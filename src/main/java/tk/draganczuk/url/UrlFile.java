@@ -7,17 +7,15 @@ import java.nio.file.StandardOpenOption;
 import java.util.List;
 import java.util.Optional;
 
-import org.eclipse.jetty.util.log.Log;
-
 
 public class UrlFile {
 
 	private File file;
 
 	public UrlFile() throws IOException{
-		String path = System.getProperty("file.location", "./urls.csv");
+		String path = System.getenv().getOrDefault("file.location", "./urls.csv");
 		this.file = new File(path);
-		if(! file.exists()){
+		if (!file.exists()) {
 			file.createNewFile();
 		}
 	}
