@@ -7,7 +7,7 @@ public class App {
 	public static void main(String[] args) {
 		// Useful for developing the frontend
 		// http://sparkjava.com/documentation#examples-and-faq -> How do I enable automatic refresh of static files?
-		if (System.getenv("dev").equals("true")) {
+		if (System.getenv("dev") != null) {
 			String projectDir = System.getProperty("user.dir");
 			String staticDir = "/src/main/resources/public";
 			staticFiles.externalLocation(projectDir + staticDir);

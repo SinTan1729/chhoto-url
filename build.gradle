@@ -11,9 +11,18 @@ repositories {
     jcenter()
 }
 
+jar {
+    manifest {
+        attributes "Main-Class": "tk.draganczuk.url.App"
+    }
+
+    from {
+        configurations.compile.collect { it.isDirectory() ? it : zipTree(it) }
+    }
+}
+
 dependencies {
 	compile "com.sparkjava:spark-core:2.8.0"
-    compile 'org.slf4j:slf4j-simple:1.7.21'
 }
 
 application {
