@@ -1,0 +1,12 @@
+version: "3"
+services:
+  url:
+    # TODO: Publish to docker hub
+    build:
+      context: .
+    ports:
+      - 4567:4567
+    environment:
+      - file.location=/urls.csv
+    volumes:
+      - ./urls.csv:/urls.csv
