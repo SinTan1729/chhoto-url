@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport"
+          content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Url</title>
+
+    <link rel="stylesheet" href="https://unpkg.com/purecss@1.0.1/build/pure-min.css"
+          integrity="sha384-oAOxQR6DkCoMliIh8yFnu25d7Eq/PHS21PClpwjOTeU2jRSq11vu66rf90/cZr47" crossorigin="anonymous">
+    <script src="js/main.js"></script>
+
+    <style>
+        body {
+            background: #333333;
+            color: #fafafa;
+        }
+
+        label, legend, a {
+            color: #fafafa !important;
+        }
+
+        .container {
+            max-width: 950px;
+            margin: 20px auto auto;
+        }
+
+        table {
+            width: 100%;
+        }
+
+
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <form class="pure-form pure-form-aligned" name="new-url-form">
+        <fieldset>
+            <legend>Add new URL</legend>
+            <div class="pure-control-group">
+                <label for="longUrl">Long URL</label>
+                <input type="text" name="longUrl" id="longUrl" placeholder="Long URL" required/>
+            </div>
+            <div class="pure-control-group">
+                <label for="shortUrl">Short URL (Optional)</label>
+                <input type="text" name="shortUrl" id="shortUrl" placeholder="Short URL (optional)"/>
+            </div>
+            <div class="pure-controls">
+                <button class="pure-button pure-button-primary">Submit</button>
+            </div>
+        </fieldset>
+
+    </form>
+
+    <table class="pure-table">
+        <thead>
+        <tr>
+            <td>Long URL</td>
+            <td>Short url</td>
+        </tr>
+        </thead>
+        <tbody id="url-table">
+
+        </tbody>
+    </table>
+</div>
+
+</body>
+</html>
