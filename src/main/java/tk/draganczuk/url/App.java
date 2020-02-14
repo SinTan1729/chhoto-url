@@ -15,6 +15,8 @@ public class App {
 			staticFiles.location("/public");
 		}
 
+		port(Integer.parseInt(System.getProperty("port", "4567")));
+
 		get("/", (req, res) -> {
 			res.redirect("/index.html");
 			return "Redirect";
