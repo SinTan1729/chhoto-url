@@ -22,13 +22,13 @@ unnecessary features, or they didn't have all the features I wanted.
 # Screenshot
 ![Screenshot](./screenshot.png)
 
-# Planned features
-- An actual name
+# Planned features for 1.0 (in order of importance
 - Some form of authentication
 - Input validation (on client and server)
 - Deleting links using API and frontend
-- Code cleanup
 - Better deduplication
+- Code cleanup
+- An actual name
 - Official Docker Hub image
 
 # Usage
