@@ -23,8 +23,6 @@ unnecessary features, or they didn't have all the features I wanted.
 ![Screenshot](./screenshot.png)
 
 # Planned features for 1.0 (in order of importance
-- Some form of authentication
-- Input validation (on client and server)
 - Deleting links using API and frontend
 - Better deduplication
 - Code cleanup
