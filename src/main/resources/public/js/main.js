@@ -23,15 +23,32 @@ const TR = (row) => {
     const tr = document.createElement("tr");
     const longTD = TD(A(row.long));
     const shortTD = TD(A_INT(row.short));
+    const btn = deleteButton(row.short);
 
     tr.appendChild(longTD);
     tr.appendChild(shortTD);
+    tr.appendChild(btn);
 
     return tr;
 };
 
 const A = (s) => `<a href='${s}'>${s}</a>`;
 const A_INT = (s) => `<a href='/${s}'>${window.location.host}/${s}</a>`;
+
+const deleteButton = (shortUrl) => {
+    const btn = document.createElement("button");
+
+    btn.innerHTML = "&times;";
+
+    btn.onclick = e => {
+        e.preventDefault();
+        fetch(`/api/${shortUrl}`, {
+            method: "DELETE"
+        }).then(_ => refreshData());
+    };
+
+    return btn;
+};
 
 const TD = (s) => {
     const td = document.createElement("td");

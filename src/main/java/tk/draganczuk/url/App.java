@@ -36,6 +36,7 @@ public class App {
 			before("/*", authFilter);
 			get("/all", Routes::getAll);
 			post("/new", Routes::addUrl);
+			delete("/:shortUrl", Routes::delete);
 		});
 
 		get("/:shortUrl", Routes::goToLongUrl);

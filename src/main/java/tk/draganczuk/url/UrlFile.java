@@ -3,6 +3,7 @@ package tk.draganczuk.url;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
+import java.nio.file.StandardCopyOption;
 import java.nio.file.StandardOpenOption;
 import java.util.List;
 import java.util.Optional;
@@ -41,18 +42,41 @@ public class UrlFile {
 
 	public Optional<String> findForShortUrl(String shortUrl){
 		try {
-			return  Files.lines(file.toPath())
-				.map(this::splitLine)
-				.filter(pair -> pair.getLeft().equals(shortUrl))
-				.map(Pair::getRight)
-				.findAny();
+			return Files.lines(file.toPath())
+					.map(this::splitLine)
+					.filter(pair -> pair.getLeft().equals(shortUrl))
+					.map(Pair::getRight)
+					.findAny();
 		} catch (IOException e) {
 			return Optional.empty();
 		}
 	}
 
-	public Pair<String, String> splitLine(String line){
+	public Pair<String, String> splitLine(String line) {
 		var split = line.split(",");
 		return new Pair<>(split[0], split[1]);
+	}
+
+	public void deleteEntry(String entry) {
+		try {
+			File tmp = File.createTempFile(file.getName(), ".tmp");
+			if (!tmp.exists()) {
+				tmp.createNewFile();
+			}
+
+			Files.lines(file.toPath())
+					.filter(line -> !line.equals(entry))
+					.forEach(line -> {
+						try {
+							Files.writeString(tmp.toPath(), line + "\n", StandardOpenOption.APPEND);
+						} catch (IOException e) {
+							e.printStackTrace();
+						}
+					});
+
+			Files.move(tmp.toPath(), file.toPath(), StandardCopyOption.REPLACE_EXISTING);
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
 	}
 }

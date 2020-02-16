@@ -54,4 +54,17 @@ public class Routes {
 		return "";
 	}
 
+	public static String delete(Request req, Response res) {
+		String shortUrl = req.params("shortUrl");
+		var longUrlOpt = urlFile
+				.findForShortUrl(shortUrl);
+
+		if (longUrlOpt.isEmpty()) {
+			res.status(404);
+			return "";
+		}
+
+		urlFile.deleteEntry(String.format("%s,%s", shortUrl, longUrlOpt.get()));
+		return "";
+	}
 }
