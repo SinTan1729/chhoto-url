@@ -1,12 +1,33 @@
 version: "3"
 services:
-  url:
-    # TODO: Publish to docker hub
-    build:
-      context: .
-    ports:
-      - 4567:4567
-    environment:
-      - file.location=/urls.csv
-    volumes:
-      - ./urls.csv:/urls.csv
+    url:
+        # TODO: Publish to docker hub
+        build:
+            context: .
+            # ports:
+            #     - 4567:4567
+        environment:
+            - file.location=/urls.csv
+        volumes:
+            - ./urls.csv:/urls.csv
+        networks:
+            - ${NETWORK}
+        labels:
+            - "traefik.enable=true"
+            - "traefik.http.routers.url.entrypoints=http"
+            - "traefik.http.routers.url.rule=Host(`url.${TLD}`)"
+            - "traefik.http.middlewares.url-https-redirect.redirectscheme.scheme=https"
+            - "traefik.http.routers.url.middlewares=url-https-redirect"
+            - "traefik.http.routers.url-secure.entrypoints=https"
+            - "traefik.http.routers.url-secure.rule=Host(`url.${TLD}`)"
+            - "traefik.http.routers.url-secure.tls=true"
+            - "traefik.http.routers.url-secure.tls.certresolver=http"
+            - "traefik.http.routers.url-secure.service=url"
+            - "traefik.http.services.url.loadbalancer.server.port=4567"
+            - "traefik.docker.network=proxy"
+        restart: ${RESTART}
+
+networks:
+    proxy:
+      external: true
+
