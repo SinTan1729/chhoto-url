@@ -6,7 +6,7 @@ import java.util.regex.Pattern;
 public class Utils {
 	private static final Random random = new Random(System.currentTimeMillis());
 
-	private static final String SHORT_URL_PATTERN = "[a-z0-9]+";
+	private static final String SHORT_URL_PATTERN = "[a-z0-9_-]+";
 	private static final Pattern PATTERN = Pattern.compile(SHORT_URL_PATTERN);
 
 	public static String randomString() {

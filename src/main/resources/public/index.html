@@ -33,9 +33,10 @@
                 <input type="url" name="longUrl" id="longUrl" placeholder="Long URL" required/>
             </div>
             <div class="pure-control-group">
-                <label for="shortUrl">Short URL (Optional)</label>
+                <label for="shortUrl">Short URL (Optional). Only letters, number dashes and underscores
+                    permitted</label>
                 <input type="text" name="shortUrl" id="shortUrl" placeholder="Short URL (optional)"
-                       pattern="[a-z0-9]+"/>
+                       pattern="[a-z0-9_-]+"/>
             </div>
             <div class="pure-controls">
                 <button class="pure-button pure-button-primary">Submit</button>
