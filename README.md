@@ -19,8 +19,13 @@ unnecessary features, or they didn't have all the features I wanted.
   written in plain HTML and vanilla JS, using [Pure CSS](https://purecss.io/)
   for styling
 
+# Screenshot
+![Screenshot](./screenshot.png)
+
 # Planned features
 - An actual name
+- Some form of authentication
+- Input validation (on client and server)
 - Deleting links using API and frontend
 - Code cleanup
 - Better deduplication
