@@ -4,6 +4,7 @@ services:
     # TODO: Publish to docker hub
     build:
       context: .
+    container_name: url
     ports:
       - 4567:4567
     environment:

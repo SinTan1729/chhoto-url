@@ -63,11 +63,11 @@ java -jar build/libs/url.jar
 ### `docker run` method
 1. Build the image
 ```
-docker build . -t url:1.0
+docker build . -t url:latest
 ```
 2. Run the image
 ```
-docker run -p 4567:4567 -d url:1.0 
+docker run -p 4567:4567 -d url:latest
 ```
 2.a Make the CSV file available to host
 ```
