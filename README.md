@@ -38,7 +38,7 @@ git clone https://github.com/draganczukp/url
 ```
 ## Building from source
 Gradle 6.x.x and JDK 11 are required. Other versions are not tested
-1. Build the `.jar` file
+### 1. Build the `.jar` file
 ```
 gradle build --no-daemon
 ```
@@ -46,11 +46,18 @@ The `--no-daemon` option means that gradle should exit as soon as the build is
 finished. Without it, gradle would still be running in the background
 in order to speed up future builds.
 
-2. Run it
+### 2. Set environment variables
+```bash
+export username=<api username>
+export password=<api password>
+export file.location=<file location> # opitonal
+```
+
+### 3. Run it
 ```
 java -jar build/libs/url.jar
 ```
-3. Navigate to `http://localhost:4567` in your browser, add links as you wish.
+### 4. Navigate to `http://localhost:4567` in your browser, add links as you wish.
 
 ## Running with docker
 ### `docker run` method
@@ -67,6 +74,8 @@ docker run -p 4567:4567 -d url:1.0
 touch ./urls.csv
 docker run -p 4567:4567 \
 	-e file.location=/urls.csv \
+    -e username="username"
+    -e password="password"
 	-v ./urls.csv:/urls.csv \
 	-d url:1.0
 ```

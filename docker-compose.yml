@@ -8,5 +8,7 @@ services:
       - 4567:4567
     environment:
       - file.location=/urls.csv
+      - username=admin
+      - password=admin
     volumes:
       - ./urls.csv:/urls.csv
