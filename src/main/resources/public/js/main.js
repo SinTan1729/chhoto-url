@@ -1,5 +1,5 @@
 const refreshData = async () => {
-    let data = await fetch("/all").then(res => res.text());
+    let data = await fetch("/api/all").then(res => res.text());
     data = data
         .split("\n")
         .filter(line => line !== "")
@@ -44,7 +44,7 @@ const submitForm = () => {
     const longUrl = form.elements["longUrl"];
     const shortUrl = form.elements["shortUrl"];
 
-    const url = `/new?long=${longUrl.value}&short=${shortUrl.value}`;
+    const url = `/api/new?long=${longUrl.value}&short=${shortUrl.value}`;
 
     fetch(url, {
         method: "POST"

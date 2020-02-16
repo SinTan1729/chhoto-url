@@ -1,5 +1,7 @@
 package tk.draganczuk.url;
 
+import spark.Filter;
+
 import static spark.Spark.*;
 
 public class App {
@@ -17,13 +19,25 @@ public class App {
 
 		port(Integer.parseInt(System.getProperty("port", "4567")));
 
+		// Add GZIP compression
+		after(Filters::addGZIP);
+
+		// Authenticate
+		Filter authFilter = Filters.createAuthFilter();
+		before("/index.html", authFilter);
+
 		get("/", (req, res) -> {
 			res.redirect("/index.html");
 			return "Redirect";
 		});
 
-		get("/all", Routes::getAll);
-		post("/new", Routes::addUrl);
+
+		path("/api", () -> {
+			before("/*", authFilter);
+			get("/all", Routes::getAll);
+			post("/new", Routes::addUrl);
+		});
+
 		get("/:shortUrl", Routes::goToLongUrl);
 	}
 }
