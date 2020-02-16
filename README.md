@@ -22,13 +22,11 @@ unnecessary features, or they didn't have all the features I wanted.
 # Screenshot
 ![Screenshot](./screenshot.png)
 
-# Planned features
-- An actual name
-- Some form of authentication
-- Input validation (on client and server)
+# Planned features for 1.0 (in order of importance
 - Deleting links using API and frontend
-- Code cleanup
 - Better deduplication
+- Code cleanup
+- An actual name
 - Official Docker Hub image
 
 # Usage
@@ -38,7 +36,7 @@ git clone https://github.com/draganczukp/url
 ```
 ## Building from source
 Gradle 6.x.x and JDK 11 are required. Other versions are not tested
-1. Build the `.jar` file
+### 1. Build the `.jar` file
 ```
 gradle build --no-daemon
 ```
@@ -46,27 +44,36 @@ The `--no-daemon` option means that gradle should exit as soon as the build is
 finished. Without it, gradle would still be running in the background
 in order to speed up future builds.
 
-2. Run it
+### 2. Set environment variables
+```bash
+export username=<api username>
+export password=<api password>
+export file.location=<file location> # opitonal
+```
+
+### 3. Run it
 ```
 java -jar build/libs/url.jar
 ```
-3. Navigate to `http://localhost:4567` in your browser, add links as you wish.
+### 4. Navigate to `http://localhost:4567` in your browser, add links as you wish.
 
 ## Running with docker
 ### `docker run` method
 1. Build the image
 ```
-docker build . -t url:1.0
+docker build . -t url:latest
 ```
 2. Run the image
 ```
-docker run -p 4567:4567 -d url:1.0 
+docker run -p 4567:4567 -d url:latest
 ```
 2.a Make the CSV file available to host
 ```
 touch ./urls.csv
 docker run -p 4567:4567 \
 	-e file.location=/urls.csv \
+    -e username="username"
+    -e password="password"
 	-v ./urls.csv:/urls.csv \
 	-d url:1.0
 ```

@@ -1,5 +1,5 @@
 const refreshData = async () => {
-    let data = await fetch("/all").then(res => res.text());
+    let data = await fetch("/api/all").then(res => res.text());
     data = data
         .split("\n")
         .filter(line => line !== "")
@@ -23,15 +23,32 @@ const TR = (row) => {
     const tr = document.createElement("tr");
     const longTD = TD(A(row.long));
     const shortTD = TD(A_INT(row.short));
+    const btn = deleteButton(row.short);
 
     tr.appendChild(longTD);
     tr.appendChild(shortTD);
+    tr.appendChild(btn);
 
     return tr;
 };
 
 const A = (s) => `<a href='${s}'>${s}</a>`;
 const A_INT = (s) => `<a href='/${s}'>${window.location.host}/${s}</a>`;
+
+const deleteButton = (shortUrl) => {
+    const btn = document.createElement("button");
+
+    btn.innerHTML = "&times;";
+
+    btn.onclick = e => {
+        e.preventDefault();
+        fetch(`/api/${shortUrl}`, {
+            method: "DELETE"
+        }).then(_ => refreshData());
+    };
+
+    return btn;
+};
 
 const TD = (s) => {
     const td = document.createElement("td");
@@ -44,7 +61,7 @@ const submitForm = () => {
     const longUrl = form.elements["longUrl"];
     const shortUrl = form.elements["shortUrl"];
 
-    const url = `/new?long=${longUrl.value}&short=${shortUrl.value}`;
+    const url = `/api/new?long=${longUrl.value}&short=${shortUrl.value}`;
 
     fetch(url, {
         method: "POST"

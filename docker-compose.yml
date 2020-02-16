@@ -4,10 +4,11 @@ services:
         # TODO: Publish to docker hub
         build:
             context: .
-            # ports:
-            #     - 4567:4567
+        container_name: url
         environment:
             - file.location=/urls.csv
+            - username=${URL_LOGIN}
+            - password=${URL_PASSWORD}
         volumes:
             - ./urls.csv:/urls.csv
         networks:
@@ -30,4 +31,3 @@ services:
 networks:
     proxy:
       external: true
-

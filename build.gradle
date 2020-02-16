@@ -23,6 +23,7 @@ jar {
 
 dependencies {
 	compile "com.sparkjava:spark-core:2.8.0"
+    implementation 'com.qmetric:spark-authentication:1.4'
 }
 
 application {
