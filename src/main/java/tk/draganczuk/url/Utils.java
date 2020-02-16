@@ -1,9 +1,13 @@
 package tk.draganczuk.url;
 
 import java.util.Random;
+import java.util.regex.Pattern;
 
 public class Utils {
 	private static final Random random = new Random(System.currentTimeMillis());
+
+	private static final String SHORT_URL_PATTERN = "[a-z0-9]+";
+	private static final Pattern PATTERN = Pattern.compile(SHORT_URL_PATTERN);
 
 	public static String randomString() {
 		int leftLimit = 48; // numeral '0'
@@ -17,5 +21,10 @@ public class Utils {
 						StringBuilder::appendCodePoint,
 						StringBuilder::append)
 				.toString();
+	}
+
+	public static boolean validate(String shortUrl) {
+		return PATTERN.matcher(shortUrl)
+				.matches();
 	}
 }

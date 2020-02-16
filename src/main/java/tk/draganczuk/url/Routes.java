@@ -1,5 +1,6 @@
 package tk.draganczuk.url;
 
+import org.eclipse.jetty.http.HttpStatus;
 import spark.Request;
 import spark.Response;
 
@@ -29,15 +30,21 @@ public class Routes {
 			shortUrl = Utils.randomString();
 		}
 
-		return urlFile.addUrl(longUrl, shortUrl);
+		if (Utils.validate(shortUrl)) {
+			return urlFile.addUrl(longUrl, shortUrl);
+		} else {
+			res.status(HttpStatus.BAD_REQUEST_400);
+			return "shortUrl not valid ([a-z0-9]+)";
+		}
 	}
 
-	public static String goToLongUrl(Request req, Response res){
+
+	public static String goToLongUrl(Request req, Response res) {
 		String shortUrl = req.params("shortUrl");
 		var longUrlOpt = urlFile
-			.findForShortUrl(shortUrl);
+				.findForShortUrl(shortUrl);
 
-		if(longUrlOpt.isEmpty()){
+		if (longUrlOpt.isEmpty()) {
 			res.status(404);
 			return "";
 		}

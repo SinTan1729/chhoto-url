@@ -30,11 +30,12 @@
             <legend>Add new URL</legend>
             <div class="pure-control-group">
                 <label for="longUrl">Long URL</label>
-                <input type="text" name="longUrl" id="longUrl" placeholder="Long URL" required/>
+                <input type="url" name="longUrl" id="longUrl" placeholder="Long URL" required/>
             </div>
             <div class="pure-control-group">
                 <label for="shortUrl">Short URL (Optional)</label>
-                <input type="text" name="shortUrl" id="shortUrl" placeholder="Short URL (optional)"/>
+                <input type="text" name="shortUrl" id="shortUrl" placeholder="Short URL (optional)"
+                       pattern="[a-z0-9]+"/>
             </div>
             <div class="pure-controls">
                 <button class="pure-button pure-button-primary">Submit</button>
