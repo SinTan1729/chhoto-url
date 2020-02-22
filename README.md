@@ -23,7 +23,6 @@ unnecessary features, or they didn't have all the features I wanted.
 ![Screenshot](./screenshot.png)
 
 # Planned features for 1.0 (in order of importance
-- Deleting links using API and frontend
 - Better deduplication
 - Code cleanup
 - An actual name
