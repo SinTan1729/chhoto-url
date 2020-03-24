@@ -13,7 +13,7 @@ unnecessary features, or they didn't have all the features I wanted.
   to the correct long URL (you'd think that's a standard feature, but
   apparently it's not)
 - Provides a simple API for adding new short links
-- Links are stored in a plaintext CSV file
+- Links are stored in an SQLite database
 - Available as a Docker container (there is no image on docker hub _yet_)
 - Backend written in Java using [Spark Java](http://sparkjava.com/), frontend
   written in plain HTML and vanilla JS, using [Pure CSS](https://purecss.io/)
@@ -45,9 +45,11 @@ in order to speed up future builds.
 
 ### 2. Set environment variables
 ```bash
+# Required for authentication
 export username=<api username>
 export password=<api password>
-export file.location=<file location> # opitonal
+# Sets where the database exists. Can be local or remote (optional)
+export db.url=<url> # Default: './urls.sqlite'
 ```
 
 ### 3. Run it
@@ -64,20 +66,24 @@ docker build . -t url:latest
 ```
 2. Run the image
 ```
-docker run -p 4567:4567 -d url:latest
+docker run -p 4567:4567
+    -d url:latest
+    -e username="username"
+    -e password="password"
+    -d url:latest
 ```
-2.a Make the CSV file available to host
+2.a Make the database file available to host (optional)
 ```
 touch ./urls.csv
 docker run -p 4567:4567 \
-	-e file.location=/urls.csv \
-    -e username="username"
-    -e password="password"
-	-v ./urls.csv:/urls.csv \
-	-d url:1.0
+    -e username="username" \
+    -e password="password" \
+    -v ./urls.sqlite:/urls.csv \
+    -e db.url=/urls.csv \
+    -d url:latest
 ```
 ## `docker-compose`
-There is a sample `docker-compose.yml` file in this repository. You can use it
+There is a sample `docker-compose.yml` file in this repository configured for Traefik. You can use it
 as a base, modifying it as needed. Run it with
 ```
 docker-compose up -d --build

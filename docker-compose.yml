@@ -6,11 +6,11 @@ services:
             context: .
         container_name: url
         environment:
-            - file.location=/urls.csv
+            - db.url=/urls.sqlite
             - username=${URL_LOGIN}
             - password=${URL_PASSWORD}
         volumes:
-            - ./urls.csv:/urls.csv
+            - ./urls.sqlite:/urls.sqlite
         networks:
             - ${NETWORK}
         labels:
