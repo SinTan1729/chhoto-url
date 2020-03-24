@@ -22,9 +22,11 @@ public class App {
 		// Add GZIP compression
 		after(Filters::addGZIP);
 
-		// Authenticate
-		Filter authFilter = Filters.createAuthFilter();
-		before("/index.html", authFilter);
+		// No need to auth in dev
+		if(System.getenv("dev") == null) {
+			// Authenticate
+			before("/api/*", Filters.createAuthFilter());
+		}
 
 		get("/", (req, res) -> {
 			res.redirect("/index.html");
@@ -33,7 +35,6 @@ public class App {
 
 
 		path("/api", () -> {
-			before("/*", authFilter);
 			get("/all", Routes::getAll);
 			post("/new", Routes::addUrl);
 			delete("/:shortUrl", Routes::delete);
