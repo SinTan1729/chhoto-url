@@ -25,13 +25,12 @@ unnecessary features, or they didn't have all the features I wanted.
 # Planned features for 1.0 (in order of importance
 - Better deduplication
 - Code cleanup
-- An actual name
 - Official Docker Hub image
 
 # Usage
 Clone this repository
 ```
-git clone https://github.com/draganczukp/url
+git clone https://github.com/draganczukp/simply-shorten
 ```
 ## Building from source
 Gradle 6.x.x and JDK 11 are required. Other versions are not tested
@@ -62,7 +61,7 @@ java -jar build/libs/url.jar
 ### `docker run` method
 1. Build the image
 ```
-docker build . -t url:latest
+docker build . -t shorten:latest
 ```
 2. Run the image
 ```
@@ -70,17 +69,17 @@ docker run -p 4567:4567
     -d url:latest
     -e username="username"
     -e password="password"
-    -d url:latest
+    -d shorten:latest
 ```
 2.a Make the database file available to host (optional)
 ```
-touch ./urls.csv
+touch ./urls.sqlite
 docker run -p 4567:4567 \
     -e username="username" \
     -e password="password" \
-    -v ./urls.sqlite:/urls.csv \
-    -e db.url=/urls.csv \
-    -d url:latest
+    -v ./urls.sqlite:/urls.sqlite \
+    -e db.url=/urls.sqlite \
+    -d shorten:latest
 ```
 ## `docker-compose`
 There is a sample `docker-compose.yml` file in this repository configured for Traefik. You can use it
