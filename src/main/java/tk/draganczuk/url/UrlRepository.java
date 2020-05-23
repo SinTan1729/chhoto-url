@@ -17,11 +17,11 @@ public class UrlRepository {
 	private static final String SELECT_FOR_SHORT_SQL = "SELECT long_url FROM urls WHERE short_url = ?";
 	private static final String DELETE_ROW_SQL = "DELETE FROM urls WHERE short_url = ?";
 
-	private String databaseUrl;
+	private final String databaseUrl;
 
 
 	public UrlRepository() {
-		String path = System.getenv().getOrDefault("db.url", "./urls.sqlite");
+		String path = System.getenv().getOrDefault("db_url", "/urls.sqlite");
 
 		databaseUrl = "jdbc:sqlite:" + path;
 

@@ -14,21 +14,21 @@ unnecessary features, or they didn't have all the features I wanted.
   apparently it's not)
 - Provides a simple API for adding new short links
 - Links are stored in an SQLite database
-- Available as a Docker container (there is no image on docker hub _yet_)
+- Available as a Docker container
 - Backend written in Java using [Spark Java](http://sparkjava.com/), frontend
   written in plain HTML and vanilla JS, using [Pure CSS](https://purecss.io/)
   for styling
   
 # Bloat that will not be implemented
 - Logging, tracking or spying of any kind. The only logs that still exist are
- errors printed to stderr and the default SLF4J warning
+ errors printed to stderr and the default SLF4J warning.
 - User management. If you need a shortener for your whole organisation, either
- run separate containers for everyone or use something else
+ run separate containers for everyone or use something else.
 - Cookies, newsletters, "we value your privacy" popups or any of the multiple
-other ways modern web shows how anti-user it is. We all hate those and they're
-not needed here
-- Paywalls or messages beging for donations. If you want to support me (for
-whatever reason), you can message me through Github issues or via email
+other ways modern web shows how anti-user it is. We all hate those, and they're
+not needed here.
+- Paywalls or messages begging for donations. If you want to support me (for
+whatever reason), you can message me through Github issues or via email.
 [github@draganczuk.tk](mailto:github@draganczuk.tk)
 
 I _might_ add one of those "fork me on github" thingies in the corner, though I
@@ -36,11 +36,6 @@ doubt I will
 
 # Screenshot
 ![Screenshot](./screenshot.png)
-
-# Planned features for 1.0 (in order of importance
-- Better deduplication
-- Code cleanup
-- Official Docker Hub image
 
 # Usage
 Clone this repository
@@ -63,7 +58,7 @@ in order to speed up future builds.
 export username=<api username>
 export password=<api password>
 # Sets where the database exists. Can be local or remote (optional)
-export db.url=<url> # Default: './urls.sqlite'
+export db_url=<url> # Default: './urls.sqlite'
 ```
 
 ### 3. Run it
@@ -76,31 +71,32 @@ You can optionally set the port the server listens on by appending `--port=[port
 
 ## Running with docker
 ### `docker run` method
-1. Build the image
+0. (Only if you really want to) Build the image
 ```
-docker build . -t shorten:latest
+docker build . -t simply-shorten:latest
 ```
-2. Run the image
+1. Run the image
 ```
 docker run -p 4567:4567
     -d url:latest
     -e username="username"
     -e password="password"
-    -d shorten:latest
+    -d simply-shorten:latest
 ```
-2.a Make the database file available to host (optional)
+1.a Make the database file available to host (optional)
 ```
 touch ./urls.sqlite
 docker run -p 4567:4567 \
     -e username="username" \
     -e password="password" \
     -v ./urls.sqlite:/urls.sqlite \
-    -e db.url=/urls.sqlite \
-    -d shorten:latest
+    -e db_url=/urls.sqlite \
+    -d simply-shorten:latest
 ```
 ## `docker-compose`
-There is a sample `docker-compose.yml` file in this repository configured for Traefik. You can use it
-as a base, modifying it as needed. Run it with
+There is a sample `docker-compose.yml` file in this repository. It contains
+everything needed for a basic install. You can use it as a base, modifying
+it as needed. Run it with
 ```
 docker-compose up -d --build
 ```
