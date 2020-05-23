@@ -4,8 +4,6 @@ import org.eclipse.jetty.http.HttpStatus;
 import spark.Request;
 import spark.Response;
 
-import java.io.IOException;
-
 public class Routes {
 
 	private static UrlRepository urlRepository;

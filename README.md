@@ -18,6 +18,21 @@ unnecessary features, or they didn't have all the features I wanted.
 - Backend written in Java using [Spark Java](http://sparkjava.com/), frontend
   written in plain HTML and vanilla JS, using [Pure CSS](https://purecss.io/)
   for styling
+  
+# Bloat that will not be implemented
+- Logging, tracking or spying of any kind. The only logs that still exist are
+ errors printed to stderr and the default SLF4J warning
+- User management. If you need a shortener for your whole organisation, either
+ run separate containers for everyone or use something else
+- Cookies, newsletters, "we value your privacy" popups or any of the multiple
+other ways modern web shows how anti-user it is. We all hate those and they're
+not needed here
+- Paywalls or messages beging for donations. If you want to support me (for
+whatever reason), you can message me through Github issues or via email
+[github@draganczuk.tk](mailto:github@draganczuk.tk)
+
+I _might_ add one of those "fork me on github" thingies in the corner, though I
+doubt I will
 
 # Screenshot
 ![Screenshot](./screenshot.png)
@@ -55,6 +70,8 @@ export db.url=<url> # Default: './urls.sqlite'
 ```
 java -jar build/libs/url.jar
 ```
+You can optionally set the port the server listens on by appending `--port=[port]`
+
 ### 4. Navigate to `http://localhost:4567` in your browser, add links as you wish.
 
 ## Running with docker

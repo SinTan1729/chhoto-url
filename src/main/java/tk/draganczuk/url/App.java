@@ -1,7 +1,5 @@
 package tk.draganczuk.url;
 
-import spark.Filter;
-
 import static spark.Spark.*;
 
 public class App {
@@ -17,13 +15,13 @@ public class App {
 			staticFiles.location("/public");
 		}
 
-		port(Integer.parseInt(System.getProperty("port", "4567")));
+		port(Integer.parseInt(System.getenv().getOrDefault("port", "4567")));
 
 		// Add GZIP compression
 		after(Filters::addGZIP);
 
 		// No need to auth in dev
-		if(System.getenv("dev") == null) {
+		if (System.getenv("dev") == null) {
 			// Authenticate
 			before("/api/*", Filters.createAuthFilter());
 		}
