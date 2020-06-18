@@ -5,10 +5,12 @@
 # What is it?
 A simple selfhosted URL shortener with no unnecessary features.
 
-If you feel
-like a feature is missing, please let me know by creating an issue using the
-"feature request" template.
+Don't worry if you see no activity for a long time. I consider this project
+to be complete, not dead. I'm unlikely to add any new features, but I will try
+and fix every bug you report.
 
+If you feel like a feature is missing, please let me know by creating an issue
+using the "feature request" template.
 
 ## But why another URL shortener?
 I've looked at a couple popular URL shorteners, however they either have
