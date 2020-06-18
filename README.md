@@ -1,5 +1,14 @@
+![Docker Pulls](https://img.shields.io/docker/pulls/draganczukp/simply-shorten?style=for-the-badge)
+![Docker Cloud Build Status](https://img.shields.io/docker/cloud/build/draganczukp/simply-shorten?style=for-the-badge)
+![GitHub issues](https://img.shields.io/github/issues/draganczukp/simply-shorten)
+
 # What is it?
-A simple selfhosted URL shortener with no name because naming is hard
+A simple selfhosted URL shortener with no unnecessary features.
+
+If you feel
+like a feature is missing, please let me know by creating an issue using the
+"feature request" template.
+
 
 ## But why another URL shortener?
 I've looked at a couple popular URL shorteners, however they either have
