@@ -21,7 +21,7 @@ public class App {
 		after(Filters::addGZIP);
 
 		// No need to auth in dev
-		if (System.getenv("dev") == null) {
+		if (System.getenv("dev") == null && Utils.isPasswordEnabled()) {
 			// Authenticate
 			before("/api/*", Filters.createAuthFilter());
 		}

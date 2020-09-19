@@ -77,7 +77,6 @@ export db_url=<url> # Default: './urls.sqlite'
 java -jar build/libs/url.jar
 ```
 You can optionally set the port the server listens on by appending `--port=[port]`
-
 ### 4. Navigate to `http://localhost:4567` in your browser, add links as you wish.
 
 ## Running with docker
@@ -109,5 +108,19 @@ There is a sample `docker-compose.yml` file in this repository. It contains
 everything needed for a basic install. You can use it as a base, modifying
 it as needed. Run it with
 ```
-docker-compose up -d --build
+docker-compose up -d
 ```
+
+## Disable authentication
+As requested in #5, it is possible to completely disable the authentication.
+This if not recommended, as it will allow anyone to create new links and delete
+old ones. This might not seem like a bad idea, until you have hundreds of links
+pointing to illegal content. Since there are no logs, it's impossible to prove
+that those links aren't created by you.
+
+If you still want to do it, then you need to set an environment variable to
+an exact value:
+```
+INSECURE_DISABLE_PASSWORD=I_KNOW_ITS_BAD
+```
+Any other value will not work.

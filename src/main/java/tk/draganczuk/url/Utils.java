@@ -27,4 +27,14 @@ public class Utils {
 		return PATTERN.matcher(shortUrl)
 				.matches();
 	}
+
+	public static boolean isPasswordEnabled(){
+		String disablePasswordEnv = System.getenv("INSECURE_DISABLE_PASSWORD");
+
+		if(disablePasswordEnv != null && disablePasswordEnv.equals("I_KNOW_ITS_BAD")){
+			return false;
+		}
+
+		return true;
+	}
 }
