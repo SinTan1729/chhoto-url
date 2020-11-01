@@ -1,6 +1,6 @@
 ![Docker Pulls](https://img.shields.io/docker/pulls/draganczukp/simply-shorten?style=for-the-badge)
-![Docker Cloud Build Status](https://img.shields.io/docker/cloud/build/draganczukp/simply-shorten?style=for-the-badge)
-![GitHub issues](https://img.shields.io/github/issues/draganczukp/simply-shorten?style=for-the-badge)
+
+[Repository moved to GitLab](https://gitlab.com/draganczukp/simply-shorten)
 
 # What is it?
 A simple selfhosted URL shortener with no unnecessary features.
@@ -40,10 +40,7 @@ other ways modern web shows how anti-user it is. We all hate those, and they're
 not needed here.
 - Paywalls or messages begging for donations. If you want to support me (for
 whatever reason), you can message me through Github issues or via email.
-[github@draganczuk.tk](mailto:github@draganczuk.tk)
-
-I _might_ add one of those "fork me on github" thingies in the corner, though I
-doubt I will
+[admin@draganczuk.me](mailto:admin@draganczuk.me)
 
 # Screenshot
 ![Screenshot](./screenshot.png)
@@ -51,7 +48,7 @@ doubt I will
 # Usage
 Clone this repository
 ```
-git clone https://github.com/draganczukp/simply-shorten
+git clone https://gitlab.com/draganczukp/simply-shorten
 ```
 ## Building from source
 Gradle 6.x.x and JDK 11 are required. Other versions are not tested
