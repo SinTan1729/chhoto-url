@@ -6,7 +6,7 @@ import spark.Response;
 
 public class Routes {
 
-	private static UrlRepository urlRepository;
+	private static final UrlRepository urlRepository;
 
 	static {
 		urlRepository = new UrlRepository();
@@ -17,8 +17,10 @@ public class Routes {
 	}
 
 	public static String addUrl(Request req, Response res) {
-		String longUrl = req.queryParams("long");
-		String shortUrl = req.queryParams("short");
+		var body = req.body();
+		var split = body.split(";");
+		String longUrl = split[0];
+		String shortUrl = split[1];
 
 		if (shortUrl == null || shortUrl.isBlank()) {
 			shortUrl = Utils.randomString();
@@ -43,7 +45,7 @@ public class Routes {
 			return "";
 		}
 
-		res.redirect(longUrlOpt.get());
+		res.redirect(longUrlOpt.get(), HttpStatus.PERMANENT_REDIRECT_308);
 
 		return "";
 	}

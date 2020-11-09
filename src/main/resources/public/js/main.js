@@ -61,17 +61,18 @@ const submitForm = () => {
     const longUrl = form.elements["longUrl"];
     const shortUrl = form.elements["shortUrl"];
 
-    const url = `/api/new?long=${longUrl.value}&short=${shortUrl.value}`;
+    const url = `/api/new`;
 
     fetch(url, {
-        method: "POST"
+        method: "POST",
+        body: `${longUrl.value};${shortUrl.value}`
     })
-        .then(_ => {
-            longUrl.value = "";
-            shortUrl.value = "";
+    .then(_ => {
+        longUrl.value = "";
+        shortUrl.value = "";
 
-            refreshData();
-        });
+        refreshData();
+    });
 
 };
 
