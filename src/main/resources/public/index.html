@@ -21,6 +21,10 @@
         table {
             width: 100%;
         }
+
+        input {
+            width: 65%;
+        }
     </style>
 </head>
 
@@ -32,19 +36,17 @@
                 <legend>Add new URL</legend>
                 <div class="pure-control-group">
                     <label for="longUrl">Long URL</label>
-                    <input type="url" name="longUrl" id="longUrl" placeholder="Long URL" required />
+                    <input type="url" name="longUrl" id="longUrl" placeholder="Please enter a valid URL" required />
                 </div>
                 <div class="pure-control-group">
-                    <label for="shortUrl">Short URL (Optional). Only letters, numbers, dashes and underscores
-                        permitted</label>
-                    <input type="text" name="shortUrl" id="shortUrl" placeholder="Short URL (optional)"
+                    <label for="shortUrl">Short URL (Optional)</label>
+                    <input type="text" name="shortUrl" id="shortUrl" placeholder="Only a-z, 0-9, - and _ are allowed"
                         pattern="[a-z0-9_-]+" />
                 </div>
                 <div class="pure-controls">
                     <button class="pure-button pure-button-primary">Submit</button>
                 </div>
             </fieldset>
-
         </form>
 
         <table class="pure-table">
