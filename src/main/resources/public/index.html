@@ -1,14 +1,15 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport"
-          content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
+        content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
     <meta http-equiv="X-UA-Compatible" content="ie=edge">
     <title>Simply Shorten</title>
 
     <link rel="stylesheet" href="https://unpkg.com/purecss@1.0.1/build/pure-min.css"
-          integrity="sha384-oAOxQR6DkCoMliIh8yFnu25d7Eq/PHS21PClpwjOTeU2jRSq11vu66rf90/cZr47" crossorigin="anonymous">
+        integrity="sha384-oAOxQR6DkCoMliIh8yFnu25d7Eq/PHS21PClpwjOTeU2jRSq11vu66rf90/cZr47" crossorigin="anonymous">
     <script src="js/main.js"></script>
 
     <style>
@@ -22,42 +23,44 @@
         }
     </style>
 </head>
+
 <body>
 
-<div class="container">
-    <form class="pure-form pure-form-aligned" name="new-url-form">
-        <fieldset>
-            <legend>Add new URL</legend>
-            <div class="pure-control-group">
-                <label for="longUrl">Long URL</label>
-                <input type="url" name="longUrl" id="longUrl" placeholder="Long URL" required/>
-            </div>
-            <div class="pure-control-group">
-                <label for="shortUrl">Short URL (Optional). Only letters, number dashes and underscores
-                    permitted</label>
-                <input type="text" name="shortUrl" id="shortUrl" placeholder="Short URL (optional)"
-                       pattern="[a-z0-9_-]+"/>
-            </div>
-            <div class="pure-controls">
-                <button class="pure-button pure-button-primary">Submit</button>
-            </div>
-        </fieldset>
+    <div class="container">
+        <form class="pure-form pure-form-aligned" name="new-url-form">
+            <fieldset>
+                <legend>Add new URL</legend>
+                <div class="pure-control-group">
+                    <label for="longUrl">Long URL</label>
+                    <input type="url" name="longUrl" id="longUrl" placeholder="Long URL" required />
+                </div>
+                <div class="pure-control-group">
+                    <label for="shortUrl">Short URL (Optional). Only letters, numbers, dashes and underscores
+                        permitted</label>
+                    <input type="text" name="shortUrl" id="shortUrl" placeholder="Short URL (optional)"
+                        pattern="[a-z0-9_-]+" />
+                </div>
+                <div class="pure-controls">
+                    <button class="pure-button pure-button-primary">Submit</button>
+                </div>
+            </fieldset>
 
-    </form>
+        </form>
 
-    <table class="pure-table">
-        <thead>
-        <tr>
-            <td>Long URL</td>
-            <td>Short url</td>
-            <td></td>
-        </tr>
-        </thead>
-        <tbody id="url-table">
+        <table class="pure-table">
+            <thead>
+                <tr>
+                    <td>Long URL</td>
+                    <td>Short url</td>
+                    <td></td>
+                </tr>
+            </thead>
+            <tbody id="url-table">
 
-        </tbody>
-    </table>
-</div>
+            </tbody>
+        </table>
+    </div>
 
 </body>
+
 </html>
