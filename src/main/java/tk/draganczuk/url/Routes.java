@@ -18,13 +18,17 @@ public class Routes {
 
 	public static String addUrl(Request req, Response res) {
 		var body = req.body();
-		var split = body.split(";");
-		String longUrl = split[0];
-		String shortUrl = split[1];
-
-		if (shortUrl == null || shortUrl.isBlank()) {
-			shortUrl = Utils.randomString();
+		if (body.endsWith(";")) {
+			body = body + "$";
 		}
+		var split = body.split(";");
+
+		String longUrl = split[0];
+		
+		if (split[1].equals("$")) {
+			split[1] = Utils.randomString();
+		}
+		String shortUrl = split[1];
 
 		if (Utils.validate(shortUrl)) {
 			return urlRepository.addUrl(longUrl, shortUrl);
