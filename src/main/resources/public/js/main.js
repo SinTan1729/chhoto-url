@@ -52,7 +52,9 @@ const deleteButton = (shortUrl) => {
 
 const TD = (s) => {
     const td = document.createElement("td");
-    td.innerHTML = s;
+    const div = document.createElement("div");
+    div.innerHTML = s;
+    td.appendChild(div);
     return td;
 };
 
