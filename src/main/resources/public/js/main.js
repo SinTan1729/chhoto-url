@@ -25,8 +25,8 @@ const TR = (row) => {
     const shortTD = TD(A_INT(row.short));
     const btn = deleteButton(row.short);
 
-    tr.appendChild(longTD);
     tr.appendChild(shortTD);
+    tr.appendChild(longTD);
     tr.appendChild(btn);
 
     return tr;
@@ -67,12 +67,12 @@ const submitForm = () => {
         method: "POST",
         body: `${longUrl.value};${shortUrl.value}`
     })
-    .then(_ => {
-        longUrl.value = "";
-        shortUrl.value = "";
+        .then(_ => {
+            longUrl.value = "";
+            shortUrl.value = "";
 
-        refreshData();
-    });
+            refreshData();
+        });
 
 };
 
