@@ -48,7 +48,7 @@ public class Routes {
 			res.status(404);
 			return "";
 		}
-
+		urlRepository.addHit(shortUrl);
 		res.redirect(longUrlOpt.get(), HttpStatus.PERMANENT_REDIRECT_308);
 
 		return "";

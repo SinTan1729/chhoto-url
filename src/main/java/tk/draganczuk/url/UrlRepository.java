@@ -7,12 +7,14 @@ import java.util.Optional;
 
 
 public class UrlRepository {
-	private static final String INSERT_ROW_SQL = "INSERT INTO urls (long_url, short_url) VALUES (?, ?)";
+	private static final String INSERT_ROW_SQL = "INSERT INTO urls (long_url, short_url, hits) VALUES (?, ?, ?)";
+	private static final String ADD_HIT_SQL = "UPDATE urls SET hits = hits + 1 WHERE short_url = ?";
 	private static final String CREATE_TABLE_SQL = "CREATE TABLE IF NOT EXISTS urls\n" +
 			"(\n" +
 			"    id          INTEGER PRIMARY KEY AUTOINCREMENT,\n" +
 			"    long_url    TEXT    NOT NULL,\n" +
-			"    short_url   TEXT    NOT NULL\n" +
+			"    short_url   TEXT    NOT NULL,\n" +
+			"	 hits		 INTEGER NOT NULL\n"  +
 			");";
 	private static final String SELECT_FOR_SHORT_SQL = "SELECT long_url FROM urls WHERE short_url = ?";
 	private static final String DELETE_ROW_SQL = "DELETE FROM urls WHERE short_url = ?";
@@ -50,7 +52,7 @@ public class UrlRepository {
 			List<String> result = new ArrayList<>();
 
 			while (rs.next()) {
-				result.add(String.format("%s,%s", rs.getString("short_url"), rs.getString("long_url")));
+				result.add(String.format("%s,%s,%s", rs.getString("short_url"), rs.getString("long_url"), String.valueOf(rs.getInt("hits"))));
 			}
 
 			return result;
@@ -66,6 +68,7 @@ public class UrlRepository {
 			final var stmt = con.prepareStatement(INSERT_ROW_SQL);
 			stmt.setString(1, longURL);
 			stmt.setString(2, shortUrl);
+			stmt.setInt(3, 0);
 			if (stmt.execute()) {
 				return String.format("%s,%s", shortUrl, longURL);
 			}
@@ -73,6 +76,16 @@ public class UrlRepository {
 			e.printStackTrace();
 		}
 		return "";
+	}
+
+	public void addHit(String shortURL) {
+		try (final var con = DriverManager.getConnection(databaseUrl)) {
+			final var stmt = con.prepareStatement(ADD_HIT_SQL);
+			stmt.setString(1, shortURL);
+			stmt.execute();
+		} catch (SQLException e) {
+			e.printStackTrace();
+		}
 	}
 
 	public Optional<String> findForShortUrl(String shortUrl) {

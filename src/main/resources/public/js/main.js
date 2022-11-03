@@ -5,8 +5,9 @@ const refreshData = async () => {
         .filter(line => line !== "")
         .map(line => line.split(","))
         .map(arr => ({
+            short: arr[0],
             long: arr[1],
-            short: arr[0]
+            hits: arr[2]
         }));
 
     displayData(data);
@@ -23,10 +24,12 @@ const TR = (row) => {
     const tr = document.createElement("tr");
     const longTD = TD(A(row.long));
     const shortTD = TD(A_INT(row.short));
+    const hitsTD = TD(row.hits);
     const btn = deleteButton(row.short);
 
     tr.appendChild(shortTD);
     tr.appendChild(longTD);
+    tr.appendChild(hitsTD);
     tr.appendChild(btn);
 
     return tr;
