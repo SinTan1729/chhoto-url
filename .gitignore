@@ -7,7 +7,6 @@ build
 
 local.properties
 url.iml
-.settings/
 urls.csv
 .env
 urls.sqlite
