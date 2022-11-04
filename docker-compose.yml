@@ -1,7 +1,7 @@
 version: "3"
 services:
     url:
-        image: registry.gitlab.com/sintan1729/simply-shorten:latest
+        image: sintan1729/simply-shorten:latest
         restart: unless-stopped
         container_name: simply-shorten
         ports:
@@ -16,9 +16,9 @@ services:
         networks:
             - proxy
 
-
 volumes:
     db:
+
 
 networks:
     proxy:
