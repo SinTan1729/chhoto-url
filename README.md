@@ -24,6 +24,8 @@ unnecessary features, or they didn't have all the features I wanted.
   to the correct long URL (you'd think that's a standard feature, but
   apparently it's not)
 - Provides a simple API for adding new short links
+- Counts number of hits for each short link in a privacy respecting way
+  i.e. only the hit is recorded, and nothing else
 - Links are stored in an SQLite database
 - Available as a Docker container
 - Backend written in Java using [Spark Java](http://sparkjava.com/), frontend
