@@ -1,8 +1,11 @@
 version: "3"
 services:
     url:
-        image: draganczukp/simply-shorten
-        container_name: url
+        image: registry.gitlab.com/sintan1729/simply-shorten:latest
+        restart: unless-stopped
+        container_name: simply-shorten
+        ports:
+            - 4567:4567
         environment:
             # Change if you want to mount the database somewhere else
             # - db_url=/urls.sqlite
@@ -10,11 +13,13 @@ services:
             - password=$3CuReP4S$W0rD
         volumes:
             - db:/urls.sqlite
-        restart: unless-stopped
+        networks:
+            - proxy
+
 
 volumes:
     db:
 
 networks:
     proxy:
-      external: true
+        external: true
