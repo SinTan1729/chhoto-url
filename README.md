@@ -1,4 +1,4 @@
-![Docker Pulls](https://img.shields.io/docker/pulls/sintan1729/simply-shorten?style=for-the-badge)
+[![Docker Pulls](https://img.shields.io/docker/pulls/sintan1729/simply-shorten?style=for-the-badge)](https://hub.docker.com/r/sintan1729/simply-shorten)
 
 A fork of [this project](https://gitlab.com/draganczukp/simply-shorten).
 
