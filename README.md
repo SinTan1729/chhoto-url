@@ -1,6 +1,6 @@
-![Docker Pulls](https://img.shields.io/docker/pulls/draganczukp/simply-shorten?style=for-the-badge)
+![Docker Pulls](https://img.shields.io/docker/pulls/sintan1729/simply-shorten?style=for-the-badge)
 
-[Repository moved to GitLab](https://gitlab.com/draganczukp/simply-shorten)
+A fork of [this project](https://gitlab.com/draganczukp/simply-shorten).
 
 # What is it?
 A simple selfhosted URL shortener with no unnecessary features.
@@ -31,7 +31,7 @@ unnecessary features, or they didn't have all the features I wanted.
   for styling
   
 # Bloat that will not be implemented
-- Logging, tracking or spying of any kind. The only logs that still exist are
+- Tracking or spying of any kind. The only logs that still exist are
  errors printed to stderr and the default SLF4J warning.
 - User management. If you need a shortener for your whole organisation, either
  run separate containers for everyone or use something else.
@@ -39,8 +39,7 @@ unnecessary features, or they didn't have all the features I wanted.
 other ways modern web shows how anti-user it is. We all hate those, and they're
 not needed here.
 - Paywalls or messages begging for donations. If you want to support me (for
-whatever reason), you can message me through Github issues or via email.
-[admin@draganczuk.me](mailto:admin@draganczuk.me)
+whatever reason), you can message me through Github issues.
 
 # Screenshot
 ![Screenshot](./screenshot.png)
@@ -48,7 +47,7 @@ whatever reason), you can message me through Github issues or via email.
 # Usage
 Clone this repository
 ```
-git clone https://gitlab.com/draganczukp/simply-shorten
+git clone https://gitlab.com/SinTan1729/simply-shorten
 ```
 ## Building from source
 Gradle 6.x.x and JDK 11 are required. Other versions are not tested
