@@ -54,7 +54,9 @@ it as needed. Run it with
 ```
 docker compose up -d
 ```
-
+If you're using a custom location for the `db_url`, make sure to make that file
+before running the docker image, as otherwise a directory will be created in its
+place, resulting in an error.
 ## Building from source
 Clone this repository
 ```

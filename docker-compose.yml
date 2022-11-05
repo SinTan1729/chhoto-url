@@ -8,6 +8,7 @@ services:
             - 4567:4567
         environment:
             # Change if you want to mount the database somewhere else
+            # In this case, you can get rid of the db volume below
             # - db_url=/urls.sqlite
             - username=admin
             - password=$3CuReP4S$W0rD
