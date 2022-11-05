@@ -12,6 +12,16 @@ docker-build-main:
     - docker push "$CI_REGISTRY_IMAGE"
   only:
     - main
+    changes:
+      - bin/*
+      - gradle/*
+      - src/*
+      - build.gradle
+      - DockerFile
+      - gradlew
+      - gradlew.bat
+      - settings.gradle
+      - .gitlab.ci.yml
 
 docker-build:
   # Official docker image.
@@ -26,3 +36,13 @@ docker-build:
     - docker push "$CI_REGISTRY_IMAGE:$CI_COMMIT_REF_SLUG"
   except:
     - main
+    changes:
+      - bin/*
+      - gradle/*
+      - src/*
+      - build.gradle
+      - DockerFile
+      - gradlew
+      - gradlew.bat
+      - settings.gradle
+      - .gitlab.ci.yml
