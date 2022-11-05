@@ -47,12 +47,20 @@ whatever reason), you can message me through Github issues.
 ![Screenshot](./screenshot.png)
 
 # Usage
+## Using `docker compose` (Recommended method)
+There is a sample `docker-compose.yml` file in this repository. It contains
+everything needed for a basic install. You can use it as a base, modifying
+it as needed. Run it with
+```
+docker compose up -d
+```
+
+## Building from source
 Clone this repository
 ```
 git clone https://gitlab.com/SinTan1729/simply-shorten
 ```
-## Building from source
-Gradle 6.x.x and JDK 11 are required. Other versions are not tested
+Note that Gradle 6.x.x and JDK 11 are required. Other versions are not tested
 ### 1. Build the `.jar` file
 ```
 gradle build --no-daemon
@@ -100,13 +108,6 @@ docker run -p 4567:4567 \
     -v ./urls.sqlite:/urls.sqlite \
     -e db_url=/urls.sqlite \
     -d simply-shorten:latest
-```
-## `docker-compose`
-There is a sample `docker-compose.yml` file in this repository. It contains
-everything needed for a basic install. You can use it as a base, modifying
-it as needed. Run it with
-```
-docker-compose up -d
 ```
 
 ## Disable authentication
