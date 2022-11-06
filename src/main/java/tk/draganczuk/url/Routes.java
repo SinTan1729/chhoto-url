@@ -34,7 +34,7 @@ public class Routes {
 			return urlRepository.addUrl(longUrl, shortUrl);
 		} else {
 			res.status(HttpStatus.BAD_REQUEST_400);
-			return "shortUrl not valid ([a-z0-9]+)";
+			return "shortUrl not valid ([a-z0-9-_]+)";
 		}
 	}
 
