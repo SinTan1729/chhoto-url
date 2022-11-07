@@ -29,6 +29,7 @@ public class Routes {
 			split[1] = Utils.randomString();
 		}
 		String shortUrl = split[1];
+		shortUrl = shortUrl.toLowerCase();
 
 		if (Utils.validate(shortUrl)) {
 			return urlRepository.addUrl(longUrl, shortUrl);
@@ -41,6 +42,7 @@ public class Routes {
 
 	public static String goToLongUrl(Request req, Response res) {
 		String shortUrl = req.params("shortUrl");
+		shortUrl = shortUrl.toLowerCase();
 		var longUrlOpt = urlRepository
 				.findForShortUrl(shortUrl);
 
