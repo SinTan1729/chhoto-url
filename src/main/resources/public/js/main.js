@@ -74,12 +74,14 @@ const submitForm = () => {
     })
         .then((res) => {
             if (!res.ok) {
-                controls = document.querySelector(".pure-controls");
-                errBox = document.createElement("p");
-                errBox.setAttribute("id", "errBox");
-                errBox.setAttribute("style", "color:red");
-                errBox.innerHTML = "Short URL not valid or already in use";
-                controls.appendChild(errBox);
+                if (document.getElementById("errBox") == null) {
+                    controls = document.querySelector(".pure-controls");
+                    errBox = document.createElement("p");
+                    errBox.setAttribute("id", "errBox");
+                    errBox.setAttribute("style", "color:red");
+                    errBox.innerHTML = "Short URL not valid or already in use!";
+                    controls.appendChild(errBox);
+                }
             }
             else {
                 document.getElementById("errBox")?.remove();
