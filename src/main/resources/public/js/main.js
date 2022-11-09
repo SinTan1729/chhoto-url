@@ -20,7 +20,7 @@ const displayData = (data) => {
         .forEach(tr => table.appendChild(tr));
 };
 
-const addErrBox = () => {
+const addErrBox = async () => {
     const controls = document.querySelector(".pure-controls");
     const errBox = document.createElement("p");
     errBox.setAttribute("id", "errBox");
@@ -82,7 +82,6 @@ const submitForm = () => {
         body: `${longUrl.value};${shortUrl.value}`
     })
         .then((res) => {
-            console.log("0");
             if (!res.ok) {
                 if (document.getElementById("errBox") == null) {
                     addErrBox();
