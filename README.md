@@ -1,5 +1,7 @@
 [![Docker Pulls](https://img.shields.io/docker/pulls/sintan1729/simply-shorten?style=for-the-badge)](https://hub.docker.com/r/sintan1729/simply-shorten)
 
+# ![Logo](src/main/resources/public/assets/favicon-32.png) <span style="font-size:42px">Simply Shorten</span>
+
 A fork of [this project](https://gitlab.com/draganczukp/simply-shorten).
 
 # What is it?
