@@ -75,8 +75,8 @@ const submitForm = () => {
         .then((res) => {
             if (!res.ok) {
                 if (document.getElementById("errBox") == null) {
-                    controls = document.querySelector(".pure-controls");
-                    errBox = document.createElement("p");
+                    const controls = document.querySelector(".pure-controls");
+                    const errBox = document.createElement("p");
                     errBox.setAttribute("id", "errBox");
                     errBox.setAttribute("style", "color:red");
                     errBox.innerHTML = "Short URL not valid or already in use!";
