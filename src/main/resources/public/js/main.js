@@ -20,6 +20,15 @@ const displayData = (data) => {
         .forEach(tr => table.appendChild(tr));
 };
 
+const addErrBox = () => {
+    const controls = document.querySelector(".pure-controls");
+    const errBox = document.createElement("p");
+    errBox.setAttribute("id", "errBox");
+    errBox.setAttribute("style", "color:red");
+    errBox.innerHTML = "Short URL not valid or already in use!";
+    controls.appendChild(errBox);
+}
+
 const TR = (row) => {
     const tr = document.createElement("tr");
     const longTD = TD(A(row.long));
@@ -73,14 +82,10 @@ const submitForm = () => {
         body: `${longUrl.value};${shortUrl.value}`
     })
         .then((res) => {
+            console.log("0");
             if (!res.ok) {
                 if (document.getElementById("errBox") == null) {
-                    const controls = document.querySelector(".pure-controls");
-                    const errBox = document.createElement("p");
-                    errBox.setAttribute("id", "errBox");
-                    errBox.setAttribute("style", "color:red");
-                    errBox.innerHTML = "Short URL not valid or already in use!";
-                    controls.appendChild(errBox);
+                    addErrBox();
                 }
             }
             else {
