@@ -72,11 +72,22 @@ const submitForm = () => {
         method: "POST",
         body: `${longUrl.value};${shortUrl.value}`
     })
-        .then(_ => {
-            longUrl.value = "";
-            shortUrl.value = "";
+        .then((res) => {
+            if (!res.ok) {
+                controls = document.querySelector(".pure-controls");
+                errBox = document.createElement("p");
+                errBox.setAttribute("id", "errBox");
+                errBox.setAttribute("style", "color:red");
+                errBox.innerHTML = "Short URL not valid or already in use";
+                controls.appendChild(errBox);
+            }
+            else {
+                document.getElementById("errBox")?.remove();
+                longUrl.value = "";
+                shortUrl.value = "";
 
-            refreshData();
+                refreshData();
+            }
         });
 
 };

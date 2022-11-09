@@ -30,12 +30,15 @@ public class Routes {
 		}
 		String shortUrl = split[1];
 		shortUrl = shortUrl.toLowerCase();
+		
+		var shortUrlPresent = urlRepository
+				.findForShortUrl(shortUrl);
 
-		if (Utils.validate(shortUrl)) {
+		if (shortUrlPresent.isEmpty() && Utils.validate(shortUrl)) {
 			return urlRepository.addUrl(longUrl, shortUrl);
 		} else {
 			res.status(HttpStatus.BAD_REQUEST_400);
-			return "shortUrl not valid ([a-z0-9-_]+)";
+			return "shortUrl not valid or already in use";
 		}
 	}
 
