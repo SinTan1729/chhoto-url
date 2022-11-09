@@ -54,9 +54,11 @@ const deleteButton = (shortUrl) => {
 
     btn.onclick = e => {
         e.preventDefault();
-        fetch(`/api/${shortUrl}`, {
-            method: "DELETE"
-        }).then(_ => refreshData());
+        if (confirm("Do you want to delete the entry " + shortUrl + "?")) {
+            fetch(`/api/${shortUrl}`, {
+                method: "DELETE"
+            }).then(_ => refreshData());
+        }
     };
 
     return btn;
