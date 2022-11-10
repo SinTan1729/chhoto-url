@@ -59,6 +59,7 @@ const deleteButton = (shortUrl) => {
     const btn = document.createElement("button");
 
     btn.innerHTML = "&times;";
+    btn.setAttribute("style", "border-radius: 50%;");
 
     btn.onclick = e => {
         e.preventDefault();
