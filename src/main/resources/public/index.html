@@ -25,20 +25,12 @@
             width: 100%;
         }
 
-        input {
-            width: 65%;
-        }
-
         table tr td div {
             max-height: 75px;
             line-height: 25px;
             word-wrap: break-word;
             max-width: 575px;
             overflow: auto;
-        }
-
-        form input[name="shortUrl"] {
-            text-transform: lowercase;
         }
 
         td[name="deleteBtn"] {
@@ -50,6 +42,18 @@
             border-style: solid;
             cursor: pointer;
             background-color: transparent;
+        }
+
+        input {
+            width: 65%;
+        }
+
+        form input[name="shortUrl"] {
+            text-transform: lowercase;
+        }
+
+        form input[name="shortUrl"]::placeholder {
+            text-transform: none;
         }
     </style>
 </head>
