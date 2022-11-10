@@ -40,6 +40,10 @@
         form input[name="shortUrl"] {
             text-transform: lowercase;
         }
+
+        td[name="deleteBtn"] {
+            text-align: center;
+        }
     </style>
 </head>
 
@@ -48,7 +52,7 @@
     <div class="container">
         <form class="pure-form pure-form-aligned" name="new-url-form">
             <fieldset>
-                <legend style="font-size: 32px;"><img src="assets/favicon-32.png" height="26px" alt="logo"> Simply
+                <legend style="font-size: 32px;"><img src="assets/favicon-32.png" width="26px" alt="logo"> Simply
                     Shorten</legend>
                 <div class="pure-control-group">
                     <label for="longUrl">Long URL</label>
@@ -65,13 +69,15 @@
             </fieldset>
         </form>
 
-        <table class="pure-table">
+        <table class="pure-table" style="visibility: hidden;">
+            <caption style="font-size: 22px; text-align: left; font-style: normal;">Active links:</caption>
+            <br>
             <thead>
                 <tr>
                     <td>Short URL</td>
                     <td>Long URL</td>
                     <td>Hits</td>
-                    <td></td>
+                    <td name="deleteBtn">&times;</td>
                 </tr>
             </thead>
             <tbody id="url-table">

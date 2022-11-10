@@ -14,10 +14,17 @@ const refreshData = async () => {
 };
 
 const displayData = (data) => {
-    const table = document.querySelector("#url-table");
-    table.innerHTML = ''; // Clear
-    data.map(TR)
-        .forEach(tr => table.appendChild(tr));
+    table_box = document.querySelector(".pure-table");
+    if (data.length == 0) {
+        table_box.style.visibility = "hidden";
+    }
+    else {
+        const table = document.querySelector("#url-table");
+        table_box.style.visibility = "visible";
+        table.innerHTML = ''; // Clear
+        data.map(TR)
+            .forEach(tr => table.appendChild(tr));
+    }
 };
 
 const addErrBox = async () => {
@@ -48,6 +55,7 @@ const A = (s) => `<a href='${s}'>${s}</a>`;
 const A_INT = (s) => `<a href='/${s}'>${window.location.host}/${s}</a>`;
 
 const deleteButton = (shortUrl) => {
+    const td = document.createElement("td");
     const btn = document.createElement("button");
 
     btn.innerHTML = "&times;";
@@ -60,8 +68,9 @@ const deleteButton = (shortUrl) => {
             }).then(_ => refreshData());
         }
     };
-
-    return btn;
+    td.setAttribute("name", "deleteBtn");
+    td.appendChild(btn);
+    return td;
 };
 
 const TD = (s) => {
