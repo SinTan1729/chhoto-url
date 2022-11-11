@@ -28,13 +28,14 @@ const displayData = (data) => {
 };
 
 const addAlertBox = async (s, t) => {
+    document.getElementById("alertBox")?.remove();
     const controls = document.querySelector(".pure-controls");
     const alertBox = document.createElement("p");
     alertBox.setAttribute("id", "alertBox");
     alertBox.setAttribute("style", `color:${t}`);
     alertBox.innerHTML = s;
     controls.appendChild(alertBox);
-}
+};
 
 const TR = (row) => {
     const tr = document.createElement("tr");
@@ -51,8 +52,13 @@ const TR = (row) => {
     return tr;
 };
 
+const copyShortUrl = (s) => {
+    navigator.clipboard.writeText(`${window.location.host}/${s}`);
+    addAlertBox(`Short URL ${s} copied to clipboard!`, "green");
+};
+
 const A = (s) => `<a href='${s}'>${s}</a>`;
-const A_INT = (s) => `<a href='/${s}'>${window.location.host}/${s}</a>`;
+const A_INT = (s) => `<a href="javascript:copyShortUrl('${s}');">${window.location.host}/${s}</a>`;
 
 const deleteButton = (shortUrl) => {
     const td = document.createElement("td");
@@ -63,6 +69,7 @@ const deleteButton = (shortUrl) => {
     btn.onclick = e => {
         e.preventDefault();
         if (confirm("Do you want to delete the entry " + shortUrl + "?")) {
+            document.getElementById("alertBox")?.remove();
             fetch(`/api/${shortUrl}`, {
                 method: "DELETE"
             }).then(_ => refreshData());
@@ -94,20 +101,19 @@ const submitForm = () => {
     })
         .then((res) => {
             if (!res.ok) {
-                if (document.getElementById("alertBox") == null) {
-                    addAlertBox("Short URL not valid or already in use!", "red");
-                }
+                addAlertBox("Short URL not valid or already in use!", "red");
+                return "error";
             }
             else {
                 return res.text();
             }
         }).then((text) => {
-            navigator.clipboard.writeText(`${window.location.host}/${text}`);
-            addAlertBox("Short URL copied to clipboard!", "green");
-            longUrl.value = "";
-            shortUrl.value = "";
-
-            refreshData();
+            if (text != "error") {
+                copyShortUrl(text);
+                longUrl.value = "";
+                shortUrl.value = "";
+                refreshData();
+            }
         });
 
 };
