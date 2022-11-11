@@ -42,6 +42,10 @@ public class Routes {
 		}
 	}
 
+	public static String siteUrl(Request req, Response res) {
+		return System.getenv().getOrDefault("site_url", "unset");
+	}
+
 
 	public static String goToLongUrl(Request req, Response res) {
 		String shortUrl = req.params("shortUrl");

@@ -1,3 +1,12 @@
+const siteName = async () => await fetch("/api/siteUrl").then(res => res.text()).then(text => {
+    if (text == "unset") {
+        return window.location.host;
+    }
+    else {
+        return text;
+    }
+});
+
 const refreshData = async () => {
     let data = await fetch("/api/all").then(res => res.text());
     data = data
@@ -13,7 +22,8 @@ const refreshData = async () => {
     displayData(data);
 };
 
-const displayData = (data) => {
+const displayData = async (data) => {
+    site = await siteName();
     table_box = document.querySelector(".pure-table");
     if (data.length == 0) {
         table_box.style.visibility = "hidden";
@@ -22,8 +32,7 @@ const displayData = (data) => {
         const table = document.querySelector("#url-table");
         table_box.style.visibility = "visible";
         table.innerHTML = ''; // Clear
-        data.map(TR)
-            .forEach(tr => table.appendChild(tr));
+        data.forEach(tr => table.appendChild(TR(tr, site)));
     }
 };
 
@@ -37,10 +46,10 @@ const addAlertBox = async (s, t) => {
     controls.appendChild(alertBox);
 };
 
-const TR = (row) => {
+const TR = (row, site) => {
     const tr = document.createElement("tr");
     const longTD = TD(A(row.long));
-    const shortTD = TD(A_INT(row.short));
+    const shortTD = TD(A_INT(row.short, site));
     const hitsTD = TD(row.hits);
     const btn = deleteButton(row.short);
 
@@ -52,13 +61,14 @@ const TR = (row) => {
     return tr;
 };
 
-const copyShortUrl = (s) => {
-    navigator.clipboard.writeText(`${window.location.host}/${s}`);
+const copyShortUrl = async (s) => {
+    site = await siteName();
+    navigator.clipboard.writeText(`${site}/${s}`);
     addAlertBox(`Short URL ${s} copied to clipboard!`, "green");
 };
 
 const A = (s) => `<a href='${s}'>${s}</a>`;
-const A_INT = (s) => `<a href="javascript:copyShortUrl('${s}');">${window.location.host}/${s}</a>`;
+const A_INT = (s, t) => `<a href="javascript:copyShortUrl('${s}');">${t}/${s}</a>`;
 
 const deleteButton = (shortUrl) => {
     const td = document.createElement("td");
@@ -99,7 +109,7 @@ const submitForm = () => {
         method: "POST",
         body: `${longUrl.value};${shortUrl.value}`
     })
-        .then((res) => {
+        .then(res => {
             if (!res.ok) {
                 addAlertBox("Short URL not valid or already in use!", "red");
                 return "error";
@@ -107,7 +117,7 @@ const submitForm = () => {
             else {
                 return res.text();
             }
-        }).then((text) => {
+        }).then(text => {
             if (text != "error") {
                 copyShortUrl(text);
                 longUrl.value = "";

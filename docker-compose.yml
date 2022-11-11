@@ -10,6 +10,10 @@ services:
             # Change if you want to mount the database somewhere else
             # In this case, you can get rid of the db volume below
             # - db_url=/urls.sqlite
+            # Change it in case you want to set the website name
+            # displayed in front of the shorturls, defaults to
+            # the hostname you're accessing it from
+            # - site_url=https://www.example.com
             - username=admin
             - password=$3CuReP4S$W0rD
         volumes:

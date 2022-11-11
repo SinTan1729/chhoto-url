@@ -28,6 +28,8 @@ unnecessary features, or they didn't have all the features I wanted.
 - Provides a simple API for adding new short links
 - Counts number of hits for each short link in a privacy respecting way
   i.e. only the hit is recorded, and nothing else
+- Allows setting the URL of your website, in case you want to conveniently generate
+  short links locally
 - Links are stored in an SQLite database
 - Available as a Docker container
 - Backend written in Java using [Spark Java](http://sparkjava.com/), frontend
@@ -80,6 +82,9 @@ export username=<api username>
 export password=<api password>
 # Sets where the database exists. Can be local or remote (optional)
 export db_url=<url> # Default: './urls.sqlite'
+# Sets the url of website, so that it displays that even when accessed
+# locally (optional, defaults to hostname you're accessing it on)
+export site_url=<url>
 ```
 
 ### 3. Run it
@@ -111,6 +116,17 @@ docker run -p 4567:4567 \
     -e password="password" \
     -v ./urls.sqlite:/urls.sqlite \
     -e db_url=/urls.sqlite \
+    -d simply-shorten:latest
+```
+1.b Further, set the URL of your website (optional)
+```
+touch ./urls.sqlite
+docker run -p 4567:4567 \
+    -e username="username" \
+    -e password="password" \
+    -v ./urls.sqlite:/urls.sqlite \
+    -e db_url=/urls.sqlite \
+    -e site_url="https://www.example.com" \
     -d simply-shorten:latest
 ```
 
