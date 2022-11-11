@@ -18,17 +18,16 @@ public class Routes {
 
 	public static String addUrl(Request req, Response res) {
 		var body = req.body();
-		if (body.endsWith(";")) {
-			body = body + "$";
-		}
 		var split = body.split(";");
-
 		String longUrl = split[0];
-		
-		if (split[1].equals("$")) {
-			split[1] = Utils.randomString();
+
+		String shortUrl;
+		try {
+			shortUrl = split[1];
+		} catch (ArrayIndexOutOfBoundsException e) {
+			shortUrl = Utils.randomString();
 		}
-		String shortUrl = split[1];
+
 		shortUrl = shortUrl.toLowerCase();
 		
 		var shortUrlPresent = urlRepository
@@ -42,7 +41,7 @@ public class Routes {
 		}
 	}
 
-	public static String siteUrl(Request req, Response res) {
+	public static String getSiteUrl(Request req, Response res) {
 		return System.getenv().getOrDefault("site_url", "unset");
 	}
 

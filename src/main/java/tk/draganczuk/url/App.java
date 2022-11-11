@@ -36,7 +36,7 @@ public class App {
 			get("/all", Routes::getAll);
 			post("/new", Routes::addUrl);
 			delete("/:shortUrl", Routes::delete);
-			get("/siteUrl", Routes::siteUrl);
+			get("/site", Routes::getSiteUrl);
 		});
 
 		get("/:shortUrl", Routes::goToLongUrl);

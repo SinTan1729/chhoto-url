@@ -1,11 +1,13 @@
-const siteName = async () => await fetch("/api/siteUrl").then(res => res.text()).then(text => {
-    if (text == "unset") {
-        return window.location.host;
-    }
-    else {
-        return text;
-    }
-});
+const getSiteUrl = async () => await fetch("/api/site")
+    .then(res => res.text())
+    .then(text => {
+        if (text == "unset") {
+            return window.location.host;
+        }
+        else {
+            return text;
+        }
+    });
 
 const refreshData = async () => {
     let data = await fetch("/api/all").then(res => res.text());
@@ -23,7 +25,7 @@ const refreshData = async () => {
 };
 
 const displayData = async (data) => {
-    let site = await siteName();
+    let site = await getSiteUrl();
     site = site.replace(/(^\w+:|^)\/\//, '');
     table_box = document.querySelector(".pure-table");
     if (data.length == 0) {
@@ -37,13 +39,13 @@ const displayData = async (data) => {
     }
 };
 
-const addAlertBox = async (s, t) => {
+const addAlertBox = async (text, col) => {
     document.getElementById("alertBox")?.remove();
     const controls = document.querySelector(".pure-controls");
     const alertBox = document.createElement("p");
     alertBox.setAttribute("id", "alertBox");
-    alertBox.setAttribute("style", `color:${t}`);
-    alertBox.innerHTML = s;
+    alertBox.setAttribute("style", `color:${col}`);
+    alertBox.innerHTML = text;
     controls.appendChild(alertBox);
 };
 
@@ -62,10 +64,10 @@ const TR = (row, site) => {
     return tr;
 };
 
-const copyShortUrl = async (s) => {
-    const site = await siteName();
-    navigator.clipboard.writeText(`${site}/${s}`);
-    addAlertBox(`Short URL ${s} copied to clipboard!`, "green");
+const copyShortUrl = async (link) => {
+    const site = await getSiteUrl();
+    navigator.clipboard.writeText(`${site}/${link}`);
+    addAlertBox(`Short URL ${link} copied to clipboard!`, "green");
 };
 
 const A = (s) => `<a href='${s}'>${s}</a>`;
