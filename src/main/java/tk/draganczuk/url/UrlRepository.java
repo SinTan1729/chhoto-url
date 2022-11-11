@@ -75,7 +75,7 @@ public class UrlRepository {
 		} catch (SQLException e) {
 			e.printStackTrace();
 		}
-		return "";
+		return shortUrl;
 	}
 
 	public void addHit(String shortURL) {

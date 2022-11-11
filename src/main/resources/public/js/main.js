@@ -27,13 +27,13 @@ const displayData = (data) => {
     }
 };
 
-const addErrBox = async () => {
+const addAlertBox = async (s, t) => {
     const controls = document.querySelector(".pure-controls");
-    const errBox = document.createElement("p");
-    errBox.setAttribute("id", "errBox");
-    errBox.setAttribute("style", "color:red");
-    errBox.innerHTML = "Short URL not valid or already in use!";
-    controls.appendChild(errBox);
+    const alertBox = document.createElement("p");
+    alertBox.setAttribute("id", "alertBox");
+    alertBox.setAttribute("style", `color:${t}`);
+    alertBox.innerHTML = s;
+    controls.appendChild(alertBox);
 }
 
 const TR = (row) => {
@@ -94,17 +94,20 @@ const submitForm = () => {
     })
         .then((res) => {
             if (!res.ok) {
-                if (document.getElementById("errBox") == null) {
-                    addErrBox();
+                if (document.getElementById("alertBox") == null) {
+                    addAlertBox("Short URL not valid or already in use!", "red");
                 }
             }
             else {
-                document.getElementById("errBox")?.remove();
-                longUrl.value = "";
-                shortUrl.value = "";
-
-                refreshData();
+                return res.text();
             }
+        }).then((text) => {
+            navigator.clipboard.writeText(`${window.location.host}/${text}`);
+            addAlertBox("Short URL copied to clipboard!", "green");
+            longUrl.value = "";
+            shortUrl.value = "";
+
+            refreshData();
         });
 
 };
