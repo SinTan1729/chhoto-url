@@ -20,20 +20,25 @@ public class Routes {
 		var body = req.body();
 		var split = body.split(";");
 		String longUrl = split[0];
+		boolean unique = false;
 
 		String shortUrl;
 		try {
 			shortUrl = split[1];
+			shortUrl = shortUrl.toLowerCase();		
+			if (urlRepository.findForShortUrl(shortUrl).isEmpty()) {
+				unique = true;
+			}
 		} catch (ArrayIndexOutOfBoundsException e) {
-			shortUrl = Utils.randomString();
+			do {
+				shortUrl = Utils.randomName();
+				if (urlRepository.findForShortUrl(shortUrl).isEmpty()) {
+				unique = true;
+				}
+			} while (unique == false);
 		}
 
-		shortUrl = shortUrl.toLowerCase();
-		
-		var shortUrlPresent = urlRepository
-				.findForShortUrl(shortUrl);
-
-		if (shortUrlPresent.isEmpty() && Utils.validate(shortUrl)) {
+		if (unique && Utils.validate(shortUrl)) {
 			return urlRepository.addUrl(longUrl, shortUrl);
 		} else {
 			res.status(HttpStatus.BAD_REQUEST_400);
