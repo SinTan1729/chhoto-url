@@ -1,4 +1,4 @@
-package tk.draganczuk.url;
+package tk.sintan1729.url;
 
 import java.util.Random;
 import java.util.regex.Pattern;
@@ -11,7 +11,7 @@ public class Utils {
 	
 	// The following lists are modified versions of the strings in
 	// https://github.com/moby/moby/blob/master/pkg/namesgenerator/names-generator.go
-	
+
 	private static final String[] adjective = new String[] {"admiring", "adoring", "affectionate", "agitated", "amazing", "angry", "awesome", "beautiful", 
 		"blissful", "bold", "boring", "brave", "busy", "charming", "clever", "compassionate", "competent", "condescending", "confident", "cool", 
 		"cranky", "crazy", "dazzling", "determined", "distracted", "dreamy", "eager", "ecstatic", "elastic", "elated", "elegant", "eloquent", "epic", 

@@ -13,7 +13,7 @@ repositories {
 
 jar {
     manifest {
-        attributes "Main-Class": "tk.draganczuk.url.App"
+        attributes "Main-Class": "tk.sintan1729.url.App"
     }
 
     from {
@@ -29,5 +29,5 @@ dependencies {
 }
 
 application {
-    mainClassName = 'tk.draganczuk.url.App'
+    mainClassName = 'tk.sintan1729.url.App'
 }

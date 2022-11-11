@@ -2,8 +2,6 @@
 
 # ![Logo](src/main/resources/public/assets/favicon-32.png) <span style="font-size:42px">Simply Shorten</span>
 
-A fork of [this project](https://gitlab.com/draganczukp/simply-shorten).
-
 # What is it?
 A simple selfhosted URL shortener with no unnecessary features.
 
@@ -143,3 +141,8 @@ an exact value:
 INSECURE_DISABLE_PASSWORD=I_KNOW_ITS_BAD
 ```
 Any other value will not work.
+
+## Notes
+- This is a fork of [this project](https://gitlab.com/draganczukp/simply-shorten).
+- The list of adjectives and names used for random short url generation is a modified
+  version of [this list used by docker](https://github.com/moby/moby/blob/master/pkg/namesgenerator/names-generator.go).
