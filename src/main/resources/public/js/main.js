@@ -23,7 +23,8 @@ const refreshData = async () => {
 };
 
 const displayData = async (data) => {
-    site = await siteName();
+    let site = await siteName();
+    site = site.replace(/(^\w+:|^)\/\//, '');
     table_box = document.querySelector(".pure-table");
     if (data.length == 0) {
         table_box.style.visibility = "hidden";
@@ -62,7 +63,7 @@ const TR = (row, site) => {
 };
 
 const copyShortUrl = async (s) => {
-    site = await siteName();
+    const site = await siteName();
     navigator.clipboard.writeText(`${site}/${s}`);
     addAlertBox(`Short URL ${s} copied to clipboard!`, "green");
 };
