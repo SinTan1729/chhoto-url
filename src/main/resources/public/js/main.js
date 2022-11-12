@@ -33,13 +33,17 @@ const displayData = async (data) => {
     }
     else {
         const table = document.querySelector("#url-table");
+        if (!window.isSecureContext) {
+            const shortUrlHeader = document.getElementById("short-url-header");
+            shortUrlHeader.innerHTML = "Short URL (click to open)";
+        }
         table_box.style.visibility = "visible";
         table.innerHTML = ''; // Clear
         data.forEach(tr => table.appendChild(TR(tr, site)));
     }
 };
 
-const addAlertBox = async (text, col) => {
+const showAlert = async (text, col) => {
     document.getElementById("alertBox")?.remove();
     const controls = document.querySelector(".pure-controls");
     const alertBox = document.createElement("p");
@@ -51,8 +55,14 @@ const addAlertBox = async (text, col) => {
 
 const TR = (row, site) => {
     const tr = document.createElement("tr");
-    const longTD = TD(A(row.long));
-    const shortTD = TD(A_INT(row.short, site));
+    const longTD = TD(A_LONG(row.long));
+    var shortTD = null;
+    if (window.isSecureContext) {
+        shortTD = TD(A_SHORT(row.short, site));
+    }
+    else {
+        shortTD = TD(A_SHORT_INSECURE(row.short, site));
+    }
     const hitsTD = TD(row.hits);
     const btn = deleteButton(row.short);
 
@@ -68,10 +78,10 @@ const copyShortUrl = async (link) => {
     const site = await getSiteUrl();
     try {
         navigator.clipboard.writeText(`${site}/${link}`);
-        addAlertBox(`Short URL ${link} was copied to clipboard!`, "green");
+        showAlert(`Short URL ${link} was copied to clipboard!`, "green");
     } catch (e) {
         console.log(e);
-        addAlertBox("Could not copy short URL to clipboard, please do it manually.", "red");
+        showAlert("Could not copy short URL to clipboard, please do it manually.", "red");
     }
 
 };
@@ -85,8 +95,9 @@ const addProtocol = (input) => {
     return input
 }
 
-const A = (s) => `<a href='${s}'>${s}</a>`;
-const A_INT = (s, t) => `<a href="javascript:copyShortUrl('${s}');">${t}/${s}</a>`;
+const A_LONG = (s) => `<a href='${s}'>${s}</a>`;
+const A_SHORT = (s, t) => `<a href="javascript:copyShortUrl('${s}');">${t}/${s}</a>`;
+const A_SHORT_INSECURE = (s, t) => `<a href="/${s}">${t}/${s}</a>`;
 
 const deleteButton = (shortUrl) => {
     const td = document.createElement("td");
@@ -129,7 +140,7 @@ const submitForm = () => {
     })
         .then(res => {
             if (!res.ok) {
-                addAlertBox("Short URL is not valid or it's already in use!", "red");
+                showAlert("Short URL is not valid or it's already in use!", "red");
                 return "error";
             }
             else {
