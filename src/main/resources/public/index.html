@@ -67,9 +67,10 @@
                     Shorten</legend>
                 <div class="pure-control-group">
                     <label for="longUrl">Long URL</label>
-                    <input type="url" name="longUrl" id="longUrl" placeholder="Please enter a valid URL" required />
+                    <input type="url" name="longUrl" id="longUrl" placeholder="Please enter a valid URL"
+                        onblur="addProtocol(this)" required />
                 </div>
-                <div class="pure-control-group">
+                <div class=" pure-control-group">
                     <label for="shortUrl">Short URL (optional)</label>
                     <input type="text" name="shortUrl" id="shortUrl" placeholder="Only a-z, 0-9, - and _ are allowed"
                         pattern="[A-Za-z0-9_-]+" />

@@ -66,9 +66,24 @@ const TR = (row, site) => {
 
 const copyShortUrl = async (link) => {
     const site = await getSiteUrl();
-    navigator.clipboard.writeText(`${site}/${link}`);
-    addAlertBox(`Short URL ${link} copied to clipboard!`, "green");
+    try {
+        navigator.clipboard.writeText(`${site}/${link}`);
+        addAlertBox(`Short URL ${link} was copied to clipboard!`, "green");
+    } catch (e) {
+        console.log(e);
+        addAlertBox("Could not copy short URL to clipboard, please do it manually.", "red");
+    }
+
 };
+
+const addProtocol = (input) => {
+    var url = input.value.trim();
+    if (url != "" && !~url.indexOf(":/")) {
+        url = "https://" + url;
+    }
+    input.value = url;
+    return input
+}
 
 const A = (s) => `<a href='${s}'>${s}</a>`;
 const A_INT = (s, t) => `<a href="javascript:copyShortUrl('${s}');">${t}/${s}</a>`;
@@ -114,7 +129,7 @@ const submitForm = () => {
     })
         .then(res => {
             if (!res.ok) {
-                addAlertBox("Short URL not valid or already in use!", "red");
+                addAlertBox("Short URL is not valid or it's already in use!", "red");
                 return "error";
             }
             else {
