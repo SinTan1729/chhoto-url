@@ -44,7 +44,7 @@ not needed here.
 whatever reason), you can message me through Github issues.
 
 # Screenshot
-![Screenshot](./screenshot.png)
+![Screenshot](screenshot.png)
 
 # Usage
 ## Using `docker compose` (Recommended method)
