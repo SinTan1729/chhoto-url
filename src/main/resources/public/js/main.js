@@ -26,7 +26,9 @@ const refreshData = async () => {
 
 const displayData = async (data) => {
     let site = await getSiteUrl();
-    site = site.replace(/(^\w+:|^)\/\//, '');
+    if (window.isSecureContext) {
+        site = site.replace(/(^\w+:|^)\/\//, '');
+    }
     table_box = document.querySelector(".pure-table");
     if (data.length == 0) {
         table_box.style.visibility = "hidden";
@@ -97,7 +99,7 @@ const addProtocol = (input) => {
 
 const A_LONG = (s) => `<a href='${s}'>${s}</a>`;
 const A_SHORT = (s, t) => `<a href="javascript:copyShortUrl('${s}');">${t}/${s}</a>`;
-const A_SHORT_INSECURE = (s, t) => `<a href="/${s}">${t}/${s}</a>`;
+const A_SHORT_INSECURE = (s, t) => `<a href="${t}/${s}">${t}/${s}</a>`;
 
 const deleteButton = (shortUrl) => {
     const td = document.createElement("td");
