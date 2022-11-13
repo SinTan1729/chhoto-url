@@ -87,7 +87,7 @@ const copyShortUrl = async (link) => {
 
 const addProtocol = (input) => {
     var url = input.value.trim();
-    if (url != "" && !~url.indexOf(":/")) {
+    if (url != "" && !~url.indexOf("://") && !~url.indexOf("magnet:")) {
         url = "https://" + url;
     }
     input.value = url;
