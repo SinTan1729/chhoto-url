@@ -58,7 +58,7 @@ public class Routes {
 				.findForShortUrl(shortUrl);
 
 		if (longUrlOpt.isEmpty()) {
-			res.status(404);
+			res.redirect("404.html");
 			return "";
 		}
 		urlRepository.addHit(shortUrl);
