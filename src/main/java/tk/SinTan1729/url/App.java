@@ -1,4 +1,4 @@
-package tk.sintan1729.url;
+package tk.SinTan1729.url;
 
 import static spark.Spark.*;
 
