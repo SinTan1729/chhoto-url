@@ -48,7 +48,7 @@ whatever reason), you can message me through Github issues.
 
 # Usage
 ## Using `docker compose` (Recommended method)
-There is a sample `docker-compose.yml` file in this repository. It contains
+There is a sample `compose.yaml` file in this repository. It contains
 everything needed for a basic install. You can use it as a base, modifying
 it as needed. Run it with
 ```

@@ -1,6 +1,5 @@
-version: "3"
 services:
-    url:
+    simply-shorten:
         image: sintan1729/simply-shorten:latest
         restart: unless-stopped
         container_name: simply-shorten
