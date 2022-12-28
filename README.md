@@ -15,22 +15,22 @@ I've looked at a couple popular URL shorteners, however they either have
 unnecessary features, or they didn't have all the features I wanted.
 
 # Features
-- Shortens URLs of any length to a fixed length, randomly generated string
+- Shortens URLs of any length to a fixed length, randomly generated string.
 - (Optional) Allows you to specify the shortened URL instead of the generated
-  one (Missing in a surprising number of alternatives)
+  one (Missing in a surprising number of alternatives).
 - Opening the fixed length URL in your browser will instantly redirect you
   to the correct long URL (you'd think that's a standard feature, but
-  apparently it's not)
-- Provides a simple API for adding new short links
+  apparently it's not).
+- Provides a simple API for adding new short links.
 - Counts number of hits for each short link in a privacy respecting way
-  i.e. only the hit is recorded, and nothing else
-- Allows setting the URL of your website, in case you want to conveniently generate
-  short links locally
-- Links are stored in an SQLite database
-- Available as a Docker container
+  i.e. only the hit is recorded, and nothing else.
+- Allows setting the URL of your website, in case you want to conveniently
+  generate short links locally.
+- Links are stored in an SQLite database.
+- Available as a Docker container.
 - Backend written in Java using [Spark Java](http://sparkjava.com/), frontend
   written in plain HTML and vanilla JS, using [Pure CSS](https://purecss.io/)
-  for styling
+  for styling.
   
 # Bloat that will not be implemented
 - Tracking or spying of any kind. The only logs that still exist are
