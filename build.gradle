@@ -11,21 +11,21 @@ repositories {
     jcenter()
 }
 
-jar {
+task fatJar(type: Jar) {
     manifest {
-        attributes "Main-Class": "tk.SinTan1729.url.App"
+        attributes 'Main-Class': 'tk.SinTan1729.url.App'
     }
-
-    from {
-        configurations.compile.collect { it.isDirectory() ? it : zipTree(it) }
-    }
+    archiveBaseName = 'url'
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+    from { configurations.runtimeClasspath.collect { it.isDirectory() ? it : zipTree(it) } }
+    with jar
 }
 
 dependencies {
-	compile "com.sparkjava:spark-core:2.9.4"
-    compile 'com.qmetric:spark-authentication:1.4'
-    compile group: 'org.xerial', name: 'sqlite-jdbc', version: '3.39.4.0'
-
+	implementation 'com.sparkjava:spark-core:2.9.4'
+    implementation 'com.qmetric:spark-authentication:1.4'
+    implementation 'org.slf4j:slf4j-simple:1.6.1'
+    implementation group: 'org.xerial', name: 'sqlite-jdbc', version: '3.30.1'
 }
 
 application {
