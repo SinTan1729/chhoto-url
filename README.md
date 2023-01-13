@@ -41,7 +41,7 @@ unnecessary features, or they didn't have all the features I wanted.
 other ways modern web shows how anti-user it is. We all hate those, and they're
 not needed here.
 - Paywalls or messages begging for donations. If you want to support me (for
-whatever reason), you can message me through Github issues.
+whatever reason), you can message me through GitLab issues.
 
 # Screenshot
 ![Screenshot](screenshot.png)
