@@ -1,14 +1,21 @@
-FROM gradle:jdk17-alpine AS build
-COPY --chown=gradle:gradle . /home/gradle/src
-WORKDIR /home/gradle/src
-RUN gradle fatJar --no-daemon
+FROM rust:1 as build
 
-FROM openjdk:17-alpine
+RUN mkdir /actix
+WORKDIR /actix
 
-EXPOSE 4567
+COPY ./actix/cargo.toml /actix/cargo.toml
+COPY ./actix/cargo.lock /actix/cargo.lock
 
-RUN mkdir /app
+RUN cargo build --deps-only
 
-COPY --from=build /home/gradle/src/build/libs/*.jar /app/application.jar
+COPY ./actix /actix
 
-ENTRYPOINT ["java", "-jar","/app/application.jar"]
+RUN cargo install --path .
+
+FROM gcr.io/distroless/cc-debian10
+
+EXPOSE 2000
+
+COPY --from=build /usr/local/cargo/bin/actix /usr/local/bin/actix
+
+CMD ["actix"]

@@ -1,12 +1,5 @@
-# Ignore Gradle project-specific cache directory
-.gradle
+# Ignore cargo build outputs
+actix/target
 
-# Ignore Gradle build output directory
-build
-.idea/
-
-local.properties
-url.iml
-urls.csv
-.env
+# Ignore SQLite file
 urls.sqlite
