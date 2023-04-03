@@ -1,21 +1,27 @@
 FROM rust:1 as build
+RUN cargo install cargo-build-deps
 
-RUN mkdir /actix
-WORKDIR /actix
+RUN cargo new --bin simply-shorten
+WORKDIR /simply-shorten
 
-COPY ./actix/cargo.toml /actix/cargo.toml
-COPY ./actix/cargo.lock /actix/cargo.lock
+COPY ./actix/Cargo.toml .
+COPY ./actix/Cargo.lock .
 
-RUN cargo build --deps-only
+RUN cargo build-deps --release
 
-COPY ./actix /actix
+COPY ./actix/src ./src
+COPY ./actix/resources ./resources
 
-RUN cargo install --path .
+RUN cargo build --release
 
 FROM gcr.io/distroless/cc-debian10
 
 EXPOSE 2000
 
-COPY --from=build /usr/local/cargo/bin/actix /usr/local/bin/actix
+WORKDIR /opt
 
-CMD ["actix"]
+COPY --from=build /simply-shorten/target/release/simply-shorten /opt/simply-shorten
+COPY --from=build /simply-shorten/resources /opt/resources
+COPY ./urls.sqlite /opt/urls.sqlite
+
+CMD ["./simply-shorten"]
