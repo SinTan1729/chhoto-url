@@ -49,9 +49,9 @@ async fn link_handler(shortlink: web::Path<String>) -> impl Responder {
     let shortlink_str = shortlink.to_string();
     let longlink = utils::get_longurl(shortlink_str);
     if longlink == "".to_string() {
-        database::add_hit(shortlink.as_str());
         Redirect::to("/err/404")
     } else {
+        database::add_hit(shortlink.as_str());
         Redirect::to(longlink).permanent()
     }
 }
