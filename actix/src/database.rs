@@ -56,3 +56,9 @@ pub fn add_link(shortlink: String, longlink: String) -> bool {
         Err(_) => false,
     }
 }
+
+pub fn delete_link(shortlink: String) -> () {
+    let db = Connection::open("./urls.sqlite").expect("Unable to open database!");
+    db.execute("DELETE FROM urls WHERE short_url = ?1", [shortlink])
+        .unwrap();
+}

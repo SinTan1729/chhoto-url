@@ -108,7 +108,7 @@ const deleteButton = (shortUrl) => {
         e.preventDefault();
         if (confirm("Do you want to delete the entry " + shortUrl + "?")) {
             document.getElementById("alertBox")?.remove();
-            fetch(`/api/${shortUrl}`, {
+            fetch(`/api/del/${shortUrl}`, {
                 method: "DELETE"
             }).then(_ => refreshData());
         }

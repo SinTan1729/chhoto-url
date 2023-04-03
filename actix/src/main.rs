@@ -2,7 +2,7 @@ use std::env;
 
 use actix_files::{Files, NamedFile};
 use actix_web::{
-    get, post,
+    delete, get, post,
     web::{self, Redirect},
     App, HttpResponse, HttpServer, Responder,
 };
@@ -56,6 +56,13 @@ async fn link_handler(shortlink: web::Path<String>) -> impl Responder {
     }
 }
 
+// Delete a given shortlink
+#[delete("/api/del/{shortlink}")]
+async fn delete_link(shortlink: web::Path<String>) -> HttpResponse {
+    database::delete_link(shortlink.to_string());
+    HttpResponse::Ok().body("")
+}
+
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
     HttpServer::new(|| {
@@ -65,6 +72,7 @@ async fn main() -> std::io::Result<()> {
             .service(getall)
             .service(siteurl)
             .service(add_link)
+            .service(delete_link)
             .service(Files::new("/", "./resources/").index_file("index.html"))
     })
     .bind(("0.0.0.0", 2000))?
