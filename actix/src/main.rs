@@ -23,8 +23,7 @@ async fn getall() -> HttpResponse {
 // Get the site URL
 #[get("/api/siteurl")]
 async fn siteurl() -> HttpResponse {
-    let site_url = env::var("site_url").unwrap_or(String::from("unset"));
-    println!("{site_url}");
+    let site_url = env::var("site_url").unwrap_or("unset".to_string());
     HttpResponse::Ok().body(site_url)
 }
 
@@ -38,7 +37,7 @@ async fn error404() -> impl Responder {
 #[get("/{shortlink}")]
 async fn link_handler(shortlink: web::Path<String>) -> impl Responder {
     let longlink = utils::get_longurl(shortlink);
-    if longlink == String::from("") {
+    if longlink == "".to_string() {
         Redirect::to("/err/404")
     } else {
         Redirect::to(longlink).permanent()

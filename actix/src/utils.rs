@@ -6,7 +6,7 @@ pub fn get_longurl(shortlink: web::Path<String>) -> String {
     if validate_link(&shortlink) {
         database::find_url(shortlink.as_str())
     } else {
-        String::from("")
+        "".to_string()
     }
 }
 
