@@ -22,10 +22,8 @@ struct AppState {
 async fn add_link(req: String, data: web::Data<AppState>) -> HttpResponse {
     let out = utils::add_link(req, &data.db);
     if out.0 {
-        println!("ok{}", out.1);
         HttpResponse::Ok().body(out.1)
     } else {
-        println!("bad{}", out.1);
         HttpResponse::BadRequest().body(out.1)
     }
 }
@@ -74,7 +72,7 @@ async fn main() -> std::io::Result<()> {
     HttpServer::new(|| {
         App::new()
             .app_data(web::Data::new(AppState {
-                db: database::open_db("./urls.sqlite".to_string()),
+                db: database::open_db(env::var("db_url").unwrap_or("./urls.sqlite".to_string())),
             }))
             .service(link_handler)
             .service(error404)
