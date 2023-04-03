@@ -919,7 +919,6 @@ dependencies = [
  "actix-web",
  "regex",
  "sqlite",
- "sqlite3-src",
 ]
 
 [[package]]

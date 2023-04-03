@@ -2,7 +2,7 @@ use actix_files::{Files, NamedFile};
 use actix_web::{
     get,
     web::{self, Redirect},
-    App, HttpServer, Responder,
+    App, HttpResponse, HttpServer, Responder,
 };
 mod database;
 mod utils;
@@ -12,6 +12,11 @@ mod utils;
 // Add new links
 
 // Return all active links
+
+#[get("/api/all")]
+async fn getall() -> HttpResponse {
+    HttpResponse::Ok().body(utils::getall())
+}
 
 // 404 error page
 #[get("/err/404")]
@@ -36,6 +41,7 @@ async fn main() -> std::io::Result<()> {
         App::new()
             .service(link_handler)
             .service(error404)
+            .service(getall)
             .service(Files::new("/", "./resources/").index_file("index.html"))
     })
     .bind(("0.0.0.0", 2000))?

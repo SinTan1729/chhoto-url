@@ -14,9 +14,10 @@ COPY ./actix/resources ./resources
 
 RUN cargo build --release
 
-FROM gcr.io/distroless/cc-debian10
+FROM frolvlad/alpine-glibc:latest
 
 EXPOSE 2000
+RUN apk add sqlite-libs
 
 WORKDIR /opt
 
