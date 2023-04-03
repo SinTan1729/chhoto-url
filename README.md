@@ -1,4 +1,4 @@
-# ![Logo](src/main/resources/public/assets/favicon-32.png) <span style="font-size:42px">Simply Shorten</span>
+# ![Logo](actix/resources/assets/favicon-32.png) <span style="font-size:42px">Simply Shorten</span>
 
 # What is it?
 A simple selfhosted URL shortener with no unnecessary features.
@@ -28,7 +28,7 @@ unnecessary features, or they didn't have all the features I wanted.
   generate short links locally.
 - Links are stored in an SQLite database.
 - Available as a Docker container.
-- Backend written in Java using [Spark Java](http://sparkjava.com/), frontend
+- Backend written in Rust using [Actix](https://actix.rs/), frontend
   written in plain HTML and vanilla JS, using [Pure CSS](https://purecss.io/)
   for styling.
   
@@ -141,6 +141,6 @@ INSECURE_DISABLE_PASSWORD=I_KNOW_ITS_BAD
 Any other value will not work.
 
 ## Notes
-- This is a fork of [this project](https://gitlab.com/draganczukp/simply-shorten).
+- It started as a fork of [this project](https://gitlab.com/draganczukp/simply-shorten).
 - The list of adjectives and names used for random short url generation is a modified
   version of [this list used by docker](https://github.com/moby/moby/blob/master/pkg/namesgenerator/names-generator.go).
