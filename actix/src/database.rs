@@ -16,7 +16,6 @@ pub fn find_url(shortlink: &str) -> String {
         longlink = link.unwrap();
     }
 
-    add_hit(shortlink);
     longlink
 }
 
@@ -37,11 +36,23 @@ pub fn getall() -> Vec<String> {
     links
 }
 
-fn add_hit(shortlink: &str) -> () {
+pub fn add_hit(shortlink: &str) -> () {
     let db = Connection::open("./urls.sqlite").expect("Unable to open database!");
     db.execute(
         "UPDATE urls SET hits = hits + 1 WHERE short_url = ?1",
         [shortlink],
     )
     .unwrap();
+}
+
+pub fn add_link(shortlink: String, longlink: String) -> bool {
+    let db = Connection::open("./urls.sqlite").expect("Unable to open database!");
+
+    match db.execute(
+        "INSERT INTO urls (long_url, short_url, hits) VALUES (?1, ?2, ?3)",
+        (longlink, shortlink, 0),
+    ) {
+        Ok(_) => true,
+        Err(_) => false,
+    }
 }
