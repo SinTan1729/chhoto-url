@@ -1,3 +1,5 @@
+use std::env;
+
 use actix_files::{Files, NamedFile};
 use actix_web::{
     get,
@@ -16,6 +18,14 @@ mod utils;
 #[get("/api/all")]
 async fn getall() -> HttpResponse {
     HttpResponse::Ok().body(utils::getall())
+}
+
+// Get the site URL
+#[get("/api/siteurl")]
+async fn siteurl() -> HttpResponse {
+    let site_url = env::var("site_url").unwrap_or(String::from("unset"));
+    println!("{site_url}");
+    HttpResponse::Ok().body(site_url)
 }
 
 // 404 error page
@@ -42,6 +52,7 @@ async fn main() -> std::io::Result<()> {
             .service(link_handler)
             .service(error404)
             .service(getall)
+            .service(siteurl)
             .service(Files::new("/", "./resources/").index_file("index.html"))
     })
     .bind(("0.0.0.0", 2000))?

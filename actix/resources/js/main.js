@@ -1,4 +1,4 @@
-const getSiteUrl = async () => await fetch("/api/site")
+const getSiteUrl = async () => await fetch("/api/siteurl")
     .then(res => res.text())
     .then(text => {
         if (text == "unset") {
