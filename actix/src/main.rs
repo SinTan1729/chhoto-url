@@ -6,15 +6,21 @@ use actix_web::{
     web::{self, Redirect},
     App, HttpResponse, HttpServer, Responder,
 };
+use rusqlite::Connection;
 mod database;
 mod utils;
+
+// This struct represents state
+struct AppState {
+    db: Connection,
+}
 
 // Define the routes
 
 // Add new links
 #[post("/api/new")]
-async fn add_link(req: String) -> HttpResponse {
-    let out = utils::add_link(req);
+async fn add_link(req: String, data: web::Data<AppState>) -> HttpResponse {
+    let out = utils::add_link(req, &data.db);
     if out.0 {
         println!("ok{}", out.1);
         HttpResponse::Ok().body(out.1)
@@ -26,8 +32,8 @@ async fn add_link(req: String) -> HttpResponse {
 
 // Return all active links
 #[get("/api/all")]
-async fn getall() -> HttpResponse {
-    HttpResponse::Ok().body(utils::getall())
+async fn getall(data: web::Data<AppState>) -> HttpResponse {
+    HttpResponse::Ok().body(utils::getall(&data.db))
 }
 
 // Get the site URL
@@ -45,21 +51,21 @@ async fn error404() -> impl Responder {
 
 // Handle a given shortlink
 #[get("/{shortlink}")]
-async fn link_handler(shortlink: web::Path<String>) -> impl Responder {
+async fn link_handler(shortlink: web::Path<String>, data: web::Data<AppState>) -> impl Responder {
     let shortlink_str = shortlink.to_string();
-    let longlink = utils::get_longurl(shortlink_str);
+    let longlink = utils::get_longurl(shortlink_str, &data.db);
     if longlink == "".to_string() {
         Redirect::to("/err/404")
     } else {
-        database::add_hit(shortlink.as_str());
+        database::add_hit(shortlink.as_str(), &data.db);
         Redirect::to(longlink).permanent()
     }
 }
 
 // Delete a given shortlink
 #[delete("/api/del/{shortlink}")]
-async fn delete_link(shortlink: web::Path<String>) -> HttpResponse {
-    database::delete_link(shortlink.to_string());
+async fn delete_link(shortlink: web::Path<String>, data: web::Data<AppState>) -> HttpResponse {
+    database::delete_link(shortlink.to_string(), &data.db);
     HttpResponse::Ok().body("")
 }
 
@@ -67,6 +73,9 @@ async fn delete_link(shortlink: web::Path<String>) -> HttpResponse {
 async fn main() -> std::io::Result<()> {
     HttpServer::new(|| {
         App::new()
+            .app_data(web::Data::new(AppState {
+                db: database::open_db("./urls.sqlite".to_string()),
+            }))
             .service(link_handler)
             .service(error404)
             .service(getall)

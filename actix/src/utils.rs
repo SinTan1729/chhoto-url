@@ -1,10 +1,11 @@
 use crate::database;
 use rand::seq::SliceRandom;
 use regex::Regex;
+use rusqlite::Connection;
 
-pub fn get_longurl(shortlink: String) -> String {
+pub fn get_longurl(shortlink: String, db: &Connection) -> String {
     if validate_link(&shortlink) {
-        database::find_url(shortlink.as_str())
+        database::find_url(shortlink.as_str(), db)
     } else {
         "".to_string()
     }
@@ -15,12 +16,12 @@ fn validate_link(link: &str) -> bool {
     re.is_match(link)
 }
 
-pub fn getall() -> String {
-    let links = database::getall();
+pub fn getall(db: &Connection) -> String {
+    let links = database::getall(db);
     links.join("\n")
 }
 
-pub fn add_link(req: String) -> (bool, String) {
+pub fn add_link(req: String, db: &Connection) -> (bool, String) {
     let chunks: Vec<&str> = req.split(';').collect();
     let longlink = chunks[0].to_string();
 
@@ -34,8 +35,11 @@ pub fn add_link(req: String) -> (bool, String) {
         shortlink = random_name();
     }
 
-    if validate_link(shortlink.as_str()) && get_longurl(shortlink.clone()) == "".to_string() {
-        (database::add_link(shortlink.clone(), longlink), shortlink)
+    if validate_link(shortlink.as_str()) && get_longurl(shortlink.clone(), db) == "".to_string() {
+        (
+            database::add_link(shortlink.clone(), longlink, db),
+            shortlink,
+        )
     } else {
         (false, "shortUrl not valid or already in use".to_string())
     }
