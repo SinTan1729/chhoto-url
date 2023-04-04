@@ -2,7 +2,7 @@ use std::env;
 
 use actix_files::{Files, NamedFile};
 use actix_web::{
-    delete, get, post,
+    delete, get, middleware, post,
     web::{self, Redirect},
     App, HttpResponse, HttpServer, Responder,
 };
@@ -74,13 +74,14 @@ async fn main() -> std::io::Result<()> {
             .app_data(web::Data::new(AppState {
                 db: database::open_db(env::var("db_url").unwrap_or("./urls.sqlite".to_string())),
             }))
+            .wrap(middleware::Compress::default())
             .service(link_handler)
             .service(error404)
             .service(getall)
             .service(siteurl)
             .service(add_link)
             .service(delete_link)
-            .service(Files::new("/", "./resources/").index_file("index.html"))
+            .default_service(Files::new("/", "./resources/").index_file("index.html"))
     })
     .bind(("0.0.0.0", 2000))?
     .run()
