@@ -107,7 +107,11 @@ async fn delete_link(
 async fn main() -> std::io::Result<()> {
     // Generate session key in runtime so that restarts invalidates older logins
     let secret_key = Key::generate();
-    let db_location = env::var("db_url").unwrap_or("/opt/urls.sqlite".to_string());
+    let db_location = env::var("db_url").unwrap_or("/urls.sqlite".to_string());
+    let port = env::var("port")
+        .unwrap_or("4567".to_string())
+        .parse::<u16>()
+        .expect("Supplied port is not an integer");
 
     // Actually start the server
     HttpServer::new(move || {
@@ -130,7 +134,7 @@ async fn main() -> std::io::Result<()> {
             .service(login)
             .default_service(Files::new("/", "./resources/").index_file("index.html"))
     })
-    .bind(("0.0.0.0", 4567))?
+    .bind(("0.0.0.0", port))?
     .run()
     .await
 }
