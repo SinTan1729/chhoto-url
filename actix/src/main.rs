@@ -78,8 +78,9 @@ async fn link_handler(shortlink: web::Path<String>, data: web::Data<AppState>) -
 // Handle login
 #[post("/api/login")]
 async fn login(req: String, session: Session) -> HttpResponse {
-    if req == "ssssss".to_string() {
-        session.insert("session-token", 123).unwrap();
+    if req == env::var("password").unwrap_or(req.clone()) {
+        // If no password was provided, match any password
+        session.insert("session-token", auth::gen_token()).unwrap();
         HttpResponse::Ok().body("Correct password!")
     } else {
         eprintln!("Failed login attempt!");
@@ -104,15 +105,20 @@ async fn delete_link(
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
+    // Generate session key in runtime so that restarts invalidates older logins
     let secret_key = Key::generate();
+    let db_location = env::var("db_url").unwrap_or("/opt/urls.sqlite".to_string());
+
+    // Actually start the server
     HttpServer::new(move || {
         App::new()
             .wrap(SessionMiddleware::new(
                 CookieSessionStore::default(),
                 secret_key.clone(),
             ))
+            // Maintain a single instance of database throughout
             .app_data(web::Data::new(AppState {
-                db: database::open_db(env::var("db_url").unwrap_or("./urls.sqlite".to_string())),
+                db: database::open_db(env::var("db_url").unwrap_or(db_location.clone())),
             }))
             .wrap(middleware::Compress::default())
             .service(link_handler)

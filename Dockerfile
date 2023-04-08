@@ -23,6 +23,5 @@ WORKDIR /opt
 
 COPY --from=build /simply-shorten/target/release/simply-shorten /opt/simply-shorten
 COPY --from=build /simply-shorten/resources /opt/resources
-COPY ./urls.sqlite /opt/urls.sqlite
 
 CMD ["./simply-shorten"]

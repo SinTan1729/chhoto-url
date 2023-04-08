@@ -58,6 +58,7 @@ pub fn delete_link(shortlink: String, db: &Connection) -> () {
 
 pub fn open_db(path: String) -> Connection {
     let db = Connection::open(path).expect("Unable to open database!");
+    // Create table if it doesn't exist
     db.execute(
         "CREATE TABLE IF NOT EXISTS urls (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
