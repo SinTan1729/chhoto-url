@@ -8,7 +8,10 @@ docker-build-main:
   before_script:
     - docker login -u "$CI_REGISTRY_USER" -p "$CI_REGISTRY_PASSWORD" $CI_REGISTRY
   script:
-    - docker build --pull -t "$CI_REGISTRY_IMAGE:develop" .
+    - docker pull "$CI_REGISTRY_IMAGE:develop-depsonly" || true
+    - docker build --cache-from "$CI_REGISTRY_IMAGE:develop-depsonly" --target build -t "$CI_REGISTRY_IMAGE:develop-depsonly" .
+    - docker push "$CI_REGISTRY_IMAGE:develop-depsonly"
+    - docker build -t "$CI_REGISTRY_IMAGE:develop" .
     - docker push "$CI_REGISTRY_IMAGE:develop"
   rules:
     - if: $CI_COMMIT_BRANCH != "main"
@@ -25,8 +28,12 @@ docker-build-tag:
   before_script:
     - docker login -u "$CI_REGISTRY_USER" -p "$CI_REGISTRY_PASSWORD" $CI_REGISTRY
   script:
-    - docker build --pull -t "$CI_REGISTRY_IMAGE:$CI_COMMIT_REF_SLUG" -t "$CI_REGISTRY_IMAGE" .
-    - docker push --all-tags "$CI_REGISTRY_IMAGE"
+    - docker pull "$CI_REGISTRY_IMAGE:develop-depsonly" || true
+    - docker build --cache-from "$CI_REGISTRY_IMAGE:develop-depsonly" -t "$CI_REGISTRY_IMAGE:develop-depsonly"
+    - docker push "$CI_REGISTRY_IMAGE:develop-depsonly"
+    - docker build -t "$CI_REGISTRY_IMAGE:$CI_COMMIT_REF_SLUG" -t "$CI_REGISTRY_IMAGE" .
+    - docker push "$CI_REGISTRY_IMAGE:$CI_COMMIT_REF_SLUG"
+    - docker push  "$CI_REGISTRY_IMAGE:latest"
   rules:
     - if: $CI_COMMIT_BRANCH != "main"
       when: never
