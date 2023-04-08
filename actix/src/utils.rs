@@ -1,18 +1,53 @@
-package tk.SinTan1729.url;
+use crate::database;
+use rand::seq::SliceRandom;
+use regex::Regex;
+use rusqlite::Connection;
 
-import java.util.Random;
-import java.util.regex.Pattern;
+pub fn get_longurl(shortlink: String, db: &Connection) -> String {
+    if validate_link(&shortlink) {
+        database::find_url(shortlink.as_str(), db)
+    } else {
+        "".to_string()
+    }
+}
 
-public class Utils {
-	private static final Random random = new Random(System.currentTimeMillis());
+fn validate_link(link: &str) -> bool {
+    let re = Regex::new("[a-z0-9-_]+").unwrap();
+    re.is_match(link)
+}
 
-	private static final String SHORT_URL_PATTERN = "[a-z0-9-_]+";
-	private static final Pattern PATTERN = Pattern.compile(SHORT_URL_PATTERN);
-	
-	// The following lists are modified versions of the strings in
-	// https://github.com/moby/moby/blob/master/pkg/namesgenerator/names-generator.go
+pub fn getall(db: &Connection) -> String {
+    let links = database::getall(db);
+    links.join("\n")
+}
 
-	private static final String[] adjective = new String[] {"admiring", "adoring", "affectionate", "agitated", "amazing", "angry", "awesome", "beautiful", 
+pub fn add_link(req: String, db: &Connection) -> (bool, String) {
+    let chunks: Vec<&str> = req.split(';').collect();
+    let longlink = chunks[0].to_string();
+
+    let mut shortlink;
+    if chunks.len() > 1 {
+        shortlink = chunks[1].to_string().to_lowercase();
+        if shortlink == "".to_string() {
+            shortlink = random_name();
+        }
+    } else {
+        shortlink = random_name();
+    }
+
+    if validate_link(shortlink.as_str()) && get_longurl(shortlink.clone(), db) == "".to_string() {
+        (
+            database::add_link(shortlink.clone(), longlink, db),
+            shortlink,
+        )
+    } else {
+        (false, "shortUrl not valid or already in use".to_string())
+    }
+}
+
+fn random_name() -> String {
+    #[rustfmt::skip]
+    static ADJECTIVES: [&str; 108] = ["admiring", "adoring", "affectionate", "agitated", "amazing", "angry", "awesome", "beautiful", 
 		"blissful", "bold", "boring", "brave", "busy", "charming", "clever", "compassionate", "competent", "condescending", "confident", "cool", 
 		"cranky", "crazy", "dazzling", "determined", "distracted", "dreamy", "eager", "ecstatic", "elastic", "elated", "elegant", "eloquent", "epic", 
 		"exciting", "fervent", "festive", "flamboyant", "focused", "friendly", "frosty", "funny", "gallant", "gifted", "goofy", "gracious", 
@@ -21,9 +56,9 @@ public class Utils {
 		"nifty", "nostalgic", "objective", "optimistic", "peaceful", "pedantic", "pensive", "practical", "priceless", "quirky", "quizzical", 
 		"recursing", "relaxed", "reverent", "romantic", "sad", "serene", "sharp", "silly", "sleepy", "stoic", "strange", "stupefied", "suspicious", 
 		"sweet", "tender", "thirsty", "trusting", "unruffled", "upbeat", "vibrant", "vigilant", "vigorous", "wizardly", "wonderful", "xenodochial", 
-		"youthful", "zealous", "zen"};
-
-	private static final String[] name = new String[] {"agnesi", "albattani", "allen", "almeida", "antonelli", "archimedes", "ardinghelli", "aryabhata", "austin", 
+		"youthful", "zealous", "zen"];
+    #[rustfmt::skip]
+    static NAMES: [&str; 241] = ["agnesi", "albattani", "allen", "almeida", "antonelli", "archimedes", "ardinghelli", "aryabhata", "austin", 
 		"babbage", "banach", "banzai", "bardeen", "bartik", "bassi", "beaver", "bell", "benz", "bhabha", "bhaskara", "black", "blackburn", "blackwell", 
 		"bohr", "booth", "borg", "bose", "bouman", "boyd", "brahmagupta", "brattain", "brown", "buck", "burnell", "cannon", "carson", "cartwright", 
 		"carver", "cauchy", "cerf", "chandrasekhar", "chaplygin", "chatelet", "chatterjee", "chaum", "chebyshev", "clarke", "cohen", "colden", "cori", 
@@ -40,24 +75,11 @@ public class Utils {
 		"rhodes", "ride", "riemann", "ritchie", "robinson", "roentgen", "rosalind", "rubin", "saha", "sammet", "sanderson", "satoshi", "shamir", "shannon", 
 		"shaw", "shirley", "shockley", "shtern", "sinoussi", "snyder", "solomon", "spence", "stonebraker", "sutherland", "swanson", "swartz", "swirles", 
 		"taussig", "tesla", "tharp", "thompson", "torvalds", "tu", "turing", "varahamihira", "vaughan", "vaughn", "villani", "visvesvaraya", "volhard", 
-		"wescoff", "weierstrass", "wilbur", "wiles", "williams", "williamson", "wilson", "wing", "wozniak", "wright", "wu", "yalow", "yonath", "zhukovsky"};
+		"wescoff", "weierstrass", "wilbur", "wiles", "williams", "williamson", "wilson", "wing", "wozniak", "wright", "wu", "yalow", "yonath", "zhukovsky"];
 
-	public static boolean validate(String shortUrl) {
-		return PATTERN.matcher(shortUrl)
-				.matches();
-	}
-
-	public static boolean isPasswordEnabled(){
-		String disablePasswordEnv = System.getenv("INSECURE_DISABLE_PASSWORD");
-
-		if(disablePasswordEnv != null && disablePasswordEnv.equals("I_KNOW_ITS_BAD")){
-			return false;
-		}
-
-		return true;
-	}
-
-	public static String randomName() {
-		return adjective[random.nextInt(adjective.length)]+"-"+name[random.nextInt(name.length)];
-	}
+    format!(
+        "{0}-{1}",
+        NAMES.choose(&mut rand::thread_rng()).unwrap(),
+        ADJECTIVES.choose(&mut rand::thread_rng()).unwrap()
+    )
 }

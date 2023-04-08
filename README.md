@@ -1,4 +1,4 @@
-# ![Logo](src/main/resources/public/assets/favicon-32.png) <span style="font-size:42px">Simply Shorten</span>
+# ![Logo](actix/resources/assets/favicon-32.png) <span style="font-size:42px">Simply Shorten</span>
 
 # What is it?
 A simple selfhosted URL shortener with no unnecessary features.
@@ -28,7 +28,7 @@ unnecessary features, or they didn't have all the features I wanted.
   generate short links locally.
 - Links are stored in an SQLite database.
 - Available as a Docker container.
-- Backend written in Java using [Spark Java](http://sparkjava.com/), frontend
+- Backend written in Rust using [Actix](https://actix.rs/), frontend
   written in plain HTML and vanilla JS, using [Pure CSS](https://purecss.io/)
   for styling.
   
@@ -62,19 +62,10 @@ Clone this repository
 ```
 git clone https://gitlab.com/SinTan1729/simply-shorten
 ```
-Note that Gradle 6.x.x and JDK 11 are required. Other versions are not tested
-### 1. Build the `.jar` file
-```
-gradle build --no-daemon
-```
-The `--no-daemon` option means that gradle should exit as soon as the build is
-finished. Without it, gradle would still be running in the background
-in order to speed up future builds.
 
 ### 2. Set environment variables
 ```bash
 # Required for authentication
-export username=<api username>
 export password=<api password>
 # Sets where the database exists. Can be local or remote (optional)
 export db_url=<url> # Default: './urls.sqlite'
@@ -83,9 +74,10 @@ export db_url=<url> # Default: './urls.sqlite'
 export site_url=<url>
 ```
 
-### 3. Run it
+### 3. Build and run it
 ```
-java -jar build/libs/url.jar
+cd actix
+cargo run
 ```
 You can optionally set the port the server listens on by appending `--port=[port]`
 ### 4. Navigate to `http://localhost:4567` in your browser, add links as you wish.
@@ -99,7 +91,6 @@ docker build . -t simply-shorten:latest
 1. Run the image
 ```
 docker run -p 4567:4567
-    -d url:latest
     -e username="username"
     -e password="password"
     -d simply-shorten:latest
@@ -127,20 +118,16 @@ docker run -p 4567:4567 \
 ```
 
 ## Disable authentication
-As requested in #5, it is possible to completely disable the authentication.
-This if not recommended, as it will allow anyone to create new links and delete
+It's not possible to completely disable authentication. It's rather easy to implement
+but there's literally no point. Rather, for testing purposes, you can omit the password
+environment variable, and any provided password should work.
+
+This if not recommended in actual use however, as it will allow anyone to create new links and delete
 old ones. This might not seem like a bad idea, until you have hundreds of links
 pointing to illegal content. Since there are no logs, it's impossible to prove
 that those links aren't created by you.
 
-If you still want to do it, then you need to set an environment variable to
-an exact value:
-```
-INSECURE_DISABLE_PASSWORD=I_KNOW_ITS_BAD
-```
-Any other value will not work.
-
 ## Notes
-- This is a fork of [this project](https://gitlab.com/draganczukp/simply-shorten).
+- It started as a fork of [this project](https://gitlab.com/draganczukp/simply-shorten).
 - The list of adjectives and names used for random short url generation is a modified
   version of [this list used by docker](https://github.com/moby/moby/blob/master/pkg/namesgenerator/names-generator.go).

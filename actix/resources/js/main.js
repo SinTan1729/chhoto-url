@@ -1,4 +1,4 @@
-const getSiteUrl = async () => await fetch("/api/site")
+const getSiteUrl = async () => await fetch("/api/siteurl")
     .then(res => res.text())
     .then(text => {
         if (text == "unset") {
@@ -9,8 +9,22 @@ const getSiteUrl = async () => await fetch("/api/site")
         }
     });
 
+const auth_fetch = async (link) => {
+    let reply = await fetch(link).then(res => res.text());
+    if (reply == "logged_out") {
+        pass = prompt("Please enter passkey to access this website");
+        await fetch("/api/login", {
+            method: "POST",
+            body: pass
+        });
+        return auth_fetch(link);
+    } else {
+        return reply;
+    }
+}
+
 const refreshData = async () => {
-    let data = await fetch("/api/all").then(res => res.text());
+    let data = await auth_fetch("/api/all");
     data = data
         .split("\n")
         .filter(line => line !== "")
@@ -108,7 +122,7 @@ const deleteButton = (shortUrl) => {
         e.preventDefault();
         if (confirm("Do you want to delete the entry " + shortUrl + "?")) {
             document.getElementById("alertBox")?.remove();
-            fetch(`/api/${shortUrl}`, {
+            fetch(`/api/del/${shortUrl}`, {
                 method: "DELETE"
             }).then(_ => refreshData());
         }

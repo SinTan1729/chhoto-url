@@ -1,14 +1,27 @@
-FROM gradle:jdk17-alpine AS build
-COPY --chown=gradle:gradle . /home/gradle/src
-WORKDIR /home/gradle/src
-RUN gradle fatJar --no-daemon
+FROM rust:1 as build
+RUN cargo install cargo-build-deps
 
-FROM openjdk:17-alpine
+RUN cargo new --bin simply-shorten
+WORKDIR /simply-shorten
 
-EXPOSE 4567
+COPY ./actix/Cargo.toml .
+COPY ./actix/Cargo.lock .
 
-RUN mkdir /app
+RUN cargo build-deps --release
 
-COPY --from=build /home/gradle/src/build/libs/*.jar /app/application.jar
+COPY ./actix/src ./src
+COPY ./actix/resources ./resources
 
-ENTRYPOINT ["java", "-jar","/app/application.jar"]
+RUN cargo build --release
+
+FROM frolvlad/alpine-glibc:latest
+
+EXPOSE 2000
+RUN apk add sqlite-libs
+
+WORKDIR /opt
+
+COPY --from=build /simply-shorten/target/release/simply-shorten /opt/simply-shorten
+COPY --from=build /simply-shorten/resources /opt/resources
+
+CMD ["./simply-shorten"]
