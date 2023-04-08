@@ -130,7 +130,7 @@ async fn main() -> std::io::Result<()> {
             .service(login)
             .default_service(Files::new("/", "./resources/").index_file("index.html"))
     })
-    .bind(("0.0.0.0", 2000))?
+    .bind(("0.0.0.0", 4567))?
     .run()
     .await
 }

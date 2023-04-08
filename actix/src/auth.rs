@@ -27,7 +27,6 @@ fn check(token: Option<String>) -> bool {
                 .duration_since(SystemTime::UNIX_EPOCH)
                 .expect("Time went backwards!")
                 .as_secs();
-            println!("{:#?}", token_parts);
             if token_text == "valid-session-token" && time_now < token_time + 1209600 {
                 // There are 1209600 seconds in 14 days
                 true
