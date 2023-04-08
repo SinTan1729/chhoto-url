@@ -1,12 +1,15 @@
 use std::env;
 
 use actix_files::{Files, NamedFile};
+use actix_session::{storage::CookieSessionStore, Session, SessionMiddleware};
 use actix_web::{
+    cookie::Key,
     delete, get, middleware, post,
     web::{self, Redirect},
     App, HttpResponse, HttpServer, Responder,
 };
 use rusqlite::Connection;
+mod auth;
 mod database;
 mod utils;
 
@@ -19,26 +22,38 @@ struct AppState {
 
 // Add new links
 #[post("/api/new")]
-async fn add_link(req: String, data: web::Data<AppState>) -> HttpResponse {
-    let out = utils::add_link(req, &data.db);
-    if out.0 {
-        HttpResponse::Ok().body(out.1)
+async fn add_link(req: String, data: web::Data<AppState>, session: Session) -> HttpResponse {
+    if auth::validate(session) {
+        let out = utils::add_link(req, &data.db);
+        if out.0 {
+            HttpResponse::Ok().body(out.1)
+        } else {
+            HttpResponse::BadRequest().body(out.1)
+        }
     } else {
-        HttpResponse::BadRequest().body(out.1)
+        HttpResponse::Forbidden().body("logged_out")
     }
 }
 
 // Return all active links
 #[get("/api/all")]
-async fn getall(data: web::Data<AppState>) -> HttpResponse {
-    HttpResponse::Ok().body(utils::getall(&data.db))
+async fn getall(data: web::Data<AppState>, session: Session) -> HttpResponse {
+    if auth::validate(session) {
+        HttpResponse::Ok().body(utils::getall(&data.db))
+    } else {
+        HttpResponse::Forbidden().body("logged_out")
+    }
 }
 
 // Get the site URL
 #[get("/api/siteurl")]
-async fn siteurl() -> HttpResponse {
-    let site_url = env::var("site_url").unwrap_or("unset".to_string());
-    HttpResponse::Ok().body(site_url)
+async fn siteurl(session: Session) -> HttpResponse {
+    if auth::validate(session) {
+        let site_url = env::var("site_url").unwrap_or("unset".to_string());
+        HttpResponse::Ok().body(site_url)
+    } else {
+        HttpResponse::Forbidden().body("logged_out")
+    }
 }
 
 // 404 error page
@@ -60,17 +75,42 @@ async fn link_handler(shortlink: web::Path<String>, data: web::Data<AppState>) -
     }
 }
 
+// Handle login
+#[post("/api/login")]
+async fn login(req: String, session: Session) -> HttpResponse {
+    if req == "ssssss".to_string() {
+        session.insert("session-token", 123).unwrap();
+        HttpResponse::Ok().body("Correct password!")
+    } else {
+        eprintln!("Failed login attempt!");
+        HttpResponse::Forbidden().body("Wrong password!")
+    }
+}
+
 // Delete a given shortlink
 #[delete("/api/del/{shortlink}")]
-async fn delete_link(shortlink: web::Path<String>, data: web::Data<AppState>) -> HttpResponse {
-    database::delete_link(shortlink.to_string(), &data.db);
-    HttpResponse::Ok().body("")
+async fn delete_link(
+    shortlink: web::Path<String>,
+    data: web::Data<AppState>,
+    session: Session,
+) -> HttpResponse {
+    if auth::validate(session) {
+        database::delete_link(shortlink.to_string(), &data.db);
+        HttpResponse::Ok().body("")
+    } else {
+        HttpResponse::Forbidden().body("Wrong password!")
+    }
 }
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
-    HttpServer::new(|| {
+    let secret_key = Key::generate();
+    HttpServer::new(move || {
         App::new()
+            .wrap(SessionMiddleware::new(
+                CookieSessionStore::default(),
+                secret_key.clone(),
+            ))
             .app_data(web::Data::new(AppState {
                 db: database::open_db(env::var("db_url").unwrap_or("./urls.sqlite".to_string())),
             }))
@@ -81,6 +121,7 @@ async fn main() -> std::io::Result<()> {
             .service(siteurl)
             .service(add_link)
             .service(delete_link)
+            .service(login)
             .default_service(Files::new("/", "./resources/").index_file("index.html"))
     })
     .bind(("0.0.0.0", 2000))?
