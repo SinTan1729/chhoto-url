@@ -31,6 +31,9 @@ unnecessary features, or they didn't have all the features I wanted.
 - Backend written in Rust using [Actix](https://actix.rs/), frontend
   written in plain HTML and vanilla JS, using [Pure CSS](https://purecss.io/)
   for styling.
+- Uses very basic authentication using a provided password. It's not encrypted in transport.
+  I  recommend using something like [Nginx Proxy Manager](https://nginxproxymanager.com/) to
+  encrypt the connection by SSL.
   
 # Bloat that will not be implemented
 - Tracking or spying of any kind. The only logs that still exist are
