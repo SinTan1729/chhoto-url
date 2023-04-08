@@ -16,7 +16,6 @@ RUN cargo build --release
 
 FROM frolvlad/alpine-glibc:latest
 
-EXPOSE 2000
 RUN apk add sqlite-libs
 
 WORKDIR /opt
