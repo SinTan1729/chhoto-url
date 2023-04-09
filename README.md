@@ -118,9 +118,8 @@ docker run -p 4567:4567 \
 ```
 
 ## Disable authentication
-It's not possible to completely disable authentication. It's rather easy to implement
-but there's literally no point. Rather, for testing purposes, you can omit the password
-environment variable, and any provided password should work.
+If you do not define a password environment variable when starting the docker image, authentication
+will be disabled.
 
 This if not recommended in actual use however, as it will allow anyone to create new links and delete
 old ones. This might not seem like a bad idea, until you have hundreds of links
