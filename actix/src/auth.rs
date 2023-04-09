@@ -1,7 +1,12 @@
 use actix_session::Session;
-use std::time::SystemTime;
+use std::{env, time::SystemTime};
 
 pub fn validate(session: Session) -> bool {
+    // If there's no password provided, just return true
+    if env::var("password").is_err() {
+        return true;
+    }
+
     let token = session.get::<String>("session-token");
     if token.is_err() {
         false
