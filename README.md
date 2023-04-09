@@ -94,7 +94,6 @@ docker build . -t simply-shorten:latest
 1. Run the image
 ```
 docker run -p 4567:4567
-    -e username="username"
     -e password="password"
     -d simply-shorten:latest
 ```
@@ -102,7 +101,6 @@ docker run -p 4567:4567
 ```
 touch ./urls.sqlite
 docker run -p 4567:4567 \
-    -e username="username" \
     -e password="password" \
     -v ./urls.sqlite:/urls.sqlite \
     -e db_url=/urls.sqlite \
@@ -112,7 +110,6 @@ docker run -p 4567:4567 \
 ```
 touch ./urls.sqlite
 docker run -p 4567:4567 \
-    -e username="username" \
     -e password="password" \
     -v ./urls.sqlite:/urls.sqlite \
     -e db_url=/urls.sqlite \

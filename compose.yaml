@@ -14,7 +14,6 @@ services:
             # displayed in front of the shorturls, defaults to
             # the hostname you're accessing it from
             # - site_url=https://www.example.com
-            - username=admin
             - password=$3CuReP4S$W0rD
         volumes:
             - db:/urls.sqlite
