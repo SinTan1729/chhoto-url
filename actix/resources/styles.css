@@ -1,0 +1,45 @@
+.container {
+    max-width: 950px;
+    margin: 20px auto auto;
+}
+
+table {
+    width: 100%;
+}
+
+table tr td div {
+    max-height: 75px;
+    line-height: 25px;
+    word-wrap: break-word;
+    max-width: 575px;
+    overflow: auto;
+}
+
+td[name="deleteBtn"] {
+    text-align: center;
+}
+
+td[name="deleteBtn"] button {
+    border-radius: 50%;
+    border-style: solid;
+    cursor: pointer;
+    background-color: transparent;
+}
+
+input {
+    width: 65%;
+}
+
+form input[name="shortUrl"] {
+    text-transform: lowercase;
+}
+
+form input[name="shortUrl"]::placeholder {
+    text-transform: none;
+}
+
+div[name="gitlab"] {
+    position: absolute;
+    right: 0.5%;
+    bottom: 0.5%;
+}
