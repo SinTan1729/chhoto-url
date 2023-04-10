@@ -59,7 +59,7 @@ async fn siteurl(session: Session) -> HttpResponse {
 // 404 error page
 #[get("/err/404")]
 async fn error404() -> impl Responder {
-    NamedFile::open_async("./resources/404.html").await
+    NamedFile::open_async("./resources/static/404.html").await
 }
 
 // Handle a given shortlink

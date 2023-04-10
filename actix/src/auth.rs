@@ -32,7 +32,7 @@ fn check(token: Option<String>) -> bool {
                 .duration_since(SystemTime::UNIX_EPOCH)
                 .expect("Time went backwards!")
                 .as_secs();
-            if token_text == "valid-session-token" && time_now < token_time + 1209600 {
+            if token_text == "session-token" && time_now < token_time + 1209600 {
                 // There are 1209600 seconds in 14 days
                 true
             } else {
@@ -43,7 +43,7 @@ fn check(token: Option<String>) -> bool {
 }
 
 pub fn gen_token() -> String {
-    let token_text = "valid-session-token".to_string();
+    let token_text = "session-token".to_string();
     let time = SystemTime::now()
         .duration_since(SystemTime::UNIX_EPOCH)
         .expect("Time went backwards!")

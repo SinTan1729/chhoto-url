@@ -48,7 +48,7 @@ const displayData = async (data) => {
         const table = document.querySelector("#url-table");
         if (!window.isSecureContext) {
             const shortUrlHeader = document.getElementById("short-url-header");
-            shortUrlHeader.innerHTML = "Short URL (right click and copy)";
+            shortUrlHeader.innerHTML = "Short URL<br>(right click and copy)";
         }
         table_box.style.visibility = "visible";
         table.innerHTML = ''; // Clear
@@ -57,10 +57,10 @@ const displayData = async (data) => {
 };
 
 const showAlert = async (text, col) => {
-    document.getElementById("alertBox")?.remove();
+    document.getElementById("alert-box")?.remove();
     const controls = document.querySelector(".pure-controls");
     const alertBox = document.createElement("p");
-    alertBox.setAttribute("id", "alertBox");
+    alertBox.setAttribute("id", "alert-box");
     alertBox.setAttribute("style", `color:${col}`);
     alertBox.innerHTML = text;
     controls.appendChild(alertBox);
@@ -121,7 +121,8 @@ const deleteButton = (shortUrl) => {
     btn.onclick = e => {
         e.preventDefault();
         if (confirm("Do you want to delete the entry " + shortUrl + "?")) {
-            document.getElementById("alertBox")?.remove();
+            document.getElementById("alert-box")?.remove();
+            showAlert("&nbsp;", "black");
             fetch(`/api/del/${shortUrl}`, {
                 method: "DELETE"
             }).then(_ => refreshData());
