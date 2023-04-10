@@ -1,3 +1,7 @@
+[![docker-pulls](https://img.shields.io/docker/pulls/sintan1729/simply-shorten)](https://hub.docker.com/r/sintan1729/simply-shorten)
+[![maintainer](https://img.shields.io/badge/maintainer-SinTan1729-blue)](https://github.com/SinTan1729)
+![commit-since-latest-release](https://img.shields.io/github/commits-since/SinTan1729/simply-shorten/latest?sort=semver&label=commits%20since%20latest%20release)
+
 # ![Logo](actix/resources/assets/favicon-32.png) <span style="font-size:42px">Simply Shorten</span>
 
 # What is it?
@@ -38,13 +42,13 @@ unnecessary features, or they didn't have all the features I wanted.
 # Bloat that will not be implemented
 - Tracking or spying of any kind. The only logs that still exist are
  errors printed to stderr and the default SLF4J warning.
-- User management. If you need a shortener for your whole organisation, either
+- User management. If you need a shortener for your whole organization, either
  run separate containers for everyone or use something else.
 - Cookies, newsletters, "we value your privacy" popups or any of the multiple
 other ways modern web shows how anti-user it is. We all hate those, and they're
 not needed here.
 - Paywalls or messages begging for donations. If you want to support me (for
-whatever reason), you can message me through GitLab issues.
+whatever reason), you can message me through GitHub issues.
 
 # Screenshot
 ![Screenshot](screenshot.png)
@@ -59,11 +63,11 @@ docker compose up -d
 ```
 If you're using a custom location for the `db_url`, make sure to make that file
 before running the docker image, as otherwise a directory will be created in its
-place, resulting in an error.
+place, resulting in possibly unwanted behavior.
 ## Building from source
 Clone this repository
 ```
-git clone https://gitlab.com/SinTan1729/simply-shorten
+git clone https://github.com/SinTan1729/simply-shorten
 ```
 
 ### 2. Set environment variables
