@@ -38,8 +38,22 @@ form input[name="shortUrl"]::placeholder {
     text-transform: none;
 }
 
-div[name="gitlab"] {
+div[name="github-link"] {
     position: absolute;
     right: 0.5%;
     bottom: 0.5%;
+}
+
+.pure-table {
+    visibility: hidden;
+}
+
+.pure-table caption {
+    font-size: 22px;
+    text-align: left;
+    font-style: normal;
+}
+
+#logo {
+    font-size: 32px;
 }

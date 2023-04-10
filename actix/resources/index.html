@@ -26,8 +26,7 @@
     <div class="container">
         <form class="pure-form pure-form-aligned" name="new-url-form">
             <fieldset>
-                <legend style="font-size: 32px;"><img src="assets/favicon-32.png" width="26px" alt="logo"> Simply
-                    Shorten</legend>
+                <legend id="logo"><img src="assets/favicon-32.png" width="26px" alt="logo"> Simply Shorten</legend>
                 <div class="pure-control-group">
                     <label for="longUrl">Long URL</label>
                     <input type="url" name="longUrl" id="longUrl" placeholder="Please enter a valid URL"
@@ -45,24 +44,24 @@
             </fieldset>
         </form>
 
-        <table class="pure-table" style="visibility: hidden;">
-            <caption style="font-size: 22px; text-align: left; font-style: normal;">Active links</caption>
+        <table class="pure-table">
+            <caption>Active links</caption>
             <br>
             <thead>
                 <tr>
-                    <td id="short-url-header">Short URL<br>(click to copy)</td>
+                    <td id=" short-url-header">Short URL<br>(click to copy)</td>
                     <td>Long URL</td>
                     <td>Hits</td>
                     <td name="deleteBtn">&times;</td>
                 </tr>
             </thead>
             <tbody id="url-table">
-
+                <!-- The links would be inserted here -->
             </tbody>
         </table>
     </div>
 
-    <div name="gitlab">
+    <div name="github-link">
         <a href="https://github.com/SinTan1729/simply-shorten" target="_blank" rel="noopener noreferrer">Source Code</a>
     </div>
 
