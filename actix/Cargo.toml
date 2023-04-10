@@ -12,3 +12,4 @@ rusqlite = "0.29.0"
 regex = "1.7.3"
 rand = "0.8.5"
 actix-session = {version = "0.7.2", features = ["cookie-session"]}
+env_logger = "0.10.0"

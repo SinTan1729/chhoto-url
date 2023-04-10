@@ -105,7 +105,9 @@ async fn delete_link(
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
-    // Generate session key in runtime so that restarts invalidates older logins
+    env_logger::init_from_env(env_logger::Env::new().default_filter_or("warn"));
+
+    // Generate session key in runtime so that restart invalidates older logins
     let secret_key = Key::generate();
     let db_location = env::var("db_url").unwrap_or("/urls.sqlite".to_string());
     let port = env::var("port")
@@ -124,6 +126,7 @@ async fn main() -> std::io::Result<()> {
             .app_data(web::Data::new(AppState {
                 db: database::open_db(env::var("db_url").unwrap_or(db_location.clone())),
             }))
+            .wrap(middleware::Logger::default())
             .wrap(middleware::Compress::default())
             .service(link_handler)
             .service(error404)
