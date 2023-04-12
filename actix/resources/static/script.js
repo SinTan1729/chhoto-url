@@ -9,33 +9,26 @@ const getSiteUrl = async () => await fetch("/api/siteurl")
         }
     });
 
-const auth_fetch = async (link) => {
-    let reply = await fetch(link).then(res => res.text());
-    if (reply == "logged_out") {
-        pass = prompt("Please enter passkey to access this website");
-        await fetch("/api/login", {
-            method: "POST",
-            body: pass
-        });
-        return auth_fetch(link);
-    } else {
-        return reply;
-    }
-}
-
 const refreshData = async () => {
-    let data = await auth_fetch("/api/all");
-    data = data
-        .split("\n")
-        .filter(line => line !== "")
-        .map(line => line.split(","))
-        .map(arr => ({
-            short: arr[0],
-            long: arr[1],
-            hits: arr[2]
-        }));
+    let reply = await fetch("/api/all").then(res => res.text());
+    if (reply == "logged_out") {
+        console.log("logged_out");
+        document.getElementById("container").style.filter = "blur(2px)"
+        document.getElementById("login-dialog").showModal();
+        document.getElementById("password").focus();
+    } else {
+        data = reply
+            .split("\n")
+            .filter(line => line !== "")
+            .map(line => line.split(","))
+            .map(arr => ({
+                short: arr[0],
+                long: arr[1],
+                hits: arr[2]
+            }));
 
-    displayData(data);
+        displayData(data);
+    }
 };
 
 const displayData = async (data) => {
@@ -168,14 +161,39 @@ const submitForm = () => {
                 refreshData();
             }
         });
-
 };
+
+const submitLogin = () => {
+    const password = document.getElementById("password");
+    fetch("/api/login", {
+        method: "POST",
+        body: password.value
+    }).then(res => {
+        if (res.ok) {
+            document.getElementById("container").style.filter = "blur(0px)"
+            document.getElementById("login-dialog").remove();
+            refreshData();
+        } else {
+            const wrongPassBox = document.getElementById("wrong-pass");
+            wrongPassBox.innerHTML = "Wrong password!";
+            wrongPassBox.setAttribute("style", "color:red");
+            password.focus();
+        }
+    })
+}
 
 (async () => {
     await refreshData();
+
     const form = document.forms.namedItem("new-url-form");
     form.onsubmit = e => {
         e.preventDefault();
         submitForm();
+    }
+
+    const login_form = document.forms.namedItem("login-form");
+    login_form.onsubmit = e => {
+        e.preventDefault();
+        submitLogin();
     }
 })();

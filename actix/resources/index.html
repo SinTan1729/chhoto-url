@@ -23,7 +23,7 @@
 
 <body>
 
-    <div class="container">
+    <div class="container" id="container">
         <form class="pure-form pure-form-aligned" name="new-url-form">
             <fieldset>
                 <legend id="logo"><img src="assets/favicon-32.png" width="26px" alt="logo"> Simply Shorten</legend>
@@ -64,6 +64,15 @@
     <div name="github-link">
         <a href="https://github.com/SinTan1729/simply-shorten" target="_blank" rel="noopener noreferrer">Source Code</a>
     </div>
+
+    <dialog id="login-dialog">
+        <form class="pure-form" name="login-form">
+            <p>Please enter password to access this website</p>
+            <input type="password" id="password" />
+            <button class="pure-button pure-button-primary" value="default">Submit</button>
+            <p id="wrong-pass">&nbsp;</p>
+        </form>
+    </dialog>
 
 </body>
 
