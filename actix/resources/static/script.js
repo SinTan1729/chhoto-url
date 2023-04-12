@@ -53,8 +53,8 @@ const showAlert = async (text, col) => {
     document.getElementById("alert-box")?.remove();
     const controls = document.querySelector(".pure-controls");
     const alertBox = document.createElement("p");
-    alertBox.setAttribute("id", "alert-box");
-    alertBox.setAttribute("style", `color:${col}`);
+    alertBox.id = "alert-box";
+    alertBox.style.color = col;
     alertBox.innerHTML = text;
     controls.appendChild(alertBox);
 };
@@ -176,7 +176,7 @@ const submitLogin = () => {
         } else {
             const wrongPassBox = document.getElementById("wrong-pass");
             wrongPassBox.innerHTML = "Wrong password!";
-            wrongPassBox.setAttribute("style", "color:red");
+            wrongPassBox.style.color = "red";
             password.focus();
         }
     })
