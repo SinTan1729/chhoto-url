@@ -10,7 +10,6 @@ COPY ./actix/Cargo.lock .
 RUN cargo build-deps --release
 
 COPY ./actix/src ./src
-COPY ./actix/resources ./resources
 
 RUN cargo build --release
 
@@ -21,6 +20,6 @@ RUN apk add sqlite-libs
 WORKDIR /opt
 
 COPY --from=build /simply-shorten/target/release/simply-shorten /opt/simply-shorten
-COPY --from=build /simply-shorten/resources /opt/resources
+COPY ./actix/resources /opt/resources
 
 CMD ["./simply-shorten"]
