@@ -61,15 +61,16 @@ const showAlert = async (text, col) => {
 
 const TR = (row, site) => {
     const tr = document.createElement("tr");
-    const longTD = TD(A_LONG(row.long));
+    const longTD = TD(A_LONG(row.long), "Long URL");
     var shortTD = null;
     if (window.isSecureContext) {
-        shortTD = TD(A_SHORT(row.short, site));
+        shortTD = TD(A_SHORT(row.short, site), "Short URL");
     }
     else {
-        shortTD = TD(A_SHORT_INSECURE(row.short, site));
+        shortTD = TD(A_SHORT_INSECURE(row.short, site), "Short URL");
     }
-    const hitsTD = TD(row.hits);
+    hitsTD = TD(row.hits);
+    hitsTD.setAttribute("label", "Hits");
     const btn = deleteButton(row.short);
 
     tr.appendChild(shortTD);
@@ -122,15 +123,17 @@ const deleteButton = (shortUrl) => {
         }
     };
     td.setAttribute("name", "deleteBtn");
+    td.setAttribute("label", "Delete");
     td.appendChild(btn);
     return td;
 };
 
-const TD = (s) => {
+const TD = (s, u) => {
     const td = document.createElement("td");
     const div = document.createElement("div");
     div.innerHTML = s;
     td.appendChild(div);
+    td.setAttribute("label", u);
     return td;
 };
 

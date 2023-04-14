@@ -41,7 +41,7 @@ form input[name="shortUrl"]::placeholder {
 div[name="github-link"] {
     position: absolute;
     right: 0.5%;
-    bottom: 0.5%;
+    top: 0.5%;
 }
 
 .pure-table {
@@ -56,4 +56,45 @@ div[name="github-link"] {
 
 #logo {
     font-size: 32px;
+}
+
+#password {
+    width: 100%;
+    margin-bottom: 10px;
+}
+
+dialog form {
+    text-align: center;
+}
+
+/* Settings for mobile devices */
+@media (pointer:none),
+(pointer:coarse) {
+    table tr {
+        border-bottom: 1px solid #999;
+    }
+
+    table thead {
+        display: none;
+    }
+
+    table td {
+        display: flex;
+    }
+
+    table td::before {
+        content: attr(label);
+        font-weight: bold;
+        width: 120px;
+        min-width: 120px;
+        text-align: left;
+    }
+
+    table tr td div {
+        width: 63vw
+    }
+
+    .pure-table caption {
+        padding-top: 0px;
+    }
 }
