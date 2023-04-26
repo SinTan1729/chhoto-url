@@ -8,21 +8,12 @@ pub fn validate(session: Session) -> bool {
     }
 
     let token = session.get::<String>("session-token");
-    if token.is_err() {
-        false
-    } else if !check(token.unwrap()) {
-        false
-    } else {
-        true
-    }
+    token.is_ok() && check(token.unwrap())
 }
 
 fn check(token: Option<String>) -> bool {
-    if token.is_none() {
-        false
-    } else {
-        let token_body = token.unwrap();
-        let token_parts: Vec<&str> = token_body.split(";").collect();
+    if let Some(token_body) = token {
+        let token_parts: Vec<&str> = token_body.split(';').collect();
         if token_parts.len() < 2 {
             false
         } else {
@@ -32,13 +23,10 @@ fn check(token: Option<String>) -> bool {
                 .duration_since(SystemTime::UNIX_EPOCH)
                 .expect("Time went backwards!")
                 .as_secs();
-            if token_text == "session-token" && time_now < token_time + 1209600 {
-                // There are 1209600 seconds in 14 days
-                true
-            } else {
-                false
-            }
+            token_text == "session-token" && time_now < token_time + 1209600 // There are 1209600 seconds in 14 days
         }
+    } else {
+        false
     }
 }
 

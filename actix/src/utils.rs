@@ -28,14 +28,14 @@ pub fn add_link(req: String, db: &Connection) -> (bool, String) {
     let mut shortlink;
     if chunks.len() > 1 {
         shortlink = chunks[1].to_string().to_lowercase();
-        if shortlink == "".to_string() {
+        if shortlink == *"" {
             shortlink = random_name();
         }
     } else {
         shortlink = random_name();
     }
 
-    if validate_link(shortlink.as_str()) && get_longurl(shortlink.clone(), db) == "".to_string() {
+    if validate_link(shortlink.as_str()) && get_longurl(shortlink.clone(), db) == *"" {
         (
             database::add_link(shortlink.clone(), longlink, db),
             shortlink,

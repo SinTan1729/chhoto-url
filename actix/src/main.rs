@@ -1,5 +1,3 @@
-use std::env;
-
 use actix_files::{Files, NamedFile};
 use actix_session::{storage::CookieSessionStore, Session, SessionMiddleware};
 use actix_web::{
@@ -9,6 +7,7 @@ use actix_web::{
     App, HttpResponse, HttpServer, Responder,
 };
 use rusqlite::Connection;
+use std::env;
 mod auth;
 mod database;
 mod utils;
@@ -67,7 +66,7 @@ async fn error404() -> impl Responder {
 async fn link_handler(shortlink: web::Path<String>, data: web::Data<AppState>) -> impl Responder {
     let shortlink_str = shortlink.to_string();
     let longlink = utils::get_longurl(shortlink_str, &data.db);
-    if longlink == "".to_string() {
+    if longlink == *"" {
         Redirect::to("/err/404")
     } else {
         database::add_hit(shortlink.as_str(), &data.db);

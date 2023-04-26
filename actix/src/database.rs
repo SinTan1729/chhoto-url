@@ -6,7 +6,7 @@ pub fn find_url(shortlink: &str, db: &Connection) -> String {
         .unwrap();
 
     let links = statement
-        .query_map([shortlink], |row| Ok(row.get("long_url")?))
+        .query_map([shortlink], |row| row.get("long_url"))
         .unwrap();
 
     let mut longlink = "".to_string();
@@ -33,7 +33,7 @@ pub fn getall(db: &Connection) -> Vec<String> {
     links
 }
 
-pub fn add_hit(shortlink: &str, db: &Connection) -> () {
+pub fn add_hit(shortlink: &str, db: &Connection) {
     db.execute(
         "UPDATE urls SET hits = hits + 1 WHERE short_url = ?1",
         [shortlink],
@@ -42,16 +42,14 @@ pub fn add_hit(shortlink: &str, db: &Connection) -> () {
 }
 
 pub fn add_link(shortlink: String, longlink: String, db: &Connection) -> bool {
-    match db.execute(
+    db.execute(
         "INSERT INTO urls (long_url, short_url, hits) VALUES (?1, ?2, ?3)",
         (longlink, shortlink, 0),
-    ) {
-        Ok(_) => true,
-        Err(_) => false,
-    }
+    )
+    .is_ok()
 }
 
-pub fn delete_link(shortlink: String, db: &Connection) -> () {
+pub fn delete_link(shortlink: String, db: &Connection) {
     db.execute("DELETE FROM urls WHERE short_url = ?1", [shortlink])
         .unwrap();
 }
