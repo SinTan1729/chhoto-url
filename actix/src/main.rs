@@ -60,7 +60,10 @@ async fn siteurl(session: Session) -> HttpResponse {
 // 404 error page
 #[get("/err/404")]
 async fn error404() -> impl Responder {
-    NamedFile::open_async("./resources/static/404.html").await
+    NamedFile::open_async("./resources/static/404.html")
+        .await
+        .customize()
+        .with_status(StatusCode::NOT_FOUND)
 }
 
 // Handle a given shortlink
@@ -69,7 +72,7 @@ async fn link_handler(shortlink: web::Path<String>, data: web::Data<AppState>) -
     let shortlink_str = shortlink.to_string();
     let longlink = utils::get_longurl(shortlink_str, &data.db);
     if longlink == *"" {
-        Redirect::to("/err/404").using_status_code(StatusCode::NOT_FOUND)
+        Redirect::to("/err/404")
     } else {
         let redirect_method = env::var("redirect_method").unwrap_or("PERMANENT".to_string());
         database::add_hit(shortlink.as_str(), &data.db);
