@@ -10,11 +10,17 @@ services:
             # In this case, you can get rid of the db volume below
             # and instead do a mount manually by specifying the location
             # - db_url=/urls.sqlite
+
             # Change it in case you want to set the website name
             # displayed in front of the shorturls, defaults to
             # the hostname you're accessing it from
             # - site_url=https://www.example.com
+
             - password=$3CuReP4S$W0rD
+            
+            # Pass the redirect method, if needed TEMPORARY and PERMANENT
+            # are accepted values, defaults to PERMANENT
+            # - redirect_method=TEMPORARY
         volumes:
             - db:/urls.sqlite
         networks:

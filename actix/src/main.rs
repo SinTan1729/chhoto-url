@@ -71,8 +71,14 @@ async fn link_handler(shortlink: web::Path<String>, data: web::Data<AppState>) -
     if longlink == *"" {
         Redirect::to("/err/404").using_status_code(StatusCode::NOT_FOUND)
     } else {
+        let redirect_method = env::var("redirect_method").unwrap_or("PERMANENT".to_string());
         database::add_hit(shortlink.as_str(), &data.db);
-        Redirect::to(longlink).permanent()
+        if redirect_method == *"TEMPORARY" {
+            Redirect::to(longlink)
+        } else {
+            // Defaults to permanent redirection
+            Redirect::to(longlink).permanent()
+        }
     }
 }
 

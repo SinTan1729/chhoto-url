@@ -87,7 +87,7 @@ export site_url=<url>
 cd actix
 cargo run
 ```
-You can optionally set the port the server listens on by appending `--port=[port]`
+You can optionally set the port the server listens on by appending `--port=[port]`.
 ### 4. Navigate to `http://localhost:4567` in your browser, add links as you wish.
 
 ## Running with docker
@@ -121,6 +121,9 @@ docker run -p 4567:4567 \
     -e site_url="https://www.example.com" \
     -d simply-shorten:latest
 ```
+
+You can also set the redirect method to Permanent 308 (default) or Temporary 307 by setting
+the `redirect_method` variable to `TEMPORARY` or `PERMANENT` (it's matched exactly).
 
 ## Disable authentication
 If you do not define a password environment variable when starting the docker image, authentication
