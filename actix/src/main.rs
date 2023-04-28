@@ -2,7 +2,9 @@ use actix_files::{Files, NamedFile};
 use actix_session::{storage::CookieSessionStore, Session, SessionMiddleware};
 use actix_web::{
     cookie::Key,
-    delete, get, middleware, post,
+    delete, get,
+    http::StatusCode,
+    middleware, post,
     web::{self, Redirect},
     App, HttpResponse, HttpServer, Responder,
 };
@@ -67,7 +69,7 @@ async fn link_handler(shortlink: web::Path<String>, data: web::Data<AppState>) -
     let shortlink_str = shortlink.to_string();
     let longlink = utils::get_longurl(shortlink_str, &data.db);
     if longlink == *"" {
-        Redirect::to("/err/404")
+        Redirect::to("/err/404").using_status_code(StatusCode::NOT_FOUND)
     } else {
         database::add_hit(shortlink.as_str(), &data.db);
         Redirect::to(longlink).permanent()
