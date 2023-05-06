@@ -58,7 +58,6 @@ async fn siteurl(session: Session) -> HttpResponse {
 }
 
 // 404 error page
-#[get("/err/404")]
 async fn error404() -> impl Responder {
     NamedFile::open_async("./resources/static/404.html")
         .await
@@ -139,13 +138,13 @@ async fn main() -> std::io::Result<()> {
             .wrap(middleware::Logger::default())
             .wrap(middleware::Compress::default())
             .service(link_handler)
-            .service(error404)
             .service(getall)
             .service(siteurl)
             .service(add_link)
             .service(delete_link)
             .service(login)
-            .default_service(Files::new("/", "./resources/").index_file("index.html"))
+            .service(Files::new("/", "./resources/").index_file("index.html"))
+            .default_service(web::get().to(error404))
     })
     .bind(("0.0.0.0", port))?
     .run()
