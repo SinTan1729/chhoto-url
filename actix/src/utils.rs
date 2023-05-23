@@ -7,7 +7,7 @@ pub fn get_longurl(shortlink: String, db: &Connection) -> String {
     if validate_link(&shortlink) {
         database::find_url(shortlink.as_str(), db)
     } else {
-        "".to_string()
+        String::new()
     }
 }
 
@@ -23,7 +23,7 @@ pub fn getall(db: &Connection) -> String {
 
 pub fn add_link(req: String, db: &Connection) -> (bool, String) {
     let chunks: Vec<&str> = req.split(';').collect();
-    let longlink = chunks[0].to_string();
+    let longlink = String::from(chunks[0]);
 
     let mut shortlink;
     if chunks.len() > 1 {
@@ -41,7 +41,7 @@ pub fn add_link(req: String, db: &Connection) -> (bool, String) {
             shortlink,
         )
     } else {
-        (false, "shortUrl not valid or already in use".to_string())
+        (false, String::from("shortUrl not valid or already in use"))
     }
 }
 

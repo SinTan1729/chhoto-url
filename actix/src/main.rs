@@ -50,7 +50,7 @@ async fn getall(data: web::Data<AppState>, session: Session) -> HttpResponse {
 #[get("/api/siteurl")]
 async fn siteurl(session: Session) -> HttpResponse {
     if auth::validate(session) {
-        let site_url = env::var("site_url").unwrap_or("unset".to_string());
+        let site_url = env::var("site_url").unwrap_or(String::from("unset"));
         HttpResponse::Ok().body(site_url)
     } else {
         HttpResponse::Forbidden().body("logged_out")
@@ -73,7 +73,7 @@ async fn link_handler(shortlink: web::Path<String>, data: web::Data<AppState>) -
     if longlink == *"" {
         Redirect::to("/err/404")
     } else {
-        let redirect_method = env::var("redirect_method").unwrap_or("PERMANENT".to_string());
+        let redirect_method = env::var("redirect_method").unwrap_or(String::from("PERMANENT"));
         database::add_hit(shortlink.as_str(), &data.db);
         if redirect_method == *"TEMPORARY" {
             Redirect::to(longlink)
@@ -118,9 +118,9 @@ async fn main() -> std::io::Result<()> {
 
     // Generate session key in runtime so that restart invalidates older logins
     let secret_key = Key::generate();
-    let db_location = env::var("db_url").unwrap_or("/urls.sqlite".to_string());
+    let db_location = env::var("db_url").unwrap_or(String::from("/urls.sqlite"));
     let port = env::var("port")
-        .unwrap_or("4567".to_string())
+        .unwrap_or(String::from("4567"))
         .parse::<u16>()
         .expect("Supplied port is not an integer");
 

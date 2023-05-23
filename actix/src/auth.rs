@@ -31,7 +31,7 @@ fn check(token: Option<String>) -> bool {
 }
 
 pub fn gen_token() -> String {
-    let token_text = "session-token".to_string();
+    let token_text = String::from("session-token");
     let time = SystemTime::now()
         .duration_since(SystemTime::UNIX_EPOCH)
         .expect("Time went backwards!")

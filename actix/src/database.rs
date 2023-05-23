@@ -9,7 +9,7 @@ pub fn find_url(shortlink: &str, db: &Connection) -> String {
         .query_map([shortlink], |row| row.get("long_url"))
         .unwrap();
 
-    let mut longlink = "".to_string();
+    let mut longlink = String::new();
     for link in links {
         longlink = link.unwrap();
     }
