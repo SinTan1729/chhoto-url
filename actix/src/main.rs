@@ -70,12 +70,12 @@ async fn error404() -> impl Responder {
 async fn link_handler(shortlink: web::Path<String>, data: web::Data<AppState>) -> impl Responder {
     let shortlink_str = shortlink.to_string();
     let longlink = utils::get_longurl(shortlink_str, &data.db);
-    if longlink == *"" {
+    if longlink.is_empty() {
         Redirect::to("/err/404")
     } else {
         let redirect_method = env::var("redirect_method").unwrap_or(String::from("PERMANENT"));
         database::add_hit(shortlink.as_str(), &data.db);
-        if redirect_method == *"TEMPORARY" {
+        if redirect_method == "TEMPORARY" {
             Redirect::to(longlink)
         } else {
             // Defaults to permanent redirection
