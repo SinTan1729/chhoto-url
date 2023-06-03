@@ -34,10 +34,15 @@ const refreshData = async () => {
 const displayData = async (data) => {
     let site = await getSiteUrl();
     table_box = document.querySelector(".pure-table");
+    loading_text = document.getElementsByName("loading-text")[0];
+
     if (data.length == 0) {
         table_box.style.visibility = "hidden";
+        loading_text.style.display = "block";
+        loading_text.innerHTML = "No active links.";
     }
     else {
+        loading_text.style.display = "none";
         const table = document.querySelector("#url-table");
         if (!window.isSecureContext) {
             const shortUrlHeader = document.getElementById("short-url-header");
