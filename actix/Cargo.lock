@@ -1225,7 +1225,7 @@ dependencies = [
 
 [[package]]
 name = "simply-shorten"
-version = "4.3.2"
+version = "4.3.3"
 dependencies = [
  "actix-files",
  "actix-session",
