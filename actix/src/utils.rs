@@ -79,7 +79,7 @@ fn random_name() -> String {
 
     format!(
         "{0}-{1}",
-        NAMES.choose(&mut rand::thread_rng()).unwrap(),
-        ADJECTIVES.choose(&mut rand::thread_rng()).unwrap()
+        ADJECTIVES.choose(&mut rand::thread_rng()).unwrap(),
+        NAMES.choose(&mut rand::thread_rng()).unwrap()
     )
 }
