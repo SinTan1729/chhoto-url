@@ -1,6 +1,6 @@
 [package]
 name = "simply-shorten"
-version = "4.3.3"
+version = "4.3.4"
 edition = "2021"
 authors = ["Sayantan Santra <sayantan[dot]santra689[at]gmail[dot]com"]
 license = "MIT"
@@ -9,7 +9,16 @@ homepage = "https://github.com/SinTan1729/simply-shorten"
 documentation = "https://github.com/SinTan1729/simply-shorten"
 repository = "https://github.com/SinTan1729/simply-shorten"
 readme = "README.md"
-keywords = ["docker", "rust", "self-hosted", "url-shortener", "webapp", "shortener", "link-shortener", "actix-web"]
+keywords = [
+    "docker",
+    "rust",
+    "self-hosted",
+    "url-shortener",
+    "webapp",
+    "shortener",
+    "link-shortener",
+    "actix-web",
+]
 categories = ["web-programming"]
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
@@ -20,5 +29,5 @@ actix-files = "0.6.2"
 rusqlite = "0.29.0"
 regex = "1.7.3"
 rand = "0.8.5"
-actix-session = {version = "0.7.2", features = ["cookie-session"]}
+actix-session = { version = "0.7.2", features = ["cookie-session"] }
 env_logger = "0.10.0"
