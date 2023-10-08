@@ -127,10 +127,11 @@ async fn main() -> std::io::Result<()> {
     // Actually start the server
     HttpServer::new(move || {
         App::new()
-            .wrap(SessionMiddleware::new(
-                CookieSessionStore::default(),
-                secret_key.clone(),
-            ))
+            .wrap(
+                SessionMiddleware::builder(CookieSessionStore::default(), secret_key.clone())
+                    .cookie_secure(false)
+                    .build(),
+            )
             // Maintain a single instance of database throughout
             .app_data(web::Data::new(AppState {
                 db: database::open_db(env::var("db_url").unwrap_or(db_location.clone())),
