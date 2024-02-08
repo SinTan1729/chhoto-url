@@ -1,6 +1,6 @@
 [package]
 name = "simply-shorten"
-version = "4.3.6"
+version = "4.4.0"
 edition = "2021"
 authors = ["Sayantan Santra <sayantan[dot]santra689[at]gmail[dot]com"]
 license = "mit"
