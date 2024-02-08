@@ -24,10 +24,10 @@ categories = ["web-programming"]
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-actix-web = "4.4.0"
-actix-files = "0.6.2"
-rusqlite = "0.29.0"
-regex = "1.9.6"
+actix-web = "4.5.1"
+actix-files = "0.6.5"
+rusqlite = "0.30.0"
+regex = "1.10.3"
 rand = "0.8.5"
-actix-session = { version = "0.8.0", features = ["cookie-session"] }
-env_logger = "0.10.0"
+actix-session = { version = "0.9.0", features = ["cookie-session"] }
+env_logger = "0.11.1"
