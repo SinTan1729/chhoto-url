@@ -6,4 +6,4 @@ urls.sqlite
 
 # Ignore irrelevant dotfiles
 .vscode/
-.directory
+**/.directory
