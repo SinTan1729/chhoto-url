@@ -19,6 +19,9 @@ struct AppState {
     db: Connection,
 }
 
+// Store the version number
+const VERSION: &str = env!("CARGO_PKG_VERSION");
+
 // Define the routes
 
 // Add new links
@@ -55,6 +58,12 @@ async fn siteurl(session: Session) -> HttpResponse {
     } else {
         HttpResponse::Forbidden().body("logged_out")
     }
+}
+
+// Get the version number
+#[get("/api/version")]
+async fn version() -> HttpResponse {
+    HttpResponse::Ok().body(VERSION)
 }
 
 // 404 error page
@@ -141,6 +150,7 @@ async fn main() -> std::io::Result<()> {
             .service(link_handler)
             .service(getall)
             .service(siteurl)
+            .service(version)
             .service(add_link)
             .service(delete_link)
             .service(login)

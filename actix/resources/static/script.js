@@ -9,6 +9,12 @@ const getSiteUrl = async () => await fetch("/api/siteurl")
         }
     });
 
+const getVersion = async () => await fetch("/api/version")
+    .then(res => res.text())
+    .then(text => {
+        return text;
+    });
+
 const refreshData = async () => {
     let reply = await fetch("/api/all").then(res => res.text());
     if (reply == "logged_out") {
@@ -32,7 +38,14 @@ const refreshData = async () => {
 };
 
 const displayData = async (data) => {
+    let version = await getVersion();
+    link = document.getElementById("version-number")
+    link.innerText = "v" + version;
+    link.href = "https://github.com/SinTan1729/chhoto-url/releases/tag/" + version;
+    link.hidden = false;
+
     let site = await getSiteUrl();
+
     table_box = document.querySelector(".pure-table");
     loading_text = document.getElementsByName("loading-text")[0];
 
