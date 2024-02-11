@@ -1,13 +1,13 @@
 [package]
-name = "simply-shorten"
+name = "chhoto-url"
 version = "4.4.0"
 edition = "2021"
 authors = ["Sayantan Santra <sayantan[dot]santra689[at]gmail[dot]com"]
 license = "mit"
 description = "A simple selfhosted URL shortener with no unnecessary features."
-homepage = "https://github.com/SinTan1729/simply-shorten"
-documentation = "https://github.com/SinTan1729/simply-shorten"
-repository = "https://github.com/SinTan1729/simply-shorten"
+homepage = "https://github.com/SinTan1729/chhoto-url"
+documentation = "https://github.com/SinTan1729/chhoto-url"
+repository = "https://github.com/SinTan1729/chhoto-url"
 readme = "README.md"
 keywords = [
     "docker",

@@ -1,8 +1,8 @@
-[![docker-pulls](https://img.shields.io/docker/pulls/sintan1729/simply-shorten)](https://hub.docker.com/r/sintan1729/simply-shorten)
+[![docker-pulls](https://img.shields.io/docker/pulls/sintan1729/chhoto-url)](https://hub.docker.com/r/sintan1729/chhoto-url)
 [![maintainer](https://img.shields.io/badge/maintainer-SinTan1729-blue)](https://github.com/SinTan1729)
-![commit-since-latest-release](https://img.shields.io/github/commits-since/SinTan1729/simply-shorten/latest?sort=semver&label=commits%20since%20latest%20release)
+![commit-since-latest-release](https://img.shields.io/github/commits-since/SinTan1729/chhoto-url/latest?sort=semver&label=commits%20since%20latest%20release)
 
-# ![Logo](actix/resources/assets/favicon-32.png) <span style="font-size:42px">Simply Shorten</span>
+# ![Logo](actix/resources/assets/favicon-32.png) <span style="font-size:42px">Chhoto URL</span>
 
 # What is it?
 A simple selfhosted URL shortener with no unnecessary features.
@@ -68,7 +68,7 @@ place, resulting in possibly unwanted behavior.
 ## Building from source
 Clone this repository
 ```
-git clone https://github.com/SinTan1729/simply-shorten
+git clone https://github.com/SinTan1729/chhoto-url
 ```
 
 ### 2. Set environment variables
@@ -94,13 +94,13 @@ You can optionally set the port the server listens on by appending `--port=[port
 ### `docker run` method
 0. (Only if you really want to) Build the image
 ```
-docker build . -t simply-shorten:latest
+docker build . -t chhoto-url:latest
 ```
 1. Run the image
 ```
 docker run -p 4567:4567
     -e password="password"
-    -d simply-shorten:latest
+    -d chhoto-url:latest
 ```
 1.a Make the database file available to host (optional)
 ```
@@ -109,7 +109,7 @@ docker run -p 4567:4567 \
     -e password="password" \
     -v ./urls.sqlite:/urls.sqlite \
     -e db_url=/urls.sqlite \
-    -d simply-shorten:latest
+    -d chhoto-url:latest
 ```
 1.b Further, set the URL of your website (optional)
 ```
@@ -119,7 +119,7 @@ docker run -p 4567:4567 \
     -v ./urls.sqlite:/urls.sqlite \
     -e db_url=/urls.sqlite \
     -e site_url="https://www.example.com" \
-    -d simply-shorten:latest
+    -d chhoto-url:latest
 ```
 
 You can also set the redirect method to Permanent 308 (default) or Temporary 307 by setting
@@ -135,6 +135,6 @@ pointing to illegal content. Since there are no logs, it's impossible to prove
 that those links aren't created by you.
 
 ## Notes
-- It started as a fork of [this project](https://gitlab.com/draganczukp/simply-shorten).
+- It started as a fork of [this project](https://gitlab.com/draganczukp/chhoto-url).
 - The list of adjectives and names used for random short url generation is a modified
   version of [this list used by docker](https://github.com/moby/moby/blob/master/pkg/namesgenerator/names-generator.go).

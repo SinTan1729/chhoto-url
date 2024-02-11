@@ -454,6 +454,19 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "baf1de4339761588bc0619e3cbc0120ee582ebb74b53b4efbf79117bd2da40fd"
 
 [[package]]
+name = "chhoto-url"
+version = "4.4.0"
+dependencies = [
+ "actix-files",
+ "actix-session",
+ "actix-web",
+ "env_logger",
+ "rand",
+ "regex",
+ "rusqlite",
+]
+
+[[package]]
 name = "cipher"
 version = "0.4.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1221,19 +1234,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "d8229b473baa5980ac72ef434c4415e70c4b5e71b423043adb4ba059f89c99a1"
 dependencies = [
  "libc",
-]
-
-[[package]]
-name = "simply-shorten"
-version = "4.4.0"
-dependencies = [
- "actix-files",
- "actix-session",
- "actix-web",
- "env_logger",
- "rand",
- "regex",
- "rusqlite",
 ]
 
 [[package]]

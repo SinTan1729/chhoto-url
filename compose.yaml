@@ -1,8 +1,8 @@
 services:
-    simply-shorten:
-        image: sintan1729/simply-shorten:latest
+    chhoto-url:
+        image: sintan1729/chhoto-url:latest
         restart: unless-stopped
-        container_name: simply-shorten
+        container_name: chhoto-url
         ports:
             - 4567:4567
         environment:
