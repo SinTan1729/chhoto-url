@@ -18,6 +18,9 @@ using the "feature request" template.
 I've looked at a couple popular URL shorteners, however they either have
 unnecessary features, or they didn't have all the features I wanted.
 
+## What does the name mean?
+Chhoto (ছোট) is the Bangla word for small. (IPA: /tʃʰoʈo/)
+
 # Features
 - Shortens URLs of any length to a fixed length, randomly generated string.
 - (Optional) Allows you to specify the shortened URL instead of the generated
