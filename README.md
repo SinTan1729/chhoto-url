@@ -5,11 +5,14 @@
 # ![Logo](actix/resources/assets/favicon-32.png) <span style="font-size:42px">Chhoto URL</span>
 
 # What is it?
-A simple selfhosted URL shortener with no unnecessary features.
+A simple selfhosted URL shortener with no unnecessary features. Simplicity
+and speed are the main foci of this project. The docker image is ~6 MB (compressed),
+and it uses <5 MB of RAM under regular use.
 
 Don't worry if you see no activity for a long time. I consider this project
 to be complete, not dead. I'm unlikely to add any new features, but I will try
-and fix every bug you report.
+and fix every bug you report. I will also try to keep it updated in terms of
+security vulnerabilities.
 
 If you feel like a feature is missing, please let me know by creating an issue
 using the "feature request" template.
