@@ -26,13 +26,13 @@ Chhoto (ছোট, [IPA](https://en.wikipedia.org/wiki/Help:IPA/Bengali): /tʃʰ
 for small. URL means, well... URL. So the name simply means Small URL.
 
 # Features
-- Shortens URLs of any length to a fixed length, randomly generated string.
+- Shortens URLs of any length to a randomly generated link.
 - (Optional) Allows you to specify the shortened URL instead of the generated
-  one (Missing in a surprising number of alternatives).
-- Opening the fixed length URL in your browser will instantly redirect you
-  to the correct long URL (you'd think that's a standard feature, but
-  apparently it's not).
-- Provides a simple API for adding new short links.
+  one. (It's surprisingly missing in a surprising number of alternatives.)
+- Opening the shortened URL in your browser will instantly redirect you
+  to the correct long URL. (So no stupid redirecting pages.)
+- Super lightweight and snappy. (The docker image is only ~6MB and RAM uasge
+  stays under 5MB under normal use.)
 - Counts number of hits for each short link in a privacy respecting way
   i.e. only the hit is recorded, and nothing else.
 - Allows setting the URL of your website, in case you want to conveniently
