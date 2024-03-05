@@ -142,6 +142,6 @@ pointing to illegal content. Since there are no logs, it's impossible to prove
 that those links aren't created by you.
 
 ## Notes
-- It started as a fork of [this project](https://gitlab.com/draganczukp/chhoto-url).
+- It started as a fork of [this project](https://gitlab.com/draganczukp/simply-shorten).
 - The list of adjectives and names used for random short url generation is a modified
   version of [this list used by docker](https://github.com/moby/moby/blob/master/pkg/namesgenerator/names-generator.go).
