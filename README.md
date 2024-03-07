@@ -43,7 +43,7 @@ for small. URL means, well... URL. So the name simply means Small URL.
   written in plain HTML and vanilla JS, using [Pure CSS](https://purecss.io/)
   for styling.
 - Uses very basic authentication using a provided password. It's not encrypted in transport.
-  I  recommend using something like [Nginx Proxy Manager](https://nginxproxymanager.com/) to
+  I  recommend using something like [caddy](https://caddyserver.com/) to
   encrypt the connection by SSL.
   
 # Bloat that will not be implemented
