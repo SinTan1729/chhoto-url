@@ -1,28 +1,26 @@
-FROM rust:slim AS build
-ENV TARGET x86_64-unknown-linux-musl
-
-RUN apt-get update && apt-get install -y musl-tools
-RUN rustup target add "$TARGET"
-
-RUN cargo install cargo-build-deps
-
-RUN cargo new --bin chhoto-url
+FROM lukemathwalker/cargo-chef:latest-rust-slim AS chef
 WORKDIR /chhoto-url
 
+FROM chef as planner
+COPY ./actix/Cargo.toml ./actix/Cargo.lock .
+COPY ./actix/src ./src
+RUN cargo chef prepare --recipe-path recipe.json
+
+FROM chef as builder
+RUN apt-get update && apt-get install -y musl-tools
 RUN rustup target add x86_64-unknown-linux-musl
 
-COPY ./actix/Cargo.toml .
-COPY ./actix/Cargo.lock .
+COPY --from=planner /chhoto-url/recipe.json recipe.json
+# Build dependencies - this is the caching Docker layer
+RUN cargo chef cook --release --target=x86_64-unknown-linux-musl --recipe-path recipe.json
 
-RUN cargo build-deps --release --target=x86_64-unknown-linux-musl
-
+COPY ./actix/Cargo.toml ./actix/Cargo.lock .
 COPY ./actix/src ./src
-
-RUN cargo build --release --locked --target "$TARGET"
+# Build application
+RUN cargo build --release --target=x86_64-unknown-linux-musl --locked --bin chhoto-url
 
 FROM scratch
-
-COPY --from=build /chhoto-url/target/x86_64-unknown-linux-musl/release/chhoto-url /chhoto-url
+COPY --from=builder /chhoto-url/target/x86_64-unknown-linux-musl/release/chhoto-url /chhoto-url
 COPY ./actix/resources /resources
+ENTRYPOINT ["/chhoto-url"]
 
-CMD ["/chhoto-url"]
