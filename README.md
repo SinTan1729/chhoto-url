@@ -2,7 +2,7 @@
 [![maintainer](https://img.shields.io/badge/maintainer-SinTan1729-blue)](https://github.com/SinTan1729)
 ![commit-since-latest-release](https://img.shields.io/github/commits-since/SinTan1729/chhoto-url/latest?sort=semver&label=commits%20since%20latest%20release)
 
-# ![Logo](actix/resources/assets/favicon-32.png) <span style="font-size:42px">Chhoto URL</span>
+# ![Logo](resources/assets/favicon-32.png) <span style="font-size:42px">Chhoto URL</span>
 
 # What is it?
 A simple selfhosted URL shortener with no unnecessary features. Simplicity
