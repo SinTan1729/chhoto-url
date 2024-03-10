@@ -16,7 +16,7 @@ done
 echo "Do you want to push these to Docker Hub?"
 select yn in "Yes" "No";
 do
-    if [ "$yn" = "Yes" ]; then
+    if [ "$yn"="Yes" ]; then
         for tag in latest $v_patch $v_minor $v_major;
         do
             docker push sintan1729/$name:$tag
