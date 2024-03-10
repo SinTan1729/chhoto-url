@@ -12,7 +12,7 @@ pub fn get_longurl(shortlink: String, db: &Connection) -> String {
 }
 
 fn validate_link(link: &str) -> bool {
-    let re = Regex::new("[a-z0-9-_]+").unwrap();
+    let re = Regex::new("^[a-z0-9-_]+$").unwrap();
     re.is_match(link)
 }
 
