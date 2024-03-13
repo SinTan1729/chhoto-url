@@ -49,9 +49,9 @@ pub fn add_link(shortlink: String, longlink: String, db: &Connection) -> bool {
     .is_ok()
 }
 
-pub fn delete_link(shortlink: String, db: &Connection) {
-    db.execute("DELETE FROM urls WHERE short_url = ?1", [shortlink])
-        .unwrap();
+pub fn delete_link(shortlink: String, db: &Connection) -> bool {
+    let out = db.execute("DELETE FROM urls WHERE short_url = ?1", [shortlink]);
+    out.is_ok() && (out.unwrap() > 0)
 }
 
 pub fn open_db(path: String) -> Connection {

@@ -45,6 +45,14 @@ pub fn add_link(req: String, db: &Connection) -> (bool, String) {
     }
 }
 
+pub fn delete_link(shortlink: String, db: &Connection) -> bool {
+    if validate_link(shortlink.as_str()) {
+        database::delete_link(shortlink, db)
+    } else {
+        false
+    }
+}
+
 fn random_name() -> String {
     #[rustfmt::skip]
     static ADJECTIVES: [&str; 108] = ["admiring", "adoring", "affectionate", "agitated", "amazing", "angry", "awesome", "beautiful", 

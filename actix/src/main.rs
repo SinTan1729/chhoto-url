@@ -114,8 +114,11 @@ async fn delete_link(
     session: Session,
 ) -> HttpResponse {
     if auth::validate(session) {
-        database::delete_link(shortlink.to_string(), &data.db);
-        HttpResponse::Ok().body("")
+        if utils::delete_link(shortlink.to_string(), &data.db) {
+            HttpResponse::Ok().body(format!("Deleted {shortlink}"))
+        } else {
+            HttpResponse::NotFound().body("Not found!")
+        }
     } else {
         HttpResponse::Forbidden().body("Wrong password!")
     }
