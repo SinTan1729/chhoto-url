@@ -8,7 +8,7 @@ name="chhoto-url"
 
 docker build -t $name .
 
-for tag in latest $v_patch $v_minor $v_major;
+for tag in $v_major $v_minor $v_patch latest
 do
     docker tag $name sintan1729/$name:$tag
 done
@@ -17,7 +17,7 @@ echo "Do you want to push these to Docker Hub?"
 select yn in "Yes" "No";
 do
     if [ "$yn"="Yes" ]; then
-        for tag in latest $v_patch $v_minor $v_major;
+        for tag in $v_major $v_minor $v_patch latest
         do
             docker push sintan1729/$name:$tag
         done
