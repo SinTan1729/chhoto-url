@@ -72,32 +72,8 @@ docker compose up -d
 If you're using a custom location for the `db_url`, make sure to make that file
 before running the docker image, as otherwise a directory will be created in its
 place, resulting in possibly unwanted behavior.
-## Building from source
-Clone this repository
-```
-git clone https://github.com/SinTan1729/chhoto-url
-```
 
-### 2. Set environment variables
-```bash
-# Required for authentication
-export password=<api password>
-# Sets where the database exists. Can be local or remote (optional)
-export db_url=<url> # Default: './urls.sqlite'
-# Sets the url of website, so that it displays that even when accessed
-# locally (optional, defaults to hostname you're accessing it on)
-export site_url=<url>
-```
-
-### 3. Build and run it
-```
-cd actix
-cargo run
-```
-You can optionally set the port the server listens on by appending `--port=[port]`.
-### 4. Navigate to `http://localhost:4567` in your browser, add links as you wish.
-
-## Running with docker
+## Building and running with docker
 ### `docker run` method
 0. (Only if you really want to) Build the image
 ```
