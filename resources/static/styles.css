@@ -110,6 +110,8 @@ dialog form {
     table td {
         display: flex;
         justify-content: left !important;
+        width: 98vw;
+        padding: .5em .1em;
     }
 
     table td::before {
