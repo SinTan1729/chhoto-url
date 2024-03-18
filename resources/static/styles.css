@@ -29,13 +29,20 @@ table tr td div {
 }
 
 td[name="deleteBtn"] {
-    text-align: center;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
 td[name="deleteBtn"] button {
     border-radius: 50%;
+    aspect-ratio: 1;
     border-style: solid;
     cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
     background-color: transparent;
 }
 
@@ -102,6 +109,7 @@ dialog form {
 
     table td {
         display: flex;
+        justify-content: left !important;
     }
 
     table td::before {
@@ -112,7 +120,13 @@ dialog form {
         text-align: left;
     }
 
+    td[name="deleteBtn"] button {
+        border-radius: 50%;
+        aspect-ratio: 1;
+    }
+
     .pure-table caption {
         padding-top: 0px;
     }
 }
+
