@@ -1,3 +1,22 @@
+@font-face
+{
+    font-family: Montserrat;
+    font-style: normal;
+    src: url('Montserrat.ttf');
+} 
+
+@font-face
+{
+    font-family: Montserrat;
+    font-style: italic;
+    src: url('Montserrat-Italic.ttf');
+} 
+
+* {
+    font-family: Montserrat;
+    font-size: 20px;
+}
+
 .container {
     max-width: 950px;
     margin: 20px auto auto;
