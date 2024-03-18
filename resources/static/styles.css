@@ -1,12 +1,10 @@
-@font-face
-{
+@font-face {
     font-family: Montserrat;
     font-style: normal;
     src: url('Montserrat.ttf');
 } 
 
-@font-face
-{
+@font-face {
     font-family: Montserrat;
     font-style: italic;
     src: url('Montserrat-Italic.ttf');
@@ -20,10 +18,6 @@
 .container {
     max-width: 950px;
     margin: 20px auto auto;
-}
-
-table {
-    width: 100%;
 }
 
 table tr td div {
@@ -64,6 +58,7 @@ div[name="github-link"] {
 }
 
 .pure-table {
+    width: 98%;
     visibility: hidden;
 }
 
@@ -89,6 +84,10 @@ dialog form {
 /* Settings for mobile devices */
 @media (pointer:none),
 (pointer:coarse) {
+    .pure-control-group input {
+        width: 98%;
+    }
+    
     table tr {
         border-bottom: 1px solid #999;
     }
@@ -107,10 +106,6 @@ dialog form {
         width: 120px;
         min-width: 120px;
         text-align: left;
-    }
-
-    table tr td div {
-        width: 63vw
     }
 
     .pure-table caption {
