@@ -84,6 +84,10 @@ dialog form {
 /* Settings for mobile devices */
 @media (pointer:none),
 (pointer:coarse) {
+    .container {
+        max-width: 100vw;
+    }
+
     .pure-control-group input {
         width: 98%;
     }
