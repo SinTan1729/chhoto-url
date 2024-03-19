@@ -126,6 +126,7 @@ const A_SHORT_INSECURE = (s, t) => `<a href="${t}/${s}">${s}</a>`;
 
 const deleteButton = (shortUrl) => {
     const td = document.createElement("td");
+    const div = document.createElement("div");
     const btn = document.createElement("button");
 
     btn.innerHTML = "&times;";
@@ -142,7 +143,8 @@ const deleteButton = (shortUrl) => {
     };
     td.setAttribute("name", "deleteBtn");
     td.setAttribute("label", "Delete");
-    td.appendChild(btn);
+    div.appendChild(btn);
+    td.appendChild(div);
     return td;
 };
 

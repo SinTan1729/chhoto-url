@@ -2,13 +2,13 @@
     font-family: Montserrat;
     font-style: normal;
     src: url('Montserrat.ttf');
-} 
+}
 
 @font-face {
     font-family: Montserrat;
     font-style: italic;
     src: url('Montserrat-Italic.ttf');
-} 
+}
 
 * {
     font-family: Montserrat;
@@ -28,14 +28,18 @@ table tr td div {
     overflow: auto;
 }
 
-td[name="deleteBtn"] {
+td[name="deleteBtn"] div {
     display: flex;
     align-items: center;
     justify-content: center;
 }
 
-td[name="deleteBtn"] button {
-    border-radius: 50%;
+td[name="deleteBtn"] {
+    text-align: center;
+}
+
+td[name="deleteBtn"] div button {
+    border-radius: 100%;
     aspect-ratio: 1;
     border-style: solid;
     cursor: pointer;
@@ -98,7 +102,7 @@ dialog form {
     .pure-control-group input {
         width: 98%;
     }
-    
+
     table tr {
         border-bottom: 1px solid #999;
     }
@@ -111,7 +115,7 @@ dialog form {
         display: flex;
         justify-content: left !important;
         width: 98vw;
-        padding: .5em .1em;
+        padding: .5em .1em !important;
     }
 
     table td::before {
@@ -122,13 +126,7 @@ dialog form {
         text-align: left;
     }
 
-    td[name="deleteBtn"] button {
-        border-radius: 50%;
-        aspect-ratio: 1;
-    }
-
     .pure-table caption {
         padding-top: 0px;
     }
 }
-
