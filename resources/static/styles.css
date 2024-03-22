@@ -1,13 +1,6 @@
 @font-face {
     font-family: Montserrat;
-    font-style: normal;
-    src: url('Montserrat.ttf');
-}
-
-@font-face {
-    font-family: Montserrat;
-    font-style: italic;
-    src: url('Montserrat-Italic.ttf');
+    src: url('Montserrat-VF.woff2');
 }
 
 * {
