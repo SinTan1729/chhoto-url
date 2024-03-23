@@ -1,22 +1,30 @@
-const getSiteUrl = async () => await fetch("/api/siteurl")
+const prepSubdir = (link) => {
+    let thisPage = new URL(window.location.href);
+    let subdir = thisPage.pathname;
+    let out = (subdir+link).replace('//','/');
+    console.log(out);
+    return (subdir+link).replace('//','/');
+}
+
+const getSiteUrl = async () => await fetch(prepSubdir("/api/siteurl"))
     .then(res => res.text())
     .then(text => {
         if (text == "unset") {
-            return window.location.host;
+            return window.location.host.replace(/\/$/,'');
         }
         else {
-            return text;
+            return text.replace(/\/$/,'');
         }
     });
 
-const getVersion = async () => await fetch("/api/version")
+const getVersion = async () => await fetch(prepSubdir("/api/version"))
     .then(res => res.text())
     .then(text => {
         return text;
     });
 
 const refreshData = async () => {
-    let reply = await fetch("/api/all").then(res => res.text());
+    let reply = await fetch(prepSubdir("/api/all")).then(res => res.text());
     if (reply == "logged_out") {
         console.log("logged_out");
         document.getElementById("container").style.filter = "blur(2px)"
@@ -136,7 +144,7 @@ const deleteButton = (shortUrl) => {
         if (confirm("Do you want to delete the entry " + shortUrl + "?")) {
             document.getElementById("alert-box")?.remove();
             showAlert("&nbsp;", "black");
-            fetch(`/api/del/${shortUrl}`, {
+            fetch(prepSubdir(`/api/del/${shortUrl}`), {
                 method: "DELETE"
             }).then(_ => refreshData());
         }
@@ -162,7 +170,7 @@ const submitForm = () => {
     const longUrl = form.elements["longUrl"];
     const shortUrl = form.elements["shortUrl"];
 
-    const url = `/api/new`;
+    const url = prepSubdir("/api/new");
 
     fetch(url, {
         method: "POST",
@@ -188,7 +196,7 @@ const submitForm = () => {
 
 const submitLogin = () => {
     const password = document.getElementById("password");
-    fetch("/api/login", {
+    fetch(prepSubdir("/api/login"), {
         method: "POST",
         body: password.value
     }).then(res => {
