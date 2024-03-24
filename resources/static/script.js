@@ -13,7 +13,7 @@ const getSiteUrl = async () => await fetch(prepSubdir("/api/siteurl"))
             return window.location.host.replace(/\/$/,'');
         }
         else {
-            return text.replace(/\/$/,'');
+            return text.replace(/\/$/,'').replace(/^"/,'').replace(/"$/,'');
         }
     });
 
