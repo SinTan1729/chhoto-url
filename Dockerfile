@@ -23,4 +23,3 @@ FROM scratch
 COPY --from=builder /chhoto-url/target/x86_64-unknown-linux-musl/release/chhoto-url /chhoto-url
 COPY ./resources /resources
 ENTRYPOINT ["/chhoto-url"]
-
