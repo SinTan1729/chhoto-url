@@ -75,10 +75,16 @@ place, resulting in possibly unwanted behavior.
 
 ## Building and running with docker
 ### `docker run` method
-0. (Only if you really want to) Build the image
+0. (Only if you really want to) Build the image for the default `x86_64-unknown-linux-musl` target:
 ```
-docker build . -t chhoto-url:latest
+docker build . -t chhoto-url
 ```
+For building on `arm64` or `arm/v7`, use the following:
+```
+docker build . -t chhoto-url --build-arg target=<desired-target>
+```
+For cross-compilation, take a look at the `Makefile`. It builds and pushes for `linux/amd64`, `linux/aarch64`
+and `linux/arm/v7` architectures. For any other architectures, open a discussion, and I'll try to help you out.
 1. Run the image
 ```
 docker run -p 4567:4567

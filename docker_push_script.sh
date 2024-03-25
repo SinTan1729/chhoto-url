@@ -1,7 +1,7 @@
 #!/bin/env bash
 
 if [ "$1" == "dev" ]; then
-    docker buildx build --push --tag sintan1729/$name:dev --platform linux/amd64
+    docker buildx build --push --tag sintan1729/$name:dev .
 
 elif [ "$1" == "release" ]; then
     v_patch=$(cat actix/Cargo.toml | sed -rn 's/^version = "(.+)"$/\1/p')

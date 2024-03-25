@@ -1,4 +1,4 @@
-USERNAME := ${USERNAME}
+USERNAME := ${DOCKER_USERNAME}
 
 setup:
 	cargo install cross
