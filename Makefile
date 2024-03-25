@@ -20,7 +20,7 @@ docker-test: docker-local
 	docker logs chhoto-url -f
 
 docker-dev: build-dev
-	docker build --push --tag ${DOCKER_USERNAME}:chhoto-url:dev --build-arg TARGETARCH=amd64 -f Dockerfile.multiarch .
+	docker build --push --tag ${DOCKER_USERNAME}/chhoto-url:dev --build-arg TARGETARCH=amd64 -f Dockerfile.multiarch .
 
 build-release:
 	cross build --release --locked --manifest-path=actix/Cargo.toml --target aarch64-unknown-linux-musl
