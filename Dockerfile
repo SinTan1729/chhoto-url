@@ -1,7 +1,7 @@
 FROM scratch
-ARG ARCH=linux/amd64
+ARG TARGETARCH
 
-COPY $ARCH/chhoto-url /chhoto-url
+COPY .docker/$TARGETARCH/chhoto-url /chhoto-url
 COPY ./resources /resources
 
 ENTRYPOINT ["/chhoto-url"]

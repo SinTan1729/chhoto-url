@@ -1,5 +1,6 @@
-# Ignore cargo build outputs
+# Ignore build outputs
 actix/target
+.docker
 
 # Ignore SQLite file
 urls.sqlite
