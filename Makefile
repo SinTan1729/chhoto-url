@@ -31,8 +31,9 @@ V_PATCH := $(shell cat actix/Cargo.toml | sed -rn 's/^version = "(.+)"$$/\1/p')
 V_MINOR := $(shell cat actix/Cargo.toml | sed -rn 's/^version = "(.+)\..+"$$/\1/p')
 V_MAJOR := $(shell cat actix/Cargo.toml | sed -rn 's/^version = "(.+)\..+\..+"$$/\1/p')
 docker-release: build-release
-	docker buildx build --push --tag ${DOCKER_USERNAME}/chhoto-url:${V_MAJOR} --tag ${DOCKER_USERNAME}/chhoto-url:${V_MINOR} --tag ${DOCKER_USERNAME}/chhoto-url:${V_PATCH} \
-		---tag ${DOCKER_USERNAME}/chhoto-url:latest -platform linux/amd64,linux/arm64,linux/arm/v7 -f Dockerfile.multiarch .
+	docker buildx build --push --tag ${DOCKER_USERNAME}/chhoto-url:${V_MAJOR} --tag ${DOCKER_USERNAME}/chhoto-url:${V_MINOR} \
+		--tag ${DOCKER_USERNAME}/chhoto-url:${V_PATCH} --tag ${DOCKER_USERNAME}/chhoto-url:latest \
+		--platform linux/amd64,linux/arm64,linux/arm/v7 -f Dockerfile.multiarch .
 
 clean:
 	docker ps -q --filter "name=chhoto-url" | xargs -r docker stop
