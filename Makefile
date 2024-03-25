@@ -9,7 +9,7 @@ build:
 	cross build --release --locked --manifest-path=actix/Cargo.toml --target x86_64-unknown-linux-musl
 
 docker: build
-	docker buildx build --push --tag sintan1729/chhoto-url:dev --platform linux/amd64,linux/arm64,linux/arm/v7 .
+	docker buildx build --push --tag sintan1729/chhoto-url:dev --platform linux/amd64,linux/arm64,linux/arm/v7 -f Dockerfile.multiarch .
 
 clean:
 	cargo clean --manifest-path=actix/Cargo.toml
