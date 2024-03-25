@@ -83,6 +83,7 @@ For building on `arm64` or `arm/v7`, use the following:
 ```
 docker build . -t chhoto-url --build-arg target=<desired-target>
 ```
+Make sure that the desired target is a `musl` one, since the docker image is built from `scratch`.
 For cross-compilation, take a look at the `Makefile`. It builds and pushes for `linux/amd64`, `linux/aarch64`
 and `linux/arm/v7` architectures. For any other architectures, open a discussion, and I'll try to help you out.
 1. Run the image
