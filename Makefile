@@ -17,4 +17,4 @@ clean:
 	cargo clean --manifest-path=actix/Cargo.toml
 	rm -rf .docker
 
-.PHONY: build clean docker
+.PHONY: build
