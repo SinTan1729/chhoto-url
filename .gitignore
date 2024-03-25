@@ -1,6 +1,5 @@
 # Ignore build outputs
 actix/target
-.docker
 
 # Ignore SQLite file
 urls.sqlite
@@ -8,3 +7,5 @@ urls.sqlite
 # Ignore irrelevant dotfiles
 .vscode/
 **/.directory
+.env
+
