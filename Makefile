@@ -35,6 +35,8 @@ docker-release: build-release
 		---tag ${DOCKER_USERNAME}/chhoto-url:latest -platform linux/amd64,linux/arm64,linux/arm/v7 -f Dockerfile.multiarch .
 
 clean:
+	docker ps -q --filter "name=chhoto-url" | xargs -r docker stop
+	docker ps -aq --filter "name=chhoto-url" | xargs -r docker rm
 	cargo clean --manifest-path=actix/Cargo.toml
 
 .PHONY: build-dev docker-local build-release
