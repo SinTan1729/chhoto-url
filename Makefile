@@ -5,13 +5,11 @@ setup:
 
 build:
 	cross build --release --locked --manifest-path=actix/Cargo.toml --target aarch64-unknown-linux-musl
+	cross build --release --locked --manifest-path=actix/Cargo.toml --target armv7-unknown-linux-musleabihf
 	cross build --release --locked --manifest-path=actix/Cargo.toml --target x86_64-unknown-linux-musl
 
 docker: build
-	mkdir -p .docker/amd64 .docker/arm64
-	cp actix/target/aarch64-unknown-linux-musl/release/chhoto-url .docker/arm64/
-	cp actix/target/x86_64-unknown-linux-musl/release/chhoto-url .docker/amd64/
-	docker buildx build --push --tag sintan1729/chhoto-url:dev --platform linux/amd64,linux/arm64 .
+	docker buildx build --push --tag sintan1729/chhoto-url:dev --platform linux/amd64,linux/arm64,linux/arm/v7 .
 
 clean:
 	cargo clean --manifest-path=actix/Cargo.toml
