@@ -18,8 +18,12 @@ If you feel like a feature is missing, please let me know by creating an issue
 using the "feature request" template.
 
 ## But why another URL shortener?
-I've looked at a couple popular URL shorteners, however they either have
-unnecessary features, or they didn't have all the features I wanted.
+Most URL shorteners are either bloated with unnecessary features, or are a pain to set up.
+Even fewer are written with simplicity and lightness in mind. When I saw the simply-shorten
+project (linked below), I really liked the idea but thought that it missed some details. Also,
+I didn't like the fact that a simple app like this had a ~200 MB docker image (mostly due to the
+included java runtime). So, I decided to rewrite it in Rust and add some features to it that I
+thought were essential (e.g. hit counting).
 
 ## What does the name mean?
 Chhoto (ছোট, [IPA](https://en.wikipedia.org/wiki/Help:IPA/Bengali): /tʃʰoʈo/) is the Bangla word
