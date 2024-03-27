@@ -3,11 +3,11 @@ use rand::seq::SliceRandom;
 use regex::Regex;
 use rusqlite::Connection;
 
-pub fn get_longurl(shortlink: String, db: &Connection) -> String {
+pub fn get_longurl(shortlink: String, db: &Connection) -> Option<String> {
     if validate_link(&shortlink) {
         database::find_url(shortlink.as_str(), db)
     } else {
-        String::new()
+        None
     }
 }
 
@@ -35,7 +35,7 @@ pub fn add_link(req: String, db: &Connection) -> (bool, String) {
         shortlink = random_name();
     }
 
-    if validate_link(shortlink.as_str()) && get_longurl(shortlink.clone(), db).is_empty() {
+    if validate_link(shortlink.as_str()) && get_longurl(shortlink.clone(), db).is_none() {
         (
             database::add_link(shortlink.clone(), longlink, db),
             shortlink,

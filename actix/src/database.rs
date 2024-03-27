@@ -1,20 +1,13 @@
 use rusqlite::Connection;
 
-pub fn find_url(shortlink: &str, db: &Connection) -> String {
+pub fn find_url(shortlink: &str, db: &Connection) -> Option<String> {
     let mut statement = db
         .prepare_cached("SELECT long_url FROM urls WHERE short_url = ?1")
         .unwrap();
 
-    let links = statement
-        .query_map([shortlink], |row| row.get("long_url"))
-        .unwrap();
-
-    let mut longlink = String::new();
-    for link in links {
-        longlink = link.unwrap();
-    }
-
-    longlink
+    statement
+        .query_row([shortlink], |row| row.get("long_url"))
+        .ok()
 }
 
 pub fn getall(db: &Connection) -> Vec<String> {
