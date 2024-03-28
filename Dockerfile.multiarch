@@ -1,0 +1,15 @@
+FROM scratch as builder-amd64
+COPY ./actix/target/x86_64-unknown-linux-musl/release/chhoto-url /chhoto-url
+
+FROM scratch as builder-arm64
+COPY ./actix/target/aarch64-unknown-linux-musl/release/chhoto-url /chhoto-url
+
+FROM scratch as builder-arm
+COPY ./actix/target/armv7-unknown-linux-musleabihf/release/chhoto-url /chhoto-url
+
+ARG TARGETARCH
+FROM builder-$TARGETARCH
+COPY ./resources /resources
+
+ENTRYPOINT ["/chhoto-url"]
+

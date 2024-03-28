@@ -18,8 +18,12 @@ If you feel like a feature is missing, please let me know by creating an issue
 using the "feature request" template.
 
 ## But why another URL shortener?
-I've looked at a couple popular URL shorteners, however they either have
-unnecessary features, or they didn't have all the features I wanted.
+Most URL shorteners are either bloated with unnecessary features, or are a pain to set up.
+Even fewer are written with simplicity and lightness in mind. When I saw the simply-shorten
+project (linked below), I really liked the idea but thought that it missed some details. Also,
+I didn't like the fact that a simple app like this had a ~200 MB docker image (mostly due to the
+included java runtime). So, I decided to rewrite it in Rust and add some features to it that I
+thought were essential (e.g. hit counting).
 
 ## What does the name mean?
 Chhoto (ছোট, [IPA](https://en.wikipedia.org/wiki/Help:IPA/Bengali): /tʃʰoʈo/) is the Bangla word
@@ -75,10 +79,17 @@ place, resulting in possibly unwanted behavior.
 
 ## Building and running with docker
 ### `docker run` method
-0. (Only if you really want to) Build the image
+0. (Only if you really want to) Build the image for the default `x86_64-unknown-linux-musl` target:
 ```
-docker build . -t chhoto-url:latest
+docker build . -t chhoto-url
 ```
+For building on `arm64` or `arm/v7`, use the following:
+```
+docker build . -t chhoto-url --build-arg target=<desired-target>
+```
+Make sure that the desired target is a `musl` one, since the docker image is built from `scratch`.
+For cross-compilation, take a look at the `Makefile`. It builds and pushes for `linux/amd64`, `linux/aarch64`
+and `linux/arm/v7` architectures. For any other architectures, open a discussion, and I'll try to help you out.
 1. Run the image
 ```
 docker run -p 4567:4567
