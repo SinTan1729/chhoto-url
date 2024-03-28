@@ -6,7 +6,7 @@ use actix_web::{
     http::StatusCode,
     middleware, post,
     web::{self, Redirect},
-    App, HttpResponse, HttpServer, Responder,
+    App, Either, HttpResponse, HttpServer, Responder,
 };
 use rusqlite::Connection;
 use std::env;
@@ -82,13 +82,18 @@ async fn link_handler(shortlink: web::Path<String>, data: web::Data<AppState>) -
         let redirect_method = env::var("redirect_method").unwrap_or(String::from("PERMANENT"));
         database::add_hit(shortlink.as_str(), &data.db);
         if redirect_method == "TEMPORARY" {
-            Redirect::to(longlink)
+            Either::Left(Redirect::to(longlink))
         } else {
             // Defaults to permanent redirection
-            Redirect::to(longlink).permanent()
+            Either::Left(Redirect::to(longlink).permanent())
         }
     } else {
-        Redirect::to("/err/404")
+        Either::Right(
+            NamedFile::open_async("./resources/static/404.html")
+                .await
+                .customize()
+                .with_status(StatusCode::NOT_FOUND),
+        )
     }
 }
 
