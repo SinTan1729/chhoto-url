@@ -1,4 +1,4 @@
-# Ignore cargo build outputs
+# Ignore build outputs
 actix/target
 
 # Ignore SQLite file
@@ -7,3 +7,5 @@ urls.sqlite
 # Ignore irrelevant dotfiles
 .vscode/
 **/.directory
+.env
+
