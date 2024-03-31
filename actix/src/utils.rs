@@ -5,6 +5,13 @@ use nanoid::nanoid;
 use rand::seq::SliceRandom;
 use regex::Regex;
 use rusqlite::Connection;
+use serde::Deserialize;
+
+#[derive(Deserialize)]
+struct Url {
+    shortlink: String,
+    longlink: String,
+}
 
 pub fn get_longurl(shortlink: String, db: &Connection) -> Option<String> {
     if validate_link(&shortlink) {
@@ -21,12 +28,11 @@ fn validate_link(link: &str) -> bool {
 
 pub fn getall(db: &Connection) -> String {
     let links = database::getall(db);
-    links.join("\n")
+    serde_json::to_string(&links).unwrap()
 }
 
 pub fn add_link(req: String, db: &Connection) -> (bool, String) {
-    let chunks: Vec<&str> = req.split(';').collect();
-    let longlink = String::from(chunks[0]);
+    let mut chunks: Url = serde_json::from_str(&req).unwrap();
 
     let style = env::var("slug_style").unwrap_or(String::from("Pair"));
     let len_str = env::var("slug_length").unwrap_or(String::from("8"));
@@ -35,20 +41,16 @@ pub fn add_link(req: String, db: &Connection) -> (bool, String) {
         len = 4;
     }
 
-    let mut shortlink;
-    if chunks.len() > 1 {
-        shortlink = chunks[1].to_string().to_lowercase();
-        if shortlink.is_empty() {
-            shortlink = gen_link(style, len);
-        }
-    } else {
-        shortlink = gen_link(style, len);
+    if chunks.shortlink.is_empty() {
+        chunks.shortlink = gen_link(style, len);
     }
 
-    if validate_link(shortlink.as_str()) && get_longurl(shortlink.clone(), db).is_none() {
+    if validate_link(chunks.shortlink.as_str())
+        && get_longurl(chunks.shortlink.clone(), db).is_none()
+    {
         (
-            database::add_link(shortlink.clone(), longlink, db),
-            shortlink,
+            database::add_link(chunks.shortlink.clone(), chunks.longlink, db),
+            chunks.shortlink,
         )
     } else {
         (false, String::from("shortUrl not valid or already in use"))

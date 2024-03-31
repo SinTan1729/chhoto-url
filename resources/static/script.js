@@ -31,16 +31,7 @@ const refreshData = async () => {
         document.getElementById("login-dialog").showModal();
         document.getElementById("password").focus();
     } else {
-        data = reply
-            .split("\n")
-            .filter(line => line !== "")
-            .map(line => line.split(","))
-            .map(arr => ({
-                short: arr[0],
-                long: arr[1],
-                hits: arr[2]
-            }));
-
+        data = JSON.parse(reply)
         displayData(data);
     }
 };
@@ -87,18 +78,18 @@ const showAlert = async (text, col) => {
 
 const TR = (row, site) => {
     const tr = document.createElement("tr");
-    const longTD = TD(A_LONG(row.long), "Long URL");
+    const longTD = TD(A_LONG(row["longlink"]), "Long URL");
     var shortTD = null;
     if (window.isSecureContext) {
-        shortTD = TD(A_SHORT(row.short, site), "Short URL");
+        shortTD = TD(A_SHORT(row["shortlink"], site), "Short URL");
     }
     else {
-        shortTD = TD(A_SHORT_INSECURE(row.short, site), "Short URL");
+        shortTD = TD(A_SHORT_INSECURE(row["shortlink"], site), "Short URL");
     }
-    hitsTD = TD(row.hits);
+    hitsTD = TD(row["hits"]);
     hitsTD.setAttribute("label", "Hits");
     hitsTD.setAttribute("name", "hitsColumn");
-    const btn = deleteButton(row.short);
+    const btn = deleteButton(row["shortlink"]);
 
     tr.appendChild(shortTD);
     tr.appendChild(longTD);
@@ -168,14 +159,19 @@ const TD = (s, u) => {
 
 const submitForm = () => {
     const form = document.forms.namedItem("new-url-form");
-    const longUrl = form.elements["longUrl"];
-    const shortUrl = form.elements["shortUrl"];
+    const data ={
+        "longlink": form.elements["longUrl"].value,
+        "shortlink": form.elements["shortUrl"].value,
+    };
 
     const url = prepSubdir("/api/new");
 
     fetch(url, {
         method: "POST",
-        body: `${longUrl.value};${shortUrl.value}`
+        headers: {
+            "Content-Type": "application/json",
+        },
+        body: JSON.stringify(data),
     })
         .then(res => {
             if (!res.ok) {
