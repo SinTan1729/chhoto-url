@@ -28,8 +28,8 @@ pub fn add_link(req: String, db: &Connection) -> (bool, String) {
     let chunks: Vec<&str> = req.split(';').collect();
     let longlink = String::from(chunks[0]);
 
-    let style = env::var("slug-style").unwrap_or(String::from("pair"));
-    let len_str = env::var("slug-length").unwrap_or(String::from("8"));
+    let style = env::var("slug_style").unwrap_or(String::from("pair"));
+    let len_str = env::var("slug_length").unwrap_or(String::from("8"));
     let mut len: usize = len_str.parse().unwrap_or(8);
     if len < 4 {
         len = 4;
