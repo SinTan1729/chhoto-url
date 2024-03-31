@@ -168,14 +168,19 @@ const TD = (s, u) => {
 
 const submitForm = () => {
     const form = document.forms.namedItem("new-url-form");
-    const longUrl = form.elements["longUrl"];
-    const shortUrl = form.elements["shortUrl"];
+    const data ={
+        "longlink": form.elements["longUrl"].value,
+        "shortlink": form.elements["shortUrl"].value,
+    };
 
     const url = prepSubdir("/api/new");
 
     fetch(url, {
         method: "POST",
-        body: `${longUrl.value};${shortUrl.value}`
+        headers: {
+            "Content-Type": "application/json",
+        },
+        body: JSON.stringify(data),
     })
         .then(res => {
             if (!res.ok) {
