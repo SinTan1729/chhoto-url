@@ -1,4 +1,7 @@
+use std::env;
+
 use crate::database;
+use nanoid::nanoid;
 use rand::seq::SliceRandom;
 use regex::Regex;
 use rusqlite::Connection;
@@ -25,14 +28,21 @@ pub fn add_link(req: String, db: &Connection) -> (bool, String) {
     let chunks: Vec<&str> = req.split(';').collect();
     let longlink = String::from(chunks[0]);
 
+    let style = env::var("slug_style").unwrap_or(String::from("Pair"));
+    let len_str = env::var("slug_length").unwrap_or(String::from("8"));
+    let mut len: usize = len_str.parse().unwrap_or(8);
+    if len < 4 {
+        len = 4;
+    }
+
     let mut shortlink;
     if chunks.len() > 1 {
         shortlink = chunks[1].to_string().to_lowercase();
         if shortlink.is_empty() {
-            shortlink = random_name();
+            shortlink = gen_link(style, len);
         }
     } else {
-        shortlink = random_name();
+        shortlink = gen_link(style, len);
     }
 
     if validate_link(shortlink.as_str()) && get_longurl(shortlink.clone(), db).is_none() {
@@ -53,7 +63,7 @@ pub fn delete_link(shortlink: String, db: &Connection) -> bool {
     }
 }
 
-fn random_name() -> String {
+fn gen_link(style: String, len: usize) -> String {
     #[rustfmt::skip]
     static ADJECTIVES: [&str; 108] = ["admiring", "adoring", "affectionate", "agitated", "amazing", "angry", "awesome", "beautiful", 
 		"blissful", "bold", "boring", "brave", "busy", "charming", "clever", "compassionate", "competent", "condescending", "confident", "cool", 
@@ -85,9 +95,17 @@ fn random_name() -> String {
 		"taussig", "tesla", "tharp", "thompson", "torvalds", "tu", "turing", "varahamihira", "vaughan", "vaughn", "villani", "visvesvaraya", "volhard", 
 		"wescoff", "weierstrass", "wilbur", "wiles", "williams", "williamson", "wilson", "wing", "wozniak", "wright", "wu", "yalow", "yonath", "zhukovsky"];
 
-    format!(
-        "{0}-{1}",
-        ADJECTIVES.choose(&mut rand::thread_rng()).unwrap(),
-        NAMES.choose(&mut rand::thread_rng()).unwrap()
-    )
+    #[rustfmt::skip]
+    static CHARS: [char; 36] = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x',
+        'y', 'z', '0', '1', '2', '3', '4', '5', '6', '7', '8', '9'];
+
+    if style == "UID" {
+        nanoid!(len, &CHARS)
+    } else {
+        format!(
+            "{0}-{1}",
+            ADJECTIVES.choose(&mut rand::thread_rng()).unwrap(),
+            NAMES.choose(&mut rand::thread_rng()).unwrap()
+        )
+    }
 }

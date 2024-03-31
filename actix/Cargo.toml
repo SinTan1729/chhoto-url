@@ -1,6 +1,6 @@
 [package]
 name = "chhoto-url"
-version = "5.1.0"
+version = "5.2.0"
 edition = "2021"
 authors = ["Sayantan Santra <sayantan[dot]santra689[at]gmail[dot]com"]
 license = "mit"
@@ -31,3 +31,4 @@ regex = "1.10.3"
 rand = "0.8.5"
 actix-session = { version = "0.9.0", features = ["cookie-session"] }
 env_logger = "0.11.1"
+nanoid = "0.4.0"
