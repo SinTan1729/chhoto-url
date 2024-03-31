@@ -6,7 +6,6 @@ use rand::seq::SliceRandom;
 use regex::Regex;
 use rusqlite::Connection;
 use serde::Deserialize;
-use serde_json::from_str;
 
 #[derive(Deserialize)]
 struct Url {
@@ -29,11 +28,11 @@ fn validate_link(link: &str) -> bool {
 
 pub fn getall(db: &Connection) -> String {
     let links = database::getall(db);
-    links.join("\n")
+    serde_json::to_string(&links).unwrap()
 }
 
 pub fn add_link(req: String, db: &Connection) -> (bool, String) {
-    let mut chunks: Url = from_str(&req).unwrap();
+    let mut chunks: Url = serde_json::from_str(&req).unwrap();
 
     let style = env::var("slug_style").unwrap_or(String::from("Pair"));
     let len_str = env::var("slug_length").unwrap_or(String::from("8"));
