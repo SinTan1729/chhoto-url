@@ -2,7 +2,7 @@ use rusqlite::Connection;
 use serde::Serialize;
 
 #[derive(Serialize)]
-pub struct DbRow {
+pub struct DBRow {
     shortlink: String,
     longlink: String,
     hits: i64,
@@ -18,14 +18,14 @@ pub fn find_url(shortlink: &str, db: &Connection) -> Option<String> {
         .ok()
 }
 
-pub fn getall(db: &Connection) -> Vec<DbRow> {
+pub fn getall(db: &Connection) -> Vec<DBRow> {
     let mut statement = db.prepare_cached("SELECT * FROM urls").unwrap();
 
     let mut data = statement.query([]).unwrap();
 
-    let mut links: Vec<DbRow> = Vec::new();
+    let mut links: Vec<DBRow> = Vec::new();
     while let Some(row) = data.next().unwrap() {
-        let row_struct = DbRow {
+        let row_struct = DBRow {
             shortlink: row.get("short_url").unwrap(),
             longlink: row.get("long_url").unwrap(),
             hits: row.get("hits").unwrap(),

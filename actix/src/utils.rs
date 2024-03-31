@@ -8,7 +8,7 @@ use rusqlite::Connection;
 use serde::Deserialize;
 
 #[derive(Deserialize)]
-struct Url {
+struct URLPair {
     shortlink: String,
     longlink: String,
 }
@@ -32,7 +32,7 @@ pub fn getall(db: &Connection) -> String {
 }
 
 pub fn add_link(req: String, db: &Connection) -> (bool, String) {
-    let mut chunks: Url = serde_json::from_str(&req).unwrap();
+    let mut chunks: URLPair = serde_json::from_str(&req).unwrap();
 
     let style = env::var("slug_style").unwrap_or(String::from("Pair"));
     let len_str = env::var("slug_length").unwrap_or(String::from("8"));
