@@ -20,6 +20,14 @@ table tr td div {
     overflow: auto;
 }
 
+.pure-table td {
+    border-left: none;
+}
+
+td[name="hitsColumn"] {
+    text-align: right;
+}
+
 td[name="deleteBtn"] div {
     display: flex;
     align-items: center;

@@ -97,6 +97,7 @@ const TR = (row, site) => {
     }
     hitsTD = TD(row.hits);
     hitsTD.setAttribute("label", "Hits");
+    hitsTD.setAttribute("name", "hitsColumn");
     const btn = deleteButton(row.short);
 
     tr.appendChild(shortTD);
