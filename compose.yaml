@@ -24,7 +24,7 @@ services:
             
             # By default, the auto-generated pairs are adjective-name pairs
             # If you want UIDs, please change slug_style to UID
-            # Supported values for slug_style are "Pair" and "UID"
+            # Supported values for slug_style are Pair and UID
             # The length is 8 by default, and a minimum of 4 is allowed
             # - slug_style=Pair
             # - slug_length=8
