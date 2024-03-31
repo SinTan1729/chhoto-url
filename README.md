@@ -116,8 +116,11 @@ docker run -p 4567:4567 \
     -d chhoto-url:latest
 ```
 
-You can also set the redirect method to Permanent 308 (default) or Temporary 307 by setting
-the `redirect_method` variable to `TEMPORARY` or `PERMANENT` (it's matched exactly).
+You can set the redirect method to Permanent 308 (default) or Temporary 307 by setting
+the `redirect_method` variable to `TEMPORARY` or `PERMANENT` (it's matched exactly). By
+default, the auto-generated links are adjective-name pairs. You can use UIDs by setting
+the `slug_style` variable to `UID`. You can also set the length of those slug by setting
+the `slug_length` variable. It defaults to 8, and a minimum of 4 is supported.
 
 ## Disable authentication
 If you do not define a password environment variable when starting the docker image, authentication

@@ -21,6 +21,13 @@ services:
             # Pass the redirect method, if needed TEMPORARY and PERMANENT
             # are accepted values, defaults to PERMANENT
             # - redirect_method=TEMPORARY
+            
+            # By default, the auto-generated pairs are adjective-name pairs
+            # If you want UIDs, please change slug_style to UID
+            # Supported values for slug_style are "pair" and "UID"
+            # The length is 8 by default, and a minimum of 4 is allowed
+            # - slug_style=pair
+            # - slug_length=8
         volumes:
             - db:/urls.sqlite
         networks:
