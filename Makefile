@@ -13,9 +13,11 @@ build-dev:
 docker-local: build-dev
 	docker build --tag chhoto-url --build-arg TARGETARCH=amd64 -f Dockerfile.multiarch .
 
-docker-test: docker-local
+docker-stop:
 	docker ps -q --filter "name=chhoto-url" | xargs -r docker stop
 	docker ps -aq --filter "name=chhoto-url" | xargs -r docker rm
+
+docker-test: docker-local docker-stop
 	docker run -p 4567:4567 --name chhoto-url -e password="${PASSWORD}" -d chhoto-url
 	docker logs chhoto-url -f
 
@@ -40,4 +42,4 @@ clean:
 	docker ps -aq --filter "name=chhoto-url" | xargs -r docker rm
 	cargo clean --manifest-path=actix/Cargo.toml
 
-.PHONY: build-dev docker-local build-release
+.PHONY: build-dev docker-local docker-stop build-release
