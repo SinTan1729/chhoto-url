@@ -35,7 +35,7 @@ async fn add_link(req: String, data: web::Data<AppState>, session: Session) -> H
             HttpResponse::BadRequest().body(out.1)
         }
     } else {
-        HttpResponse::Forbidden().body("logged_out")
+        HttpResponse::Forbidden().body("Not logged in!")
     }
 }
 
@@ -45,7 +45,7 @@ async fn getall(data: web::Data<AppState>, session: Session) -> HttpResponse {
     if auth::validate(session) {
         HttpResponse::Ok().body(utils::getall(&data.db))
     } else {
-        HttpResponse::Forbidden().body("logged_out")
+        HttpResponse::Forbidden().body("Not logged in!")
     }
 }
 
@@ -56,7 +56,7 @@ async fn siteurl(session: Session) -> HttpResponse {
         let site_url = env::var("site_url").unwrap_or(String::from("unset"));
         HttpResponse::Ok().body(site_url)
     } else {
-        HttpResponse::Forbidden().body("logged_out")
+        HttpResponse::Forbidden().body("Not logged in!")
     }
 }
 
@@ -124,7 +124,7 @@ async fn delete_link(
             HttpResponse::NotFound().body("Not found!")
         }
     } else {
-        HttpResponse::Forbidden().body("Wrong password!")
+        HttpResponse::Forbidden().body("Not logged in!")
     }
 }
 

@@ -25,8 +25,8 @@ const getVersion = async () => await fetch(prepSubdir("/api/version"))
 
 const refreshData = async () => {
     let reply = await fetch(prepSubdir("/api/all")).then(res => res.text());
-    if (reply == "logged_out") {
-        console.log("logged_out");
+    if (reply == "Not logged in!") {
+        console.log("Not logged in!");
         document.getElementById("container").style.filter = "blur(2px)"
         document.getElementById("login-dialog").showModal();
         document.getElementById("password").focus();
