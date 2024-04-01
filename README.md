@@ -122,7 +122,7 @@ default, the auto-generated links are adjective-name pairs. You can use UIDs by 
 the `slug_style` variable to `UID`. You can also set the length of those slug by setting
 the `slug_length` variable. It defaults to 8, and a minimum of 4 is supported.
 
-## CLI usage instructions
+## Instructions for CLI usage
 The application can be used from the terminal using something like `curl`. In all the examples
 below, replace `http://localhost:4567` with where your instance of `chhoto-url` is accessible.
 
@@ -136,7 +136,7 @@ request, please add `-b cookie.txt` to use this authentication cookie.
 
 To add a link, do
 ```bash
-curl -X POST -d '{"shhortlink":"<shortlink>", "longlink":<longlink>}' http://localhost:4567/api/new
+curl -X POST -d '{"shortlink":"<shortlink>", "longlink":"<longlink>"}' http://localhost:4567/api/new
 ```
 Send an empty `<shortlink>` if you want it to be auto-generated. The server will reply with the generated shortlink.
 
