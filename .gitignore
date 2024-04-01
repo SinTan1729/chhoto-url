@@ -8,4 +8,4 @@ urls.sqlite
 .vscode/
 **/.directory
 .env
-
+cookie*

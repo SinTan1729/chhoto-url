@@ -1,13 +1,13 @@
-use std::env;
-
-use crate::database;
 use nanoid::nanoid;
 use rand::seq::SliceRandom;
 use regex::Regex;
 use rusqlite::Connection;
 use serde::Deserialize;
+use std::env;
 
-#[derive(Deserialize)]
+use crate::database;
+
+#[derive(Deserialize, Default, PartialEq)]
 struct URLPair {
     shortlink: String,
     longlink: String,
@@ -32,7 +32,11 @@ pub fn getall(db: &Connection) -> String {
 }
 
 pub fn add_link(req: String, db: &Connection) -> (bool, String) {
-    let mut chunks: URLPair = serde_json::from_str(&req).unwrap();
+    let mut chunks: URLPair = serde_json::from_str(&req).unwrap_or_default();
+
+    if chunks == URLPair::default() {
+        return (false, String::from("Invalid request!"));
+    }
 
     let style = env::var("slug_style").unwrap_or(String::from("Pair"));
     let len_str = env::var("slug_length").unwrap_or(String::from("8"));
