@@ -131,8 +131,8 @@ a password, first do the following to get an authentication cookie and store it 
 ```bash
 curl -X post -d "<your-password>" -c cookie.txt http://localhost:4567/api/login
 ```
-You should receive "Correct password!" in case the provided password was correct. For any other
-request, please add `-b cookie.txt` to use this authentication cookie.
+You should receive "Correct password!" if the provided password was correct. For any subsequent
+request, please add `-b cookie.txt` to provide authentication.
 
 To add a link, do
 ```bash
