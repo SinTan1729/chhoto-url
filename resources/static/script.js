@@ -1,40 +1,41 @@
 const prepSubdir = (link) => {
     let thisPage = new URL(window.location.href);
     let subdir = thisPage.pathname;
-    let out = (subdir+link).replace('//','/');
+    let out = (subdir + link).replace('//', '/');
     console.log(out);
-    return (subdir+link).replace('//','/');
+    return (subdir + link).replace('//', '/');
 }
 
-const getSiteUrl = async () => await fetch(prepSubdir("/api/siteurl"))
-    .then(res => res.text())
-    .then(text => {
-        if (text == "unset") {
-            return window.location.host.replace(/\/$/,'');
-        }
-        else {
-            return text.replace(/\/$/,'').replace(/^"/,'').replace(/"$/,'');
-        }
-    });
+const getSiteUrl = async () => {
+    let url = await fetch(prepSubdir("/api/siteurl"))
+                .then(res => res.text());
+    if (url == "unset") {
+        return window.location.host.replace(/\/$/, '');
+    }
+    else {
+        return text.replace(/\/$/, '').replace(/^"/, '').replace(/"$/, '');
+    }
+}
 
-const getVersion = async () => await fetch(prepSubdir("/api/version"))
-    .then(res => res.text())
-    .then(text => {
-        return text;
-    });
+const getVersion = async () => {
+    let ver = await fetch(prepSubdir("/api/version"))
+                .then(res => res.text());
+    return ver;
+}
 
 const refreshData = async () => {
-    let reply = await fetch(prepSubdir("/api/all")).then(res => res.text());
-    if (reply == "Not logged in!") {
-        console.log("Not logged in!");
-        document.getElementById("container").style.filter = "blur(2px)"
+    let res = await fetch(prepSubdir("/api/all"));
+    if (!res.ok) {
+        let errorMsg = await res.text();
+        console.log(errorMsg);
+        document.getElementById("container").style.filter = "blur(2px)";
         document.getElementById("login-dialog").showModal();
         document.getElementById("password").focus();
     } else {
-        data = JSON.parse(reply)
+        let data = await res.json();
         displayData(data);
     }
-};
+}
 
 const displayData = async (data) => {
     let version = await getVersion();
@@ -64,7 +65,7 @@ const displayData = async (data) => {
         table.innerHTML = ''; // Clear
         data.forEach(tr => table.appendChild(TR(tr, site)));
     }
-};
+}
 
 const showAlert = async (text, col) => {
     document.getElementById("alert-box")?.remove();
@@ -74,7 +75,7 @@ const showAlert = async (text, col) => {
     alertBox.style.color = col;
     alertBox.innerHTML = text;
     controls.appendChild(alertBox);
-};
+}
 
 const TR = (row, site) => {
     const tr = document.createElement("tr");
@@ -86,7 +87,7 @@ const TR = (row, site) => {
     else {
         shortTD = TD(A_SHORT_INSECURE(row["shortlink"], site), "Short URL");
     }
-    hitsTD = TD(row["hits"]);
+    let hitsTD = TD(row["hits"]);
     hitsTD.setAttribute("label", "Hits");
     hitsTD.setAttribute("name", "hitsColumn");
     const btn = deleteButton(row["shortlink"]);
@@ -97,7 +98,7 @@ const TR = (row, site) => {
     tr.appendChild(btn);
 
     return tr;
-};
+}
 
 const copyShortUrl = async (link) => {
     const site = await getSiteUrl();
@@ -109,7 +110,7 @@ const copyShortUrl = async (link) => {
         showAlert("Could not copy short URL to clipboard, please do it manually.", "red");
     }
 
-};
+}
 
 const addProtocol = (input) => {
     var url = input.value.trim();
@@ -117,7 +118,7 @@ const addProtocol = (input) => {
         url = "https://" + url;
     }
     input.value = url;
-    return input
+    return input;
 }
 
 const A_LONG = (s) => `<a href='${s}'>${s}</a>`;
@@ -138,7 +139,14 @@ const deleteButton = (shortUrl) => {
             showAlert("&nbsp;", "black");
             fetch(prepSubdir(`/api/del/${shortUrl}`), {
                 method: "DELETE"
-            }).then(_ => refreshData());
+            }).then(res => {
+                if (res.ok) {
+                    console.log("Deleted " + shortUrl);
+                } else {
+                    console.log("Unable to delete " + shortUrl);
+                }
+                refreshData();
+            });
         }
     };
     td.setAttribute("name", "deleteBtn");
@@ -146,7 +154,7 @@ const deleteButton = (shortUrl) => {
     div.appendChild(btn);
     td.appendChild(div);
     return td;
-};
+}
 
 const TD = (s, u) => {
     const td = document.createElement("td");
@@ -155,11 +163,11 @@ const TD = (s, u) => {
     td.appendChild(div);
     td.setAttribute("label", u);
     return td;
-};
+}
 
 const submitForm = () => {
     const form = document.forms.namedItem("new-url-form");
-    const data ={
+    const data = {
         "longlink": form.elements["longUrl"].value,
         "shortlink": form.elements["shortUrl"].value,
     };
@@ -175,7 +183,7 @@ const submitForm = () => {
     })
         .then(res => {
             if (!res.ok) {
-                showAlert("Short URL is not valid or it's already in use!", "red");
+                showAlert(res.text(), "red");
                 return "error";
             }
             else {
@@ -188,8 +196,8 @@ const submitForm = () => {
                 shortUrl.value = "";
                 refreshData();
             }
-        });
-};
+        })
+}
 
 const submitLogin = () => {
     const password = document.getElementById("password");
@@ -224,4 +232,4 @@ const submitLogin = () => {
         e.preventDefault();
         submitLogin();
     }
-})();
+})()
