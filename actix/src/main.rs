@@ -148,6 +148,7 @@ async fn main() -> std::io::Result<()> {
         App::new()
             .wrap(
                 SessionMiddleware::builder(CookieSessionStore::default(), secret_key.clone())
+                    .cookie_same_site(actix_web::cookie::SameSite::Strict)
                     .cookie_secure(false)
                     .build(),
             )
