@@ -100,14 +100,17 @@ async fn link_handler(shortlink: web::Path<String>, data: web::Data<AppState>) -
 // Handle login
 #[post("/api/login")]
 async fn login(req: String, session: Session) -> HttpResponse {
-    if req == env::var("password").unwrap_or(req.clone()) {
-        // If no password was provided, match any password
-        session.insert("session-token", auth::gen_token()).unwrap();
-        HttpResponse::Ok().body("Correct password!")
-    } else {
-        eprintln!("Failed login attempt!");
-        HttpResponse::Forbidden().body("Wrong password!")
+    if let Ok(password) = env::var("password") {
+        if password != req {
+            eprintln!("Failed login attempt!");
+            return HttpResponse::Forbidden().body("Wrong password!");
+        }
     }
+    // Return Ok if no password was set on the server side
+    session
+        .insert("session-token", auth::gen_token())
+        .expect("Error inserting session-token.");
+    HttpResponse::Ok().body("Correct password!")
 }
 
 // Delete a given shortlink

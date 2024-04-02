@@ -11,7 +11,7 @@ pub struct DBRow {
 pub fn find_url(shortlink: &str, db: &Connection) -> Option<String> {
     let mut statement = db
         .prepare_cached("SELECT long_url FROM urls WHERE short_url = ?1")
-        .unwrap();
+        .expect("Error preparing SQL statement for find_url.");
 
     statement
         .query_row([shortlink], |row| row.get("long_url"))
@@ -19,16 +19,24 @@ pub fn find_url(shortlink: &str, db: &Connection) -> Option<String> {
 }
 
 pub fn getall(db: &Connection) -> Vec<DBRow> {
-    let mut statement = db.prepare_cached("SELECT * FROM urls").unwrap();
+    let mut statement = db
+        .prepare_cached("SELECT * FROM urls")
+        .expect("Error preparing SQL statement for getall.");
 
-    let mut data = statement.query([]).unwrap();
+    let mut data = statement
+        .query([])
+        .expect("Error executing query for getall.");
 
     let mut links: Vec<DBRow> = Vec::new();
-    while let Some(row) = data.next().unwrap() {
+    while let Some(row) = data.next().expect("Error reading fetched rows.") {
         let row_struct = DBRow {
-            shortlink: row.get("short_url").unwrap(),
-            longlink: row.get("long_url").unwrap(),
-            hits: row.get("hits").unwrap(),
+            shortlink: row
+                .get("short_url")
+                .expect("Error reading shortlink from row."),
+            longlink: row
+                .get("long_url")
+                .expect("Error reading shortlink from row."),
+            hits: row.get("hits").expect("Error reading shortlink from row."),
         };
         links.push(row_struct);
     }
@@ -41,7 +49,7 @@ pub fn add_hit(shortlink: &str, db: &Connection) {
         "UPDATE urls SET hits = hits + 1 WHERE short_url = ?1",
         [shortlink],
     )
-    .unwrap();
+    .expect("Error updating hit count.");
 }
 
 pub fn add_link(shortlink: String, longlink: String, db: &Connection) -> bool {
@@ -53,8 +61,11 @@ pub fn add_link(shortlink: String, longlink: String, db: &Connection) -> bool {
 }
 
 pub fn delete_link(shortlink: String, db: &Connection) -> bool {
-    let out = db.execute("DELETE FROM urls WHERE short_url = ?1", [shortlink]);
-    out.is_ok() && (out.unwrap() > 0)
+    if let Ok(delta) = db.execute("DELETE FROM urls WHERE short_url = ?1", [shortlink]) {
+        delta > 0
+    } else {
+        false
+    }
 }
 
 pub fn open_db(path: String) -> Connection {
@@ -69,6 +80,6 @@ pub fn open_db(path: String) -> Connection {
             )",
         [],
     )
-    .unwrap();
+    .expect("Unable to initialize empty database.");
     db
 }

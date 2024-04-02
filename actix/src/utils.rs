@@ -22,25 +22,28 @@ pub fn get_longurl(shortlink: String, db: &Connection) -> Option<String> {
 }
 
 fn validate_link(link: &str) -> bool {
-    let re = Regex::new("^[a-z0-9-_]+$").unwrap();
+    let re = Regex::new("^[a-z0-9-_]+$").expect("Regex generation failed.");
     re.is_match(link)
 }
 
 pub fn getall(db: &Connection) -> String {
     let links = database::getall(db);
-    serde_json::to_string(&links).unwrap()
+    serde_json::to_string(&links).expect("Failure during creation of json from db.")
 }
 
 pub fn add_link(req: String, db: &Connection) -> (bool, String) {
-    let mut chunks: URLPair = serde_json::from_str(&req).unwrap_or_default();
-
-    if chunks == URLPair::default() {
+    let mut chunks: URLPair;
+    if let Ok(json) = serde_json::from_str(&req) {
+        chunks = json;
+    } else {
         return (false, String::from("Invalid request!"));
     }
 
     let style = env::var("slug_style").unwrap_or(String::from("Pair"));
-    let len_str = env::var("slug_length").unwrap_or(String::from("8"));
-    let mut len: usize = len_str.parse().unwrap_or(8);
+    let mut len = env::var("slug_style")
+        .ok()
+        .and_then(|s| s.parse::<usize>().ok())
+        .unwrap_or(8);
     if len < 4 {
         len = 4;
     }
@@ -110,8 +113,12 @@ fn gen_link(style: String, len: usize) -> String {
     } else {
         format!(
             "{0}-{1}",
-            ADJECTIVES.choose(&mut rand::thread_rng()).unwrap(),
-            NAMES.choose(&mut rand::thread_rng()).unwrap()
+            ADJECTIVES
+                .choose(&mut rand::thread_rng())
+                .expect("Error choosing random adjective."),
+            NAMES
+                .choose(&mut rand::thread_rng())
+                .expect("Error choosing random name.")
         )
     }
 }

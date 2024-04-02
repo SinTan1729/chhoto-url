@@ -7,8 +7,11 @@ pub fn validate(session: Session) -> bool {
         return true;
     }
 
-    let token = session.get::<String>("session-token");
-    token.is_ok() && check(token.unwrap())
+    if let Ok(token) = session.get::<String>("session-token") {
+        check(token)
+    } else {
+        false
+    }
 }
 
 fn check(token: Option<String>) -> bool {
