@@ -108,8 +108,8 @@ async fn login(req: String, session: Session) -> HttpResponse {
     }
     // Return Ok if no password was set on the server side
     session
-        .insert("session-token", auth::gen_token())
-        .expect("Error inserting session-token.");
+        .insert("chhoto-url-auth", auth::gen_token())
+        .expect("Error inserting auth token.");
     HttpResponse::Ok().body("Correct password!")
 }
 

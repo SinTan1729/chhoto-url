@@ -1,19 +1,21 @@
 use actix_session::Session;
 use std::{env, time::SystemTime};
 
+// Validate a given password
 pub fn validate(session: Session) -> bool {
     // If there's no password provided, just return true
     if env::var("password").is_err() {
         return true;
     }
 
-    if let Ok(token) = session.get::<String>("session-token") {
+    if let Ok(token) = session.get::<String>("chhoto-url-auth") {
         check(token)
     } else {
         false
     }
 }
 
+// Check a token cryptographically
 fn check(token: Option<String>) -> bool {
     if let Some(token_body) = token {
         let token_parts: Vec<&str> = token_body.split(';').collect();
@@ -26,15 +28,16 @@ fn check(token: Option<String>) -> bool {
                 .duration_since(SystemTime::UNIX_EPOCH)
                 .expect("Time went backwards!")
                 .as_secs();
-            token_text == "session-token" && time_now < token_time + 1209600 // There are 1209600 seconds in 14 days
+            token_text == "chhoto-url-auth" && time_now < token_time + 1209600 // There are 1209600 seconds in 14 days
         }
     } else {
         false
     }
 }
 
+// Generate a new cryptographic token
 pub fn gen_token() -> String {
-    let token_text = String::from("session-token");
+    let token_text = String::from("chhoto-url-auth");
     let time = SystemTime::now()
         .duration_since(SystemTime::UNIX_EPOCH)
         .expect("Time went backwards!")

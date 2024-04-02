@@ -1,6 +1,7 @@
 use rusqlite::Connection;
 use serde::Serialize;
 
+// Struct for encoding a DB row
 #[derive(Serialize)]
 pub struct DBRow {
     shortlink: String,
@@ -8,6 +9,7 @@ pub struct DBRow {
     hits: i64,
 }
 
+// Find a single URL
 pub fn find_url(shortlink: &str, db: &Connection) -> Option<String> {
     let mut statement = db
         .prepare_cached("SELECT long_url FROM urls WHERE short_url = ?1")
@@ -18,6 +20,7 @@ pub fn find_url(shortlink: &str, db: &Connection) -> Option<String> {
         .ok()
 }
 
+// Get all URLs in DB
 pub fn getall(db: &Connection) -> Vec<DBRow> {
     let mut statement = db
         .prepare_cached("SELECT * FROM urls")
@@ -44,6 +47,7 @@ pub fn getall(db: &Connection) -> Vec<DBRow> {
     links
 }
 
+// Add a hit when site is visited
 pub fn add_hit(shortlink: &str, db: &Connection) {
     db.execute(
         "UPDATE urls SET hits = hits + 1 WHERE short_url = ?1",
@@ -52,6 +56,7 @@ pub fn add_hit(shortlink: &str, db: &Connection) {
     .expect("Error updating hit count.");
 }
 
+// Insert a new link
 pub fn add_link(shortlink: String, longlink: String, db: &Connection) -> bool {
     db.execute(
         "INSERT INTO urls (long_url, short_url, hits) VALUES (?1, ?2, ?3)",
@@ -60,6 +65,7 @@ pub fn add_link(shortlink: String, longlink: String, db: &Connection) -> bool {
     .is_ok()
 }
 
+// Delete and existing link
 pub fn delete_link(shortlink: String, db: &Connection) -> bool {
     if let Ok(delta) = db.execute("DELETE FROM urls WHERE short_url = ?1", [shortlink]) {
         delta > 0
@@ -68,6 +74,7 @@ pub fn delete_link(shortlink: String, db: &Connection) -> bool {
     }
 }
 
+// Open the DB, and create schema if missing
 pub fn open_db(path: String) -> Connection {
     let db = Connection::open(path).expect("Unable to open database!");
     // Create table if it doesn't exist

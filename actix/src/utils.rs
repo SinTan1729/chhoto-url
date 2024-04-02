@@ -7,12 +7,14 @@ use std::env;
 
 use crate::database;
 
-#[derive(Deserialize, Default, PartialEq)]
+// Struct for reading link pairs sent during API call
+#[derive(Deserialize)]
 struct URLPair {
     shortlink: String,
     longlink: String,
 }
 
+// Request the DB for searching an URL
 pub fn get_longurl(shortlink: String, db: &Connection) -> Option<String> {
     if validate_link(&shortlink) {
         database::find_url(shortlink.as_str(), db)
@@ -21,21 +23,25 @@ pub fn get_longurl(shortlink: String, db: &Connection) -> Option<String> {
     }
 }
 
+// Only have a-z, 0-9, - and _ as valid characters in a shortlink
 fn validate_link(link: &str) -> bool {
     let re = Regex::new("^[a-z0-9-_]+$").expect("Regex generation failed.");
     re.is_match(link)
 }
 
+// Request the DB for all URLs
 pub fn getall(db: &Connection) -> String {
     let links = database::getall(db);
     serde_json::to_string(&links).expect("Failure during creation of json from db.")
 }
 
+// Make checks and then request the DB to add a new URL entry
 pub fn add_link(req: String, db: &Connection) -> (bool, String) {
     let mut chunks: URLPair;
     if let Ok(json) = serde_json::from_str(&req) {
         chunks = json;
     } else {
+        // shorturl should always be supplied, even if empty
         return (false, String::from("Invalid request!"));
     }
 
@@ -64,6 +70,7 @@ pub fn add_link(req: String, db: &Connection) -> (bool, String) {
     }
 }
 
+// Check if link, and request DB to delete it if exists
 pub fn delete_link(shortlink: String, db: &Connection) -> bool {
     if validate_link(shortlink.as_str()) {
         database::delete_link(shortlink, db)
@@ -72,6 +79,7 @@ pub fn delete_link(shortlink: String, db: &Connection) -> bool {
     }
 }
 
+// Generate a random link using either adjective-name pair (default) of a slug or a-z, 0-9
 fn gen_link(style: String, len: usize) -> String {
     #[rustfmt::skip]
     static ADJECTIVES: [&str; 108] = ["admiring", "adoring", "affectionate", "agitated", "amazing", "angry", "awesome", "beautiful", 
