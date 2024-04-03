@@ -30,12 +30,12 @@ async fn add_link(req: String, data: web::Data<AppState>, session: Session) -> H
     if auth::validate(session) {
         let out = utils::add_link(req, &data.db);
         if out.0 {
-            HttpResponse::Ok().body(out.1)
+            HttpResponse::Created().body(out.1)
         } else {
-            HttpResponse::BadRequest().body(out.1)
+            HttpResponse::Conflict().body(out.1)
         }
     } else {
-        HttpResponse::Forbidden().body("Not logged in!")
+        HttpResponse::Unauthorized().body("Not logged in!")
     }
 }
 
@@ -45,7 +45,7 @@ async fn getall(data: web::Data<AppState>, session: Session) -> HttpResponse {
     if auth::validate(session) {
         HttpResponse::Ok().body(utils::getall(&data.db))
     } else {
-        HttpResponse::Forbidden().body("Not logged in!")
+        HttpResponse::Unauthorized().body("Not logged in!")
     }
 }
 
@@ -56,7 +56,7 @@ async fn siteurl(session: Session) -> HttpResponse {
         let site_url = env::var("site_url").unwrap_or(String::from("unset"));
         HttpResponse::Ok().body(site_url)
     } else {
-        HttpResponse::Forbidden().body("Not logged in!")
+        HttpResponse::Unauthorized().body("Not logged in!")
     }
 }
 
@@ -103,7 +103,7 @@ async fn login(req: String, session: Session) -> HttpResponse {
     if let Ok(password) = env::var("password") {
         if password != req {
             eprintln!("Failed login attempt!");
-            return HttpResponse::Forbidden().body("Wrong password!");
+            return HttpResponse::Unauthorized().body("Wrong password!");
         }
     }
     // Return Ok if no password was set on the server side
@@ -127,7 +127,7 @@ async fn delete_link(
             HttpResponse::NotFound().body("Not found!")
         }
     } else {
-        HttpResponse::Forbidden().body("Not logged in!")
+        HttpResponse::Unauthorized().body("Not logged in!")
     }
 }
 
