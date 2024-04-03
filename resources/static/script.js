@@ -173,6 +173,7 @@ const submitForm = () => {
     };
 
     const url = prepSubdir("/api/new");
+    let ok = false;
 
     fetch(url, {
         method: "POST",
@@ -182,15 +183,14 @@ const submitForm = () => {
         body: JSON.stringify(data),
     })
         .then(res => {
-            if (!res.ok) {
-                showAlert(res.text(), "red");
-                return "error";
+            ok = res.ok;
+            return res.text();
+        })
+        .then(text => {
+            if (!ok) {
+                showAlert(text, "red");
             }
             else {
-                return res.text();
-            }
-        }).then(text => {
-            if (text != "error") {
                 copyShortUrl(text);
                 longUrl.value = "";
                 shortUrl.value = "";
