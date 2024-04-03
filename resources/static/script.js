@@ -13,7 +13,7 @@ const getSiteUrl = async () => {
         return window.location.host.replace(/\/$/, '');
     }
     else {
-        return text.replace(/\/$/, '').replace(/^"/, '').replace(/"$/, '');
+        return url.replace(/\/$/, '').replace(/^"/, '').replace(/"$/, '');
     }
 }
 
