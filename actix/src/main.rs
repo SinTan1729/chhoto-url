@@ -9,7 +9,7 @@ use actix_web::{
     App, Either, HttpResponse, HttpServer, Responder,
 };
 use rusqlite::Connection;
-use std::env;
+use std::{env, io::Result};
 mod auth;
 mod database;
 mod utils;
@@ -132,7 +132,7 @@ async fn delete_link(
 }
 
 #[actix_web::main]
-async fn main() -> std::io::Result<()> {
+async fn main() -> Result<()> {
     env_logger::init_from_env(env_logger::Env::new().default_filter_or("warn"));
 
     // Generate session key in runtime so that restart invalidates older logins
