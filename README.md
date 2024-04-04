@@ -42,6 +42,7 @@ for small. URL means, well... URL. So the name simply means Small URL.
   stays under 5MB under normal use.)
 - Counts number of hits for each short link in a privacy respecting way
   i.e. only the hit is recorded, and nothing else.
+- Has a mobile friendly UI.
 - Allows setting the URL of your website, in case you want to conveniently
   generate short links locally.
 - Links are stored in an SQLite database.
