@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2023 Sayantan Santra <sayantan.santra689@gmail.com>
+// SPDX-License-Identifier: MIT
+
 const prepSubdir = (link) => {
     let thisPage = new URL(window.location.href);
     let subdir = thisPage.pathname;

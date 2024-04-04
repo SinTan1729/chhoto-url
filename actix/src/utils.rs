@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2023 Sayantan Santra <sayantan.santra689@gmail.com>
+// SPDX-License-Identifier: MIT
+
 use nanoid::nanoid;
 use rand::seq::SliceRandom;
 use regex::Regex;

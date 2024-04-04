@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2023 Sayantan Santra <sayantan.santra689@gmail.com>
+// SPDX-License-Identifier: MIT
+
 use actix_files::{Files, NamedFile};
 use actix_session::{storage::CookieSessionStore, Session, SessionMiddleware};
 use actix_web::{

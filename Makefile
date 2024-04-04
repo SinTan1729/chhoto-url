@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2023 Sayantan Santra <sayantan.santra689@gmail.com>
+# SPDX-License-Identifier: MIT
+
 # .env file has the variables $DOCKER_USERNAME and $PASSWORD defined
 include .env
 
