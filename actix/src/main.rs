@@ -149,6 +149,8 @@ async fn main() -> Result<()> {
     // Actually start the server
     HttpServer::new(move || {
         App::new()
+            .wrap(middleware::Logger::default())
+            .wrap(middleware::Compress::default())
             .wrap(
                 SessionMiddleware::builder(CookieSessionStore::default(), secret_key.clone())
                     .cookie_same_site(actix_web::cookie::SameSite::Strict)
@@ -159,8 +161,6 @@ async fn main() -> Result<()> {
             .app_data(web::Data::new(AppState {
                 db: database::open_db(env::var("db_url").unwrap_or(db_location.clone())),
             }))
-            .wrap(middleware::Logger::default())
-            .wrap(middleware::Compress::default())
             .service(link_handler)
             .service(getall)
             .service(siteurl)
