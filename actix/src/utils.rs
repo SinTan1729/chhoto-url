@@ -69,7 +69,10 @@ pub fn add_link(req: String, db: &Connection) -> (bool, String) {
             chunks.shortlink,
         )
     } else {
-        (false, String::from("shortUrl not valid or already in use"))
+        (
+            false,
+            String::from("Short URL not valid or already in use!"),
+        )
     }
 }
 
