@@ -31,6 +31,10 @@ services:
             # The length is 8 by default, and a minimum of 4 is allowed
             # - slug_style=Pair
             # - slug_length=8
+            
+            # In case you want to provide public access to adding links (and not 
+            # delete, or listing), change the following option to Enable
+            # - public_mode=Disable
         volumes:
             - db:/urls.sqlite
         networks:

@@ -45,6 +45,8 @@ for small. URL means, well... URL. So the name simply means Small URL.
 - Counts number of hits for each short link in a privacy respecting way
   i.e. only the hit is recorded, and nothing else.
 - Has a mobile friendly UI.
+- Has a public mode, where anyone can add links without authentication. Deleting 
+  or listing available links will need admin access using the password.
 - Allows setting the URL of your website, in case you want to conveniently
   generate short links locally.
 - Links are stored in an SQLite database.
@@ -127,6 +129,9 @@ the `redirect_method` variable to `TEMPORARY` or `PERMANENT` (it's matched exact
 default, the auto-generated links are adjective-name pairs. You can use UIDs by setting
 the `slug_style` variable to `UID`. You can also set the length of those slug by setting
 the `slug_length` variable. It defaults to 8, and a minimum of 4 is supported.
+
+To enable public mode, set `public_mode` to `Enable`. With this, anyone will be able to add 
+links. Listing existing links or deleting links will need admin access using the password.
 
 ## Instructions for CLI usage
 The application can be used from the terminal using something like `curl`. In all the examples
