@@ -65,7 +65,7 @@ form input[name="shortUrl"]::placeholder {
     text-transform: none;
 }
 
-div[name="github-link"] {
+div[name="links-div"] {
     position: absolute;
     right: 0.5%;
     top: 0.5%;

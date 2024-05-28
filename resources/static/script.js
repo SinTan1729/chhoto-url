@@ -26,14 +26,32 @@ const getVersion = async () => {
     return ver;
 }
 
+const showVersion = async () => {
+    let version = await getVersion();
+    link = document.getElementById("version-number");
+    link.innerText = "v" + version;
+    link.href = "https://github.com/SinTan1729/chhoto-url/releases/tag/" + version;
+    link.hidden = false;
+}
+
+const getLogin = async () => {
+    document.getElementById("container").style.filter = "blur(2px)";
+    document.getElementById("login-dialog").showModal();
+    document.getElementById("password").focus();
+}
+
 const refreshData = async () => {
     let res = await fetch(prepSubdir("/api/all"));
     if (!res.ok) {
         let errorMsg = await res.text();
         console.log(errorMsg);
-        document.getElementById("container").style.filter = "blur(2px)";
-        document.getElementById("login-dialog").showModal();
-        document.getElementById("password").focus();
+        if (errorMsg == "Using public mode.") {
+            loading_text = document.getElementById("loading-text");
+            loading_text.style.display = "none";
+            showVersion();
+        } else {
+            getLogin();
+        }
     } else {
         let data = await res.json();
         displayData(data);
@@ -41,16 +59,14 @@ const refreshData = async () => {
 }
 
 const displayData = async (data) => {
-    let version = await getVersion();
-    link = document.getElementById("version-number")
-    link.innerText = "v" + version;
-    link.href = "https://github.com/SinTan1729/chhoto-url/releases/tag/" + version;
-    link.hidden = false;
-
+    showVersion();
     let site = await getSiteUrl();
+    admin_button = document.getElementById("admin-button");
+    admin_button.innerText = "logout";
+    admin_button.href = "javascript:logOut()";
 
     table_box = document.querySelector(".pure-table");
-    loading_text = document.getElementsByName("loading-text")[0];
+    loading_text = document.getElementById("loading-text");
 
     if (data.length == 0) {
         table_box.style.visibility = "hidden";
@@ -219,6 +235,12 @@ const submitLogin = () => {
             password.focus();
         }
     })
+}
+
+const logOut = async () => {
+    let reply = await fetch(prepSubdir("/api/logout"), {method: "DELETE"}).then(res => res.text());
+    console.log(reply);
+    location.reload();
 }
 
 (async () => {
