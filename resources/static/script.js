@@ -46,8 +46,9 @@ const refreshData = async () => {
         let errorMsg = await res.text();
         console.log(errorMsg);
         if (errorMsg == "Using public mode.") {
+            document.getElementById("admin-button").hidden = false;
             loading_text = document.getElementById("loading-text");
-            loading_text.style.display = "none";
+            loading_text.hidden = true;
             showVersion();
         } else {
             getLogin();
@@ -64,13 +65,14 @@ const displayData = async (data) => {
     admin_button = document.getElementById("admin-button");
     admin_button.innerText = "logout";
     admin_button.href = "javascript:logOut()";
+    admin_button.hidden = false;
 
     table_box = document.querySelector(".pure-table");
     loading_text = document.getElementById("loading-text");
 
     if (data.length == 0) {
-        table_box.style.visibility = "hidden";
-        loading_text.style.display = "block";
+        table_box.hidden = true;
+        loading_text.hidden = true;
         loading_text.innerHTML = "No active links.";
     }
     else {
@@ -80,7 +82,7 @@ const displayData = async (data) => {
             const shortUrlHeader = document.getElementById("short-url-header");
             shortUrlHeader.innerHTML = "Short URL<br>(right click and copy)";
         }
-        table_box.style.visibility = "visible";
+        table_box.hidden = false;
         table.innerHTML = ''; // Clear
         data.forEach(tr => table.appendChild(TR(tr, site)));
     }
