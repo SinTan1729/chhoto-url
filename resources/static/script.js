@@ -129,7 +129,7 @@ const copyShortUrl = async (link) => {
         showAlert(`Short URL ${link} was copied to clipboard!`, "green");
     } catch (e) {
         console.log(e);
-        showAlert("Could not copy short URL to clipboard, please do it manually.", "red");
+        showAlert(`Could not copy short URL to clipboard, please do it manually: ${site}/${link}`, "red");
     }
 
 }
