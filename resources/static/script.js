@@ -44,6 +44,7 @@ const refreshData = async () => {
     let res = await fetch(prepSubdir("/api/all"));
     if (!res.ok) {
         let errorMsg = await res.text();
+        document.getElementById("url-table").innerHTML = '';
         console.log(errorMsg);
         if (errorMsg == "Using public mode.") {
             document.getElementById("admin-button").hidden = false;
@@ -67,30 +68,30 @@ const displayData = async (data) => {
     admin_button.href = "javascript:logOut()";
     admin_button.hidden = false;
 
-    table_box = document.querySelector(".pure-table");
+    table_box = document.getElementById("table-box");
     loading_text = document.getElementById("loading-text");
+    const table = document.getElementById("url-table");
 
     if (data.length == 0) {
         table_box.hidden = true;
-        loading_text.hidden = true;
         loading_text.innerHTML = "No active links.";
+        loading_text.hidden = false;
     }
     else {
-        loading_text.style.display = "none";
-        const table = document.querySelector("#url-table");
+        loading_text.hidden = true;
         if (!window.isSecureContext) {
             const shortUrlHeader = document.getElementById("short-url-header");
             shortUrlHeader.innerHTML = "Short URL<br>(right click and copy)";
         }
         table_box.hidden = false;
-        table.innerHTML = ''; // Clear
+        table.innerHTML = '';
         data.forEach(tr => table.appendChild(TR(tr, site)));
     }
 }
 
 const showAlert = async (text, col) => {
     document.getElementById("alert-box")?.remove();
-    const controls = document.querySelector(".pure-controls");
+    const controls = document.getElementById("controls");
     const alertBox = document.createElement("p");
     alertBox.id = "alert-box";
     alertBox.style.color = col;
@@ -228,7 +229,8 @@ const submitLogin = () => {
     }).then(res => {
         if (res.ok) {
             document.getElementById("container").style.filter = "blur(0px)"
-            document.getElementById("login-dialog").remove();
+            document.getElementById("login-dialog").close();
+            password.value = '';
             refreshData();
         } else {
             const wrongPassBox = document.getElementById("wrong-pass");
@@ -242,7 +244,9 @@ const submitLogin = () => {
 const logOut = async () => {
     let reply = await fetch(prepSubdir("/api/logout"), {method: "DELETE"}).then(res => res.text());
     console.log(reply);
-    location.reload();
+    document.getElementById("table-box").hidden = true;
+    document.getElementById("loading-text").hidden = false;
+    refreshData();
 }
 
 (async () => {

@@ -40,7 +40,7 @@
                     <input type="text" name="shortUrl" id="shortUrl" placeholder="Only a-z, 0-9, - and _ are allowed"
                         pattern="[a-z0-9\-_]+" title="Only a-z, 0-9, - and _ are allowed"/>
                 </div>
-                <div class="pure-controls">
+                <div class="pure-controls" id="controls">
                     <button class="pure-button pure-button-primary">Shorten!</button>
                     <p id="alert-box">&nbsp;</p>
                 </div>
@@ -48,7 +48,7 @@
         </form>
 
         <p id="loading-text">Loading links table...</p>
-        <table class="pure-table" hidden>
+        <table class="pure-table" id="table-box" hidden>
             <caption>Active links</caption>
             <br />
             <thead>
