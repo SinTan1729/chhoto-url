@@ -34,6 +34,11 @@ async fn main() -> Result<()> {
         .parse::<u16>()
         .expect("Supplied port is not an integer");
 
+    let cache_control_header = env::var("cache_control_header")
+        .ok()
+        .filter(|s| !s.trim().is_empty())
+        .unwrap_or(String::from("Enable"));
+
     // Actually start the server
     HttpServer::new(move || {
         App::new()
@@ -49,7 +54,11 @@ async fn main() -> Result<()> {
             .app_data(web::Data::new(AppState {
                 db: database::open_db(db_location.clone()),
             }))
-            .wrap(middleware::DefaultHeaders::new().add(("Cache-Control", "no-cache, private")))
+            .wrap(if cache_control_header == "Disable" {
+                middleware::DefaultHeaders::new()
+            } else {
+                middleware::DefaultHeaders::new().add(("Cache-Control", "no-cache, private"))
+            })
             .service(services::link_handler)
             .service(services::getall)
             .service(services::siteurl)
