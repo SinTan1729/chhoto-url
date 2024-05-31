@@ -23,7 +23,8 @@ docker-stop:
 docker-test: docker-local docker-stop
 	docker run -p 4567:4567 --name chhoto-url -e password="${PASSWORD}" -e public_mode="${PUBLIC_MODE}" \
 		-e site_url="${SITE_URL}" -e db_url="${DB_URL}" -e redirect_method="${REDIRECT_METHOD}" \
-		-e slug_style="${SLUG_STYLE}" -e slug_length="${SLUG_LENGTH}" -d chhoto-url
+		-e slug_style="${SLUG_STYLE}" -e slug_length="${SLUG_LENGTH}" -e cache_control_header="${CACHE_CONTROL_HEADER}"\
+		-d chhoto-url
 	docker logs chhoto-url -f
 
 docker-dev: build-dev
