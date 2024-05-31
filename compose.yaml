@@ -9,32 +9,36 @@ services:
         ports:
             - 4567:4567
         environment:
-            # Change if you want to mount the database somewhere else
+            # Change if you want to mount the database somewhere else.
             # In this case, you can get rid of the db volume below
-            # and instead do a mount manually by specifying the location
+            # and instead do a mount manually by specifying the location.
             # - db_url=/urls.sqlite
 
             # Change it in case you want to set the website name
             # displayed in front of the shorturls, defaults to
-            # the hostname you're accessing it from
+            # the hostname you're accessing it from.
             # - site_url=https://www.example.com
 
             - password=$3CuReP4S$W0rD
             
-            # Pass the redirect method, if needed TEMPORARY and PERMANENT
-            # are accepted values, defaults to PERMANENT
+            # Pass the redirect method, if needed. TEMPORARY and PERMANENT
+            # are accepted values, defaults to PERMANENT.
             # - redirect_method=TEMPORARY
             
-            # By default, the auto-generated pairs are adjective-name pairs
-            # If you want UIDs, please change slug_style to UID
-            # Supported values for slug_style are Pair and UID
-            # The length is 8 by default, and a minimum of 4 is allowed
+            # By default, the auto-generated pairs are adjective-name pairs.
+            # If you want UIDs, please change slug_style to UID.
+            # Supported values for slug_style are Pair and UID.
+            # The length is 8 by default, and a minimum of 4 is allowed.
             # - slug_style=Pair
             # - slug_length=8
             
             # In case you want to provide public access to adding links (and not 
-            # delete, or listing), change the following option to Enable
+            # delete, or listing), change the following option to Enable.
             # - public_mode=Disable
+            
+            # By default, the server sends `no-cache` and `private` Cache-Control
+            # headers. To disable those, change the following option to Disable.
+            # - cache_control_header=Enable
         volumes:
             - db:/urls.sqlite
         networks:

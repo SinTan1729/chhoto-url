@@ -133,6 +133,10 @@ the `slug_length` variable. It defaults to 8, and a minimum of 4 is supported.
 To enable public mode, set `public_mode` to `Enable`. With this, anyone will be able to add 
 links. Listing existing links or deleting links will need admin access using the password.
 
+By default, the server sends `no-cache` and `private` Cache-Control headers. To disable those,
+set `cache_control_header` to `Disable`. It might help boost performance if served through a 
+proxy.
+
 ## Instructions for CLI usage
 The application can be used from the terminal using something like `curl`. In all the examples
 below, replace `http://localhost:4567` with where your instance of `chhoto-url` is accessible.
