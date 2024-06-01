@@ -23,6 +23,12 @@ A clear and concise description of what you expected to happen.
 **Screenshots**
 If applicable, add screenshots to help explain your problem.
 
+**Which version of Chhoto-URL are you experiencing the problem on?**
+e.g. v5.x.x
+
+**Can you reproduce the issue in the latest version?**
+Yes/No
+
 **Desktop (please complete the following information):**
  - OS: [e.g. iOS]
  - Browser [e.g. chrome, safari]
