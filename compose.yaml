@@ -36,9 +36,10 @@ services:
             # delete, or listing), change the following option to Enable.
             # - public_mode=Disable
             
-            # By default, the server sends `no-cache` and `private` Cache-Control
-            # headers. To disable those, change the following option to Disable.
-            # - cache_control_header=Enable
+            # By default, the server sends no Cache-Control headers. You can supply a 
+            # comma separated list of valid header as per RFC 7234 §5.2 to send those
+            # headers instead.
+            # - cache_control_header=no-cache, private
         volumes:
             - db:/urls.sqlite
         networks:

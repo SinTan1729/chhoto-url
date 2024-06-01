@@ -133,9 +133,11 @@ the `slug_length` variable. It defaults to 8, and a minimum of 4 is supported.
 To enable public mode, set `public_mode` to `Enable`. With this, anyone will be able to add 
 links. Listing existing links or deleting links will need admin access using the password.
 
-By default, the server sends `no-cache` and `private` Cache-Control headers. To disable those,
-set `cache_control_header` to `Disable`. It might help boost performance if served through a 
-proxy.
+By default, the server sends no Cache-Control headers. You can set custom `cache_control_header` 
+to send your desired headers. It must be a comma separated list of valid 
+[RFC 7234 §5.2](https://datatracker.ietf.org/doc/html/rfc7234#section-5.2) headers. For example,
+you can set it to `no-cache, private` to disable caching. It might help during testing if
+served through a proxy.
 
 ## Instructions for CLI usage
 The application can be used from the terminal using something like `curl`. In all the examples
@@ -179,6 +181,6 @@ pointing to illegal content. Since there are no logs, it's impossible to prove
 that those links aren't created by you.
 
 ## Notes
-- It started as a fork of [this project](https://gitlab.com/draganczukp/simply-shorten).
+- It started as a fork of [`simply-shorten`](https://gitlab.com/draganczukp/simply-shorten).
 - The list of adjectives and names used for random short url generation is a modified
   version of [this list used by docker](https://github.com/moby/moby/blob/master/pkg/namesgenerator/names-generator.go).

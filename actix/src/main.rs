@@ -36,8 +36,7 @@ async fn main() -> Result<()> {
 
     let cache_control_header = env::var("cache_control_header")
         .ok()
-        .filter(|s| !s.trim().is_empty())
-        .unwrap_or(String::from("Enable"));
+        .filter(|s| !s.trim().is_empty());
 
     // Actually start the server
     HttpServer::new(move || {
@@ -54,10 +53,10 @@ async fn main() -> Result<()> {
             .app_data(web::Data::new(AppState {
                 db: database::open_db(db_location.clone()),
             }))
-            .wrap(if cache_control_header == "Disable" {
-                middleware::DefaultHeaders::new()
+            .wrap(if let Some(header) = &cache_control_header {
+                middleware::DefaultHeaders::new().add(("Cache-Control", header.to_owned()))
             } else {
-                middleware::DefaultHeaders::new().add(("Cache-Control", "no-cache, private"))
+                middleware::DefaultHeaders::new()
             })
             .service(services::link_handler)
             .service(services::getall)
