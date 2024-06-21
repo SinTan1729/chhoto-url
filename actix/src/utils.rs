@@ -49,7 +49,7 @@ pub fn add_link(req: String, db: &Connection) -> (bool, String) {
     }
 
     let style = env::var("slug_style").unwrap_or(String::from("Pair"));
-    let mut len = env::var("slug_style")
+    let mut len = env::var("slug_length")
         .ok()
         .and_then(|s| s.parse::<usize>().ok())
         .unwrap_or(8);
