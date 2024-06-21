@@ -4,6 +4,7 @@
 [![docker-pulls-badge](https://img.shields.io/docker/pulls/sintan1729/chhoto-url)](https://hub.docker.com/r/sintan1729/chhoto-url)
 [![maintainer-badge](https://img.shields.io/badge/maintainer-SinTan1729-blue)](https://github.com/SinTan1729)
 [![latest-release-badge](https://img.shields.io/github/v/release/SinTan1729/chhoto-url?label=latest%20release)](https://github.com/SinTan1729/chhoto-url/releases/latest)
+![docker-image-size-badge](https://img.shields.io/docker/image-size/sintan1729/chhoto-url)
 ![commit-since-latest-release-badge](https://img.shields.io/github/commits-since/SinTan1729/chhoto-url/latest?sort=semver&label=commits%20since%20latest%20release)
 [![license-badge](https://img.shields.io/github/license/SinTan1729/chhoto-url)](https://spdx.org/licenses/MIT.html)
 
@@ -72,8 +73,8 @@ whatever reason), you can message me through GitHub issues.
 
 # Screenshots
 <p align="middle">
-  <img src="screenshot-desktop.webp" height="200" alt="desktop screenshot" />
-  <img src="screenshot-mobile.webp" height="200"alt="mobile screenshot" />
+  <img src="screenshot-desktop.webp" height="250" alt="desktop screenshot" />
+  <img src="screenshot-mobile.webp" height="250" alt="mobile screenshot" />
 </p>
 
 # Usage
