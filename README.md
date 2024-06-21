@@ -70,8 +70,11 @@ not needed here.
 - Paywalls or messages begging for donations. If you want to support me (for
 whatever reason), you can message me through GitHub issues.
 
-# Screenshot
-![Screenshot](screenshot.png)
+# Screenshots
+<p align="middle">
+  <img src="screenshot-desktop.webp" height="200" alt="desktop screenshot" />
+  <img src="screenshot-mobile.webp" height="200"alt="mobile screenshot" />
+</p>
 
 # Usage
 ## Using `docker compose` (Recommended method)
