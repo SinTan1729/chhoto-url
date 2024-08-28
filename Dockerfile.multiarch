@@ -1,13 +1,13 @@
 # SPDX-FileCopyrightText: 2023 Sayantan Santra <sayantan.santra689@gmail.com>
 # SPDX-License-Identifier: MIT
 
-FROM scratch as builder-amd64
+FROM scratch AS builder-amd64
 COPY ./actix/target/x86_64-unknown-linux-musl/release/chhoto-url /chhoto-url
 
-FROM scratch as builder-arm64
+FROM scratch AS builder-arm64
 COPY ./actix/target/aarch64-unknown-linux-musl/release/chhoto-url /chhoto-url
 
-FROM scratch as builder-arm
+FROM scratch AS builder-arm
 COPY ./actix/target/armv7-unknown-linux-musleabihf/release/chhoto-url /chhoto-url
 
 ARG TARGETARCH
