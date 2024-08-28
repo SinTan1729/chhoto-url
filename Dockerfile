@@ -4,12 +4,12 @@
 FROM lukemathwalker/cargo-chef:latest-rust-slim AS chef
 WORKDIR /chhoto-url
 
-FROM chef as planner
+FROM chef AS planner
 COPY ./actix/Cargo.toml ./actix/Cargo.lock ./
 COPY ./actix/src ./src
 RUN cargo chef prepare --recipe-path recipe.json
 
-FROM chef as builder
+FROM chef AS builder
 ARG target=x86_64-unknown-linux-musl
 RUN apt-get update && apt-get install -y musl-tools
 RUN rustup target add $target
