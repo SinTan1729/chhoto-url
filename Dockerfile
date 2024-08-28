@@ -22,8 +22,9 @@ COPY ./actix/Cargo.toml ./actix/Cargo.lock ./
 COPY ./actix/src ./src
 # Build application
 RUN cargo build --release --target=$target --locked --bin chhoto-url
+RUN cp /chhoto-url/target/$target/release/chhoto-url /chhoto-url/release
 
 FROM scratch
-COPY --from=builder /chhoto-url/target/$target/release/chhoto-url /chhoto-url
+COPY --from=builder /chhoto-url/release /chhoto-url
 COPY ./resources /resources
 ENTRYPOINT ["/chhoto-url"]
