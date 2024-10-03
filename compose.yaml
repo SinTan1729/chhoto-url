@@ -10,9 +10,9 @@ services:
             - 4567:4567
         environment:
             # Change if you want to mount the database somewhere else.
-            # In this case, you can get rid of the db volume below
-            # and instead do a mount manually by specifying the location.
-            # - db_url=/urls.sqlite
+            # If you do change it, make sure to accordingly change the volume 
+            # mount location below.
+            - db_url=/urls.sqlite
 
             # Change it in case you want to set the website name
             # displayed in front of the shorturls, defaults to
@@ -41,13 +41,9 @@ services:
             # headers instead.
             # - cache_control_header=no-cache, private
         volumes:
-            - db:/urls.sqlite
+            - ./urls.sqlite:/urls.sqlite
         networks:
             - proxy
-
-volumes:
-    db:
-
 
 networks:
     proxy:
