@@ -27,7 +27,7 @@ async fn main() -> Result<()> {
     let db_location = env::var("db_url")
         .ok()
         .filter(|s| !s.trim().is_empty())
-        .unwrap_or(String::from("unset"));
+        .unwrap_or(String::from("urls.sqlite"));
 
     let port = env::var("port")
         .unwrap_or(String::from("4567"))
