@@ -7,7 +7,11 @@ use std::{env, time::SystemTime};
 // Validate a given password
 pub fn validate(session: Session) -> bool {
     // If there's no password provided, just return true
-    if env::var("password").is_err() {
+    if env::var("password")
+        .ok()
+        .filter(|s| !s.trim().is_empty())
+        .is_none()
+    {
         return true;
     }
 
