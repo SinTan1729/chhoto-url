@@ -23,7 +23,7 @@ services:
             # the hostname you're accessing it from.
             # - site_url=https://www.example.com
 
-            - password=$3CuReP4S$W0rD
+            - password=TopSecretPass
             
             # Pass the redirect method, if needed. TEMPORARY and PERMANENT
             # are accepted values, defaults to PERMANENT.
