@@ -57,10 +57,6 @@ input {
     width: 65%;
 }
 
-form input[name="shortUrl"] {
-    text-transform: lowercase;
-}
-
 form input[name="shortUrl"]::placeholder {
     text-transform: none;
 }
