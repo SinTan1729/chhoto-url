@@ -103,7 +103,10 @@ const TR = (row, site) => {
     const tr = document.createElement("tr");
     const longTD = TD(A_LONG(row["longlink"]), "Long URL");
     var shortTD = null;
-    if (window.isSecureContext) {
+    var isSafari = /Safari/.test(navigator.userAgent) && /Apple Computer/.test(navigator.vendor);
+    // For now, we disable copying on WebKit due to a possible bug. Manual copying is enabled instead.
+    // Take a look at https://github.com/SinTan1729/chhoto-url/issues/36
+    if (window.isSecureContext && !(isSafari)) {
         shortTD = TD(A_SHORT(row["shortlink"], site), "Short URL");
     }
     else {
