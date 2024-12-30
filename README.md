@@ -151,7 +151,7 @@ below, replace `http://localhost:4567` with where your instance of `chhoto-url` 
 If you have set up
 a password, first do the following to get an authentication cookie and store it in a file.
 ```bash
-curl -X post -d "<your-password>" -c cookie.txt http://localhost:4567/api/login
+curl -X POST -d "<your-password>" -c cookie.txt http://localhost:4567/api/login
 ```
 You should receive "Correct password!" if the provided password was correct. For any subsequent
 request, please add `-b cookie.txt` to provide authentication.
