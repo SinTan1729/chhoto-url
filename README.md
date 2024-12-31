@@ -189,7 +189,7 @@ The server will send a confirmation.
 **This is required for programs that rely on a JSON response from Chhoto URL**
 
 In order to use API key validation, set the `api_key` environment variable. If this is not set, the API will default to cookie validation (see section above).
-If the API key is insecure, a warning will be outputted. Aditionally, in this situation, a generated API key will be outputted which may be used.
+If the API key is insecure, a warning will be outputted along with a generated API key which may be used.
 
 To add a link:
 ``` bash
@@ -203,7 +203,7 @@ curl -H "Chhoto-Api-Key: <YOUR_API_KEY>" http://localhost:4567/api/all
 
 To delete a link:
 ``` bash
-curl -X DELETE -H "Chhoto-Api-Key: <YOUR_API_KEY> http://localhost:4567/api/del/<shortlink>"
+curl -X DELETE -H "Chhoto-Api-Key: <YOUR_API_KEY>" http://localhost:4567/api/del/<shortlink>
 ```
 Where `<shortlink>` is name of the shortened link you would like to delete. For example, if the shortened link is `http://localhost:4567/example`, `<shortlink>` would be `example`.
 
