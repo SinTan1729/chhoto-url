@@ -128,6 +128,17 @@ docker run -p 4567:4567 \
     -e site_url="https://www.example.com" \
     -d chhoto-url:latest
 ```
+1.c Optionally, set an API key to activate JSON result mode (optional)
+
+```
+docker run -p 4567:4567 \
+    -e password="password" \
+    -e api_key="SECURE_API_KEY" \
+    -v ./urls.sqlite:/urls.sqlite \
+    -e db_url=/urls.sqlite \
+    -e site_url="https://www.example.com" \
+    -d chhoto-url:latest
+```
 
 You can set the redirect method to Permanent 308 (default) or Temporary 307 by setting
 the `redirect_method` variable to `TEMPORARY` or `PERMANENT` (it's matched exactly). By
@@ -148,6 +159,7 @@ served through a proxy.
 The application can be used from the terminal using something like `curl`. In all the examples
 below, replace `http://localhost:4567` with where your instance of `chhoto-url` is accessible.
 
+### Cookie validation
 If you have set up
 a password, first do the following to get an authentication cookie and store it in a file.
 ```bash
@@ -172,6 +184,30 @@ To delete a link, do
 curl -X DELETE http://localhost:4567/api/del/<shortlink>
 ```
 The server will send a confirmation.
+
+### API key validation
+**This is required for programs that rely on a JSON response from Chhoto URL**
+In order to use API key validation, set the `api_key` environment variable. If this is not set, the API will default to cookie validation (see section above).
+If the API key is insecure, a warning will be outputted. Aditionally, in this situation, a generated API key will be outputted which may be used.
+
+To add a link:
+``` bash
+curl -X POST -H "Chhoto-Api-Key: <YOUR_API_KEY>" -d '{"shortlink":"<shortlink>", "longlink":"<longlink>"}' http://localhost:4567/api/new
+```
+
+To get a list of all the currently available links:
+``` bash
+curl -H "Chhoto-Api-Key: <YOUR_API_KEY>" http://localhost:4567/api/all
+```
+
+To delete a link:
+``` bash
+curl -X DELETE -H "Chhoto-Api-Key: <YOUR_API_KEY> http://localhost:4567/api/del/<shortlink>"
+```
+Where `<shortlink>` is name of the shortened link you would like to delete. For example, if the shortened link is `http://localhost:4567/example`, `<shortlink>` would be `example`.
+
+The server will output when the instance is accessed over API, when an incorrect API key is received, etc.
+
 
 You can get the version of `chhoto-url` the server is running using `curl http://localhost:4567/api/version` and
 get the siteurl using `curl http://localhost:4567/api/siteurl`.
