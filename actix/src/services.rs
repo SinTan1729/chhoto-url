@@ -4,7 +4,7 @@
 use actix_files::NamedFile;
 use actix_session::Session;
 use actix_web::{delete, get, http::StatusCode, post, web::{self, Redirect}, Either, HttpRequest, HttpResponse, Responder};
-use std::{env};
+use std::env;
 
 // Serialize JSON data
 use serde::Serialize;
