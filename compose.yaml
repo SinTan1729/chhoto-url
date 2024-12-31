@@ -3,7 +3,7 @@
 
 services:
     chhoto-url:
-        image: sintan1729/chhoto-url:latest
+        image: chhoto-url
         restart: unless-stopped
         container_name: chhoto-url
         ports:
@@ -24,7 +24,9 @@ services:
             # - site_url=https://www.example.com
 
             - password=TopSecretPass
-            
+  
+            - api_key=test
+
             # Pass the redirect method, if needed. TEMPORARY and PERMANENT
             # are accepted values, defaults to PERMANENT.
             # - redirect_method=TEMPORARY
@@ -33,12 +35,12 @@ services:
             # If you want UIDs, please change slug_style to UID.
             # Supported values for slug_style are Pair and UID.
             # The length is 8 by default, and a minimum of 4 is allowed.
-            # - slug_style=Pair
-            # - slug_length=8
+            - slug_style=Pair
+            - slug_length=8
             
             # In case you want to provide public access to adding links (and not 
             # delete, or listing), change the following option to Enable.
-            # - public_mode=Disable
+            - public_mode=Disable
             
             # By default, the server sends no Cache-Control headers. You can supply a 
             # comma separated list of valid header as per RFC 7234 §5.2 to send those

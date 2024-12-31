@@ -24,10 +24,12 @@ async fn main() -> Result<()> {
 
     // Generate session key in runtime so that restart invalidates older logins
     let secret_key = Key::generate();
+
     let db_location = env::var("db_url")
         .ok()
         .filter(|s| !s.trim().is_empty())
         .unwrap_or(String::from("urls.sqlite"));
+
 
     let port = env::var("port")
         .unwrap_or(String::from("4567"))
@@ -37,6 +39,16 @@ async fn main() -> Result<()> {
     let cache_control_header = env::var("cache_control_header")
         .ok()
         .filter(|s| !s.trim().is_empty());
+
+    // If an API key is set, check the security
+    if let Ok(key) = env::var("api_key") {
+        if !auth::is_key_secure() {
+            eprintln!("API key is insecure! Please change it. Current key is: {}. Generated secure key which you may use: {}", key, auth::gen_key())
+        }
+    }
+
+    // Tell the user that the server has started, and where it is listening to, rather than simply outputting nothing
+    eprintln!("Server has started at 0.0.0.0 on port {}. Configured Site URL is: {}", port, env::var("site_url").unwrap_or(String::from("http://localhost")));
 
     // Actually start the server
     HttpServer::new(move || {

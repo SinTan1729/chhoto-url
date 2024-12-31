@@ -3,6 +3,53 @@
 
 use actix_session::Session;
 use std::{env, time::SystemTime};
+use actix_web::{HttpRequest};
+
+// API key generation and scoring
+use passwords::{PasswordGenerator, scorer, analyzer};
+
+// Validate API key
+pub fn validate_key(key: String) -> bool {
+    if let Ok(api_key) = env::var("api_key") {
+        if api_key != key {
+            eprintln!("Incorrect API key was provided when connecting to Chhoto URL.");
+            false
+        } else {
+            eprintln!("Server accessed with API key.");
+            true
+        }
+    } else {
+        eprintln!("API was accessed with API key validation but no API key was specified. Set the 'api_key' environment variable.");
+        false
+    }
+}
+
+// Generate an API key if the user doesn't specify a secure key
+// Called in main.rs
+pub fn gen_key() -> String {
+    let key = PasswordGenerator {
+        length: 128,
+        numbers: true,
+        lowercase_letters: true,
+        uppercase_letters: true,
+        symbols: false,
+        spaces: false,
+        exclude_similar_characters: false,
+        strict: true,
+    };
+    key.generate_one().unwrap()
+}
+
+// Check if the API key header exists
+pub fn api_header(req: &HttpRequest) -> Option<&str> {
+    req.headers().get("Chhoto-Api-Key")?.to_str().ok()
+}
+
+// Determine whether the inputted API key is sufficiently secure
+pub fn is_key_secure() -> bool {
+    let score = scorer::score(&analyzer::analyze(env::var("api_key").unwrap()));
+    if score < 90.0 { false } else { true }
+}
 
 // Validate a given password
 pub fn validate(session: Session) -> bool {

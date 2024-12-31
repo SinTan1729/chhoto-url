@@ -1,7 +1,7 @@
 // SPDX-FileCopyrightText: 2023 Sayantan Santra <sayantan.santra689@gmail.com>
 // SPDX-License-Identifier: MIT
 
-use rusqlite::Connection;
+use rusqlite::{Connection};
 use serde::Serialize;
 
 // Struct for encoding a DB row
@@ -91,5 +91,6 @@ pub fn open_db(path: String) -> Connection {
         [],
     )
     .expect("Unable to initialize empty database.");
+
     db
 }

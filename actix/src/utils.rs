@@ -5,10 +5,10 @@ use nanoid::nanoid;
 use rand::seq::SliceRandom;
 use regex::Regex;
 use rusqlite::Connection;
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 use std::env;
-
-use crate::database;
+use actix_web::HttpRequest;
+use crate::{auth, database};
 
 // Struct for reading link pairs sent during API call
 #[derive(Deserialize)]
@@ -16,6 +16,42 @@ struct URLPair {
     shortlink: String,
     longlink: String,
 }
+
+// Define JSON struct for response
+#[derive(Serialize)]
+pub struct Response {
+    pub(crate) success: bool,
+    pub(crate) error: bool,
+    reason: String,
+    pass: bool,
+}
+
+// If the api_key environment variable eists
+pub fn is_api_ok(http: HttpRequest) -> Response {
+    // If the api_key environment variable exists
+    if let Ok(_) = env::var("api_key") {
+        // If the header exists
+        if let Some(header) = auth::api_header(&http) {
+            // If the header is correct
+            if auth::validate_key(header.to_string()) {
+                let result = Response { success: true, error: false, reason: "".to_string(), pass: false };
+                result
+            } else {
+                let result = Response { success: false, error: true, reason: "Incorrect API key".to_string(), pass: false };
+                result
+            }
+        // The header may not exist when the user logs in through the web interface, so allow a request with no header.
+        // Further authentication checks will be conducted in services.rs
+        } else {
+            let result = Response { success: false, error: false, reason: "Chhoto-Api-Key header not found".to_string(), pass: true };
+            result
+        }
+    } else {
+        let result = Response {success: false, error: false, reason: "".to_string(), pass: true};
+        result
+    }
+}
+
 
 // Request the DB for searching an URL
 pub fn get_longurl(shortlink: String, db: &Connection) -> Option<String> {
