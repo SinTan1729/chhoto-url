@@ -18,6 +18,7 @@ struct URLPair {
 }
 
 // Define JSON struct for response
+// Named "ReturnResponse" rather than "Response" because of the previous import.
 #[derive(Serialize)]
 pub struct Response {
     pub(crate) success: bool,
@@ -47,8 +48,14 @@ pub fn is_api_ok(http: HttpRequest) -> Response {
             result
         }
     } else {
-        let result = Response {success: false, error: false, reason: "".to_string(), pass: true};
-        result
+        // If the API key isn't set, but an API Key header is provided
+        if let Some(_) = auth::api_header(&http) {
+            let result = Response {success: false, error: true, reason: "API key access was attempted, but no API key is configured".to_string(), pass: false};
+            result
+        } else {
+            let result = Response {success: false, error: false, reason: "".to_string(), pass: true};
+            result
+        }
     }
 }
 
