@@ -187,6 +187,7 @@ The server will send a confirmation.
 
 ### API key validation
 **This is required for programs that rely on a JSON response from Chhoto URL**
+
 In order to use API key validation, set the `api_key` environment variable. If this is not set, the API will default to cookie validation (see section above).
 If the API key is insecure, a warning will be outputted. Aditionally, in this situation, a generated API key will be outputted which may be used.
 
@@ -208,6 +209,8 @@ Where `<shortlink>` is name of the shortened link you would like to delete. For 
 
 The server will output when the instance is accessed over API, when an incorrect API key is received, etc.
 
+
+In both modes, these routes are accessible:
 
 You can get the version of `chhoto-url` the server is running using `curl http://localhost:4567/api/version` and
 get the siteurl using `curl http://localhost:4567/api/siteurl`.
