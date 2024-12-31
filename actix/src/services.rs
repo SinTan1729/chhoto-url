@@ -25,6 +25,14 @@ struct Response {
        reason: String,
 }
 
+// Needs to return the short URL to make it easier for programs leveraging the API
+#[derive(Serialize)]
+struct CreatedURL {
+    success: bool,
+    error: bool,
+    shorturl: String,
+}
+
 // Define the routes
 
 // Add new links
@@ -36,9 +44,24 @@ pub async fn add_link(req: String, data: web::Data<AppState>, session: Session, 
     if result.success {
         let out = utils::add_link(req, &data.db);
         if out.0 {
-            HttpResponse::Created().body(out.1)
+            let port = env::var("port")
+                .unwrap_or(String::from("4567"))
+                .parse::<u16>()
+                .expect("Supplied port is not an integer");
+            let url = format!("{}:{}", env::var("site_url").unwrap_or(String::from("http://localhost")), port);
+            let response = CreatedURL {
+                success: true,
+                error: false,
+                shorturl: format!("{}/{}", url, out.1)
+            };
+            HttpResponse::Created().json(response)
         } else {
-            HttpResponse::Conflict().body(out.1)
+            let response = Response {
+                success: false,
+                error: true,
+                reason: out.1
+            };
+            HttpResponse::Conflict().json(response)
         }
     } else if result.error {
         HttpResponse::Unauthorized().json(result)
