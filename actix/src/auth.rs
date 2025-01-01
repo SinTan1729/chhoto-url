@@ -3,7 +3,7 @@
 
 use actix_session::Session;
 use std::{env, time::SystemTime};
-use actix_web::{HttpRequest};
+use actix_web::HttpRequest;
 
 // API key generation and scoring
 use passwords::{PasswordGenerator, scorer, analyzer};
@@ -48,7 +48,7 @@ pub fn api_header(req: &HttpRequest) -> Option<&str> {
 // Determine whether the inputted API key is sufficiently secure
 pub fn is_key_secure() -> bool {
     let score = scorer::score(&analyzer::analyze(env::var("api_key").unwrap()));
-    if score < 90.0 { false } else { true }
+    score >= 90.0
 }
 
 // Validate a given password

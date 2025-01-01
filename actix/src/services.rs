@@ -158,11 +158,8 @@ pub async fn link_handler(
 // Handle login
 #[post("/api/login")]
 pub async fn login(req: String, session: Session) -> HttpResponse {
-    // Someone's API may be listening for the plain HTML body response of "Correct password!"
-    // rather than a 200 OK HTTP response. Because of that, a check is performed to see whether
-    // the api_key environment variable is set. If it is set, then it is assumed the user will expect a JSON response for all API routes.
-    // *If this is not a concern, this can be removed.*
-    if let Ok(_) = env::var("api_key") {
+    // Keep this function backwards compatible
+    if env::var("api_key").is_ok() {
         if let Ok(password) = env::var("password") {
             if password != req {
                 eprintln!("Failed login attempt!");

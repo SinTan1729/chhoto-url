@@ -30,7 +30,6 @@ async fn main() -> Result<()> {
         .filter(|s| !s.trim().is_empty())
         .unwrap_or(String::from("urls.sqlite"));
 
-
     let port = env::var("port")
         .unwrap_or(String::from("4567"))
         .parse::<u16>()

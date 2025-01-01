@@ -18,7 +18,6 @@ struct URLPair {
 }
 
 // Define JSON struct for response
-// Named "ReturnResponse" rather than "Response" because of the previous import.
 #[derive(Serialize)]
 pub struct Response {
     pub(crate) success: bool,
@@ -30,31 +29,26 @@ pub struct Response {
 // If the api_key environment variable eists
 pub fn is_api_ok(http: HttpRequest) -> Response {
     // If the api_key environment variable exists
-    if let Ok(_) = env::var("api_key") {
+    if env::var("api_key").is_ok() {
         // If the header exists
         if let Some(header) = auth::api_header(&http) {
             // If the header is correct
             if auth::validate_key(header.to_string()) {
-                let result = Response { success: true, error: false, reason: "".to_string(), pass: false };
-                result
+                Response { success: true, error: false, reason: "".to_string(), pass: false }
             } else {
-                let result = Response { success: false, error: true, reason: "Incorrect API key".to_string(), pass: false };
-                result
+                Response { success: false, error: true, reason: "Incorrect API key".to_string(), pass: false }
             }
         // The header may not exist when the user logs in through the web interface, so allow a request with no header.
         // Further authentication checks will be conducted in services.rs
         } else {
-            let result = Response { success: false, error: false, reason: "Chhoto-Api-Key header not found".to_string(), pass: true };
-            result
+            Response { success: false, error: false, reason: "Chhoto-Api-Key header not found".to_string(), pass: true }
         }
     } else {
         // If the API key isn't set, but an API Key header is provided
-        if let Some(_) = auth::api_header(&http) {
-            let result = Response {success: false, error: true, reason: "API key access was attempted, but no API key is configured".to_string(), pass: false};
-            result
+        if auth::api_header(&http).is_some() {
+            Response {success: false, error: true, reason: "API key access was attempted, but no API key is configured".to_string(), pass: false}
         } else {
-            let result = Response {success: false, error: false, reason: "".to_string(), pass: true};
-            result
+            Response {success: false, error: false, reason: "".to_string(), pass: true}
         }
     }
 }
