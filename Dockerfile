@@ -21,7 +21,7 @@ RUN cargo chef cook --release --target=$target --recipe-path recipe.json
 COPY ./actix/Cargo.toml ./actix/Cargo.lock ./
 COPY ./actix/src ./src
 # Build application
-RUN cargo build --release --target=$target --locked --bin chhoto-url
+RUN cargo build --release --target=$target --offline --bin chhoto-url
 RUN cp /chhoto-url/target/$target/release/chhoto-url /chhoto-url/release
 
 FROM scratch

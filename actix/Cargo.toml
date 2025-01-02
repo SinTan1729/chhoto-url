@@ -32,6 +32,7 @@ actix-files = "0.6.5"
 rusqlite = { version = "0.32.0", features = ["bundled"] }
 regex = "1.10.3"
 rand = "0.8.5"
+passwords = "3.1.16"
 actix-session = { version = "0.10.0", features = ["cookie-session"] }
 env_logger = "0.11.1"
 nanoid = "0.4.0"
