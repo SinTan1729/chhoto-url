@@ -193,17 +193,17 @@ If the API key is insecure, a warning will be outputted along with a generated A
 
 To add a link:
 ``` bash
-curl -X POST -H "Chhoto-Api-Key: <YOUR_API_KEY>" -d '{"shortlink":"<shortlink>", "longlink":"<longlink>"}' http://localhost:4567/api/new
+curl -X POST -H "X-API-Key: <YOUR_API_KEY>" -d '{"shortlink":"<shortlink>", "longlink":"<longlink>"}' http://localhost:4567/api/new
 ```
 
 To get a list of all the currently available links:
 ``` bash
-curl -H "Chhoto-Api-Key: <YOUR_API_KEY>" http://localhost:4567/api/all
+curl -H "X-API-Key: <YOUR_API_KEY>" http://localhost:4567/api/all
 ```
 
 To delete a link:
 ``` bash
-curl -X DELETE -H "Chhoto-Api-Key: <YOUR_API_KEY>" http://localhost:4567/api/del/<shortlink>
+curl -X DELETE -H "X-API-Key: <YOUR_API_KEY>" http://localhost:4567/api/del/<shortlink>
 ```
 Where `<shortlink>` is name of the shortened link you would like to delete. For example, if the shortened link is `http://localhost:4567/example`, `<shortlink>` would be `example`.
 

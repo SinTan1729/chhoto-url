@@ -29,7 +29,7 @@ pub struct Response {
 // If the api_key environment variable eists
 pub fn is_api_ok(http: HttpRequest) -> Response {
     // If the api_key environment variable exists
-    if env::var("api_key").is_ok() {
+    if let Ok(_) = env::var("api_key") {
         // If the header exists
         if let Some(header) = auth::api_header(&http) {
             // If the header is correct
@@ -41,11 +41,12 @@ pub fn is_api_ok(http: HttpRequest) -> Response {
         // The header may not exist when the user logs in through the web interface, so allow a request with no header.
         // Further authentication checks will be conducted in services.rs
         } else {
-            Response { success: false, error: false, reason: "Chhoto-Api-Key header not found".to_string(), pass: true }
+            // Due to the implementation of this result in services.rs, this JSON object will not be outputted.
+            Response { success: false, error: false, reason: "X-API-Key header was not found".to_string(), pass: true }
         }
     } else {
         // If the API key isn't set, but an API Key header is provided
-        if auth::api_header(&http).is_some() {
+        if let Some(_) = auth::api_header(&http) {
             Response {success: false, error: true, reason: "An API key was provided, but the 'api_key' environment variable is not configured in the Chhoto URL instance".to_string(), pass: false}
         } else {
             Response {success: false, error: false, reason: "".to_string(), pass: true}

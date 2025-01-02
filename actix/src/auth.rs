@@ -42,7 +42,7 @@ pub fn gen_key() -> String {
 
 // Check if the API key header exists
 pub fn api_header(req: &HttpRequest) -> Option<&str> {
-    req.headers().get("Chhoto-Api-Key")?.to_str().ok()
+    req.headers().get("X-API-Key")?.to_str().ok()
 }
 
 // Determine whether the inputted API key is sufficiently secure
