@@ -3,7 +3,13 @@
 
 use actix_files::NamedFile;
 use actix_session::Session;
-use actix_web::{delete, get, http::StatusCode, post, web::{self, Redirect}, Either, HttpRequest, HttpResponse, Responder};
+use actix_web::{
+    delete, get,
+    http::StatusCode,
+    post,
+    web::{self, Redirect},
+    Either, HttpRequest, HttpResponse, Responder,
+};
 use std::env;
 
 // Serialize JSON data
@@ -20,9 +26,9 @@ const VERSION: &str = env!("CARGO_PKG_VERSION");
 // Define JSON struct for returning JSON data
 #[derive(Serialize)]
 struct Response {
-       success: bool,
-       error: bool,
-       reason: String,
+    success: bool,
+    error: bool,
+    reason: String,
 }
 
 // Needs to return the short URL to make it easier for programs leveraging the API
@@ -37,7 +43,12 @@ struct CreatedURL {
 
 // Add new links
 #[post("/api/new")]
-pub async fn add_link(req: String, data: web::Data<AppState>, session: Session, http: HttpRequest) -> HttpResponse {
+pub async fn add_link(
+    req: String,
+    data: web::Data<AppState>,
+    session: Session,
+    http: HttpRequest,
+) -> HttpResponse {
     // Call is_api_ok() function, pass HttpRequest
     let result = utils::is_api_ok(http);
     // If success, add new link
@@ -48,41 +59,47 @@ pub async fn add_link(req: String, data: web::Data<AppState>, session: Session, 
                 .unwrap_or(String::from("4567"))
                 .parse::<u16>()
                 .expect("Supplied port is not an integer");
-            let url = format!("{}:{}", env::var("site_url").unwrap_or(String::from("http://localhost")), port);
+            let url = format!(
+                "{}:{}",
+                env::var("site_url").unwrap_or(String::from("http://localhost")),
+                port
+            );
             let response = CreatedURL {
                 success: true,
                 error: false,
-                shorturl: format!("{}/{}", url, out.1)
+                shorturl: format!("{}/{}", url, out.1),
             };
             HttpResponse::Created().json(response)
         } else {
             let response = Response {
                 success: false,
                 error: true,
-                reason: out.1
+                reason: out.1,
             };
             HttpResponse::Conflict().json(response)
         }
     } else if result.error {
         HttpResponse::Unauthorized().json(result)
-    // If "pass" is true - keeps backwards compatibility
-    } else {
-        if env::var("public_mode") == Ok(String::from("Enable")) || auth::validate(session) {
-            let out = utils::add_link(req, &data.db);
-            if out.0 {
-                HttpResponse::Created().body(out.1)
-            } else {
-                HttpResponse::Conflict().body(out.1)
-            }
+    // If password authentication or public mode is used - keeps backwards compatibility
+    } else if env::var("public_mode") == Ok(String::from("Enable")) || auth::validate(session) {
+        let out = utils::add_link(req, &data.db);
+        if out.0 {
+            HttpResponse::Created().body(out.1)
         } else {
-            HttpResponse::Unauthorized().body("Not logged in!")
+            HttpResponse::Conflict().body(out.1)
         }
+    } else {
+        HttpResponse::Unauthorized().body("Not logged in!")
     }
 }
 
 // Return all active links
 #[get("/api/all")]
-pub async fn getall(data: web::Data<AppState>, session: Session, http: HttpRequest) -> HttpResponse {
+pub async fn getall(
+    data: web::Data<AppState>,
+    session: Session,
+    http: HttpRequest,
+) -> HttpResponse {
     // Call is_api_ok() function, pass HttpRequest
     let result = utils::is_api_ok(http);
     // If success, return all links
@@ -90,18 +107,16 @@ pub async fn getall(data: web::Data<AppState>, session: Session, http: HttpReque
         HttpResponse::Ok().body(utils::getall(&data.db))
     } else if result.error {
         HttpResponse::Unauthorized().json(result)
-    // If "pass" is true - keeps backwards compatibility
+    // If password authentication is used - keeps backwards compatibility
+    } else if auth::validate(session) {
+        HttpResponse::Ok().body(utils::getall(&data.db))
     } else {
-        if auth::validate(session){
-            HttpResponse::Ok().body(utils::getall(&data.db))
+        let body = if env::var("public_mode") == Ok(String::from("Enable")) {
+            "Using public mode."
         } else {
-            let body = if env::var("public_mode") == Ok(String::from("Enable")) {
-                "Using public mode."
-            } else {
-                "Not logged in!"
-            };
-            HttpResponse::Unauthorized().body(body)
-        }
+            "Not logged in!"
+        };
+        HttpResponse::Unauthorized().body(body)
     }
 }
 
@@ -166,7 +181,7 @@ pub async fn login(req: String, session: Session) -> HttpResponse {
                 let response = Response {
                     success: false,
                     error: true,
-                    reason: "Wrong password!".to_string()
+                    reason: "Wrong password!".to_string(),
                 };
                 return HttpResponse::Unauthorized().json(response);
             }
@@ -179,7 +194,7 @@ pub async fn login(req: String, session: Session) -> HttpResponse {
         let response = Response {
             success: true,
             error: false,
-            reason: "Correct password!".to_string()
+            reason: "Correct password!".to_string(),
         };
         HttpResponse::Ok().json(response)
     } else {
@@ -225,29 +240,27 @@ pub async fn delete_link(
             let response = Response {
                 success: true,
                 error: false,
-                reason: format!("Deleted {}", shortlink)
+                reason: format!("Deleted {}", shortlink),
             };
             HttpResponse::Ok().json(response)
         } else {
             let response = Response {
                 success: false,
                 error: true,
-                reason: "The short link was not found, and could not be deleted.".to_string()
+                reason: "The short link was not found, and could not be deleted.".to_string(),
             };
             HttpResponse::NotFound().json(response)
         }
     } else if result.error {
         HttpResponse::Unauthorized().json(result)
     // If "pass" is true - keeps backwards compatibility
-    } else {
-        if auth::validate(session) {
-            if utils::delete_link(shortlink.to_string(), &data.db) {
-                HttpResponse::Ok().body(format!("Deleted {shortlink}"))
-            } else {
-                HttpResponse::NotFound().body("Not found!")
-            }
+    } else if auth::validate(session) {
+        if utils::delete_link(shortlink.to_string(), &data.db) {
+            HttpResponse::Ok().body(format!("Deleted {shortlink}"))
         } else {
-            HttpResponse::Unauthorized().body("Not logged in!")
+            HttpResponse::NotFound().body("Not found!")
         }
+    } else {
+        HttpResponse::Unauthorized().body("Not logged in!")
     }
 }

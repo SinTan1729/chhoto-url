@@ -2,11 +2,11 @@
 // SPDX-License-Identifier: MIT
 
 use actix_session::Session;
-use std::{env, time::SystemTime};
 use actix_web::HttpRequest;
+use std::{env, time::SystemTime};
 
 // API key generation and scoring
-use passwords::{PasswordGenerator, scorer, analyzer};
+use passwords::{analyzer, scorer, PasswordGenerator};
 
 // Validate API key
 pub fn validate_key(key: String) -> bool {

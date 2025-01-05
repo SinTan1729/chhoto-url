@@ -1,14 +1,14 @@
 // SPDX-FileCopyrightText: 2023 Sayantan Santra <sayantan.santra689@gmail.com>
 // SPDX-License-Identifier: MIT
 
+use crate::{auth, database};
+use actix_web::HttpRequest;
 use nanoid::nanoid;
 use rand::seq::SliceRandom;
 use regex::Regex;
 use rusqlite::Connection;
 use serde::{Deserialize, Serialize};
 use std::env;
-use actix_web::HttpRequest;
-use crate::{auth, database};
 
 // Struct for reading link pairs sent during API call
 #[derive(Deserialize)]
@@ -26,7 +26,7 @@ pub struct Response {
     pass: bool,
 }
 
-// If the api_key environment variable eists
+// If the api_key environment variable exists
 pub fn is_api_ok(http: HttpRequest) -> Response {
     // If the api_key environment variable exists
     if env::var("api_key").is_ok() {
@@ -34,26 +34,45 @@ pub fn is_api_ok(http: HttpRequest) -> Response {
         if let Some(header) = auth::api_header(&http) {
             // If the header is correct
             if auth::validate_key(header.to_string()) {
-                Response { success: true, error: false, reason: "Correct API key".to_string(), pass: false }
+                Response {
+                    success: true,
+                    error: false,
+                    reason: "Correct API key".to_string(),
+                    pass: false,
+                }
             } else {
-                Response { success: false, error: true, reason: "Incorrect API key".to_string(), pass: false }
+                Response {
+                    success: false,
+                    error: true,
+                    reason: "Incorrect API key".to_string(),
+                    pass: false,
+                }
             }
         // The header may not exist when the user logs in through the web interface, so allow a request with no header.
         // Further authentication checks will be conducted in services.rs
         } else {
             // Due to the implementation of this result in services.rs, this JSON object will not be outputted.
-            Response { success: false, error: false, reason: "X-API-Key header was not found".to_string(), pass: true }
+            Response {
+                success: false,
+                error: false,
+                reason: "X-API-Key header was not found".to_string(),
+                pass: true,
+            }
         }
     } else {
         // If the API key isn't set, but an API Key header is provided
         if auth::api_header(&http).is_some() {
             Response {success: false, error: true, reason: "An API key was provided, but the 'api_key' environment variable is not configured in the Chhoto URL instance".to_string(), pass: false}
         } else {
-            Response {success: false, error: false, reason: "".to_string(), pass: true}
+            Response {
+                success: false,
+                error: false,
+                reason: "".to_string(),
+                pass: true,
+            }
         }
     }
 }
-
 
 // Request the DB for searching an URL
 pub fn get_longurl(shortlink: String, db: &Connection) -> Option<String> {

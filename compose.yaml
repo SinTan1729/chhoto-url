@@ -26,7 +26,7 @@ services:
             - password=TopSecretPass
 
             # This needs to be set in order to use programs that use the JSON interface of Chhoto URL.
-            # You will get a warning if this is insecure, and a generated value will be outputted
+            # You will get a warning if this is insecure, and a generated value will be output
             # You may use that value if you can't think of a secure key
             # - api_key=SECURE_API_KEY
 
