@@ -61,7 +61,10 @@ pub async fn add_link(
                 .expect("Supplied port is not an integer");
             let url = format!(
                 "{}:{}",
-                env::var("site_url").unwrap_or(String::from("http://localhost")),
+                env::var("site_url")
+                    .ok()
+                    .filter(|s| !s.trim().is_empty())
+                    .unwrap_or(String::from("http://localhost")),
                 port
             );
             let response = CreatedURL {

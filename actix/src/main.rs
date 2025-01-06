@@ -47,11 +47,10 @@ async fn main() -> Result<()> {
     }
 
     // Tell the user that the server has started, and where it is listening to, rather than simply outputting nothing
-    eprintln!(
-        "Server has started at 0.0.0.0 on port {}. Configured Site URL is: {}",
-        port,
-        env::var("site_url").unwrap_or(String::from("http://localhost"))
-    );
+    eprintln!("Server has started at 0.0.0.0 on port {port}.");
+    if let Some(site_url) = env::var("site_url").ok().filter(|s| !s.trim().is_empty()) {
+        eprintln!("Configured Site URL is: {site_url}.");
+    }
 
     // Actually start the server
     HttpServer::new(move || {
