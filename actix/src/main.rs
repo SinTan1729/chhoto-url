@@ -43,6 +43,8 @@ async fn main() -> Result<()> {
     if let Ok(key) = env::var("api_key") {
         if !auth::is_key_secure() {
             eprintln!("API key is insecure! Please change it. Current key is: {}. Generated secure key which you may use: {}", key, auth::gen_key())
+        } else {
+            eprintln!("Secure API key was provided.")
         }
     }
 
