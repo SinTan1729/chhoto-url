@@ -193,10 +193,13 @@ The server will send a confirmation.
 In order to use API key validation, set the `api_key` environment variable. If this is not set, the API will default to cookie
 validation (see section above). If the API key is insecure, a warning will be outputted along with a generated API key which may be used.
 
+Example Linux command for generating a secure API key: `tr -dc A-Za-z0-9 </dev/urandom | head -c 128`
+
 To add a link:
 ``` bash
 curl -X POST -H "X-API-Key: <YOUR_API_KEY>" -d '{"shortlink":"<shortlink>", "longlink":"<longlink>"}' http://localhost:4567/api/new
 ```
+Send an empty `<shortlink>` if you want it to be auto-generated. The server will reply with the generated shortlink.
 
 To get a list of all the currently available links:
 ``` bash
