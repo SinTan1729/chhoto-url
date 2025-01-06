@@ -9,3 +9,4 @@ urls.sqlite
 **/.directory
 .env
 cookie*
+.idea/

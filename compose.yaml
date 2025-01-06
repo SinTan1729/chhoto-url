@@ -24,7 +24,12 @@ services:
             # - site_url=https://www.example.com
 
             - password=TopSecretPass
-            
+
+            # This needs to be set in order to use programs that use the JSON interface of Chhoto URL.
+            # You will get a warning if this is insecure, and a generated value will be output
+            # You may use that value if you can't think of a secure key
+            # - api_key=SECURE_API_KEY
+
             # Pass the redirect method, if needed. TEMPORARY and PERMANENT
             # are accepted values, defaults to PERMANENT.
             # - redirect_method=TEMPORARY

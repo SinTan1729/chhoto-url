@@ -128,6 +128,17 @@ docker run -p 4567:4567 \
     -e site_url="https://www.example.com" \
     -d chhoto-url:latest
 ```
+1.c Further, set an API key to activate JSON result mode (optional)
+
+```
+docker run -p 4567:4567 \
+    -e password="password" \
+    -e api_key="SECURE_API_KEY" \
+    -v ./urls.sqlite:/urls.sqlite \
+    -e db_url=/urls.sqlite \
+    -e site_url="https://www.example.com" \
+    -d chhoto-url:latest
+```
 
 You can set the redirect method to Permanent 308 (default) or Temporary 307 by setting
 the `redirect_method` variable to `TEMPORARY` or `PERMANENT` (it's matched exactly). By
@@ -148,8 +159,11 @@ served through a proxy.
 The application can be used from the terminal using something like `curl`. In all the examples
 below, replace `http://localhost:4567` with where your instance of `chhoto-url` is accessible.
 
-If you have set up
-a password, first do the following to get an authentication cookie and store it in a file.
+You can get the version of `chhoto-url` the server is running using `curl http://localhost:4567/api/version` and
+get the siteurl using `curl http://localhost:4567/api/siteurl`. These routes are accessible without any authentication.
+
+### Cookie validation
+If you have set up a password, first do the following to get an authentication cookie and store it in a file.
 ```bash
 curl -X POST -d "<your-password>" -c cookie.txt http://localhost:4567/api/login
 ```
@@ -173,8 +187,33 @@ curl -X DELETE http://localhost:4567/api/del/<shortlink>
 ```
 The server will send a confirmation.
 
-You can get the version of `chhoto-url` the server is running using `curl http://localhost:4567/api/version` and
-get the siteurl using `curl http://localhost:4567/api/siteurl`.
+### API key validation
+**This is required for programs that rely on a JSON response from Chhoto URL**
+
+In order to use API key validation, set the `api_key` environment variable. If this is not set, the API will default to cookie
+validation (see section above). If the API key is insecure, a warning will be outputted along with a generated API key which may be used.
+
+Example Linux command for generating a secure API key: `tr -dc A-Za-z0-9 </dev/urandom | head -c 128`
+
+To add a link:
+``` bash
+curl -X POST -H "X-API-Key: <YOUR_API_KEY>" -d '{"shortlink":"<shortlink>", "longlink":"<longlink>"}' http://localhost:4567/api/new
+```
+Send an empty `<shortlink>` if you want it to be auto-generated. The server will reply with the generated shortlink.
+
+To get a list of all the currently available links:
+``` bash
+curl -H "X-API-Key: <YOUR_API_KEY>" http://localhost:4567/api/all
+```
+
+To delete a link:
+``` bash
+curl -X DELETE -H "X-API-Key: <YOUR_API_KEY>" http://localhost:4567/api/del/<shortlink>
+```
+Where `<shortlink>` is name of the shortened link you would like to delete. For example, if the shortened link is
+`http://localhost:4567/example`, `<shortlink>` would be `example`.
+
+The server will output when the instance is accessed over API, when an incorrect API key is received, etc.
 
 ## Disable authentication
 If you do not define a password environment variable when starting the docker image, authentication
