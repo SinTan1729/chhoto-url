@@ -13,14 +13,21 @@ pub struct DBRow {
 }
 
 // Find a single URL
-pub fn find_url(shortlink: &str, db: &Connection) -> Option<String> {
+pub fn find_url(shortlink: &str, db: &Connection, needhits: bool) -> (Option<String>, Option<i64>) {
+    let query = if needhits {
+        "SELECT long_url,hits FROM urls WHERE short_url = ?1"
+    } else {
+        "SELECT long_url FROM urls WHERE short_url = ?1"
+    };
     let mut statement = db
-        .prepare_cached("SELECT long_url FROM urls WHERE short_url = ?1")
+        .prepare_cached(query)
         .expect("Error preparing SQL statement for find_url.");
 
-    statement
+    let longlink = statement
         .query_row([shortlink], |row| row.get("long_url"))
-        .ok()
+        .ok();
+    let hits = statement.query_row([shortlink], |row| row.get("hits")).ok();
+    (longlink, hits)
 }
 
 // Get all URLs in DB

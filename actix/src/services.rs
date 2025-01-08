@@ -31,12 +31,21 @@ struct Response {
     reason: String,
 }
 
-// Needs to return the short URL to make it easier for programs leveraging the API
+// Needed to return the short URL to make it easier for programs leveraging the API
 #[derive(Serialize)]
 struct CreatedURL {
     success: bool,
     error: bool,
     shorturl: String,
+}
+
+// Struct for returning information about a shortlink
+#[derive(Serialize)]
+struct LinkInfo {
+    success: bool,
+    error: bool,
+    longurl: String,
+    hits: i64,
 }
 
 // Define the routes
@@ -123,6 +132,35 @@ pub async fn getall(
     }
 }
 
+// Get information about a single shortlink
+#[post("/api/expand")]
+pub async fn expand(req: String, data: web::Data<AppState>, http: HttpRequest) -> HttpResponse {
+    let result = utils::is_api_ok(http);
+    if result.success {
+        let linkinfo = utils::get_longurl(req, &data.db, true);
+        if let Some(longlink) = linkinfo.0 {
+            let body = LinkInfo {
+                success: true,
+                error: false,
+                longurl: longlink,
+                hits: linkinfo
+                    .1
+                    .expect("Error getting hit count for existing shortlink."),
+            };
+            HttpResponse::Ok().json(body)
+        } else {
+            let body = Response {
+                success: false,
+                error: true,
+                reason: "The shortlink does not exist on the server.".to_string(),
+            };
+            HttpResponse::Unauthorized().json(body)
+        }
+    } else {
+        HttpResponse::Unauthorized().json(result)
+    }
+}
+
 // Get the site URL
 #[get("/api/siteurl")]
 pub async fn siteurl() -> HttpResponse {
@@ -154,7 +192,7 @@ pub async fn link_handler(
     data: web::Data<AppState>,
 ) -> impl Responder {
     let shortlink_str = shortlink.to_string();
-    if let Some(longlink) = utils::get_longurl(shortlink_str, &data.db) {
+    if let Some(longlink) = utils::get_longurl(shortlink_str, &data.db, false).0 {
         let redirect_method = env::var("redirect_method").unwrap_or(String::from("PERMANENT"));
         database::add_hit(shortlink.as_str(), &data.db);
         if redirect_method == "TEMPORARY" {
