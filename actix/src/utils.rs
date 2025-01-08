@@ -80,9 +80,9 @@ pub fn is_api_ok(http: HttpRequest) -> Response {
 }
 
 // Request the DB for searching an URL
-pub fn get_longurl(shortlink: String, db: &Connection) -> (Option<String>, Option<i64>) {
+pub fn get_longurl(shortlink: String, db: &Connection, needhits: bool) -> (Option<String>, Option<i64>) {
     if validate_link(&shortlink) {
-        database::find_url(shortlink.as_str(), db)
+        database::find_url(shortlink.as_str(), db, needhits)
     } else {
         (None, None)
     }
@@ -124,7 +124,7 @@ pub fn add_link(req: String, db: &Connection) -> (bool, String) {
     }
 
     if validate_link(chunks.shortlink.as_str())
-        && get_longurl(chunks.shortlink.clone(), db).0.is_none()
+        && get_longurl(chunks.shortlink.clone(), db, false).0.is_none()
     {
         (
             database::add_link(chunks.shortlink.clone(), chunks.longlink, db),

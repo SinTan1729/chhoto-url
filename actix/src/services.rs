@@ -137,7 +137,7 @@ pub async fn getall(
 pub async fn expand(req: String, data: web::Data<AppState>, http: HttpRequest) -> HttpResponse {
     let result = utils::is_api_ok(http);
     if result.success {
-        let linkinfo = utils::get_longurl(req, &data.db);
+        let linkinfo = utils::get_longurl(req, &data.db, true);
         if let Some(longlink) = linkinfo.0 {
             let body = LinkInfo {
                 success: true,
@@ -192,7 +192,7 @@ pub async fn link_handler(
     data: web::Data<AppState>,
 ) -> impl Responder {
     let shortlink_str = shortlink.to_string();
-    if let Some(longlink) = utils::get_longurl(shortlink_str, &data.db).0 {
+    if let Some(longlink) = utils::get_longurl(shortlink_str, &data.db, false).0 {
         let redirect_method = env::var("redirect_method").unwrap_or(String::from("PERMANENT"));
         database::add_hit(shortlink.as_str(), &data.db);
         if redirect_method == "TEMPORARY" {
