@@ -8,7 +8,7 @@ services:
         container_name: chhoto-url
         ports:
             # If you changed the "port" environment variable, adjust accordingly
-            # The number after the colon should match the "port" environment variable
+            # Both numbers before and after the colon should match the "port" variable
             - 4567:4567
         environment:
             # Change if you want to mount the database somewhere else.
