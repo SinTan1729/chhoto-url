@@ -11,7 +11,6 @@ use actix_web::{
     Either, HttpRequest, HttpResponse, Responder,
 };
 use std::env;
-
 // Serialize JSON data
 use serde::Serialize;
 
@@ -68,7 +67,7 @@ pub async fn add_link(
                 .unwrap_or(String::from("4567"))
                 .parse::<u16>()
                 .expect("Supplied port is not an integer");
-            let url = format!(
+            let mut url = format!(
                 "{}:{}",
                 env::var("site_url")
                     .ok()
@@ -76,6 +75,22 @@ pub async fn add_link(
                     .unwrap_or(String::from("http://localhost")),
                 port
             );
+            // If the port is 80, remove the port from the returned URL (better for copying and pasting)
+            // Return http://
+            if port == 80 {
+                url = env::var("site_url")
+                        .ok()
+                        .filter(|s| !s.trim().is_empty())
+                        .unwrap_or(String::from("http://localhost"));
+            }
+            // If the port is 443, remove the port from the returned URL (better for copying and pasting)
+            // Return https://
+            if port == 443 {
+                url = env::var("site_url")
+                    .ok()
+                    .filter(|s| !s.trim().is_empty())
+                    .unwrap_or(String::from("https://localhost"));
+            }
             let response = CreatedURL {
                 success: true,
                 error: false,

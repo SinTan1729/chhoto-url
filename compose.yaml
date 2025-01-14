@@ -8,7 +8,7 @@ services:
         container_name: chhoto-url
         ports:
             # If you changed the "port" environment variable, adjust accordingly
-            # Both numbers before and after the colon should match the "port" variable
+            # The number before the colon should match the "port" variable
             - 4567:4567
         environment:
             # Change if you want to mount the database somewhere else.
@@ -36,7 +36,7 @@ services:
             # This needs to be set in order to use programs that use the JSON interface of Chhoto URL.
             # You will get a warning if this is insecure, and a generated value will be output
             # You may use that value if you can't think of a secure key
-            # - api_key=SECURE_API_KEY
+            - api_key=SECURE_API_KEY
 
             # Pass the redirect method, if needed. TEMPORARY and PERMANENT
             # are accepted values, defaults to PERMANENT.
