@@ -78,7 +78,7 @@ async fn main() -> Result<()> {
     }
 
     // Tell the user that the server has started, and where it is listening to, rather than simply outputting nothing
-    eprintln!("Server has started at 0.0.0.0 on port 4567.");
+    eprintln!("Server has started at 0.0.0.0 on port {port}.");
 
     // Actually start the server
     HttpServer::new(move || {
@@ -113,7 +113,7 @@ async fn main() -> Result<()> {
             .default_service(actix_web::web::get().to(services::error404))
     })
     // Hardcode the port the server listens to. Allows for more intuitive Docker Compose port management
-    .bind(("0.0.0.0", 4567))?
+    .bind(("0.0.0.0", port))?
     .run()
     .await
 }
