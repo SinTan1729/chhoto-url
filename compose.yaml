@@ -7,6 +7,9 @@ services:
         restart: unless-stopped
         container_name: chhoto-url
         ports:
+            # If you changed the "port" environment variable, adjust accordingly
+            # The number AFTER the colon should match the "port" variable and the number
+            # before the colon is the port where you would access the container from outside.
             - 4567:4567
         environment:
             # Change if you want to mount the database somewhere else.
@@ -18,11 +21,17 @@ services:
             # a copy of your database.)
             - db_url=/db/urls.sqlite
 
-            # Change it in case you want to set the website name
-            # displayed in front of the shorturls, defaults to
-            # the hostname you're accessing it from.
+            # Change this if your server URL is not "http://localhost"
+            # This must not be surrounded by quotes. For example:
+            # site_url="https://www.example.com"   incorrect
+            # site_url=https://www.example.com     correct
+            # This is important to ensure Chhoto URL outputs the shortened link with the correct URL.
             # - site_url=https://www.example.com
 
+            # Change this if you are running Chhoto URL on a port which is not 4567.
+            # This is important to ensure Chhoto URL outputs the shortened link with the correct port.
+            # - port=4567
+            
             - password=TopSecretPass
 
             # This needs to be set in order to use programs that use the JSON interface of Chhoto URL.

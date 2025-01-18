@@ -30,6 +30,7 @@ async fn main() -> Result<()> {
         .filter(|s| !s.trim().is_empty())
         .unwrap_or(String::from("urls.sqlite"));
 
+    // Get the port environment variable
     let port = env::var("port")
         .unwrap_or(String::from("4567"))
         .parse::<u16>()
@@ -42,17 +43,42 @@ async fn main() -> Result<()> {
     // If an API key is set, check the security
     if let Ok(key) = env::var("api_key") {
         if !auth::is_key_secure() {
-            eprintln!("API key is insecure! Please change it. Current key is: {}. Generated secure key which you may use: {}", key, auth::gen_key())
+            eprintln!("WARN: API key is insecure! Please change it. Current key is: {}. Generated secure key which you may use: {}", key, auth::gen_key())
         } else {
             eprintln!("Secure API key was provided.")
         }
     }
 
+    // If the site_url env variable exists
+    if let Some(site_url) = env::var("site_url").ok().filter(|s| !s.trim().is_empty()) {
+        // Get first and last characters of the site_url
+        let mut chars = site_url.chars();
+        let first = chars.next();
+        let last = chars.next_back();
+        let url = chars.as_str();
+        // If the site_url is encapsulated by quotes (i.e. invalid)
+        if first == Option::from('"') || first == Option::from('\'') && first == last {
+            // Set the site_url without the quotes
+            env::set_var("site_url", url);
+            eprintln!("WARN: The site_url environment variable is encapsulated by quotes. Automatically adjusting to {}", url);
+
+            // Tell the user what URI the server will respond with
+            eprintln!("INFO: Public URI is: {url}:{port}.")
+        } else {
+            // No issues
+            eprintln!("INFO: Configured Site URL is: {site_url}.");
+
+            // Tell the user what URI the server will respond with
+            eprintln!("INFO: Public URI is: {site_url}:{port}.")
+        }
+    } else {
+        // Site URL is not configured
+        eprintln!("WARN: The site_url environment variable is not configured. Defaulting to http://localhost");
+        eprintln!("INFO: Public URI is: http://localhost:{port}.")
+    }
+
     // Tell the user that the server has started, and where it is listening to, rather than simply outputting nothing
     eprintln!("Server has started at 0.0.0.0 on port {port}.");
-    if let Some(site_url) = env::var("site_url").ok().filter(|s| !s.trim().is_empty()) {
-        eprintln!("Configured Site URL is: {site_url}.");
-    }
 
     // Actually start the server
     HttpServer::new(move || {
@@ -86,6 +112,7 @@ async fn main() -> Result<()> {
             .service(Files::new("/", "./resources/").index_file("index.html"))
             .default_service(actix_web::web::get().to(services::error404))
     })
+    // Hardcode the port the server listens to. Allows for more intuitive Docker Compose port management
     .bind(("0.0.0.0", port))?
     .run()
     .await
