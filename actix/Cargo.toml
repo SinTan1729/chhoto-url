@@ -29,6 +29,7 @@ categories = ["web-programming"]
 [dependencies]
 actix-web = "4.5.1"
 actix-files = "0.6.5"
+actix-cors = "0.7.0"
 rusqlite = { version = "0.32.0", features = ["bundled"] }
 regex = "1.10.3"
 rand = "0.8.5"

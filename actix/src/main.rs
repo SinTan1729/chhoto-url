@@ -4,6 +4,7 @@
 use actix_files::Files;
 use actix_session::{storage::CookieSessionStore, SessionMiddleware};
 use actix_web::{cookie::Key, middleware, web, App, HttpServer};
+use actix_cors::Cors;
 use rusqlite::Connection;
 use std::{env, io::Result};
 
@@ -39,6 +40,7 @@ async fn main() -> Result<()> {
     let cache_control_header = env::var("cache_control_header")
         .ok()
         .filter(|s| !s.trim().is_empty());
+
 
     // If an API key is set, check the security
     if let Ok(key) = env::var("api_key") {
@@ -82,9 +84,18 @@ async fn main() -> Result<()> {
 
     // Actually start the server
     HttpServer::new(move || {
+        // Define cors
+        let cors = Cors::default()
+            .allow_any_origin()
+            .supports_credentials()
+            .allowed_methods(vec!["GET", "POST", "DELETE"])
+            .allowed_header("X-API-Key")
+            .max_age(3600);
+
         App::new()
             .wrap(middleware::Logger::default())
             .wrap(middleware::Compress::default())
+            .wrap(cors)
             .wrap(
                 SessionMiddleware::builder(CookieSessionStore::default(), secret_key.clone())
                     .cookie_same_site(actix_web::cookie::SameSite::Strict)
