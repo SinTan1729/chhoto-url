@@ -232,5 +232,7 @@ that those links aren't created by you.
 
 ## Notes
 - It started as a fork of [`simply-shorten`](https://gitlab.com/draganczukp/simply-shorten).
+- There's an (unofficial) extension maintained by [SolninjaA](https://github.com/SolninjaA) for shortening URLs easily using Chhoto URL.
+  [You can take a look at it here.](https://addons.mozilla.org/en-US/firefox/addon/chhoto-url)
 - The list of adjectives and names used for random short url generation is a modified
   version of [this list used by docker](https://github.com/moby/moby/blob/master/pkg/namesgenerator/names-generator.go).
