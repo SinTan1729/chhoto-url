@@ -86,7 +86,12 @@ div[name="links-div"] {
     margin-bottom: 10px;
 }
 
-dialog form {
+#login-dialog {
+    border-radius: 10px;
+    border-width: 2px;
+}
+
+#login-dialog form {
     text-align: center;
 }
 
