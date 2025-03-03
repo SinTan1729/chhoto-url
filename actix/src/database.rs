@@ -33,7 +33,7 @@ pub fn find_url(shortlink: &str, db: &Connection, needhits: bool) -> (Option<Str
 // Get all URLs in DB
 pub fn getall(db: &Connection) -> Vec<DBRow> {
     let mut statement = db
-        .prepare_cached("SELECT * FROM urls")
+        .prepare_cached("SELECT * FROM urls ORDER BY id ASC")
         .expect("Error preparing SQL statement for getall.");
 
     let mut data = statement

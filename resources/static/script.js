@@ -56,7 +56,7 @@ const refreshData = async () => {
         }
     } else {
         let data = await res.json();
-        displayData(data);
+        displayData(data.reverse());
     }
 }
 
