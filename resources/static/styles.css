@@ -6,6 +6,33 @@
     src: url('/assets/Montserrat-VF.woff2');
 }
 
+:root {
+    color-scheme: light dark;
+}
+
+body {
+    color: light-dark(black, #e8e6e3);
+    background-color: light-dark(white, #181a1b);
+}
+
+.pure-button {
+    background-color: light-dark(#0078e7, #0060b9);
+}
+
+input {
+    border-color: light-dark(#cccccc, #3e4446) !important;
+    box-shadow: light-dark(#dddddd, #2b2f31) 0px 1px 3px inset !important;
+}
+
+::placeholder {
+    color: light-dark(#757575, #636061);
+}
+
+legend {
+    color: light-dark(#333333, #c8c3bc) !important;
+    border-bottom-color: light-dark(#e5e5e5 ,#373c3e) !important;
+}
+
 * {
     font-family: Montserrat;
 }
@@ -21,6 +48,19 @@ table tr td div {
     word-wrap: break-word;
     max-width: 575px;
     overflow: auto;
+}
+
+.pure-table {
+    border-color: light-dark(black, #867d6e);
+}
+
+.pure-table caption {
+    color: light-dark(black, #e8e6e3);
+}
+
+.pure-table thead {
+    color: light-dark(black, #e8e6e3);
+    background-color: light-dark(#e0e0e0, #2a2d2f);
 }
 
 .pure-table td {

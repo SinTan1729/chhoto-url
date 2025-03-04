@@ -129,10 +129,10 @@ const copyShortUrl = async (link) => {
     const site = await getSiteUrl();
     try {
         navigator.clipboard.writeText(`${site}/${link}`);
-        showAlert(`Short URL ${link} was copied to clipboard!`, "green");
+        showAlert(`Short URL ${link} was copied to clipboard!`, "light-dark(green, #72ff72)");
     } catch (e) {
         console.log(e);
-        showAlert(`Could not copy short URL to clipboard, please do it manually: <a href=${site}/${link}>${site}/${link}</a>`, "red");
+        showAlert(`Could not copy short URL to clipboard, please do it manually: <a href=${site}/${link}>${site}/${link}</a>`, "light-dark(red, #ff1a1a)");
     }
 
 }
@@ -213,7 +213,7 @@ const submitForm = () => {
         })
         .then(text => {
             if (!ok) {
-                showAlert(text, "red");
+                showAlert(text, "light-dark(red, #ff1a1a)");
             }
             else {
                 copyShortUrl(text);
@@ -238,7 +238,7 @@ const submitLogin = () => {
         } else {
             const wrongPassBox = document.getElementById("wrong-pass");
             wrongPassBox.innerHTML = "Wrong password!";
-            wrongPassBox.style.color = "red";
+            wrongPassBox.style.color = "light-dark(red, #ff1a1a)";
             password.focus();
         }
     })
