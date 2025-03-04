@@ -239,6 +239,7 @@ const submitLogin = () => {
             const wrongPassBox = document.getElementById("wrong-pass");
             wrongPassBox.innerHTML = "Wrong password!";
             wrongPassBox.style.color = "light-dark(red, #ff1a1a)";
+            wrongPassBox.hidden = false;
             password.focus();
         }
     })
