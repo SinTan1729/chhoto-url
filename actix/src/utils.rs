@@ -4,7 +4,7 @@
 use crate::{auth, database};
 use actix_web::HttpRequest;
 use nanoid::nanoid;
-use rand::seq::SliceRandom;
+use rand::seq::IndexedRandom;
 use regex::Regex;
 use rusqlite::Connection;
 use serde::{Deserialize, Serialize};
@@ -190,10 +190,10 @@ fn gen_link(style: String, len: usize) -> String {
         format!(
             "{0}-{1}",
             ADJECTIVES
-                .choose(&mut rand::thread_rng())
+                .choose(&mut rand::rng())
                 .expect("Error choosing random adjective."),
             NAMES
-                .choose(&mut rand::thread_rng())
+                .choose(&mut rand::rng())
                 .expect("Error choosing random name.")
         )
     }
