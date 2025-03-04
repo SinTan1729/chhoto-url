@@ -42,6 +42,10 @@ legend {
     margin: 20px auto auto;
 }
 
+a {
+    color: light-dark(blue, #3391ff);
+}
+
 table tr td div {
     max-height: 75px;
     line-height: 25px;
