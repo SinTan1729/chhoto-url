@@ -139,6 +139,10 @@ div[name="links-div"] {
     text-align: center;
 }
 
+#wrong-pass {
+    color: light-dark(red, #ff1a1a);
+}
+
 /* Settings for mobile devices */
 @media (pointer:none),
 (pointer:coarse) {

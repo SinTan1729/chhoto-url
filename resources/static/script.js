@@ -234,12 +234,10 @@ const submitLogin = () => {
             document.getElementById("container").style.filter = "blur(0px)"
             document.getElementById("login-dialog").close();
             password.value = '';
+            document.getElementById("wrong-pass").hidden = true;
             refreshData();
         } else {
-            const wrongPassBox = document.getElementById("wrong-pass");
-            wrongPassBox.innerHTML = "Wrong password!";
-            wrongPassBox.style.color = "light-dark(red, #ff1a1a)";
-            wrongPassBox.hidden = false;
+            document.getElementById("wrong-pass").hidden = false;
             password.focus();
         }
     })
