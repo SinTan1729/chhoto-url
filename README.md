@@ -72,7 +72,6 @@ not needed here.
 whatever reason), you can message me through GitHub issues.
 
 # Screenshots 
-#### Note: I'm using Dark Reader here to get the dark theme.
 <p align="middle">
   <img src="screenshot-desktop.webp" height="250" alt="desktop screenshot" />
   <img src="screenshot-mobile.webp" height="250" alt="mobile screenshot" />
