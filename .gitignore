@@ -10,3 +10,4 @@ urls.sqlite
 .env
 cookie*
 .idea/
+.DS_Store
