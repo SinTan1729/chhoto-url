@@ -1,0 +1,14 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: chhoto-url
+  labels:
+    app: chhoto-url
+spec:
+  type: ClusterIP
+  ports:
+    - port: 80
+      targetPort: 4567
+      protocol: TCP
+  selector:
+    app: chhoto-url
