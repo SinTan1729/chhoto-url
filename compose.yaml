@@ -6,6 +6,12 @@ services:
         image: sintan1729/chhoto-url:latest
         restart: unless-stopped
         container_name: chhoto-url
+        # You may enable the next two options if you want, but it may break the program if the db is bind
+        # mounted from the system. It does add extra security, but I don't know enough about docker
+        # to help in case it breaks something.
+        # read_only: true
+        # cap_drop:
+        #   - ALL
         ports:
             # If you changed the "port" environment variable, adjust accordingly
             # The number AFTER the colon should match the "port" variable and the number
