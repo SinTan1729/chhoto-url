@@ -1,0 +1,14 @@
+# Default values for chhoto-url.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+image:
+  repository: sintan1729/chhoto-url
+  pullPolicy: IfNotPresent
+  tag: "5.4.6"
+
+# please use a better password in your values and base64 encode it
+password: cGFzc3dvcmQ=
+
+fqdn: your.short.link.url.com
+letsencryptmail: your.mail@address.com

@@ -1,0 +1,23 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: chhoto-url
+  annotations:
+    cert-manager.io/issuer: "letsencrypt"
+    acme.cert-manager.io/http01-edit-in-place: "true"
+spec:
+  tls:
+    - hosts:
+      - {{ .Values.fqdn }}
+      secretName: my-tls
+  rules:
+  - host: {{ .Values.fqdn }}
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: chhoto-url
+            port:
+              number: 80
