@@ -29,7 +29,7 @@ categories = ["web-programming"]
 [dependencies]
 actix-web = "4.5.1"
 actix-files = "0.6.5"
-rusqlite = { version = "0.33.0", features = ["bundled"] }
+rusqlite = { version = "0.34.0", features = ["bundled"] }
 regex = "1.10.3"
 rand = "0.9.0"
 passwords = "3.1.16"
