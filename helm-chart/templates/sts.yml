@@ -42,6 +42,8 @@ spec:
               value: "{{ .Values.slug_length }}"
             - name: public_mode
               value: {{ .Values.public_mode }}
+            - name: disable_frontend
+              value: {{ .Values.disable_frontend }}
             {{- if .Values.cache_control_header }}
             - name: cache_control_header
               value: {{ .Values.cache_control_header }}
