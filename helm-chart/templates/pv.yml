@@ -10,4 +10,4 @@ spec:
   accessModes:
     - ReadWriteOnce
   hostPath:
-    path: /mnt/data/chhoto-data
+    path: {{ .Values.persistence.hostPath.path }}

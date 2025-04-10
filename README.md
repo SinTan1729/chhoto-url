@@ -159,13 +159,13 @@ The helm values are very sparse to keep it simple. If you need more values to be
 
 The PVC allocates 100Mi and the PV is using a host path volume.
 
-The helm chart assumes you have [cert manager](https://github.com/jetstack/cert-manager) deployed to have TLS certificates managed easily in your cluster. Feel free to remove the issuer and adjust the ingress if you're on AWS with EKS for example.
+The helm chart assumes you have [cert manager](https://github.com/jetstack/cert-manager) deployed to have TLS certificates managed easily in your cluster. Feel free to remove the issuer and adjust the ingress if you're on AWS with EKS for example. To install cert-manager, I recommend using the ["kubectl apply" way](https://cert-manager.io/docs/installation/kubectl/) to install cert-manager.
 
 To get started, `cp helm-chart/values.yaml helm-chart/my-values.yaml` and adjust `password`, `fqdn` and `letsencryptmail` in your new `my-values.yaml`, then just run
 
 ``` bash
 cd helm-chart
-helm upgrade --install chhoto-url -n chhoto-url --create-namespace -f my-values.yaml
+helm upgrade --install chhoto-url . -n chhoto-url --create-namespace -f my-values.yaml
 ```
 
 ## Instructions for CLI usage
