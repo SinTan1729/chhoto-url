@@ -47,7 +47,8 @@ for small. URL means, well... URL. So the name simply means Small URL.
   i.e. only the hit is recorded, and nothing else.
 - Has a mobile friendly UI, and automatic dark mode.
 - Has a public mode, where anyone can add links without authentication. Deleting 
-  or listing available links will need admin access using the password.
+  or listing available links will need admin access using the password. It's also 
+  possible to completely disable the frontend.
 - Allows setting the URL of your website, in case you want to conveniently
   generate short links locally.
 - Links are stored in an SQLite database.
@@ -146,7 +147,8 @@ the `slug_style` variable to `UID`. You can also set the length of those slug by
 the `slug_length` variable. It defaults to 8, and a minimum of 4 is supported.
 
 To enable public mode, set `public_mode` to `Enable`. With this, anyone will be able to add 
-links. Listing existing links or deleting links will need admin access using the password.
+links. Listing existing links or deleting links will need admin access using the password. To
+completely disable the frontend, set `disable_frontend` to `True`.
 
 By default, the server sends no Cache-Control headers. You can set custom `cache_control_header` 
 to send your desired headers. It must be a comma separated list of valid 

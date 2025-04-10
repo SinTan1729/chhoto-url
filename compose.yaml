@@ -59,6 +59,9 @@ services:
             # In case you want to provide public access to adding links (and not 
             # delete, or listing), change the following option to Enable.
             # - public_mode=Disable
+            # In case you want to completely disable the frontend, change the following
+            # to True.
+            # - disable_frontend=False
             
             # By default, the server sends no Cache-Control headers. You can supply a 
             # comma separated list of valid header as per RFC 7234 §5.2 to send those
