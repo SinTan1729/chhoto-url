@@ -79,9 +79,9 @@ pub async fn add_link(
             // Return http://
             if port == 80 {
                 url = env::var("site_url")
-                        .ok()
-                        .filter(|s| !s.trim().is_empty())
-                        .unwrap_or(String::from("http://localhost"));
+                    .ok()
+                    .filter(|s| !s.trim().is_empty())
+                    .unwrap_or(String::from("http://localhost"));
             }
             // If the port is 443, remove the port from the returned URL (better for copying and pasting)
             // Return https://

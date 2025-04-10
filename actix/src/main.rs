@@ -40,6 +40,8 @@ async fn main() -> Result<()> {
         .ok()
         .filter(|s| !s.trim().is_empty());
 
+    let disable_frontend = env::var("disable_frontend").is_ok_and(|s| s.trim() == "True");
+
     // If an API key is set, check the security
     if let Ok(key) = env::var("api_key") {
         if !auth::is_key_secure() {
@@ -82,7 +84,7 @@ async fn main() -> Result<()> {
 
     // Actually start the server
     HttpServer::new(move || {
-        App::new()
+        let mut app = App::new()
             .wrap(middleware::Logger::default())
             .wrap(middleware::Compress::default())
             .wrap(
@@ -108,9 +110,13 @@ async fn main() -> Result<()> {
             .service(services::delete_link)
             .service(services::login)
             .service(services::logout)
-            .service(services::expand)
-            .service(Files::new("/", "./resources/").index_file("index.html"))
-            .default_service(actix_web::web::get().to(services::error404))
+            .service(services::expand);
+
+        if !disable_frontend {
+            app = app.service(Files::new("/", "./resources/").index_file("index.html"));
+        }
+
+        app.default_service(actix_web::web::get().to(services::error404))
     })
     // Hardcode the port the server listens to. Allows for more intuitive Docker Compose port management
     .bind(("0.0.0.0", port))?
