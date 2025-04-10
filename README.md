@@ -156,6 +156,20 @@ to send your desired headers. It must be a comma separated list of valid
 you can set it to `no-cache, private` to disable caching. It might help during testing if
 served through a proxy.
 
+## Deploying in your Kubernetes cluster with Helm
+The helm values are very sparse to keep it simple. If you need more values to be variable, feel free to adjust.
+
+The PVC allocates 100Mi and the PV is using a host path volume.
+
+The helm chart assumes you have [cert manager](https://github.com/jetstack/cert-manager) deployed to have TLS certificates managed easily in your cluster. Feel free to remove the issuer and adjust the ingress if you're on AWS with EKS for example. To install cert-manager, I recommend using the ["kubectl apply" way](https://cert-manager.io/docs/installation/kubectl/) to install cert-manager.
+
+To get started, `cp helm-chart/values.yaml helm-chart/my-values.yaml` and adjust `password`, `fqdn` and `letsencryptmail` in your new `my-values.yaml`, then just run
+
+``` bash
+cd helm-chart
+helm upgrade --install chhoto-url . -n chhoto-url --create-namespace -f my-values.yaml
+```
+
 ## Instructions for CLI usage
 The application can be used from the terminal using something like `curl`. In all the examples
 below, replace `http://localhost:4567` with where your instance of `chhoto-url` is accessible.

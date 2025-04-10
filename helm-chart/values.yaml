@@ -1,0 +1,28 @@
+# Default values for chhoto-url.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+image:
+  repository: sintan1729/chhoto-url
+  pullPolicy: IfNotPresent
+  tag: "5.4.6"
+
+# please use a better password in your values and base64 encode it
+password: cGFzc3dvcmQ=
+# if used, needs to be base64 encoded as well
+# api_key: U0VDVVJFX0FQSV9LRVk=
+
+persistence:
+  hostPath:
+    path: /mnt/data/chhoto-data
+
+redirect_method: PERMANENT
+slug_style: Pair
+slug_length: 8
+public_mode: Disable
+disable_frontend: False
+# cache_control_header: "no-cache, private"
+
+protocol: https
+fqdn: your.short.link.url.com
+letsencryptmail: your.mail@address.com

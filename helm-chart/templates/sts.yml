@@ -1,0 +1,61 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: chhoto-url
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: chhoto-url
+  template:
+    metadata:
+      labels:
+        app: chhoto-url
+    spec:
+      containers:
+        - name: chhoto-url
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          ports:
+            - containerPort: 4567
+          env:
+            - name: password
+              valueFrom:
+                secretKeyRef:
+                  name: secret
+                  key: password
+            {{- if .Values.api_key }}
+            - name: api_key
+              valueFrom:
+                secretKeyRef:
+                  name: secret
+                  key: api_key
+            {{- end }}
+            - name: db_url
+              value: /db/urls.sqlite
+            - name: site_url
+              value: "{{ .Values.protocol }}://{{ .Values.fqdn }}"
+            - name: redirect_method
+              value: {{ .Values.redirect_method }}
+            - name: slug_style
+              value: {{ .Values.slug_style }}
+            - name: slug_length
+              value: "{{ .Values.slug_length }}"
+            - name: public_mode
+              value: {{ .Values.public_mode }}
+            - name: disable_frontend
+              value: {{ .Values.disable_frontend }}
+            {{- if .Values.cache_control_header }}
+            - name: cache_control_header
+              value: {{ .Values.cache_control_header }}
+            {{- end }}
+          volumeMounts:
+            - name: data
+              mountPath: /db
+  volumeClaimTemplates:
+    - metadata:
+        name: data
+      spec:
+        accessModes: [ "ReadWriteOnce" ]
+        resources:
+          requests:
+            storage: 100Mi
