@@ -63,8 +63,8 @@ pub fn is_api_ok(http: HttpRequest) -> Response {
         // If the API key isn't set, but an API Key header is provided
         if auth::api_header(&http).is_some() {
             Response {
-                success: false, 
-                error: true, 
+                success: false,
+                error: true,
                 reason: "An API key was provided, but the 'api_key' environment variable is not configured in the Chhoto URL instance".to_string(), 
                 pass: false
             }
@@ -80,7 +80,11 @@ pub fn is_api_ok(http: HttpRequest) -> Response {
 }
 
 // Request the DB for searching an URL
-pub fn get_longurl(shortlink: String, db: &Connection, needhits: bool) -> (Option<String>, Option<i64>) {
+pub fn get_longurl(
+    shortlink: String,
+    db: &Connection,
+    needhits: bool,
+) -> (Option<String>, Option<i64>) {
     if validate_link(&shortlink) {
         database::find_url(shortlink.as_str(), db, needhits)
     } else {
@@ -123,18 +127,14 @@ pub fn add_link(req: String, db: &Connection) -> (bool, String) {
         chunks.shortlink = gen_link(style, len);
     }
 
-    if validate_link(chunks.shortlink.as_str())
-        && get_longurl(chunks.shortlink.clone(), db, false).0.is_none()
-    {
-        (
-            database::add_link(chunks.shortlink.clone(), chunks.longlink, db),
-            chunks.shortlink,
-        )
+    if validate_link(chunks.shortlink.as_str()) {
+        if database::add_link(chunks.shortlink.clone(), chunks.longlink, db) {
+            (true, chunks.shortlink)
+        } else {
+            (false, String::from("Short URL is already in use!"))
+        }
     } else {
-        (
-            false,
-            String::from("Short URL not valid or already in use!"),
-        )
+        (false, String::from("Short URL is not valid!"))
     }
 }
 
