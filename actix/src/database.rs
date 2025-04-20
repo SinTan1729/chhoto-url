@@ -99,5 +99,12 @@ pub fn open_db(path: String) -> Connection {
     )
     .expect("Unable to initialize empty database.");
 
+    // Create index on short_url for faster lookups
+    db.execute(
+        "CREATE UNIQUE INDEX IF NOT EXISTS idx_short_url ON urls (short_url)",
+        [],
+    )
+    .expect("Unable to create index on short_url.");
+
     db
 }
