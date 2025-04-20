@@ -92,7 +92,7 @@ pub fn open_db(path: String) -> Connection {
         "CREATE TABLE IF NOT EXISTS urls (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             long_url TEXT NOT NULL,
-            short_url TEXT NOT NULL UNIQUE,
+            short_url TEXT NOT NULL,
             hits INTEGER NOT NULL
             )",
         [],
@@ -101,7 +101,7 @@ pub fn open_db(path: String) -> Connection {
 
     // Create index on short_url for faster lookups
     db.execute(
-        "CREATE INDEX IF NOT EXISTS idx_short_url ON urls (short_url)",
+        "CREATE UNIQUE INDEX IF NOT EXISTS idx_short_url ON urls (short_url)",
         [],
     )
     .expect("Unable to create index on short_url.");
