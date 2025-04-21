@@ -63,15 +63,9 @@ async fn main() -> Result<()> {
             // Set the site_url without the quotes
             env::set_var("site_url", url);
             eprintln!("WARN: The site_url environment variable is encapsulated by quotes. Automatically adjusting to {}", url);
-
-            // Tell the user what URI the server will respond with
-            eprintln!("INFO: Public URI is: {url}:{port}.")
         } else {
             // No issues
             eprintln!("INFO: Configured Site URL is: {site_url}.");
-
-            // Tell the user what URI the server will respond with
-            eprintln!("INFO: Public URI is: {site_url}:{port}.")
         }
     } else {
         // Site URL is not configured
