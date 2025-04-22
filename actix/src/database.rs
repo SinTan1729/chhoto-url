@@ -1,7 +1,7 @@
 // SPDX-FileCopyrightText: 2023 Sayantan Santra <sayantan.santra689@gmail.com>
 // SPDX-License-Identifier: MIT
 
-use rusqlite::Connection;
+use rusqlite::{Connection, Error};
 use serde::Serialize;
 
 // Struct for encoding a DB row
@@ -67,12 +67,11 @@ pub fn add_hit(shortlink: &str, db: &Connection) {
 }
 
 // Insert a new link
-pub fn add_link(shortlink: String, longlink: String, db: &Connection) -> bool {
+pub fn add_link(shortlink: String, longlink: String, db: &Connection) -> Result<usize, Error> {
     db.execute(
         "INSERT INTO urls (long_url, short_url, hits) VALUES (?1, ?2, ?3)",
         (longlink, shortlink, 0),
     )
-    .is_ok()
 }
 
 // Delete and existing link

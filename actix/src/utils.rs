@@ -128,10 +128,16 @@ pub fn add_link(req: String, db: &Connection) -> (bool, String) {
     }
 
     if validate_link(chunks.shortlink.as_str()) {
-        if database::add_link(chunks.shortlink.clone(), chunks.longlink, db) {
-            (true, chunks.shortlink)
-        } else {
-            (false, String::from("Short URL is already in use!"))
+        match database::add_link(chunks.shortlink.clone(), chunks.longlink, db) {
+            Ok(_) => (true, chunks.shortlink),
+            Err(error) => {
+                if error.to_string() == "UNIQUE constraint failed: urls.short_url" {
+                    (false, String::from("Short URL is already in use!"))
+                } else {
+                    // This should be super rare
+                    (false, String::from("Something went wrong!"))
+                }
+            }
         }
     } else {
         (false, String::from("Short URL is not valid!"))
