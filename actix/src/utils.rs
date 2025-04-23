@@ -123,9 +123,12 @@ pub fn add_link(req: String, db: &Connection) -> (bool, String) {
         len = 4;
     }
 
-    if chunks.shortlink.is_empty() {
+    let shortlink_provided = if chunks.shortlink.is_empty() {
         chunks.shortlink = gen_link(style, len);
-    }
+        false
+    } else {
+        true
+    };
 
     if validate_link(chunks.shortlink.as_str()) {
         match database::add_link(chunks.shortlink.clone(), chunks.longlink, db) {
@@ -133,6 +136,7 @@ pub fn add_link(req: String, db: &Connection) -> (bool, String) {
             Err(error) => {
                 if error.sqlite_error().map(|err| err.extended_code)
                     == Some(SQLITE_CONSTRAINT_UNIQUE)
+                    && shortlink_provided
                 {
                     (false, String::from("Short URL is already in use!"))
                 } else {
