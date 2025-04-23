@@ -69,9 +69,8 @@ for small. URL means, well... URL. So the name simply means Small URL.
 - **Cookies, newsletters**, "we value your privacy" popups or any of the multiple
 other ways modern web shows how anti-user it is. We all hate those, and they're
 not needed here.
-- **Paywalls** or messages begging for donations. If you want to support me (for
-whatever reason), you can message me through GitHub issues.
-
+- **Paywalls** or messages begging for donations. If you want to buy me a coffee, 
+you can message me through GitHub discussions or mail me.
 # Screenshots 
 <p align="middle">
   <img src="screenshot-desktop.webp" height="250" alt="desktop screenshot" />
