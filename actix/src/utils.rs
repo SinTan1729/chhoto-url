@@ -6,7 +6,7 @@ use actix_web::HttpRequest;
 use nanoid::nanoid;
 use rand::seq::IndexedRandom;
 use regex::Regex;
-use rusqlite::Connection;
+use rusqlite::{ffi::SQLITE_CONSTRAINT_UNIQUE, Connection};
 use serde::{Deserialize, Serialize};
 use std::env;
 
@@ -131,7 +131,9 @@ pub fn add_link(req: String, db: &Connection) -> (bool, String) {
         match database::add_link(chunks.shortlink.clone(), chunks.longlink, db) {
             Ok(_) => (true, chunks.shortlink),
             Err(error) => {
-                if error.to_string() == "UNIQUE constraint failed: urls.short_url" {
+                if error.sqlite_error().map(|err| err.extended_code)
+                    == Some(SQLITE_CONSTRAINT_UNIQUE)
+                {
                     (false, String::from("Short URL is already in use!"))
                 } else {
                     // This should be super rare
