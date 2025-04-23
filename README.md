@@ -38,9 +38,9 @@ for small. URL means, well... URL. So the name simply means Small URL.
 # Features
 - Shortens URLs of any length to a randomly generated link.
 - (Optional) Allows you to specify the shortened URL instead of the generated
-  one. (It's surprisingly missing in a surprising number of alternatives.)
+  one. (It's missing in a surprising number of alternatives.)
 - Opening the shortened URL in your browser will instantly redirect you
-  to the correct long URL. (So no stupid redirecting pages.)
+  to the correct long URL. (So no stupid redirection pages.)
 - Super lightweight and snappy. (The docker image is only ~6MB and RAM uasge
   stays under 5MB under normal use.)
 - Counts number of hits for each short link in a privacy respecting way
@@ -52,8 +52,8 @@ for small. URL means, well... URL. So the name simply means Small URL.
 - Allows setting the URL of your website, in case you want to conveniently
   generate short links locally.
 - Links are stored in an SQLite database.
-- Available as a Docker container.
-- Backend written in Rust using [Actix](https://actix.rs/), frontend
+- Available as a Docker container with a provided compose file.
+- Backend written in Rust using [Actix](https://actix.rs/), and frontend
   written in plain HTML and vanilla JS, using [Pure CSS](https://purecss.io/)
   for styling.
 - Uses very basic authentication using a provided password. It's not encrypted in transport.
@@ -61,15 +61,15 @@ for small. URL means, well... URL. So the name simply means Small URL.
   encrypt the connection by SSL.
   
 # Bloat that will not be implemented
-- Tracking or spying of any kind. The only logs that still exist are
+- **Tracking or spying of any kind.** The only logs that still exist are
  errors printed to stderr and the basic logging (only warnings) provided by the
  [`env_logger`](https://crates.io/crates/env_logger) crate.
-- User management. If you need a shortener for your whole organization, either
+- **User management.** If you need a shortener for your whole organization, either
  run separate containers for everyone or use something else.
-- Cookies, newsletters, "we value your privacy" popups or any of the multiple
+- **Cookies, newsletters**, "we value your privacy" popups or any of the multiple
 other ways modern web shows how anti-user it is. We all hate those, and they're
 not needed here.
-- Paywalls or messages begging for donations. If you want to support me (for
+- **Paywalls** or messages begging for donations. If you want to support me (for
 whatever reason), you can message me through GitHub issues.
 
 # Screenshots 
