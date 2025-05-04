@@ -232,7 +232,7 @@ pub async fn login(req: String, session: Session) -> HttpResponse {
     // Check if password is hashed using Argon2. More algorithms maybe added later.
     let authorized = if let Ok(password) = env::var("password") {
         if env::var("hash_algorithm") == Ok(String::from("Argon2")) {
-            println!("Using Argon2 hashes for password validation.");
+            println!("Using Argon2 hash for password validation.");
             let hash =
                 Hash::from_str(password.as_str()).expect("The provided password hash in invalid.");
             Some(hash.verify(req.as_bytes()))
