@@ -35,7 +35,7 @@ services:
             # - site_url=https://www.example.com
 
             # If you want to provided hashed password and API Key, uncomment the next line. Read the README
-            # for instructions for the hashing.
+            # for instructions for the hashing. Make sure to escape $ by $$.
             # - hash_algorithm=Argon2
 
             # Change this if you are running Chhoto URL on a port which is not 4567.
