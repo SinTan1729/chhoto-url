@@ -24,7 +24,7 @@ docker-test: docker-local docker-stop
 	docker run -p ${PORT}:${PORT} --name chhoto-url -e password="${PASSWORD}" -e public_mode="${PUBLIC_MODE}" \
 		-e site_url="${SITE_URL}" -e db_url="${DB_URL}" -e redirect_method="${REDIRECT_METHOD}" -e port="${PORT}"\
 		-e slug_style="${SLUG_STYLE}" -e slug_length="${SLUG_LENGTH}" -e cache_control_header="${CACHE_CONTROL_HEADER}"\
-		-e api_key="${API_KEY}" -e disable_frontend="${DISABLE_FRONTEND}"\
+		-e api_key="${API_KEY}" -e disable_frontend="${DISABLE_FRONTEND}" -e hash_algorithm="${HASH_ALGORITHM}"\
 		-d chhoto-url
 	docker logs chhoto-url -f
 
