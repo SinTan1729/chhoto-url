@@ -38,3 +38,4 @@ env_logger = "0.11.1"
 nanoid = "0.4.0"
 serde_json = "1.0.115"
 serde = { version = "1.0.197", features = [ "derive" ] }
+argon2-kdf = "1.6.2"

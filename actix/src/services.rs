@@ -10,8 +10,9 @@ use actix_web::{
     web::{self, Redirect},
     Either, HttpRequest, HttpResponse, Responder,
 };
-use std::env;
+use std::{env, str::FromStr};
 // Serialize JSON data
+use argon2_kdf::Hash;
 use serde::Serialize;
 
 use crate::auth;
@@ -232,7 +233,17 @@ pub async fn login(req: String, session: Session) -> HttpResponse {
     // Keep this function backwards compatible
     if env::var("api_key").is_ok() {
         if let Ok(password) = env::var("password") {
-            if password != req {
+            // Check if password is hashed using Argon2. More algorithms maybe added later.
+            let authorized = if env::var("hash_algorithm") == Ok(String::from("Argon2")) {
+                println!("{password}");
+                let hash = Hash::from_str(password.as_str())
+                    .expect("The provided password hash in invalid.");
+                hash.verify(req.as_bytes())
+            } else {
+                // If hashing is not enabled, use the plaintext password for matching
+                password == req
+            };
+            if !authorized {
                 eprintln!("Failed login attempt!");
                 let response = Response {
                     success: false,
