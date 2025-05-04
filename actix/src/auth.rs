@@ -14,6 +14,7 @@ pub fn validate_key(key: String) -> bool {
     if let Ok(api_key) = env::var("api_key") {
         // Check if API Key is hashed using Argon2. More algorithms maybe added later.
         let authorized = if env::var("hash_algorithm") == Ok(String::from("Argon2")) {
+            println!("Using Argon2 hashes for API key validation.")
             let hash =
                 Hash::from_str(api_key.as_str()).expect("The provided password hash in invalid.");
             hash.verify(key.as_bytes())
@@ -25,7 +26,7 @@ pub fn validate_key(key: String) -> bool {
             eprintln!("Incorrect API key was provided when connecting to Chhoto URL.");
             false
         } else {
-            eprintln!("Server accessed with API key.");
+            println!("Server accessed with API key.");
             true
         }
     } else {

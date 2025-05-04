@@ -15,10 +15,9 @@ use std::{env, str::FromStr};
 use argon2_kdf::Hash;
 use serde::Serialize;
 
-use crate::auth;
-use crate::database;
 use crate::utils;
 use crate::AppState;
+use crate::{auth, database};
 
 // Store the version number
 const VERSION: &str = env!("CARGO_PKG_VERSION");
@@ -230,19 +229,24 @@ pub async fn link_handler(
 // Handle login
 #[post("/api/login")]
 pub async fn login(req: String, session: Session) -> HttpResponse {
+    // Check if password is hashed using Argon2. More algorithms maybe added later.
+    let authorized = if let Ok(password) = env::var("password") {
+        if env::var("hash_algorithm") == Ok(String::from("Argon2")) {
+            println!("Using Argon2 hashes for password validation.")
+            let hash =
+                Hash::from_str(password.as_str()).expect("The provided password hash in invalid.");
+            Some(hash.verify(req.as_bytes()))
+        } else {
+            // If hashing is not enabled, use the plaintext password for matching
+            Some(password == req)
+        }
+    } else {
+        None
+    };
     // Keep this function backwards compatible
     if env::var("api_key").is_ok() {
-        if let Ok(password) = env::var("password") {
-            // Check if password is hashed using Argon2. More algorithms maybe added later.
-            let authorized = if env::var("hash_algorithm") == Ok(String::from("Argon2")) {
-                let hash = Hash::from_str(password.as_str())
-                    .expect("The provided password hash in invalid.");
-                hash.verify(req.as_bytes())
-            } else {
-                // If hashing is not enabled, use the plaintext password for matching
-                password == req
-            };
-            if !authorized {
+        if let Some(valid_pass) = authorized {
+            if !valid_pass {
                 eprintln!("Failed login attempt!");
                 let response = Response {
                     success: false,
@@ -264,8 +268,8 @@ pub async fn login(req: String, session: Session) -> HttpResponse {
         };
         HttpResponse::Ok().json(response)
     } else {
-        if let Ok(password) = env::var("password") {
-            if password != req {
+        if let Some(valid_pass) = authorized {
+            if !valid_pass {
                 eprintln!("Failed login attempt!");
                 return HttpResponse::Unauthorized().body("Wrong password!");
             }
