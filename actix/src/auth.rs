@@ -3,7 +3,8 @@
 
 use actix_session::Session;
 use actix_web::HttpRequest;
-use std::{env, time::SystemTime};
+use argon2_kdf::Hash;
+use std::{env, str::FromStr, time::SystemTime};
 
 // API key generation and scoring
 use passwords::{analyzer, scorer, PasswordGenerator};
@@ -11,7 +12,16 @@ use passwords::{analyzer, scorer, PasswordGenerator};
 // Validate API key
 pub fn validate_key(key: String) -> bool {
     if let Ok(api_key) = env::var("api_key") {
-        if api_key != key {
+        // Check if API Key is hashed using Argon2. More algorithms maybe added later.
+        let authorized = if env::var("hash_algorithm") == Ok(String::from("Argon2")) {
+            let hash =
+                Hash::from_str(api_key.as_str()).expect("The provided password hash in invalid.");
+            hash.verify(key.as_bytes())
+        } else {
+            // If hashing is not enabled, use the plaintext password for matching
+            api_key == key
+        };
+        if !authorized {
             eprintln!("Incorrect API key was provided when connecting to Chhoto URL.");
             false
         } else {
