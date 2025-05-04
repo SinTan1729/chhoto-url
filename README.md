@@ -146,7 +146,7 @@ the `slug_style` variable to `UID`. You can also set the length of those slug by
 the `slug_length` variable. It defaults to 8, and a minimum of 4 is supported.
 
 You can provide hashed password and API key for extra security. Note that it will add some latency
-to your requests and use more resources in general. The only supported algorithm for now is Argon2.
+to some of your requests and use more resources in general. The only supported algorithm for now is Argon2.
 Recommended command for hashing:
 ```bash
 echo -n <password> | argon2 <salt> -id -t 3 -m 16 -l 32 -e
