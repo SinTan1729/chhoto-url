@@ -47,7 +47,7 @@ async fn main() -> Result<()> {
         if !auth::is_key_secure() {
             eprintln!("WARN: API key is insecure! Please change it. Current key is: {}. Generated secure key which you may use: {}", key, auth::gen_key())
         } else {
-            eprintln!("Secure API key was provided.")
+            println!("Secure API key was provided.")
         }
     }
 
@@ -62,19 +62,19 @@ async fn main() -> Result<()> {
         if first == Option::from('"') || first == Option::from('\'') && first == last {
             // Set the site_url without the quotes
             env::set_var("site_url", url);
-            eprintln!("WARN: The site_url environment variable is encapsulated by quotes. Automatically adjusting to {}", url);
+            println!("WARN: The site_url environment variable is encapsulated by quotes. Automatically adjusting to {}", url);
         } else {
             // No issues
-            eprintln!("INFO: Configured Site URL is: {site_url}.");
+            println!("INFO: Configured Site URL is: {site_url}.");
         }
     } else {
         // Site URL is not configured
         eprintln!("WARN: The site_url environment variable is not configured. Defaulting to http://localhost");
-        eprintln!("INFO: Public URI is: http://localhost:{port}.")
+        println!("INFO: Public URI is: http://localhost:{port}.")
     }
 
     // Tell the user that the server has started, and where it is listening to, rather than simply outputting nothing
-    eprintln!("Server has started at 0.0.0.0 on port {port}.");
+    println!("Server has started at 0.0.0.0 on port {port}.");
 
     // Actually start the server
     HttpServer::new(move || {
