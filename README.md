@@ -45,6 +45,7 @@ for small. URL means, well... URL. So the name simply means Small URL.
   stays under 5MB under normal use.)
 - Counts number of hits for each short link in a privacy respecting way
   i.e. only the hit is recorded, and nothing else.
+- Supports operation using API key, and lets the user provide hashed password and API key.
 - Has a mobile friendly UI, and automatic dark mode.
 - Has a public mode, where anyone can add links without authentication. Deleting 
   or listing available links will need admin access using the password. It's also 
