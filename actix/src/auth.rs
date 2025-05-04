@@ -3,8 +3,8 @@
 
 use actix_session::Session;
 use actix_web::HttpRequest;
-use argon2_kdf::Hash;
-use std::{env, str::FromStr, time::SystemTime};
+use argon2::{password_hash::PasswordHash, Argon2, PasswordVerifier};
+use std::{env, time::SystemTime};
 
 // API key generation and scoring
 use passwords::{analyzer, scorer, PasswordGenerator};
@@ -15,9 +15,10 @@ pub fn validate_key(key: String) -> bool {
         // Check if API Key is hashed using Argon2. More algorithms maybe added later.
         let authorized = if env::var("hash_algorithm") == Ok(String::from("Argon2")) {
             println!("Using Argon2 hash for API key validation.");
-            let hash =
-                Hash::from_str(api_key.as_str()).expect("The provided password hash in invalid.");
-            hash.verify(key.as_bytes())
+            let hash = PasswordHash::new(&key).expect("The provided password hash in invalid.");
+            Argon2::default()
+                .verify_password(api_key.as_bytes(), &hash)
+                .is_ok()
         } else {
             // If hashing is not enabled, use the plaintext password for matching
             api_key == key
