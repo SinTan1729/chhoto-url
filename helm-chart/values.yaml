@@ -7,6 +7,7 @@ image:
   pullPolicy: IfNotPresent
   tag: "5.4.6"
 
+# hash_algorithm: Argon2
 # please use a better password in your values and base64 encode it
 password: cGFzc3dvcmQ=
 # if used, needs to be base64 encoded as well

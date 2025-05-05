@@ -30,6 +30,10 @@ spec:
                   name: secret
                   key: api_key
             {{- end }}
+            {{- if .Values.hash_algorithm }}
+            - name: hash_algorithm 
+              value: {{ .Values.hash_algorithm  }}
+            {{- end }}
             - name: db_url
               value: /db/urls.sqlite
             - name: site_url
