@@ -85,6 +85,9 @@ pub fn delete_link(shortlink: String, db: &Connection) -> bool {
 
 // Open the DB, and create schema if missing
 pub fn open_db(path: String) -> Connection {
+    // Current user version, should be incremented on schema change
+    let user_version = 1;
+
     let db = Connection::open(path).expect("Unable to open database!");
     // Create table if it doesn't exist
     db.execute(
@@ -93,8 +96,10 @@ pub fn open_db(path: String) -> Connection {
             long_url TEXT NOT NULL,
             short_url TEXT NOT NULL,
             hits INTEGER NOT NULL
-            )",
-        [],
+            expiry_time INTEGER,
+            );
+        PRAGMA schema.user_version = ?1",
+        [&user_version],
     )
     .expect("Unable to initialize empty database.");
 
@@ -104,6 +109,20 @@ pub fn open_db(path: String) -> Connection {
         [],
     )
     .expect("Unable to create index on short_url.");
+
+    let current_user_version = db
+        .execute("SELECT user_version FROM pragma_user_version", [])
+        .expect("Unable to read pragma_user_version.");
+
+    // Migration 1: Add expiry_time, introduced in 5.9.0
+    if current_user_version < 1 {
+        db.execute(
+            "ALTER TABLE urls ADD COLUMN expiry_time;
+                    PRAGMA schema.user_version = 1",
+            [],
+        )
+        .expect("Unable to apply migration 1.");
+    }
 
     db
 }
