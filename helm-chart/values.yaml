@@ -5,7 +5,7 @@
 image:
   repository: sintan1729/chhoto-url
   pullPolicy: IfNotPresent
-  tag: "5.4.6"
+  tag: "latest"
 
 # hash_algorithm: Argon2
 # please use a better password in your values and base64 encode it
