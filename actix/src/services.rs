@@ -36,6 +36,7 @@ struct CreatedURL {
     success: bool,
     error: bool,
     shorturl: String,
+    expiry_time: i64,
 }
 
 // Struct for returning information about a shortlink
@@ -96,6 +97,7 @@ pub async fn add_link(
                 success: true,
                 error: false,
                 shorturl: format!("{}/{}", url, out.1),
+                expiry_time: out.2,
             };
             HttpResponse::Created().json(response)
         } else {

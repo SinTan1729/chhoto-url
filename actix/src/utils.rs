@@ -108,12 +108,12 @@ pub fn getall(db: &Connection) -> String {
 }
 
 // Make checks and then request the DB to add a new URL entry
-pub fn add_link(req: String, db: &Connection) -> (bool, String) {
+pub fn add_link(req: String, db: &Connection) -> (bool, String, i64) {
     let mut chunks: URLPair;
     if let Ok(json) = serde_json::from_str(&req) {
         chunks = json;
     } else {
-        return (false, String::from("Invalid request!"));
+        return (false, String::from("Invalid request!"), 0);
     }
 
     let style = env::var("slug_style").unwrap_or(String::from("Pair"));
@@ -143,21 +143,21 @@ pub fn add_link(req: String, db: &Connection) -> (bool, String) {
             chunks.expiry_delay,
             db,
         ) {
-            Ok(_) => (true, chunks.shortlink),
+            Ok(expiry_time) => (true, chunks.shortlink, expiry_time),
             Err(error) => {
                 if error.sqlite_error().map(|err| err.extended_code)
                     == Some(SQLITE_CONSTRAINT_UNIQUE)
                     && shortlink_provided
                 {
-                    (false, String::from("Short URL is already in use!"))
+                    (false, String::from("Short URL is already in use!"), 0)
                 } else {
                     // This should be super rare
-                    (false, String::from("Something went wrong!"))
+                    (false, String::from("Something went wrong!"), 0)
                 }
             }
         }
     } else {
-        (false, String::from("Short URL is not valid!"))
+        (false, String::from("Short URL is not valid!"), 0)
     }
 }
 

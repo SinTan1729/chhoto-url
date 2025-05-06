@@ -84,7 +84,7 @@ pub fn add_link(
     longlink: String,
     expiry_delay: i64,
     db: &Connection,
-) -> Result<usize, Error> {
+) -> Result<i64, Error> {
     let now = chrono::Utc::now().timestamp();
     let expiry_time = if expiry_delay == 0 {
         0
@@ -96,6 +96,7 @@ pub fn add_link(
         "INSERT INTO urls (long_url, short_url, hits, expiry_time) VALUES (?1, ?2, ?3, ?4)",
         (longlink, shortlink, 0, expiry_time),
     )
+    .map(|_| expiry_time)
 }
 
 // Clean expired links
