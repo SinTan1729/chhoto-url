@@ -23,7 +23,7 @@ An empty or missing `<shortlink>` will result in it being auto-generated.
 Expiry delay is in seconds. It is capped to a maximum of 5 years. A missing `<expiry_delay>` or a value of 0 will disable expiry.
 
 The server will reply in the following format.
-```json
+```
 {"success":true,"error":false,"shorturl":<shortlink>,"expiry_time":<expiry_time>}
 or
 {"success":false,"error":true,"reason":<reason>}
@@ -34,7 +34,7 @@ To get information about a single shortlink:
 curl -H "X-API-Key: <YOUR_API_KEY>" -d '<shortlink>' http://localhost:4567/api/expand
 ```
 The server will reply in the following format.
-```json
+```
 {"success":true,"error":false,"longurl":<longurl>,"hits":<hits>,"expiry_time":<expiry_time>}
 or
 {"success":false,"error":true,"reason":<reason>}
