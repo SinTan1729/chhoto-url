@@ -89,6 +89,28 @@ pub fn add_link(
     )
 }
 
+// Clean expired links
+pub fn cleanup(db: &Connection) {
+    let now = chrono::Utc::now().timestamp();
+
+    let mut statement = db
+        .prepare_cached("SELECT short_url FROM urls WHERE ?1 > expiry_time AND expiry_time > 0")
+        .expect("Error preparing SQL statement for cleanup.");
+
+    let mut data = statement
+        .query([now])
+        .expect("Error executing query for cleanup.");
+
+    while let Some(row) = data.next().expect("Error reading fetched rows.") {
+        let shortlink: String = row
+            .get("short_url")
+            .expect("Error reading shortlink off a row.");
+        db.execute("DELETE FROM urls WHERE short_url = ?1", [&shortlink])
+            .expect("Error cleaning up shortlink.");
+        println!("Deleted expired link {}.", shortlink);
+    }
+}
+
 // Delete and existing link
 pub fn delete_link(shortlink: String, db: &Connection) -> bool {
     if let Ok(delta) = db.execute("DELETE FROM urls WHERE short_url = ?1", [shortlink]) {

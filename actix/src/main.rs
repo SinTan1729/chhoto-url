@@ -5,7 +5,8 @@ use actix_files::Files;
 use actix_session::{storage::CookieSessionStore, SessionMiddleware};
 use actix_web::{cookie::Key, middleware, web, App, HttpServer};
 use rusqlite::Connection;
-use std::{env, io::Result};
+pub(crate) use std::{env, io::Result};
+use tokio::{spawn, time};
 
 // Import modules
 mod auth;
@@ -75,6 +76,18 @@ async fn main() -> Result<()> {
 
     // Tell the user that the server has started, and where it is listening to, rather than simply outputting nothing
     println!("Server has started at 0.0.0.0 on port {port}.");
+
+    // Do periodic cleanup
+    let db_location_clone = db_location.clone();
+    println!("Starting cleanup service, running once every 15 minutes.");
+    spawn(async move {
+        let db = database::open_db(db_location_clone);
+        let mut interval = time::interval(time::Duration::from_secs(900));
+        loop {
+            interval.tick().await;
+            database::cleanup(&db);
+        }
+    });
 
     // Actually start the server
     HttpServer::new(move || {

@@ -180,7 +180,6 @@ pub async fn expand(req: String, data: web::Data<AppState>, http: HttpRequest) -
     }
 }
 
-// Get the site URL
 #[get("/api/siteurl")]
 pub async fn siteurl() -> HttpResponse {
     let site_url = env::var("site_url")
