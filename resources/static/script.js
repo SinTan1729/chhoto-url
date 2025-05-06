@@ -115,11 +115,24 @@ const TR = (row, site) => {
     let hitsTD = TD(row["hits"]);
     hitsTD.setAttribute("label", "Hits");
     hitsTD.setAttribute("name", "hitsColumn");
+    
+    let expiryTime = row["expiry_time"];
+    if (expiryTime == 0) {
+        expiryTime = "-";
+    } else {
+        expiryTime = new Date(expiryTime * 1000);
+        expiryTime = expiryTime.toLocaleString();
+    }
+    let expiryTD = TD(expiryTime);
+    expiryTD.setAttribute("label", "Expiry");
+    expiryTD.setAttribute("name", "expiryColumn");
+
     const btn = deleteButton(row["shortlink"]);
 
     tr.appendChild(shortTD);
     tr.appendChild(longTD);
     tr.appendChild(hitsTD);
+    tr.appendChild(expiryTD);
     tr.appendChild(btn);
 
     return tr;
