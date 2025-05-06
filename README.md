@@ -80,7 +80,7 @@ you can message me through GitHub discussions or mail me.
 </p>
 
 # Installation and Configuration
-[See here.](./Installation.md)
+[See here.](./INSTALLATION.md)
 
 # Instructions for CLI usage
 [See here.](./CLI.md)
