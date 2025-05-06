@@ -10,14 +10,19 @@ pub struct DBRow {
     shortlink: String,
     longlink: String,
     hits: i64,
+    expiry_time: i64,
 }
 
 // Find a single URL
-pub fn find_url(shortlink: &str, db: &Connection, needhits: bool) -> (Option<String>, Option<i64>) {
+pub fn find_url(
+    shortlink: &str,
+    db: &Connection,
+    needhits: bool,
+) -> (Option<String>, Option<i64>, Option<i64>) {
     let query = if needhits {
-        "SELECT long_url, hits FROM urls WHERE short_url = ?1"
+        "SELECT long_url, hits, expiry_time FROM urls WHERE short_url = ?1"
     } else {
-        "SELECT long_url FROM urls WHERE short_url = ?1"
+        "SELECT long_url, expiry_time FROM urls WHERE short_url = ?1"
     };
     let mut statement = db
         .prepare_cached(query)
@@ -27,7 +32,10 @@ pub fn find_url(shortlink: &str, db: &Connection, needhits: bool) -> (Option<Str
         .query_row([shortlink], |row| row.get("long_url"))
         .ok();
     let hits = statement.query_row([shortlink], |row| row.get("hits")).ok();
-    (longlink, hits)
+    let expiry_time = statement
+        .query_row([shortlink], |row| row.get("expiry_time"))
+        .ok();
+    (longlink, hits, expiry_time)
 }
 
 // Get all URLs in DB
@@ -50,6 +58,7 @@ pub fn getall(db: &Connection) -> Vec<DBRow> {
                 .get("long_url")
                 .expect("Error reading shortlink from row."),
             hits: row.get("hits").expect("Error reading shortlink from row."),
+            expiry_time: row.get("expiry_time").unwrap_or_default(),
         };
         links.push(row_struct);
     }
@@ -70,20 +79,14 @@ pub fn add_hit(shortlink: &str, db: &Connection) {
 pub fn add_link(
     shortlink: String,
     longlink: String,
-    expiry_delay: u64,
+    expiry_delay: i64,
     db: &Connection,
 ) -> Result<usize, Error> {
-    if expiry_delay > 0 {
-        db.execute(
-            "INSERT INTO urls (long_url, short_url, hits, expiry_time) VALUES (?1, ?2, ?3, ?4)",
-            (longlink, shortlink, 0, expiry_delay),
-        )
-    } else {
-        db.execute(
-            "INSERT INTO urls (long_url, short_url, hits) VALUES (?1, ?2, ?3)",
-            (longlink, shortlink, 0),
-        )
-    }
+    let now = chrono::Utc::now().timestamp();
+    db.execute(
+        "INSERT INTO urls (long_url, short_url, hits, expiry_time) VALUES (?1, ?2, ?3, ?4)",
+        (longlink, shortlink, 0, now + expiry_delay),
+    )
 }
 
 // Delete and existing link
@@ -127,9 +130,19 @@ pub fn open_db(path: String) -> Connection {
 
     // Migration 1: Add expiry_time, introduced in 5.9.0
     if current_user_version < 1 {
-        db.execute("ALTER TABLE urls ADD COLUMN expiry_time INTEGER", [])
-            .expect("Unable to apply migration 1.");
+        db.execute(
+            "ALTER TABLE urls ADD COLUMN expiry_time INTEGER NOT NULL DEFAULT 0",
+            [],
+        )
+        .expect("Unable to apply migration 1.");
     }
+
+    // Create index on expiry_time for faster lookups
+    db.execute(
+        "CREATE INDEX IF NOT EXISTS idx_expiry_time ON urls (expiry_time)",
+        [],
+    )
+    .expect("Unable to create index on expiry_time.");
 
     // Set current user_version. Should be incremented on change of schema.
     db.execute("PRAGMA user_version = 1", [])

@@ -17,7 +17,7 @@ struct URLPair {
     shortlink: String,
     longlink: String,
     #[serde(default)]
-    expiry_delay: u64,
+    expiry_delay: i64,
 }
 
 // Define JSON struct for response
@@ -87,11 +87,11 @@ pub fn get_longurl(
     shortlink: String,
     db: &Connection,
     needhits: bool,
-) -> (Option<String>, Option<i64>) {
+) -> (Option<String>, Option<i64>, Option<i64>) {
     if validate_link(&shortlink) {
         database::find_url(shortlink.as_str(), db, needhits)
     } else {
-        (None, None)
+        (None, None, None)
     }
 }
 
@@ -131,6 +131,10 @@ pub fn add_link(req: String, db: &Connection) -> (bool, String) {
     } else {
         true
     };
+
+    // Allow max delay of 1 year
+    chunks.expiry_delay = chunks.expiry_delay.min(31556952);
+    chunks.expiry_delay = chunks.expiry_delay.max(0);
 
     if validate_link(chunks.shortlink.as_str()) {
         match database::add_link(

@@ -45,6 +45,7 @@ struct LinkInfo {
     error: bool,
     longurl: String,
     hits: i64,
+    expiry_time: i64,
 }
 
 // Define the routes
@@ -161,6 +162,9 @@ pub async fn expand(req: String, data: web::Data<AppState>, http: HttpRequest) -
                 hits: linkinfo
                     .1
                     .expect("Error getting hit count for existing shortlink."),
+                expiry_time: linkinfo
+                    .2
+                    .expect("Error getting expiry time for existing shortlink."),
             };
             HttpResponse::Ok().json(body)
         } else {
