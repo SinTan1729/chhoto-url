@@ -185,7 +185,7 @@ pub fn open_db(path: String) -> Connection {
         .unwrap_or_default()
     };
 
-    // Migration 1: Add expiry_time, introduced in 5.9.0
+    // Migration 1: Add expiry_time, introduced in 6.0.0
     if current_user_version < 1 {
         db.execute(
             "ALTER TABLE urls ADD COLUMN expiry_time INTEGER NOT NULL DEFAULT 0",
