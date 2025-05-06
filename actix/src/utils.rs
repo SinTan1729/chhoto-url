@@ -13,8 +13,11 @@ use std::env;
 // Struct for reading link pairs sent during API call
 #[derive(Deserialize)]
 struct URLPair {
+    #[serde(default)]
     shortlink: String,
     longlink: String,
+    #[serde(default)]
+    expiry_delay: u64,
 }
 
 // Define JSON struct for response
@@ -110,7 +113,6 @@ pub fn add_link(req: String, db: &Connection) -> (bool, String) {
     if let Ok(json) = serde_json::from_str(&req) {
         chunks = json;
     } else {
-        // shorturl should always be supplied, even if empty
         return (false, String::from("Invalid request!"));
     }
 
@@ -131,7 +133,12 @@ pub fn add_link(req: String, db: &Connection) -> (bool, String) {
     };
 
     if validate_link(chunks.shortlink.as_str()) {
-        match database::add_link(chunks.shortlink.clone(), chunks.longlink, db) {
+        match database::add_link(
+            chunks.shortlink.clone(),
+            chunks.longlink,
+            chunks.expiry_delay,
+            db,
+        ) {
             Ok(_) => (true, chunks.shortlink),
             Err(error) => {
                 if error.sqlite_error().map(|err| err.extended_code)

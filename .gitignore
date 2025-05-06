@@ -2,7 +2,7 @@
 actix/target
 
 # Ignore SQLite file
-urls.sqlite
+*.sqlite
 
 # Ignore irrelevant dotfiles
 .vscode/

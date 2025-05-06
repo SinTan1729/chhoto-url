@@ -197,7 +197,7 @@ To add a link:
 ``` bash
 curl -X POST -H "X-API-Key: <YOUR_API_KEY>" -d '{"shortlink":"<shortlink>", "longlink":"<longlink>"}' http://localhost:4567/api/new
 ```
-Send an empty `<shortlink>` if you want it to be auto-generated. The server will reply with the generated shortlink.
+Send an empty or missing `<shortlink>` if you want it to be auto-generated. The server will reply with the generated shortlink.
 
 To get information about a single shortlink:
 ``` bash
@@ -231,7 +231,7 @@ To add a link, do
 ```bash
 curl -X POST -d '{"shortlink":"<shortlink>", "longlink":"<longlink>"}' http://localhost:4567/api/new
 ```
-Send an empty `<shortlink>` if you want it to be auto-generated. The server will reply with the generated shortlink.
+Send an empty or missing `<shortlink>` if you want it to be auto-generated. The server will reply with the generated shortlink.
 
 To get a list of all the currently available links as `json`, do
 ```bash

@@ -67,11 +67,23 @@ pub fn add_hit(shortlink: &str, db: &Connection) {
 }
 
 // Insert a new link
-pub fn add_link(shortlink: String, longlink: String, db: &Connection) -> Result<usize, Error> {
-    db.execute(
-        "INSERT INTO urls (long_url, short_url, hits) VALUES (?1, ?2, ?3)",
-        (longlink, shortlink, 0),
-    )
+pub fn add_link(
+    shortlink: String,
+    longlink: String,
+    expiry_delay: u64,
+    db: &Connection,
+) -> Result<usize, Error> {
+    if expiry_delay > 0 {
+        db.execute(
+            "INSERT INTO urls (long_url, short_url, hits, expiry_time) VALUES (?1, ?2, ?3, ?4)",
+            (longlink, shortlink, 0, expiry_delay),
+        )
+    } else {
+        db.execute(
+            "INSERT INTO urls (long_url, short_url, hits) VALUES (?1, ?2, ?3)",
+            (longlink, shortlink, 0),
+        )
+    }
 }
 
 // Delete and existing link
