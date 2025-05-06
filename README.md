@@ -91,3 +91,5 @@ you can message me through GitHub discussions or mail me.
   [You can take a look at it here.](https://github.com/SolninjaA/Chhoto-URL-Extension)
 - The list of adjectives and names used for random short url generation is a modified
   version of [this list used by docker](https://github.com/moby/moby/blob/master/pkg/namesgenerator/names-generator.go).
+- Although it's unlikely, it's possible that your database is mangled after some update. For mission critical use cases,
+  it's recommended to keep regular versioned backups of the database, and sticking to a minor release tag e.g. 5.8.
