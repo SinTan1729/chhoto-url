@@ -79,10 +79,10 @@ async fn main() -> Result<()> {
 
     // Do periodic cleanup
     let db_location_clone = db_location.clone();
-    println!("Starting cleanup service, running once every 15 minutes.");
+    println!("Starting cleanup service, running once every hour.");
     spawn(async move {
         let db = database::open_db(db_location_clone);
-        let mut interval = time::interval(time::Duration::from_secs(900));
+        let mut interval = time::interval(time::Duration::from_secs(3600));
         loop {
             interval.tick().await;
             database::cleanup(&db);
