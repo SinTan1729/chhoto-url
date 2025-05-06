@@ -132,8 +132,8 @@ pub fn add_link(req: String, db: &Connection) -> (bool, String) {
         true
     };
 
-    // Allow max delay of 1 year
-    chunks.expiry_delay = chunks.expiry_delay.min(31556952);
+    // Allow max delay of 5 years
+    chunks.expiry_delay = chunks.expiry_delay.min(157784760);
     chunks.expiry_delay = chunks.expiry_delay.max(0);
 
     if validate_link(chunks.shortlink.as_str()) {

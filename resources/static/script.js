@@ -99,6 +99,26 @@ const showAlert = async (text, col) => {
     controls.appendChild(alertBox);
 }
 
+const formatRelative = (timestamp) => {
+    now = new Date();
+    // in miliseconds
+    var units = {
+        year  : 31536000000,
+        month : 2592000000,
+        day   : 86400000,
+        hour  : 3600000,
+        minute: 60000,
+        second: 1000
+    }
+
+    var diff = (timestamp) - now
+    var rtf = new Intl.RelativeTimeFormat('en', { numeric: 'auto' })
+      // "Math.abs" accounts for both "past" & "future" scenarios
+    for (var u in units) 
+        if (Math.abs(diff) > units[u] || u == 'second') 
+            return rtf.format(Math.round(diff/units[u]), u)
+}
+
 const TR = (row, site) => {
     const tr = document.createElement("tr");
     const longTD = TD(A_LONG(row["longlink"]), "Long URL");
@@ -121,7 +141,7 @@ const TR = (row, site) => {
         expiryTime = "-";
     } else {
         expiryTime = new Date(expiryTime * 1000);
-        expiryTime = expiryTime.toLocaleString();
+        expiryTime = formatRelative(expiryTime);
     }
     let expiryTD = TD(expiryTime);
     expiryTD.setAttribute("label", "Expiry");
@@ -208,6 +228,7 @@ const submitForm = () => {
     const data = {
         "longlink": form.elements["longUrl"].value,
         "shortlink": form.elements["shortUrl"].value,
+        "expiry_delay": parseInt(form.elements["expiryDelay"].value),
     };
 
     const url = prepSubdir("/api/new");
@@ -232,6 +253,7 @@ const submitForm = () => {
                 copyShortUrl(text);
                 longUrl.value = "";
                 shortUrl.value = "";
+                expiryDelay.value = 0;
                 refreshData();
             }
         })

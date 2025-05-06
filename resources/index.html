@@ -35,10 +35,26 @@
                     <input type="url" name="longUrl" id="longUrl" placeholder="Please enter a valid URL"
                         onblur="addProtocol(this)" required />
                 </div>
-                <div class=" pure-control-group">
+                <div class="pure-control-group">
                     <label for="shortUrl">Short URL (optional)</label>
                     <input type="text" name="shortUrl" id="shortUrl" placeholder="Only a-z, 0-9, - and _ are allowed"
                         pattern="[a-z0-9\-_]+" title="Only a-z, 0-9, - and _ are allowed" autocapitalize="off"/>
+                </div>
+                <div class="pure-control-group">
+                    <label for="expiryDelay">Expiry</label>
+                    <select name="expiryDelay" id="expiryDelay">
+                        <option value=0>Never</option>
+                        <option value=600>10 Minutes</option>
+                        <option value=1800>30 Minutes</option>
+                        <option value=3600>1 Hour</option>
+                        <option value=43200>12 Hours</option>
+                        <option value=86400>1 Day</option>
+                        <option value=604800>1 Week</option>
+                        <option value=2592000>1 Month</option>
+                        <option value=7776000>3 Months</option>
+                        <option value=15552000>6 Months</option>
+                        <option value=31536000>1 Year</option>
+                    </select>
                 </div>
                 <div class="pure-controls" id="controls">
                     <button class="pure-button pure-button-primary">Shorten!</button>

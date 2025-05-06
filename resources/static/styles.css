@@ -24,6 +24,12 @@ input {
     box-shadow: light-dark(#dddddd, #2b2f31) 0px 1px 3px inset !important;
 }
 
+select {
+    background-color: light-dark(white, #2b2a33) !important;
+    border-color: light-dark(#cccccc, #3e4446) !important;
+    box-shadow: light-dark(#dddddd, #2b2f31) 0px 1px 3px inset !important;
+}
+
 ::placeholder {
     color: light-dark(#757575, #636061);
 }
@@ -73,6 +79,10 @@ table tr td div {
 
 td[name="hitsColumn"] {
     text-align: right;
+}
+
+td[name="expiryColumn"] {
+    text-align: center;
 }
 
 td[name="deleteBtn"] div {
