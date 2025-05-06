@@ -22,7 +22,7 @@ pub fn find_url(
     let query = if needhits {
         "SELECT long_url, hits, expiry_time FROM urls WHERE short_url = ?1"
     } else {
-        "SELECT long_url, expiry_time FROM urls WHERE short_url = ?1"
+        "SELECT long_url FROM urls WHERE short_url = ?1"
     };
     let mut statement = db
         .prepare_cached(query)
@@ -105,10 +105,19 @@ pub fn cleanup(db: &Connection) {
         let shortlink: String = row
             .get("short_url")
             .expect("Error reading shortlink off a row.");
-        db.execute("DELETE FROM urls WHERE short_url = ?1", [&shortlink])
-            .expect("Error cleaning up shortlink.");
-        println!("Deleted expired link {}.", shortlink);
+        println!("Expired link marked for deletion: {shortlink}");
     }
+
+    db.execute(
+        "DELETE FROM urls WHERE ?1 > expiry_time AND expiry_time > 0",
+        [now],
+    )
+    .inspect(|&u| {
+        if u > 0 {
+            println!("{u} shortlinks deleted.")
+        }
+    })
+    .expect("Error cleaning expired shortlinks.");
 }
 
 // Delete and existing link
@@ -120,9 +129,20 @@ pub fn delete_link(shortlink: String, db: &Connection) -> bool {
     }
 }
 
-// Open the DB, and create schema if missing
 pub fn open_db(path: String) -> Connection {
+    // Set current user_version. Should be incremented on change of schema.
+    let user_version = 1;
+
     let db = Connection::open(path).expect("Unable to open database!");
+
+    // It would be 0 if table does not exist, and 1 if it does
+    let table_exists: usize = db
+        .query_row_and_then(
+            "SELECT count(*) FROM sqlite_master WHERE type = 'table' AND name = 'urls'",
+            [],
+            |row| row.get(0),
+        )
+        .expect("Error querying existence of table.");
 
     // Create table if it doesn't exist
     db.execute(
@@ -130,7 +150,8 @@ pub fn open_db(path: String) -> Connection {
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             long_url TEXT NOT NULL,
             short_url TEXT NOT NULL,
-            hits INTEGER NOT NULL
+            hits INTEGER NOT NULL,
+            expiry_time INTEGER NOT NULL DEFAULT 0
             )",
         // expiry_time is added later during migration 1
         [],
@@ -144,11 +165,15 @@ pub fn open_db(path: String) -> Connection {
     )
     .expect("Unable to create index on short_url.");
 
-    let current_user_version: u32 = db
-        .query_row_and_then("SELECT user_version FROM pragma_user_version", [], |row| {
+    let current_user_version: u32 = if table_exists == 0 {
+        // It would mean that the table is newly created i.e. has the desired schema
+        user_version
+    } else {
+        db.query_row_and_then("SELECT user_version FROM pragma_user_version", [], |row| {
             row.get(0)
         })
-        .unwrap_or_default();
+        .unwrap_or_default()
+    };
 
     // Migration 1: Add expiry_time, introduced in 5.9.0
     if current_user_version < 1 {
@@ -166,8 +191,8 @@ pub fn open_db(path: String) -> Connection {
     )
     .expect("Unable to create index on expiry_time.");
 
-    // Set current user_version. Should be incremented on change of schema.
-    db.execute("PRAGMA user_version = 1", [])
+    // Set the user version
+    db.pragma_update(None, "user_version", user_version)
         .expect("Unable to set user_version.");
 
     db
