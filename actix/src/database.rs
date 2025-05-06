@@ -19,33 +19,36 @@ pub fn find_url(
     db: &Connection,
     needhits: bool,
 ) -> (Option<String>, Option<i64>, Option<i64>) {
+    let now = chrono::Utc::now().timestamp();
     let query = if needhits {
-        "SELECT long_url, hits, expiry_time FROM urls WHERE short_url = ?1"
+        "SELECT long_url, hits, expiry_time FROM urls WHERE short_url = ?1 AND expiry_time > ?2 OR expiry_time = 0"
     } else {
-        "SELECT long_url FROM urls WHERE short_url = ?1"
+        "SELECT long_url FROM urls WHERE short_url = ?1 AND expiry_time > ?2 OR expiry_time = 0"
     };
     let mut statement = db
         .prepare_cached(query)
         .expect("Error preparing SQL statement for find_url.");
-
-    let longlink = statement
-        .query_row([shortlink], |row| row.get("long_url"))
-        .ok();
-    let hits = statement.query_row([shortlink], |row| row.get("hits")).ok();
-    let expiry_time = statement
-        .query_row([shortlink], |row| row.get("expiry_time"))
-        .ok();
-    (longlink, hits, expiry_time)
+    statement
+        .query_row((shortlink, now), |row| {
+            let longlink = row.get("long_url").ok();
+            let hits = row.get("hits").ok();
+            let expiry_time = row.get("expiry_time").ok();
+            Ok((longlink, hits, expiry_time))
+        })
+        .unwrap()
 }
 
 // Get all URLs in DB
 pub fn getall(db: &Connection) -> Vec<DBRow> {
+    let now = chrono::Utc::now().timestamp();
     let mut statement = db
-        .prepare_cached("SELECT * FROM urls ORDER BY id ASC")
+        .prepare_cached(
+            "SELECT * FROM urls WHERE expiry_time > ?1 OR expiry_time = 0 ORDER BY id ASC",
+        )
         .expect("Error preparing SQL statement for getall.");
 
     let mut data = statement
-        .query([])
+        .query([now])
         .expect("Error executing query for getall.");
 
     let mut links: Vec<DBRow> = Vec::new();
@@ -83,9 +86,15 @@ pub fn add_link(
     db: &Connection,
 ) -> Result<usize, Error> {
     let now = chrono::Utc::now().timestamp();
+    let expiry_time = if expiry_delay == 0 {
+        0
+    } else {
+        now + expiry_delay
+    };
+
     db.execute(
         "INSERT INTO urls (long_url, short_url, hits, expiry_time) VALUES (?1, ?2, ?3, ?4)",
-        (longlink, shortlink, 0, now + expiry_delay),
+        (longlink, shortlink, 0, expiry_time),
     )
 }
 
@@ -109,15 +118,15 @@ pub fn cleanup(db: &Connection) {
     }
 
     db.execute(
-        "DELETE FROM urls WHERE ?1 > expiry_time AND expiry_time > 0",
+        "DELETE FROM urls WHERE expiry_time < ?1 AND expiry_time > 0",
         [now],
     )
     .inspect(|&u| {
         if u > 0 {
-            println!("{u} shortlinks deleted.")
+            println!("{u} expired links deleted.")
         }
     })
-    .expect("Error cleaning expired shortlinks.");
+    .expect("Error cleaning expired links.");
 }
 
 // Delete and existing link
