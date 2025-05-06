@@ -11,17 +11,33 @@ get the siteurl using `curl http://localhost:4567/api/siteurl`. These routes are
 In order to use API key validation, set the `api_key` environment variable. If this is not set, the API will default to cookie
 validation (see section above). If the API key is insecure, a warning will be outputted along with a generated API key which may be used.
 
+**All responses for requests using API key are JSON encoded.**
+
 Example Linux command for generating a secure API key: `tr -dc A-Za-z0-9 </dev/urandom | head -c 128`
 
 To add a link:
 ``` bash
-curl -X POST -H "X-API-Key: <YOUR_API_KEY>" -d '{"shortlink":"<shortlink>", "longlink":"<longlink>"}' http://localhost:4567/api/new
+curl -X POST -H "X-API-Key: <YOUR_API_KEY>" -d '{"shortlink":"<shortlink>", "longlink":"<longlink>", "expiry_delay": <expiry_delay>}' http://localhost:4567/api/new
 ```
-Send an empty or missing `<shortlink>` if you want it to be auto-generated. The server will reply with the generated shortlink.
+An empty or missing `<shortlink>` will result in it being auto-generated. 
+Expiry delay is in seconds. It is capped to a maximum of 5 years. A missing `<expiry_delay>` or a value of 0 will disable expiry.
+
+The server will reply in the following format.
+```json
+{"success":true,"error":false,"shorturl":<shortlink>,"expiry_time":<expiry_time>}
+or
+{"success":false,"error":true,"reason":<reason>}
+```
 
 To get information about a single shortlink:
 ``` bash
 curl -H "X-API-Key: <YOUR_API_KEY>" -d '<shortlink>' http://localhost:4567/api/expand
+```
+The server will reply in the following format.
+```json
+{"success":true,"error":false,"longurl":<longurl>,"hits":<hits>,"expiry_time":<expiry_time>}
+or
+{"success":false,"error":true,"reason":<reason>}
 ```
 (This route is not accessible using cookie validation.)
 
@@ -45,24 +61,7 @@ If you have set up a password, first do the following to get an authentication c
 curl -X POST -d "<your-password>" -c cookie.txt http://localhost:4567/api/login
 ```
 You should receive "Correct password!" if the provided password was correct. For any subsequent
-request, please add `-b cookie.txt` to provide authentication.
-
-To add a link, do
-```bash
-curl -X POST -d '{"shortlink":"<shortlink>", "longlink":"<longlink>"}' http://localhost:4567/api/new
-```
-Send an empty or missing `<shortlink>` if you want it to be auto-generated. The server will reply with the generated shortlink.
-
-To get a list of all the currently available links as `json`, do
-```bash
-curl http://localhost:4567/api/all
-```
-
-To delete a link, do
-```bash
-curl -X DELETE http://localhost:4567/api/del/<shortlink>
-```
-The server will send a confirmation.
+request, please add `-b cookie.txt` to provide authentication. Unless specified, all API methods should work with cookies.
 
 ## Disable authentication
 If you do not define a password environment variable when starting the docker image, authentication
