@@ -21,9 +21,9 @@ pub fn find_url(
 ) -> (Option<String>, Option<i64>, Option<i64>) {
     let now = chrono::Utc::now().timestamp();
     let query = if needhits {
-        "SELECT long_url, hits, expiry_time FROM urls WHERE short_url = ?1 AND expiry_time > ?2 OR expiry_time = 0"
+        "SELECT long_url, hits, expiry_time FROM urls WHERE short_url = ?1 AND (expiry_time > ?2 OR expiry_time) = 0"
     } else {
-        "SELECT long_url FROM urls WHERE short_url = ?1 AND expiry_time > ?2 OR expiry_time = 0"
+        "SELECT long_url FROM urls WHERE short_url = ?1 AND (expiry_time > ?2 OR expiry_time = 0)"
     };
     let mut statement = db
         .prepare_cached(query)
@@ -35,7 +35,7 @@ pub fn find_url(
             let expiry_time = row.get("expiry_time").ok();
             Ok((longlink, hits, expiry_time))
         })
-        .unwrap()
+        .unwrap_or_default()
 }
 
 // Get all URLs in DB
