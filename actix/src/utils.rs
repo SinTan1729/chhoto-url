@@ -13,8 +13,11 @@ use std::env;
 // Struct for reading link pairs sent during API call
 #[derive(Deserialize)]
 struct URLPair {
+    #[serde(default)]
     shortlink: String,
     longlink: String,
+    #[serde(default)]
+    expiry_delay: i64,
 }
 
 // Define JSON struct for response
@@ -84,11 +87,11 @@ pub fn get_longurl(
     shortlink: String,
     db: &Connection,
     needhits: bool,
-) -> (Option<String>, Option<i64>) {
+) -> (Option<String>, Option<i64>, Option<i64>) {
     if validate_link(&shortlink) {
         database::find_url(shortlink.as_str(), db, needhits)
     } else {
-        (None, None)
+        (None, None, None)
     }
 }
 
@@ -105,13 +108,12 @@ pub fn getall(db: &Connection) -> String {
 }
 
 // Make checks and then request the DB to add a new URL entry
-pub fn add_link(req: String, db: &Connection) -> (bool, String) {
+pub fn add_link(req: String, db: &Connection) -> (bool, String, i64) {
     let mut chunks: URLPair;
     if let Ok(json) = serde_json::from_str(&req) {
         chunks = json;
     } else {
-        // shorturl should always be supplied, even if empty
-        return (false, String::from("Invalid request!"));
+        return (false, String::from("Invalid request!"), 0);
     }
 
     let style = env::var("slug_style").unwrap_or(String::from("Pair"));
@@ -130,23 +132,32 @@ pub fn add_link(req: String, db: &Connection) -> (bool, String) {
         true
     };
 
+    // Allow max delay of 5 years
+    chunks.expiry_delay = chunks.expiry_delay.min(157784760);
+    chunks.expiry_delay = chunks.expiry_delay.max(0);
+
     if validate_link(chunks.shortlink.as_str()) {
-        match database::add_link(chunks.shortlink.clone(), chunks.longlink, db) {
-            Ok(_) => (true, chunks.shortlink),
+        match database::add_link(
+            chunks.shortlink.clone(),
+            chunks.longlink,
+            chunks.expiry_delay,
+            db,
+        ) {
+            Ok(expiry_time) => (true, chunks.shortlink, expiry_time),
             Err(error) => {
                 if error.sqlite_error().map(|err| err.extended_code)
                     == Some(SQLITE_CONSTRAINT_UNIQUE)
                     && shortlink_provided
                 {
-                    (false, String::from("Short URL is already in use!"))
+                    (false, String::from("Short URL is already in use!"), 0)
                 } else {
                     // This should be super rare
-                    (false, String::from("Something went wrong!"))
+                    (false, String::from("Something went wrong!"), 0)
                 }
             }
         }
     } else {
-        (false, String::from("Short URL is not valid!"))
+        (false, String::from("Short URL is not valid!"), 0)
     }
 }
 
