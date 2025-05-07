@@ -21,16 +21,11 @@ docker-stop:
 	docker ps -aq --filter "name=chhoto-url" | xargs -r docker rm
 
 docker-test: docker-local docker-stop
-	docker run -p ${PORT}:${PORT} --name chhoto-url -e password="${PASSWORD}" -e public_mode="${PUBLIC_MODE}" \
-		-e site_url="${SITE_URL}" -e db_url="${DB_URL}" -e redirect_method="${REDIRECT_METHOD}" -e port="${PORT}"\
-		-e slug_style="${SLUG_STYLE}" -e slug_length="${SLUG_LENGTH}" -e cache_control_header="${CACHE_CONTROL_HEADER}"\
-		-e api_key="${API_KEY}" -e disable_frontend="${DISABLE_FRONTEND}" -e hash_algorithm="${HASH_ALGORITHM}"\
-		-e public_mode_expiry_delay="${PUBLIC_MODE_EXPIRY_DELAY}" -v "${DB_FILE}:${DB_URL}" \
-		-d chhoto-url
+	docker run -p ${port}:${port} --name chhoto-url --env-file ./.env -v "${db_file}:${db_url}" -d chhoto-url
 	docker logs chhoto-url -f
 
 docker-dev: build-dev
-	docker build --push --tag ${DOCKER_USERNAME}/chhoto-url:dev --build-arg TARGETARCH=amd64 -f Dockerfile.multiarch .
+	docker build --push --tag ${docker_username}/chhoto-url:dev --build-arg TARGETARCH=amd64 -f Dockerfile.multiarch .
 
 build-release:
 	cross build --release --locked --manifest-path=actix/Cargo.toml --target aarch64-unknown-linux-musl
@@ -41,8 +36,8 @@ V_PATCH := $(shell cat actix/Cargo.toml | sed -rn 's/^version = "(.+)"$$/\1/p')
 V_MINOR := $(shell cat actix/Cargo.toml | sed -rn 's/^version = "(.+)\..+"$$/\1/p')
 V_MAJOR := $(shell cat actix/Cargo.toml | sed -rn 's/^version = "(.+)\..+\..+"$$/\1/p')
 docker-release: build-release
-	docker buildx build --push --tag ${DOCKER_USERNAME}/chhoto-url:${V_MAJOR} --tag ${DOCKER_USERNAME}/chhoto-url:${V_MINOR} \
-		--tag ${DOCKER_USERNAME}/chhoto-url:${V_PATCH} --tag ${DOCKER_USERNAME}/chhoto-url:latest \
+	docker buildx build --push --tag ${docker_username}/chhoto-url:${v_major} --tag ${docker_username}/chhoto-url:${v_minor} \
+		--tag ${docker_username}/chhoto-url:${v_patch} --tag ${docker_username}/chhoto-url:latest \
 		--platform linux/amd64,linux/arm64,linux/arm/v7 -f Dockerfile.multiarch .
 
 clean:
