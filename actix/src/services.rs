@@ -63,7 +63,7 @@ pub async fn add_link(
     let result = utils::is_api_ok(http);
     // If success, add new link
     if result.success {
-        let out = utils::add_link(req, &data.db);
+        let out = utils::add_link(req, &data.db, false);
         if out.0 {
             let port = env::var("port")
                 .unwrap_or(String::from("4567"))
@@ -112,7 +112,7 @@ pub async fn add_link(
         HttpResponse::Unauthorized().json(result)
     // If password authentication or public mode is used - keeps backwards compatibility
     } else if env::var("public_mode") == Ok(String::from("Enable")) || auth::validate(session) {
-        let out = utils::add_link(req, &data.db);
+        let out = utils::add_link(req, &data.db, true);
         if out.0 {
             HttpResponse::Created().body(out.1)
         } else {
@@ -142,9 +142,13 @@ pub async fn getall(
         HttpResponse::Ok().body(utils::getall(&data.db))
     } else {
         let body = if env::var("public_mode") == Ok(String::from("Enable")) {
-            "Using public mode."
+            let public_mode_expiry_delay = env::var("public_mode_expiry_delay")
+                .ok()
+                .and_then(|s| s.parse::<i64>().ok())
+                .unwrap_or_default();
+            format!("Using public mode. {public_mode_expiry_delay}")
         } else {
-            "Not logged in!"
+            String::from("Not logged in!")
         };
         HttpResponse::Unauthorized().body(body)
     }

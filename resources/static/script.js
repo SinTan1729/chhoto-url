@@ -48,8 +48,15 @@ const refreshData = async () => {
         console.log(errorMsg);
         if (errorMsg.startsWith("Using public mode.")) {
             document.getElementById("admin-button").hidden = false;
-            loading_text = document.getElementById("loading-text");
-            loading_text.innerHTML = "Using public mode."
+            let loading_text = document.getElementById("loading-text");
+            loading_text.innerHTML = "Using public mode.";
+            let expiry = parseInt(errorMsg.split(" ").pop());
+            if (expiry > 0) {
+                loading_text.innerHTML += " Unless chosen a shorter expiry time, submitted links will automatically expire ";
+                time = new Date();
+                time.setSeconds(time.getSeconds() + expiry);
+                loading_text.innerHTML += formatRelativeTime(time) + ".";
+            }
             showVersion();
         } else {
             getLogin();
@@ -99,7 +106,7 @@ const showAlert = async (text, col) => {
     controls.appendChild(alertBox);
 }
 
-const formatRelative = (timestamp) => {
+const formatRelativeTime = (timestamp) => {
     now = new Date();
     // in miliseconds
     var units = {
@@ -108,15 +115,17 @@ const formatRelative = (timestamp) => {
         day   : 86400000,
         hour  : 3600000,
         minute: 60000,
-        second: 1000
-    }
+        second: 1000,
+    };
 
-    var diff = (timestamp) - now
-    var rtf = new Intl.RelativeTimeFormat('en', { numeric: 'auto' })
+    var diff = (timestamp) - now;
+    var rtf = new Intl.RelativeTimeFormat('en', { numeric: 'auto' });
       // "Math.abs" accounts for both "past" & "future" scenarios
-    for (var u in units) 
-        if (Math.abs(diff) > units[u] || u == 'second') 
-            return rtf.format(Math.round(diff/units[u]), u)
+    for (var u in units) {
+        if (Math.abs(diff) > units[u] || u == 'second') {
+            return rtf.format(Math.round(diff/units[u]), u);
+        }
+    }
 }
 
 const TR = (row, site) => {
@@ -141,7 +150,7 @@ const TR = (row, site) => {
         expiryTime = "-";
     } else {
         expiryTime = new Date(expiryTime * 1000);
-        expiryTime = formatRelative(expiryTime);
+        expiryTime = formatRelativeTime(expiryTime);
     }
     let expiryTD = TD(expiryTime);
     expiryTD.setAttribute("label", "Expiry");

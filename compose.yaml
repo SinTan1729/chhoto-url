@@ -63,6 +63,10 @@ services:
             # In case you want to provide public access to adding links (and not 
             # delete, or listing), change the following option to Enable.
             # - public_mode=Disable
+            # Additionally, it's possible to force an expiry delay in public mode.
+            # The user can still choose a shorter expiry delay. The input must be in seconds.
+            # It defaults to 0 i.e. no expiry.
+            # - public_mode_expiry_delay=3600
             # In case you want to completely disable the frontend, change the following
             # to True.
             # - disable_frontend=False
