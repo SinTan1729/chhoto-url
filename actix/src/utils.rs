@@ -1,7 +1,6 @@
 // SPDX-FileCopyrightText: 2023 Sayantan Santra <sayantan.santra689@gmail.com>
 // SPDX-License-Identifier: MIT
 
-use crate::{auth, database};
 use actix_web::HttpRequest;
 use nanoid::nanoid;
 use rand::seq::IndexedRandom;
@@ -9,6 +8,8 @@ use regex::Regex;
 use rusqlite::{ffi::SQLITE_CONSTRAINT_UNIQUE, Connection};
 use serde::{Deserialize, Serialize};
 use std::env;
+
+use crate::{auth, config::Config, database};
 
 // Struct for reading link pairs sent during API call
 #[derive(Deserialize)]
@@ -30,13 +31,13 @@ pub struct Response {
 }
 
 // If the api_key environment variable exists
-pub fn is_api_ok(http: HttpRequest) -> Response {
+pub fn is_api_ok(http: HttpRequest, config: &Config) -> Response {
     // If the api_key environment variable exists
     if env::var("api_key").is_ok() {
         // If the header exists
         if let Some(header) = auth::api_header(&http) {
             // If the header is correct
-            if auth::validate_key(header.to_string()) {
+            if auth::validate_key(header.to_string(), config) {
                 Response {
                     success: true,
                     error: false,
@@ -108,7 +109,7 @@ pub fn getall(db: &Connection) -> String {
 }
 
 // Make checks and then request the DB to add a new URL entry
-pub fn add_link(req: String, db: &Connection, public_mode: bool) -> (bool, String, i64) {
+pub fn add_link(req: String, db: &Connection, config: &Config) -> (bool, String, i64) {
     let mut chunks: URLPair;
     if let Ok(json) = serde_json::from_str(&req) {
         chunks = json;
@@ -133,17 +134,11 @@ pub fn add_link(req: String, db: &Connection, public_mode: bool) -> (bool, Strin
     };
 
     // In public mode, set automatic expiry delay
-    if public_mode {
-        let public_mode_expiry_delay = env::var("public_mode_expiry_delay")
-            .ok()
-            .and_then(|s| s.parse::<i64>().ok())
-            .unwrap_or_default();
-        if public_mode_expiry_delay > 0 {
-            if chunks.expiry_delay == 0 {
-                chunks.expiry_delay = public_mode_expiry_delay;
-            } else {
-                chunks.expiry_delay = chunks.expiry_delay.min(public_mode_expiry_delay);
-            }
+    if config.public_mode && config.public_mode_expiry_delay > 0 {
+        if chunks.expiry_delay == 0 {
+            chunks.expiry_delay = config.public_mode_expiry_delay;
+        } else {
+            chunks.expiry_delay = chunks.expiry_delay.min(config.public_mode_expiry_delay);
         }
     }
 

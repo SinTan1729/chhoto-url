@@ -4,16 +4,16 @@
 use actix_session::Session;
 use actix_web::HttpRequest;
 use argon2::{password_hash::PasswordHash, Argon2, PasswordVerifier};
-use std::{env, time::SystemTime};
+use passwords::PasswordGenerator;
+use std::time::SystemTime;
 
-// API key generation and scoring
-use passwords::{analyzer, scorer, PasswordGenerator};
+use crate::config::Config;
 
 // Validate API key
-pub fn validate_key(key: String) -> bool {
-    if let Ok(api_key) = env::var("api_key") {
+pub fn validate_key(key: String, config: &Config) -> bool {
+    if let Some(api_key) = &config.api_key {
         // Check if API Key is hashed using Argon2. More algorithms maybe added later.
-        let authorized = if env::var("hash_algorithm") == Ok(String::from("Argon2")) {
+        let authorized = if config.hash_algorithm.is_some() {
             println!("Using Argon2 hash for API key validation.");
             let hash = PasswordHash::new(&key).expect("The provided password hash in invalid.");
             Argon2::default()
@@ -21,7 +21,7 @@ pub fn validate_key(key: String) -> bool {
                 .is_ok()
         } else {
             // If hashing is not enabled, use the plaintext password for matching
-            api_key == key
+            api_key == &key
         };
         if !authorized {
             eprintln!("Incorrect API key was provided when connecting to Chhoto URL.");
@@ -57,20 +57,10 @@ pub fn api_header(req: &HttpRequest) -> Option<&str> {
     req.headers().get("X-API-Key")?.to_str().ok()
 }
 
-// Determine whether the inputted API key is sufficiently secure
-pub fn is_key_secure() -> bool {
-    let score = scorer::score(&analyzer::analyze(env::var("api_key").unwrap()));
-    score >= 90.0
-}
-
 // Validate a given password
-pub fn validate(session: Session) -> bool {
+pub fn validate(session: Session, config: &Config) -> bool {
     // If there's no password provided, just return true
-    if env::var("password")
-        .ok()
-        .filter(|s| !s.trim().is_empty())
-        .is_none()
-    {
+    if config.password.is_none() {
         return true;
     }
 

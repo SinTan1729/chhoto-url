@@ -59,44 +59,29 @@ pub async fn add_link(
     session: Session,
     http: HttpRequest,
 ) -> HttpResponse {
+    let config = &data.config;
     // Call is_api_ok() function, pass HttpRequest
-    let result = utils::is_api_ok(http);
+    let result = utils::is_api_ok(http, config);
     // If success, add new link
     if result.success {
-        let out = utils::add_link(req, &data.db, false);
+        let out = utils::add_link(req, &data.db, config);
         if out.0 {
-            let port = env::var("port")
-                .unwrap_or(String::from("4567"))
-                .parse::<u16>()
-                .expect("Supplied port is not an integer");
-            let mut url = format!(
-                "{}:{}",
-                env::var("site_url")
-                    .ok()
-                    .filter(|s| !s.trim().is_empty())
-                    .unwrap_or(String::from("http://localhost")),
-                port
-            );
-            // If the port is 80, remove the port from the returned URL (better for copying and pasting)
-            // Return http://
-            if port == 80 {
-                url = env::var("site_url")
-                    .ok()
-                    .filter(|s| !s.trim().is_empty())
-                    .unwrap_or(String::from("http://localhost"));
-            }
-            // If the port is 443, remove the port from the returned URL (better for copying and pasting)
-            // Return https://
-            if port == 443 {
-                url = env::var("site_url")
-                    .ok()
-                    .filter(|s| !s.trim().is_empty())
-                    .unwrap_or(String::from("https://localhost"));
-            }
+            let domain = data
+                .config
+                .site_url
+                .clone()
+                .unwrap_or(String::from("unset"));
+            let protocol = if config.port == 443 { "https" } else { "http" };
+            let port_text = if [80, 443].contains(&config.port) {
+                String::new()
+            } else {
+                format!(":{}", config.port)
+            };
+            let shorturl = format!("{protocol}://{domain}{port_text}/{}", out.1);
             let response = CreatedURL {
                 success: true,
                 error: false,
-                shorturl: format!("{}/{}", url, out.1),
+                shorturl,
                 expiry_time: out.2,
             };
             HttpResponse::Created().json(response)
@@ -111,8 +96,8 @@ pub async fn add_link(
     } else if result.error {
         HttpResponse::Unauthorized().json(result)
     // If password authentication or public mode is used - keeps backwards compatibility
-    } else if env::var("public_mode") == Ok(String::from("Enable")) || auth::validate(session) {
-        let out = utils::add_link(req, &data.db, true);
+    } else if config.public_mode || auth::validate(session, config) {
+        let out = utils::add_link(req, &data.db, config);
         if out.0 {
             HttpResponse::Created().body(out.1)
         } else {
@@ -130,23 +115,20 @@ pub async fn getall(
     session: Session,
     http: HttpRequest,
 ) -> HttpResponse {
+    let config = &data.config;
     // Call is_api_ok() function, pass HttpRequest
-    let result = utils::is_api_ok(http);
+    let result = utils::is_api_ok(http, config);
     // If success, return all links
     if result.success {
         HttpResponse::Ok().body(utils::getall(&data.db))
     } else if result.error {
         HttpResponse::Unauthorized().json(result)
     // If password authentication is used - keeps backwards compatibility
-    } else if auth::validate(session) {
+    } else if auth::validate(session, config) {
         HttpResponse::Ok().body(utils::getall(&data.db))
     } else {
-        let body = if env::var("public_mode") == Ok(String::from("Enable")) {
-            let public_mode_expiry_delay = env::var("public_mode_expiry_delay")
-                .ok()
-                .and_then(|s| s.parse::<i64>().ok())
-                .unwrap_or_default();
-            format!("Using public mode. {public_mode_expiry_delay}")
+        let body = if config.public_mode {
+            format!("Using public mode. {}", config.public_mode_expiry_delay)
         } else {
             String::from("Not logged in!")
         };
@@ -157,7 +139,7 @@ pub async fn getall(
 // Get information about a single shortlink
 #[post("/api/expand")]
 pub async fn expand(req: String, data: web::Data<AppState>, http: HttpRequest) -> HttpResponse {
-    let result = utils::is_api_ok(http);
+    let result = utils::is_api_ok(http, &data.config);
     if result.success {
         let linkinfo = utils::get_longurl(req, &data.db, true);
         if let Some(longlink) = linkinfo.0 {
@@ -188,12 +170,12 @@ pub async fn expand(req: String, data: web::Data<AppState>, http: HttpRequest) -
 
 // Get the site URL
 #[get("/api/siteurl")]
-pub async fn siteurl() -> HttpResponse {
-    let site_url = env::var("site_url")
-        .ok()
-        .filter(|s| !s.trim().is_empty())
-        .unwrap_or(String::from("unset"));
-    HttpResponse::Ok().body(site_url)
+pub async fn siteurl(data: web::Data<AppState>) -> HttpResponse {
+    if let Some(url) = &data.config.site_url {
+        HttpResponse::Ok().body(url.clone())
+    } else {
+        HttpResponse::Ok().body("unset")
+    }
 }
 
 // Get the version number
@@ -218,9 +200,8 @@ pub async fn link_handler(
 ) -> impl Responder {
     let shortlink_str = shortlink.to_string();
     if let Some(longlink) = utils::get_longurl(shortlink_str, &data.db, false).0 {
-        let redirect_method = env::var("redirect_method").unwrap_or(String::from("PERMANENT"));
         database::add_hit(shortlink.as_str(), &data.db);
-        if redirect_method == "TEMPORARY" {
+        if data.config.redirect_method == "TEMPORARY" {
             Either::Left(Redirect::to(longlink))
         } else {
             // Defaults to permanent redirection
@@ -238,13 +219,13 @@ pub async fn link_handler(
 
 // Handle login
 #[post("/api/login")]
-pub async fn login(req: String, session: Session) -> HttpResponse {
+pub async fn login(req: String, session: Session, data: web::Data<AppState>) -> HttpResponse {
+    let config = &data.config;
     // Check if password is hashed using Argon2. More algorithms maybe added later.
-    let authorized = if let Ok(password) = env::var("password") {
-        if env::var("hash_algorithm") == Ok(String::from("Argon2")) {
+    let authorized = if let Some(password) = &config.password {
+        if config.hash_algorithm.is_some() {
             println!("Using Argon2 hash for password validation.");
-            let hash =
-                PasswordHash::new(&password).expect("The provided password hash in invalid.");
+            let hash = PasswordHash::new(password).expect("The provided password hash in invalid.");
             Some(
                 Argon2::default()
                     .verify_password(req.as_bytes(), &hash)
@@ -252,13 +233,13 @@ pub async fn login(req: String, session: Session) -> HttpResponse {
             )
         } else {
             // If hashing is not enabled, use the plaintext password for matching
-            Some(password == req)
+            Some(password == &req)
         }
     } else {
         None
     };
     // Keep this function backwards compatible
-    if env::var("api_key").is_ok() {
+    if config.api_key.is_some() {
         if let Some(valid_pass) = authorized {
             if !valid_pass {
                 eprintln!("Failed login attempt!");
@@ -298,7 +279,7 @@ pub async fn login(req: String, session: Session) -> HttpResponse {
 }
 
 // Handle logout
-// There's no reason to be calling this route with an API key, so it is not necessary to check if the api_key env variable is set.
+// There's no reason to be calling this route with an API key
 #[delete("/api/logout")]
 pub async fn logout(session: Session) -> HttpResponse {
     if session.remove("chhoto-url-auth").is_some() {
@@ -316,8 +297,9 @@ pub async fn delete_link(
     session: Session,
     http: HttpRequest,
 ) -> HttpResponse {
+    let config = &data.config;
     // Call is_api_ok() function, pass HttpRequest
-    let result = utils::is_api_ok(http);
+    let result = utils::is_api_ok(http, config);
     // If success, delete shortlink
     if result.success {
         if utils::delete_link(shortlink.to_string(), &data.db) {
@@ -338,7 +320,7 @@ pub async fn delete_link(
     } else if result.error {
         HttpResponse::Unauthorized().json(result)
     // If "pass" is true - keeps backwards compatibility
-    } else if auth::validate(session) {
+    } else if auth::validate(session, config) {
         if utils::delete_link(shortlink.to_string(), &data.db) {
             HttpResponse::Ok().body(format!("Deleted {shortlink}"))
         } else {

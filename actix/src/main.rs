@@ -5,11 +5,12 @@ use actix_files::Files;
 use actix_session::{storage::CookieSessionStore, SessionMiddleware};
 use actix_web::{cookie::Key, middleware, web, App, HttpServer};
 use rusqlite::Connection;
-pub(crate) use std::{env, io::Result};
+pub(crate) use std::io::Result;
 use tokio::{spawn, time};
 
 // Import modules
 mod auth;
+mod config;
 mod database;
 mod services;
 mod utils;
@@ -17,6 +18,7 @@ mod utils;
 // This struct represents state
 struct AppState {
     db: Connection,
+    config: config::Config,
 }
 
 #[actix_web::main]
@@ -26,59 +28,14 @@ async fn main() -> Result<()> {
     // Generate session key in runtime so that restart invalidates older logins
     let secret_key = Key::generate();
 
-    let db_location = env::var("db_url")
-        .ok()
-        .filter(|s| !s.trim().is_empty())
-        .unwrap_or(String::from("urls.sqlite"));
-
-    // Get the port environment variable
-    let port = env::var("port")
-        .unwrap_or(String::from("4567"))
-        .parse::<u16>()
-        .expect("Supplied port is not an integer");
-
-    let cache_control_header = env::var("cache_control_header")
-        .ok()
-        .filter(|s| !s.trim().is_empty());
-
-    let disable_frontend = env::var("disable_frontend").is_ok_and(|s| s.trim() == "True");
-
-    // If an API key is set, check the security
-    if let Ok(key) = env::var("api_key") {
-        if !auth::is_key_secure() {
-            eprintln!("WARN: API key is insecure! Please change it. Current key is: {}. Generated secure key which you may use: {}", key, auth::gen_key())
-        } else {
-            println!("Secure API key was provided.")
-        }
-    }
-
-    // If the site_url env variable exists
-    if let Some(site_url) = env::var("site_url").ok().filter(|s| !s.trim().is_empty()) {
-        // Get first and last characters of the site_url
-        let mut chars = site_url.chars();
-        let first = chars.next();
-        let last = chars.next_back();
-        let url = chars.as_str();
-        // If the site_url is encapsulated by quotes (i.e. invalid)
-        if first == Option::from('"') || first == Option::from('\'') && first == last {
-            // Set the site_url without the quotes
-            env::set_var("site_url", url);
-            println!("WARN: The site_url environment variable is encapsulated by quotes. Automatically adjusting to {}", url);
-        } else {
-            // No issues
-            println!("INFO: Configured Site URL is: {site_url}.");
-        }
-    } else {
-        // Site URL is not configured
-        eprintln!("WARN: The site_url environment variable is not configured. Defaulting to http://localhost");
-        println!("INFO: Public URI is: http://localhost:{port}.")
-    }
+    // Read config from env vars
+    let conf = config::read();
 
     // Tell the user that the server has started, and where it is listening to, rather than simply outputting nothing
-    println!("Server has started at 0.0.0.0 on port {port}.");
+    println!("Server has started at 0.0.0.0 on port {}.", conf.port);
 
     // Do periodic cleanup
-    let db_location_clone = db_location.clone();
+    let db_location_clone = conf.db_location.clone();
     println!("Starting cleanup service, running once every hour.");
     spawn(async move {
         let db = database::open_db(db_location_clone);
@@ -89,6 +46,7 @@ async fn main() -> Result<()> {
         }
     });
 
+    let conf_clone = conf.clone();
     // Actually start the server
     HttpServer::new(move || {
         let mut app = App::new()
@@ -102,9 +60,10 @@ async fn main() -> Result<()> {
             )
             // Maintain a single instance of database throughout
             .app_data(web::Data::new(AppState {
-                db: database::open_db(db_location.clone()),
+                db: database::open_db(conf_clone.db_location.clone()),
+                config: conf_clone.clone(),
             }))
-            .wrap(if let Some(header) = &cache_control_header {
+            .wrap(if let Some(header) = &conf.cache_control_header {
                 middleware::DefaultHeaders::new().add(("Cache-Control", header.to_owned()))
             } else {
                 middleware::DefaultHeaders::new()
@@ -119,14 +78,14 @@ async fn main() -> Result<()> {
             .service(services::logout)
             .service(services::expand);
 
-        if !disable_frontend {
+        if !conf.disable_frontend {
             app = app.service(Files::new("/", "./resources/").index_file("index.html"));
         }
 
         app.default_service(actix_web::web::get().to(services::error404))
     })
     // Hardcode the port the server listens to. Allows for more intuitive Docker Compose port management
-    .bind(("0.0.0.0", port))?
+    .bind(("0.0.0.0", conf.port))?
     .run()
     .await
 }
