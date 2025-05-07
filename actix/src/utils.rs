@@ -139,7 +139,11 @@ pub fn add_link(req: String, db: &Connection, public_mode: bool) -> (bool, Strin
             .and_then(|s| s.parse::<i64>().ok())
             .unwrap_or_default();
         if public_mode_expiry_delay > 0 {
-            chunks.expiry_delay = chunks.expiry_delay.min(public_mode_expiry_delay);
+            if chunks.expiry_delay == 0 {
+                chunks.expiry_delay = public_mode_expiry_delay;
+            } else {
+                chunks.expiry_delay = chunks.expiry_delay.min(public_mode_expiry_delay);
+            }
         }
     }
 
