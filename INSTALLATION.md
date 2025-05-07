@@ -75,8 +75,10 @@ echo -n <password> | argon2 <salt> -id -t 3 -m 16 -l 32 -e
 You may also use online tools for this step.
 
 To enable public mode, set `public_mode` to `Enable`. With this, anyone will be able to add 
-links. Listing existing links or deleting links will need admin access using the password. To
-completely disable the frontend, set `disable_frontend` to `True`.
+links. Listing existing links or deleting links will need admin access using the password. If
+`public_mode` is enabled, and `public_mode_expiry_delay` is set to a positive value, submitted links
+will expire in that given time. The user can still choose a shorter expiry delay.
+To completely disable the frontend, set `disable_frontend` to `True`.
 
 By default, the server sends no Cache-Control headers. You can set custom `cache_control_header` 
 to send your desired headers. It must be a comma separated list of valid 

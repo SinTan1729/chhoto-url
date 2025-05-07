@@ -50,7 +50,8 @@ for small. URL means, well... URL. So the name simply means Small URL.
 - Has a mobile friendly UI, and automatic dark mode.
 - Has a public mode, where anyone can add links without authentication. Deleting 
   or listing available links will need admin access using the password. It's also 
-  possible to completely disable the frontend.
+  possible to completely disable the frontend. It's also possible to force an expiry 
+  time for public instances, which might be useful.
 - Allows setting the URL of your website, in case you want to conveniently
   generate short links locally.
 - Links are stored in an SQLite database.
