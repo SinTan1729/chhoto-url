@@ -46,10 +46,10 @@ const refreshData = async () => {
         let errorMsg = await res.text();
         document.getElementById("url-table").innerHTML = '';
         console.log(errorMsg);
-        if (errorMsg == "Using public mode.") {
+        if (errorMsg.startsWith("Using public mode.")) {
             document.getElementById("admin-button").hidden = false;
             loading_text = document.getElementById("loading-text");
-            loading_text.hidden = true;
+            loading_text.innerHTML = "Using public mode."
             showVersion();
         } else {
             getLogin();
@@ -283,6 +283,10 @@ const logOut = async () => {
     console.log(reply);
     document.getElementById("table-box").hidden = true;
     document.getElementById("loading-text").hidden = false;
+    admin_button = document.getElementById("admin-button");
+    admin_button.innerText = "login";
+    admin_button.href = "javascript:getLogin()";
+    admin_button.hidden = false;
     refreshData();
 }
 
