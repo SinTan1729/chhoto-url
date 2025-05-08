@@ -21,8 +21,8 @@ docker-stop:
 	docker ps -aq --filter "name=chhoto-url" | xargs -r docker rm
 
 docker-test: docker-local docker-stop
-	docker run -p ${port}:${port} --name chhoto-url --env-file ./.env -v "${db_file}:${db_url}" -d chhoto-url
-	docker logs chhoto-url -f
+	docker run -t -p ${port}:${port} --name chhoto-url --env-file ./.env -v "${db_file}:${db_url}" -d chhoto-url
+	docker logs chhoto-url -f 
 
 docker-dev: build-dev
 	docker build --push --tag ${docker_username}/chhoto-url:dev --build-arg TARGETARCH=amd64 -f Dockerfile.multiarch .

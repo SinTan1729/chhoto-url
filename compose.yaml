@@ -6,6 +6,7 @@ services:
         image: sintan1729/chhoto-url:latest
         restart: unless-stopped
         container_name: chhoto-url
+        tty: true
         # You may enable the next two options if you want, but it may break the program if the db is bind
         # mounted from the system. It does add extra security, but I don't know enough about docker
         # to help in case it breaks something.
