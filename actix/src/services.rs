@@ -201,7 +201,7 @@ pub async fn link_handler(
     let shortlink_str = shortlink.to_string();
     if let Some(longlink) = utils::get_longurl(shortlink_str, &data.db, false).0 {
         database::add_hit(shortlink.as_str(), &data.db);
-        if data.config.redirect_method == "TEMPORARY" {
+        if data.config.use_temp_redirect {
             Either::Left(Redirect::to(longlink))
         } else {
             // Defaults to permanent redirection

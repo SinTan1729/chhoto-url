@@ -17,7 +17,7 @@ pub struct Config {
     pub site_url: Option<String>,
     pub public_mode: bool,
     pub public_mode_expiry_delay: i64,
-    pub redirect_method: String,
+    pub use_temp_redirect: bool,
     pub password: Option<String>,
     pub hash_algorithm: Option<String>,
     pub api_key: Option<String>,
@@ -28,18 +28,24 @@ pub fn read() -> Config {
         .ok()
         .filter(|s| !s.trim().is_empty())
         .unwrap_or(String::from("urls.sqlite"));
+    info!("DB Location is set to: {db_location}");
 
     // Get the port environment variable
     let port = var("port")
         .unwrap_or(String::from("4567"))
         .parse::<u16>()
         .expect("Supplied port is not an integer");
+    info!("Listening port is set to {port}");
 
     let cache_control_header = var("cache_control_header")
         .ok()
+        .inspect(|h| info!("Using {h} as Cache-Control header."))
         .filter(|s| !s.trim().is_empty());
 
     let disable_frontend = var("disable_frontend").is_ok_and(|s| s.trim() == "True");
+    if disable_frontend {
+        info!("Frontend is disabled.")
+    };
 
     // If an API key is set, check the security
     let api_key = var("api_key").ok();
@@ -57,12 +63,29 @@ pub fn read() -> Config {
         .ok()
         .and_then(|s| s.parse::<i64>().ok())
         .unwrap_or_default();
+    if public_mode {
+        if public_mode_expiry_delay > 0 {
+            info!("Enabling public mode with no enforced expiry delay.");
+        } else {
+            info!("Enabling public mode with an enforced expiry delay of {public_mode_expiry_delay} seconds.");
+        }
+    }
 
-    let redirect_method = var("redirect_method").unwrap_or(String::from("PERMANENT"));
+    let use_temp_redirect = var("redirect_method") == Ok(String::from("TEMPORARY"));
+    if use_temp_redirect {
+        info!("Using Temporary redirection.");
+    }
 
-    let password = var("password").ok();
+    let password = var("password")
+        .inspect_err(|_| {
+            warn!("No password was provided. The API will be accessible to the public.")
+        })
+        .ok();
 
-    let hash_algorithm = var("hash_algorithm").ok().filter(|h| h == "Argon2");
+    let hash_algorithm = var("hash_algorithm")
+        .ok()
+        .filter(|h| h == "Argon2")
+        .inspect(|_| info!("Will use Argon2 hashes for password verification."));
 
     // If the site_url env variable exists
     let site_url = if let Some(provided_url) = var("site_url").ok().filter(|s| !s.trim().is_empty())
@@ -99,7 +122,7 @@ pub fn read() -> Config {
         site_url,
         public_mode,
         public_mode_expiry_delay,
-        redirect_method,
+        use_temp_redirect,
         password,
         hash_algorithm,
         api_key,
