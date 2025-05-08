@@ -65,8 +65,7 @@ for small. URL means, well... URL. So the name simply means Small URL.
   
 # Bloat that will not be implemented
 - **Tracking or spying of any kind.** The only logs that still exist are
- errors printed to stderr and the basic logging (only warnings) provided by the
- [`env_logger`](https://crates.io/crates/env_logger) crate.
+ errors printed to stderr and some basic logging of configs.
 - **User management.** If you need a shortener for your whole organization, either
  run separate containers for everyone or use something else.
 - **Cookies, newsletters**, "we value your privacy" popups or any of the multiple
