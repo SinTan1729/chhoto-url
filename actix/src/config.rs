@@ -48,7 +48,7 @@ pub fn read() -> Config {
         if score(&analyze(key)) < 90.0 {
             warn!("API key is insecure! Please change it. Current key is: {}. Generated secure key which you may use: {}", key, auth::gen_key());
         } else {
-            warn!("Secure API key was provided.");
+            info!("Secure API key was provided.");
         }
     }
 

@@ -11,7 +11,7 @@ use actix_web::{
     Either, HttpRequest, HttpResponse, Responder,
 };
 use argon2::{password_hash::PasswordHash, Argon2, PasswordVerifier};
-use log::warn;
+use log::{info, warn};
 use serde::Serialize;
 use std::env;
 
@@ -224,7 +224,7 @@ pub async fn login(req: String, session: Session, data: web::Data<AppState>) -> 
     // Check if password is hashed using Argon2. More algorithms maybe added later.
     let authorized = if let Some(password) = &config.password {
         if config.hash_algorithm.is_some() {
-            warn!("Using Argon2 hash for password validation.");
+            info!("Using Argon2 hash for password validation.");
             let hash = PasswordHash::new(password).expect("The provided password hash in invalid.");
             Some(
                 Argon2::default()
