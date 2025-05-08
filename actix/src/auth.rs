@@ -4,6 +4,7 @@
 use actix_session::Session;
 use actix_web::HttpRequest;
 use argon2::{password_hash::PasswordHash, Argon2, PasswordVerifier};
+use log::warn;
 use passwords::PasswordGenerator;
 use std::time::SystemTime;
 
@@ -14,7 +15,7 @@ pub fn validate_key(key: String, config: &Config) -> bool {
     if let Some(api_key) = &config.api_key {
         // Check if API Key is hashed using Argon2. More algorithms maybe added later.
         let authorized = if config.hash_algorithm.is_some() {
-            println!("Using Argon2 hash for API key validation.");
+            warn!("Using Argon2 hash for API key validation.");
             let hash = PasswordHash::new(&key).expect("The provided password hash in invalid.");
             Argon2::default()
                 .verify_password(api_key.as_bytes(), &hash)
@@ -24,14 +25,14 @@ pub fn validate_key(key: String, config: &Config) -> bool {
             api_key == &key
         };
         if !authorized {
-            eprintln!("Incorrect API key was provided when connecting to Chhoto URL.");
+            warn!("Incorrect API key was provided when connecting to Chhoto URL.");
             false
         } else {
-            println!("Server accessed with API key.");
+            warn!("Server accessed with API key.");
             true
         }
     } else {
-        eprintln!("API was accessed with API key validation but no API key was specified. Set the 'api_key' environment variable.");
+        warn!("API was accessed with API key validation but no API key was specified. Set the 'api_key' environment variable.");
         false
     }
 }

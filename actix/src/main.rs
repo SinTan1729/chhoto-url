@@ -4,6 +4,7 @@
 use actix_files::Files;
 use actix_session::{storage::CookieSessionStore, SessionMiddleware};
 use actix_web::{cookie::Key, middleware, web, App, HttpServer};
+use log::info;
 use rusqlite::Connection;
 pub(crate) use std::io::Result;
 use tokio::{spawn, time};
@@ -23,7 +24,9 @@ struct AppState {
 
 #[actix_web::main]
 async fn main() -> Result<()> {
-    env_logger::init_from_env(env_logger::Env::new().default_filter_or("warn"));
+    pretty_env_logger::formatted_timed_builder()
+        .parse_filters("warn,chhoto_url=info")
+        .init();
 
     // Generate session key in runtime so that restart invalidates older logins
     let secret_key = Key::generate();
@@ -32,11 +35,11 @@ async fn main() -> Result<()> {
     let conf = config::read();
 
     // Tell the user that the server has started, and where it is listening to, rather than simply outputting nothing
-    println!("Server has started at 0.0.0.0 on port {}.", conf.port);
+    info!("Server has started at 0.0.0.0 on port {}.", conf.port);
 
     // Do periodic cleanup
     let db_location_clone = conf.db_location.clone();
-    println!("Starting cleanup service, running once every hour.");
+    info!("Starting cleanup service, running once every hour.");
     spawn(async move {
         let db = database::open_db(db_location_clone);
         let mut interval = time::interval(time::Duration::from_secs(3600));

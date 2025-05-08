@@ -1,6 +1,7 @@
 // SPDX-FileCopyrightText: 2023 Sayantan Santra <sayantan.santra689@gmail.com>
 // SPDX-License-Identifier: MIT
 
+use log::info;
 use rusqlite::{Connection, Error};
 use serde::Serialize;
 
@@ -115,7 +116,7 @@ pub fn cleanup(db: &Connection) {
         let shortlink: String = row
             .get("short_url")
             .expect("Error reading shortlink off a row.");
-        println!("Expired link marked for deletion: {shortlink}");
+        info!("Expired link marked for deletion: {shortlink}");
     }
 
     db.execute(
@@ -124,7 +125,7 @@ pub fn cleanup(db: &Connection) {
     )
     .inspect(|&u| {
         if u > 0 {
-            println!("{u} expired link(s) were deleted.")
+            info!("{u} expired link(s) were deleted.")
         }
     })
     .expect("Error cleaning expired links.");

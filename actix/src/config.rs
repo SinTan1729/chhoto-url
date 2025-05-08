@@ -1,6 +1,7 @@
 // SPDX-FileCopyrightText: 2025 Sayantan Santra <sayantan.santra689@gmail.com>
 // SPDX-License-Identifier: MIT
 
+use log::{info, warn};
 use passwords::{analyzer::analyze, scorer::score};
 use std::env::var;
 
@@ -45,9 +46,9 @@ pub fn read() -> Config {
     if let Some(key) = &api_key {
         // Determine whether the inputted API key is sufficiently secure
         if score(&analyze(key)) < 90.0 {
-            eprintln!("WARN: API key is insecure! Please change it. Current key is: {}. Generated secure key which you may use: {}", key, auth::gen_key());
+            warn!("API key is insecure! Please change it. Current key is: {}. Generated secure key which you may use: {}", key, auth::gen_key());
         } else {
-            println!("Secure API key was provided.");
+            warn!("Secure API key was provided.");
         }
     }
 
@@ -74,17 +75,19 @@ pub fn read() -> Config {
         // If the site_url is encapsulated by quotes (i.e. invalid)
         if first == Option::from('"') || first == Option::from('\'') && first == last {
             // Set the site_url without the quotes
-            println!("WARN: The site_url environment variable is encapsulated by quotes. Automatically adjusting to {}", url);
+            warn!("The site_url environment variable is encapsulated by quotes. Automatically adjusting to {}", url);
             Some(url.to_string())
         } else {
             // No issues
-            println!("INFO: Configured Site URL is: {provided_url}.");
+            info!("Configured Site URL is: {provided_url}.");
             Some(provided_url)
         }
     } else {
         // Site URL is not configured
-        eprintln!("WARN: The site_url environment variable is not configured. Defaulting to http://localhost");
-        println!("INFO: Public URI is: http://localhost:{port}.");
+        warn!(
+            "The site_url environment variable is not configured. Defaulting to http://localhost"
+        );
+        info!("Public URI is: http://localhost:{port}.");
         None
     };
 

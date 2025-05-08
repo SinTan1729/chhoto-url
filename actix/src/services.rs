@@ -10,10 +10,10 @@ use actix_web::{
     web::{self, Redirect},
     Either, HttpRequest, HttpResponse, Responder,
 };
-use std::env;
-// Serialize JSON data
 use argon2::{password_hash::PasswordHash, Argon2, PasswordVerifier};
+use log::warn;
 use serde::Serialize;
+use std::env;
 
 use crate::utils;
 use crate::AppState;
@@ -224,7 +224,7 @@ pub async fn login(req: String, session: Session, data: web::Data<AppState>) -> 
     // Check if password is hashed using Argon2. More algorithms maybe added later.
     let authorized = if let Some(password) = &config.password {
         if config.hash_algorithm.is_some() {
-            println!("Using Argon2 hash for password validation.");
+            warn!("Using Argon2 hash for password validation.");
             let hash = PasswordHash::new(password).expect("The provided password hash in invalid.");
             Some(
                 Argon2::default()
@@ -242,7 +242,7 @@ pub async fn login(req: String, session: Session, data: web::Data<AppState>) -> 
     if config.api_key.is_some() {
         if let Some(valid_pass) = authorized {
             if !valid_pass {
-                eprintln!("Failed login attempt!");
+                warn!("Failed login attempt!");
                 let response = Response {
                     success: false,
                     error: true,
@@ -265,7 +265,7 @@ pub async fn login(req: String, session: Session, data: web::Data<AppState>) -> 
     } else {
         if let Some(valid_pass) = authorized {
             if !valid_pass {
-                eprintln!("Failed login attempt!");
+                warn!("Failed login attempt!");
                 return HttpResponse::Unauthorized().body("Wrong password!");
             }
         }
