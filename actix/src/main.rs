@@ -24,7 +24,7 @@ struct AppState {
 
 #[actix_web::main]
 async fn main() -> Result<()> {
-    pretty_env_logger::formatted_timed_builder()
+    env_logger::builder()
         .parse_filters("warn,chhoto_url=info,actix_session::middleware=error")
         .format_timestamp_secs()
         .init();
