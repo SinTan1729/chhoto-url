@@ -35,11 +35,11 @@ pub fn read() -> Config {
         .unwrap_or(String::from("4567"))
         .parse::<u16>()
         .expect("Supplied port is not an integer");
-    info!("Listening port is set to {port}");
+    info!("Listening port is set to {port}.");
 
     let cache_control_header = var("cache_control_header")
         .ok()
-        .inspect(|h| info!("Using {h} as Cache-Control header."))
+        .inspect(|h| info!("Using \"{h}\" as Cache-Control header."))
         .filter(|s| !s.trim().is_empty());
 
     let disable_frontend = var("disable_frontend").is_ok_and(|s| s.trim() == "True");
@@ -74,6 +74,8 @@ pub fn read() -> Config {
     let use_temp_redirect = var("redirect_method") == Ok(String::from("TEMPORARY"));
     if use_temp_redirect {
         info!("Using Temporary redirection.");
+    } else {
+        info!("Using Permanent redirection (default).")
     }
 
     let password = var("password")
@@ -85,7 +87,7 @@ pub fn read() -> Config {
     let hash_algorithm = var("hash_algorithm")
         .ok()
         .filter(|h| h == "Argon2")
-        .inspect(|_| info!("Will use Argon2 hashes for password verification."));
+        .inspect(|h| info!("Will use {h} hashes for password verification."));
 
     // If the site_url env variable exists
     let site_url = if let Some(provided_url) = var("site_url").ok().filter(|s| !s.trim().is_empty())
@@ -98,17 +100,17 @@ pub fn read() -> Config {
         // If the site_url is encapsulated by quotes (i.e. invalid)
         if first == Option::from('"') || first == Option::from('\'') && first == last {
             // Set the site_url without the quotes
-            warn!("The site_url environment variable is encapsulated by quotes. Automatically adjusting to {}", url);
+            warn!("The site_url environment variable is encapsulated by quotes. Automatically adjusting to: {}", url);
             Some(url.to_string())
         } else {
             // No issues
-            info!("Configured Site URL is: {provided_url}.");
+            info!("Configured Site URL is: {provided_url}");
             Some(provided_url)
         }
     } else {
         // Site URL is not configured
         warn!(
-            "The site_url environment variable is not configured. Defaulting to http://localhost"
+            "The site_url environment variable is not configured. Using http://localhost by default."
         );
         info!("Public URI is: http://localhost:{port}.");
         None
