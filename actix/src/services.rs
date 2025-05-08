@@ -238,7 +238,6 @@ pub async fn login(req: String, session: Session, data: web::Data<AppState>) -> 
     } else {
         None
     };
-    // Keep this function backwards compatible
     if config.api_key.is_some() {
         if let Some(valid_pass) = authorized {
             if !valid_pass {
@@ -261,8 +260,10 @@ pub async fn login(req: String, session: Session, data: web::Data<AppState>) -> 
             error: false,
             reason: "Correct password!".to_string(),
         };
+        info!("Successful login.");
         HttpResponse::Ok().json(response)
     } else {
+        // Keep this function backwards compatible
         if let Some(valid_pass) = authorized {
             if !valid_pass {
                 warn!("Failed login attempt!");
@@ -274,6 +275,7 @@ pub async fn login(req: String, session: Session, data: web::Data<AppState>) -> 
             .insert("chhoto-url-auth", auth::gen_token())
             .expect("Error inserting auth token.");
 
+        info!("Successful login.");
         HttpResponse::Ok().body("Correct password!")
     }
 }
@@ -283,6 +285,7 @@ pub async fn login(req: String, session: Session, data: web::Data<AppState>) -> 
 #[delete("/api/logout")]
 pub async fn logout(session: Session) -> HttpResponse {
     if session.remove("chhoto-url-auth").is_some() {
+        info!("Successful logout.");
         HttpResponse::Ok().body("Logged out!")
     } else {
         HttpResponse::Unauthorized().body("You don't seem to be logged in.")

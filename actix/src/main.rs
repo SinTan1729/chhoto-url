@@ -25,7 +25,7 @@ struct AppState {
 #[actix_web::main]
 async fn main() -> Result<()> {
     pretty_env_logger::formatted_timed_builder()
-        .parse_filters("warn,chhoto_url=info")
+        .parse_filters("warn,chhoto_url=info,actix_session::middleware=error")
         .init();
 
     // Generate session key in runtime so that restart invalidates older logins
