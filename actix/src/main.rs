@@ -32,6 +32,10 @@ async fn main() -> Result<()> {
     // Generate session key in runtime so that restart invalidates older logins
     let secret_key = Key::generate();
 
+    eprintln!("----------------------------------------------------------------------");
+    info!("Starting Chhoto URL Server...");
+    eprintln!("----------------------------------------------------------------------");
+
     // Read config from env vars
     let conf = config::read();
 
