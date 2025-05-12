@@ -107,5 +107,5 @@ There's an (unofficial) browser extension maintained by @SolninjaA for shortenin
 ## OpenBSD package
 There's an (unofficial) FreeBSD package maintained by @jcpsantiago for installing Chhoto URL.
 [You can take a look at it here.](https://tangled.sh/@jcpsantiago.xyz/freebsd-ports/tree/main/www/chhoto-url)
-Feel free to discuss any issues or suggestions in #56.
+Feel free to discuss any issues or suggestions in [#56](https://github.com/SinTan1729/chhoto-url/discussions/56).
 
