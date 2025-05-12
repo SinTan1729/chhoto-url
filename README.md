@@ -87,10 +87,6 @@ you can message me through GitHub discussions or mail me.
 
 ## Notes
 - It started as a fork of [`simply-shorten`](https://gitlab.com/draganczukp/simply-shorten).
-- There's an (unofficial) browser extension maintained by @SolninjaA for shortening URLs easily using Chhoto URL.
-  [You can take a look at it here.](https://github.com/SolninjaA/Chhoto-URL-Extension)
-- There's an (unofficial) FreeBSD package maintained by @jcpsantiago for installing Chhoto URL.
-  [You can take a look at it here.](https://tangled.sh/@jcpsantiago.xyz/freebsd-ports/tree/main/www/chhoto-url)
 - The list of adjectives and names used for random short url generation is a modified
   version of [this list used by docker](https://github.com/moby/moby/blob/master/pkg/namesgenerator/names-generator.go).
 - Although it's unlikely, it's possible that your database is mangled after some update. For mission critical use cases,

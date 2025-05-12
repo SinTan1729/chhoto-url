@@ -99,3 +99,13 @@ To get started, `cp helm-chart/values.yaml helm-chart/my-values.yaml` and adjust
 cd helm-chart
 helm upgrade --install chhoto-url . -n chhoto-url --create-namespace -f my-values.yaml
 ```
+
+## Browser extension
+There's an (unofficial) browser extension maintained by @SolninjaA for shortening URLs easily using Chhoto URL. 
+[You can take a look at it here.](https://github.com/SolninjaA/Chhoto-URL-Extension)
+
+## OpenBSD package
+There's an (unofficial) FreeBSD package maintained by @jcpsantiago for installing Chhoto URL.
+[You can take a look at it here.](https://tangled.sh/@jcpsantiago.xyz/freebsd-ports/tree/main/www/chhoto-url)
+Feel free to discuss any issues or suggestions in #56.
+
