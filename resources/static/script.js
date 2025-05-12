@@ -128,6 +128,15 @@ const formatRelativeTime = (timestamp) => {
     }
 }
 
+const TD = (s, u) => {
+    const td = document.createElement("td");
+    const div = document.createElement("div");
+    div.innerHTML = s;
+    td.appendChild(div);
+    td.setAttribute("label", u);
+    return td;
+}
+
 const TR = (row, site) => {
     const tr = document.createElement("tr");
     const longTD = TD(A_LONG(row["longlink"]), "Long URL");
@@ -146,13 +155,18 @@ const TR = (row, site) => {
     hitsTD.setAttribute("name", "hitsColumn");
     
     let expiryTime = row["expiry_time"];
-    if (expiryTime == 0) {
-        expiryTime = "-";
-    } else {
+    let expiryHTML = "-";
+    if (expiryTime > 0) {
         expiryTime = new Date(expiryTime * 1000);
-        expiryTime = formatRelativeTime(expiryTime);
+        relativeExpiryTime = formatRelativeTime(expiryTime);
+        accurateExpiryTime = expiryTime.toLocaleString();
+        expiryHTML = relativeExpiryTime + '<span class="tooltiptext">' + accurateExpiryTime + '</span>';
     }
-    let expiryTD = TD(expiryTime);
+
+    let expiryTD = TD(expiryHTML);
+    if (expiryTime > 0) {
+        expiryTD.classList.add("tooltip");
+    }
     expiryTD.setAttribute("label", "Expiry");
     expiryTD.setAttribute("name", "expiryColumn");
 
@@ -220,15 +234,6 @@ const deleteButton = (shortUrl) => {
     td.setAttribute("label", "Delete");
     div.appendChild(btn);
     td.appendChild(div);
-    return td;
-}
-
-const TD = (s, u) => {
-    const td = document.createElement("td");
-    const div = document.createElement("div");
-    div.innerHTML = s;
-    td.appendChild(div);
-    td.setAttribute("label", u);
     return td;
 }
 
