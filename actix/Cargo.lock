@@ -506,7 +506,7 @@ checksum = "baf1de4339761588bc0619e3cbc0120ee582ebb74b53b4efbf79117bd2da40fd"
 
 [[package]]
 name = "chhoto-url"
-version = "6.0.0"
+version = "6.0.1"
 dependencies = [
  "actix-files",
  "actix-session",
