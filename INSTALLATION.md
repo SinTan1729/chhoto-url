@@ -64,7 +64,14 @@ You can set the redirect method to Permanent 308 (default) or Temporary 307 by s
 the `redirect_method` variable to `TEMPORARY` or `PERMANENT` (it's matched exactly). By
 default, the auto-generated links are adjective-name pairs. You can use UIDs by setting
 the `slug_style` variable to `UID`. You can also set the length of those slug by setting
-the `slug_length` variable. It defaults to 8, and a minimum of 4 is supported.
+the `slug_length` variable. It defaults to 8, and a minimum of 4 is supported. If you 
+intend to have more than a few thousand shortlinks, it's strongly recommended that you 
+use the UID `slug_style` with a `slug_length` of 16 or more.
+
+Although it's unlikely, it's possible that your database is mangled after some update. 
+For mission critical use cases, it's recommended to keep regular versioned backups of 
+the database, and sticking to a minor release tag e.g. 5.8. You can either bind mount a file
+for the database as described in 1.a above, or take a backup of the docker volume.
 
 You can provide hashed password and API key for extra security. Note that it will add some latency
 to some of your requests and use more resources in general. The only supported algorithm for now is Argon2.
@@ -91,10 +98,13 @@ The helm values are very sparse to keep it simple. If you need more values to be
 
 The PVC allocates 100Mi and the PV is using a host path volume.
 
-The helm chart assumes you have [cert manager](https://github.com/jetstack/cert-manager) deployed to have TLS certificates managed easily in your cluster. Feel free to remove the issuer and adjust the ingress if you're on AWS with EKS for example. To install cert-manager, I recommend using the ["kubectl apply" way](https://cert-manager.io/docs/installation/kubectl/) to install cert-manager.
+The helm chart assumes you have [cert manager](https://github.com/jetstack/cert-manager) deployed to have TLS 
+certificates managed easily in your cluster. Feel free to remove the issuer and adjust the ingress if you're on 
+AWS with EKS for example. To install cert-manager, I recommend using the
+["kubectl apply" way](https://cert-manager.io/docs/installation/kubectl/) to install cert-manager.
 
-To get started, `cp helm-chart/values.yaml helm-chart/my-values.yaml` and adjust `password`, `fqdn` and `letsencryptmail` in your new `my-values.yaml`, then just run
-
+To get started, `cp helm-chart/values.yaml helm-chart/my-values.yaml` and adjust `password`, `fqdn`
+and `letsencryptmail` in your new `my-values.yaml`, then just run
 ``` bash
 cd helm-chart
 helm upgrade --install chhoto-url . -n chhoto-url --create-namespace -f my-values.yaml

@@ -91,3 +91,5 @@ you can message me through GitHub discussions or mail me.
   version of [this list used by docker](https://github.com/moby/moby/blob/master/pkg/namesgenerator/names-generator.go).
 - Although it's unlikely, it's possible that your database is mangled after some update. For mission critical use cases,
   it's recommended to keep regular versioned backups of the database, and sticking to a minor release tag e.g. 5.8.
+- If you intend to have more than a few thousand shortlinks, it's strongly recommended that you use the UID `slug_style`
+  with a `slug_length` of 16 or more.
