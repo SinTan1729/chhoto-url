@@ -3,7 +3,7 @@ use actix_service::Service;
 use actix_web::{body::to_bytes, dev::ServiceResponse, test, web::Bytes, App, Error};
 use regex::Regex;
 use serde::Deserialize;
-use std::{fmt::Display, fs};
+use std::{fmt::Display, fs, thread::sleep, time::Duration};
 
 use super::*;
 
@@ -35,14 +35,7 @@ struct CreatedURL {
     longurl: String,
 }
 
-async fn setup(
-    slug_style: Option<String>,
-    test: &str,
-) -> (
-    config::Config,
-    impl Service<Request, Response = ServiceResponse, Error = Error>,
-) {
-    let _ = fs::remove_file(format!("/tmp/chhoto-url-test-{test}.sqlite"));
+fn default_config(test: &str) -> config::Config {
     let conf = config::Config {
     port: 4567,
     db_location: format!("/tmp/chhoto-url-test-{test}.sqlite"),
@@ -55,9 +48,17 @@ async fn setup(
     password: Some(String::from("testpass")),
     hash_algorithm: None,
     api_key: Some(String::from("Z8FNjh2J2v3yfb0xPDIVA58Pj4D0e2jSERVdoqM5pJCbU2w5tmg3PNioD6GUhaQwHHaDLBNZj0EQE8MS4TLKcUyusa05")),
-    slug_style: slug_style.unwrap_or(String::from("Pair")),
+    slug_style: "Pair".to_string(),
     slug_length: 8,
     };
+    conf
+}
+
+async fn create_app(
+    conf: &config::Config,
+    test: &str,
+) -> impl Service<Request, Response = ServiceResponse, Error = Error> {
+    let _ = fs::remove_file(format!("/tmp/chhoto-url-test-{test}.sqlite"));
     let app = test::init_service(
         App::new()
             .app_data(web::Data::new(AppState {
@@ -74,17 +75,18 @@ async fn setup(
             .service(services::expand),
     )
     .await;
-    (conf, app)
+    app
 }
 
 async fn add_link<T: Service<Request, Response = ServiceResponse, Error = Error>, S: Display>(
     app: T,
     api_key: &str,
     shortlink: S,
+    expiry_delay: i64,
 ) -> (StatusCode, CreatedURL) {
     let req = test::TestRequest::post().uri("/api/new")
         .insert_header(("X-API-Key", api_key))
-        .set_payload(format!("{{\"shortlink\": \"{shortlink}\", \"longlink\": \"https://example-{shortlink}.com\", \"expiry_delay\": 10}}"))
+        .set_payload(format!("{{\"shortlink\": \"{shortlink}\", \"longlink\": \"https://example-{shortlink}.com\", \"expiry_delay\": {expiry_delay}}}"))
         .to_request();
 
     let resp = test::call_service(&app, req).await;
@@ -102,7 +104,8 @@ async fn add_link<T: Service<Request, Response = ServiceResponse, Error = Error>
 #[test]
 async fn basic_site_config() {
     let test = "basic";
-    let (conf, app) = setup(None, test).await;
+    let conf = default_config(test);
+    let app = create_app(&conf, test).await;
 
     let req = test::TestRequest::get().uri("/api/siteurl").to_request();
     let resp = test::call_service(&app, req).await;
@@ -120,25 +123,28 @@ async fn basic_site_config() {
 #[test]
 async fn adding_link_with_shortlink() {
     let test = "adding";
-    let (conf, app) = setup(None, test).await;
+    let conf = default_config(test);
+    let app = create_app(&conf, test).await;
     let api_key = conf.api_key.unwrap();
     for shortlink in ["test1", "test2", "test3"] {
-        let (status, reply) = add_link(&app, &api_key, shortlink).await;
+        let (status, reply) = add_link(&app, &api_key, shortlink, 10).await;
         assert!(status.is_success());
         assert_eq!(reply.shorturl, format!("https://mydomain.com/{shortlink}"));
     }
 
-    let (status, reply) = add_link(&app, &api_key, "test1").await;
+    let (status, reply) = add_link(&app, &api_key, "test1", 10).await;
     assert!(status.is_client_error());
     assert_eq!(reply.reason, "Short URL is already in use!");
+
     let _ = fs::remove_file(format!("/tmp/chhoto-url-test-{test}.sqlite"));
 }
 
 #[test]
 async fn link_resolution() {
     let test = "link-resolution";
-    let (conf, app) = setup(None, test).await;
-    let _ = add_link(&app, &conf.api_key.unwrap(), "test1").await;
+    let conf = default_config(test);
+    let app = create_app(&conf, test).await;
+    let _ = add_link(&app, &conf.api_key.unwrap(), "test1", 10).await;
 
     let req = test::TestRequest::get().uri("/test1").to_request();
     let resp = test::call_service(&app, req).await;
@@ -147,15 +153,17 @@ async fn link_resolution() {
         resp.headers().get("location").unwrap(),
         "https://example-test1.com"
     );
+
     let _ = fs::remove_file(format!("/tmp/chhoto-url-test-{test}.sqlite"));
 }
 
 #[test]
 async fn link_deletion() {
     let test = "link-deletion";
-    let (conf, app) = setup(None, test).await;
+    let conf = default_config(test);
+    let app = create_app(&conf, test).await;
     let api_key = conf.api_key.clone().unwrap();
-    let _ = add_link(&app, &api_key, "test2").await;
+    let _ = add_link(&app, &api_key, "test2", 10).await;
 
     let req = test::TestRequest::delete()
         .uri("/api/del/test2")
@@ -164,16 +172,18 @@ async fn link_deletion() {
 
     let resp = test::call_service(&app, req).await;
     assert!(resp.status().is_success());
+
     let _ = fs::remove_file(format!("/tmp/chhoto-url-test-{test}.sqlite"));
 }
 
 #[test]
 async fn data_fetching_all() {
     let test = "data-fetching-all";
-    let (conf, app) = setup(None, test).await;
+    let conf = default_config(test);
+    let app = create_app(&conf, test).await;
     let api_key = conf.api_key.clone().unwrap();
-    let _ = add_link(&app, &api_key, "test1").await;
-    let _ = add_link(&app, &api_key, "test3").await;
+    let _ = add_link(&app, &api_key, "test1", 10).await;
+    let _ = add_link(&app, &api_key, "test3", 10).await;
     let req = test::TestRequest::get().uri("/test1").to_request();
     let _ = test::call_service(&app, req).await;
 
@@ -195,39 +205,47 @@ async fn data_fetching_all() {
     assert_eq!(reply_chunks[1].hits, 0);
     assert_ne!(reply_chunks[0].expiry_time, 0);
     assert_ne!(reply_chunks[1].expiry_time, 0);
+
     let _ = fs::remove_file(format!("/tmp/chhoto-url-test-{test}.sqlite"));
 }
 
 #[test]
 async fn adding_link_with_generated_shortlink_with_pair_slug() {
     let test = "shortlink-with-pair-slug";
-    let (conf, app) = setup(None, test).await;
-    let (status, reply) = add_link(&app, &conf.api_key.unwrap(), "").await;
+    let conf = default_config(test);
+    let app = create_app(&conf, test).await;
+    let (status, reply) = add_link(&app, &conf.api_key.unwrap(), "", 10).await;
 
     assert!(status.is_success());
     let re = Regex::new(r"^https://mydomain.com/[a-z]+-[a-z]+$").unwrap();
     assert!(re.is_match(reply.shorturl.as_str()));
+
     let _ = fs::remove_file(format!("/tmp/chhoto-url-test-{test}.sqlite"));
 }
 
 #[test]
 async fn adding_link_with_generated_shortlink_with_uid_slug() {
     let test = "shortlink-with-uid-slug";
-    let (conf, app) = setup(Some(String::from("UID")), test).await;
-    let (status, reply) = add_link(&app, &conf.api_key.unwrap(), "").await;
+    let mut conf = default_config(test);
+    conf.slug_style = "UID".to_string();
+    conf.slug_length = 12;
+    let app = create_app(&conf, test).await;
+    let (status, reply) = add_link(&app, &conf.api_key.unwrap(), "", 10).await;
 
     assert!(status.is_success());
-    let re = Regex::new(r"^https://mydomain.com/[a-z0-9]+$").unwrap();
+    let re = Regex::new(r"^https://mydomain.com/[a-z0-9]{12}$").unwrap();
     assert!(re.is_match(reply.shorturl.as_str()));
+
     let _ = fs::remove_file(format!("/tmp/chhoto-url-test-{test}.sqlite"));
 }
 
 #[test]
 async fn expand_link() {
     let test = "expand-link";
-    let (conf, app) = setup(None, test).await;
+    let conf = default_config(test);
+    let app = create_app(&conf, test).await;
     let api_key = conf.api_key.unwrap();
-    let _ = add_link(&app, &api_key, "test4").await;
+    let _ = add_link(&app, &api_key, "test4", 10).await;
 
     let req = test::TestRequest::post()
         .uri("/api/expand")
@@ -240,5 +258,33 @@ async fn expand_link() {
     let body = to_bytes(resp.into_body()).await.unwrap();
     let reply: CreatedURL = serde_json::from_str(body.as_str()).unwrap();
     assert_eq!(reply.longurl, "https://example-test4.com");
+
+    let _ = fs::remove_file(format!("/tmp/chhoto-url-test-{test}.sqlite"));
+}
+
+#[test]
+async fn link_expiry() {
+    let test = "link-expiry";
+    let conf = default_config(test);
+    let app = create_app(&conf, test).await;
+    let api_key = conf.api_key.unwrap();
+
+    let (status, _) = add_link(&app, &api_key, "test1", 1).await;
+    assert!(status.is_success());
+    let one_second = Duration::from_secs(1);
+    sleep(one_second);
+
+    let req = test::TestRequest::get().uri("/test1").to_request();
+    let resp = test::call_service(&app, req).await;
+    assert!(resp.status().is_client_error());
+
+    let req = test::TestRequest::post()
+        .uri("/api/expand")
+        .insert_header(("X-API-Key", api_key))
+        .set_payload("test4")
+        .to_request();
+    let resp = test::call_service(&app, req).await;
+    assert!(resp.status().is_client_error());
+
     let _ = fs::remove_file(format!("/tmp/chhoto-url-test-{test}.sqlite"));
 }
