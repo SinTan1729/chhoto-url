@@ -29,10 +29,10 @@ docker-test: docker-local docker-stop test
 	docker run -t -p ${port}:${port} --name chhoto-url --env-file ./.env -v "${db_file}:${db_url}" -d chhoto-url
 	docker logs chhoto-url -f 
 
-docker-dev: build-dev
+docker-dev: test build-dev
 	docker build --push --tag ${docker_username}/chhoto-url:dev --build-arg TARGETARCH=amd64 -f Dockerfile.multiarch .
 
-build-release:
+build-release: test
 	cross build --release --locked --manifest-path=actix/Cargo.toml --target aarch64-unknown-linux-musl
 	cross build --release --locked --manifest-path=actix/Cargo.toml --target armv7-unknown-linux-musleabihf
 	cross build --release --locked --manifest-path=actix/Cargo.toml --target x86_64-unknown-linux-musl
