@@ -21,6 +21,8 @@ pub struct Config {
     pub password: Option<String>,
     pub hash_algorithm: Option<String>,
     pub api_key: Option<String>,
+    pub slug_style: String,
+    pub slug_length: usize,
 }
 
 pub fn read() -> Config {
@@ -116,6 +118,18 @@ pub fn read() -> Config {
         None
     };
 
+    let slug_style = var("slug_style").unwrap_or(String::from("Pair"));
+    let slug_length = var("slug_length")
+        .ok()
+        .and_then(|s| s.parse::<usize>().ok())
+        .filter(|&s| s >= 4)
+        .unwrap_or(8);
+    if slug_style == "UID" {
+        info!("Using UID slugs with length {slug_length}.");
+    } else {
+        info!("Using adjective-noun pair slugs.");
+    }
+
     Config {
         port,
         db_location,
@@ -128,5 +142,7 @@ pub fn read() -> Config {
         password,
         hash_algorithm,
         api_key,
+        slug_style,
+        slug_length,
     }
 }

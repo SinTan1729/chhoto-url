@@ -7,7 +7,6 @@ use rand::seq::IndexedRandom;
 use regex::Regex;
 use rusqlite::{ffi::SQLITE_CONSTRAINT_UNIQUE, Connection};
 use serde::{Deserialize, Serialize};
-use std::env;
 
 use crate::{auth, config::Config, database};
 
@@ -33,7 +32,7 @@ pub struct Response {
 // If the api_key environment variable exists
 pub fn is_api_ok(http: HttpRequest, config: &Config) -> Response {
     // If the api_key environment variable exists
-    if env::var("api_key").is_ok() {
+    if config.api_key.is_some() {
         // If the header exists
         if let Some(header) = auth::api_header(&http) {
             // If the header is correct
@@ -117,15 +116,8 @@ pub fn add_link(req: String, db: &Connection, config: &Config) -> (bool, String,
         return (false, String::from("Invalid request!"), 0);
     }
 
-    let style = env::var("slug_style").unwrap_or(String::from("Pair"));
-    let mut len = env::var("slug_length")
-        .ok()
-        .and_then(|s| s.parse::<usize>().ok())
-        .unwrap_or(8);
-    if len < 4 {
-        len = 4;
-    }
-
+    let style = &config.slug_style;
+    let len = config.slug_length;
     let shortlink_provided = if chunks.shortlink.is_empty() {
         chunks.shortlink = gen_link(style, len);
         false
@@ -181,7 +173,7 @@ pub fn delete_link(shortlink: String, db: &Connection) -> bool {
 }
 
 // Generate a random link using either adjective-name pair (default) of a slug or a-z, 0-9
-fn gen_link(style: String, len: usize) -> String {
+fn gen_link(style: &String, len: usize) -> String {
     #[rustfmt::skip]
     static ADJECTIVES: [&str; 108] = ["admiring", "adoring", "affectionate", "agitated", "amazing", "angry", "awesome", "beautiful", 
 		"blissful", "bold", "boring", "brave", "busy", "charming", "clever", "compassionate", "competent", "condescending", "confident", "cool", 

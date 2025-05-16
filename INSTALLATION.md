@@ -60,6 +60,8 @@ docker run -p 4567:4567 \
     -d chhoto-url:latest
 ```
 
+Example Linux command for generating a secure API key: `tr -dc A-Za-z0-9 </dev/urandom | head -c 128`.
+
 You can set the redirect method to Permanent 308 (default) or Temporary 307 by setting
 the `redirect_method` variable to `TEMPORARY` or `PERMANENT` (it's matched exactly). By
 default, the auto-generated links are adjective-name pairs. You can use UIDs by setting
