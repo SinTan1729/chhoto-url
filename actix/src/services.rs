@@ -161,7 +161,7 @@ pub async fn expand(req: String, data: web::Data<AppState>, http: HttpRequest) -
                 error: true,
                 reason: "The shortlink does not exist on the server.".to_string(),
             };
-            HttpResponse::Unauthorized().json(body)
+            HttpResponse::BadRequest().json(body)
         }
     } else {
         HttpResponse::Unauthorized().json(result)
