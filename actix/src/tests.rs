@@ -2,7 +2,7 @@ use actix_http::Request;
 use actix_service::Service;
 use actix_web::{body::to_bytes, dev::ServiceResponse, test, web::Bytes, App, Error};
 use serde::{Deserialize, Serialize};
-use std::env::set_var;
+use std::{env::set_var, fs};
 
 use super::*;
 
@@ -37,10 +37,11 @@ async fn setup() -> (
     set_var("site_url", "https://example.com");
     set_var("api_key", "Z8FNjh2J2v3yfb0xPDIVA58Pj4D0e2jSERVdoqM5pJCbU2w5tmg3PNioD6GUhaQwHHaDLBNZj0EQE8MS4TLKcUyusa053Q8Y3X2o0wbbWdIlU8t5rf9yXjSjAlcGrFSz");
     let conf = config::read();
+    let _ = fs::remove_file("/tmp/chhoto-url-testing-db.sqlite");
     let app = test::init_service(
         App::new()
             .app_data(web::Data::new(AppState {
-                db: database::open_db(String::from("/tmp/urls.sqlite")),
+                db: database::open_db(String::from("/tmp/chhoto-url-testing-db.sqlite")),
                 config: conf.clone(),
             }))
             .service(services::siteurl)

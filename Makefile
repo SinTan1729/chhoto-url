@@ -4,6 +4,8 @@
 # .env file has the variables $DOCKER_USERNAME and $PASSWORD defined
 include .env
 
+.PHONY: clean test setup build-dev docker-local docker-stop docker-test build-release docker-release
+
 setup:
 	cargo install cross
 	rustup target add x86_64-unknown-linux-musl
@@ -20,7 +22,10 @@ docker-stop:
 	docker ps -q --filter "name=chhoto-url" | xargs -r docker stop
 	docker ps -aq --filter "name=chhoto-url" | xargs -r docker rm
 
-docker-test: docker-local docker-stop
+test:
+	cargo test --manifest-path=actix/Cargo.toml
+
+docker-test: docker-local docker-stop test
 	docker run -t -p ${port}:${port} --name chhoto-url --env-file ./.env -v "${db_file}:${db_url}" -d chhoto-url
 	docker logs chhoto-url -f 
 
@@ -45,4 +50,3 @@ clean:
 	docker ps -aq --filter "name=chhoto-url" | xargs -r docker rm
 	cargo clean --manifest-path=actix/Cargo.toml
 
-.PHONY: build-dev docker-local docker-stop build-release
