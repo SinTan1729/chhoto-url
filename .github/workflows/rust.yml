@@ -3,8 +3,10 @@ name: Rust
 on:
   push:
     branches: [ "main" ]
+    paths: [ "actix/**" ]
   pull_request:
     branches: [ "main" ]
+    paths: [ "actix/**" ]
 
 env:
   CARGO_TERM_COLOR: always
@@ -18,5 +20,7 @@ jobs:
     - uses: actions/checkout@v4
     - name: Build
       run: cargo build --verbose
+      working-directory: actix
     - name: Run tests
       run: cargo test --verbose
+      working-directory: actix
