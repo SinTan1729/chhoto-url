@@ -7,7 +7,7 @@ on:
   pull_request:
     branches: [ "main" ]
     paths: [ "actix/**" ]
-  workflow_dispatch
+  workflow_dispatch:
 
 env:
   CARGO_TERM_COLOR: always
