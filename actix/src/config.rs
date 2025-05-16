@@ -80,11 +80,10 @@ pub fn read() -> Config {
         info!("Using Permanent redirection (default).")
     }
 
-    let password = var("password")
-        .inspect_err(|_| {
-            warn!("No password was provided. The API will be accessible to the public.")
-        })
-        .ok();
+    let password = var("password").ok().filter(|s| !s.trim().is_empty());
+    if password.is_none() {
+        warn!("No password was provided. The API will be accessible to the public.")
+    };
 
     let hash_algorithm = var("hash_algorithm")
         .ok()
