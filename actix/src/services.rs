@@ -66,18 +66,18 @@ pub async fn add_link(
     if result.success {
         let out = utils::add_link(req, &data.db, config);
         if out.0 {
-            let domain = data
-                .config
-                .site_url
-                .clone()
-                .unwrap_or(String::from("unset"));
-            let protocol = if config.port == 443 { "https" } else { "http" };
-            let port_text = if [80, 443].contains(&config.port) {
-                String::new()
+            let site_url = config.site_url.clone();
+            let shorturl = if let Some(url) = site_url {
+                format!("{url}/{}", out.1)
             } else {
-                format!(":{}", config.port)
+                let protocol = if config.port == 443 { "https" } else { "http" };
+                let port_text = if [80, 443].contains(&config.port) {
+                    String::new()
+                } else {
+                    format!(":{}", config.port)
+                };
+                format!("{protocol}://localhost{port_text}/{}", out.1)
             };
-            let shorturl = format!("{protocol}://{domain}{port_text}/{}", out.1);
             let response = CreatedURL {
                 success: true,
                 error: false,

@@ -104,7 +104,6 @@ pub fn read() -> Config {
             warn!("The site_url environment variable is encapsulated by quotes. Automatically adjusting to: {}", url);
             Some(url.to_string())
         } else {
-            // No issues
             info!("Configured Site URL is: {provided_url}");
             Some(provided_url)
         }
@@ -113,7 +112,14 @@ pub fn read() -> Config {
         warn!(
             "The site_url environment variable is not configured. Using http://localhost by default."
         );
-        info!("Public URI is: http://localhost:{port}.");
+        let protocol = if port == 443 { "https" } else { "http" };
+        let port_text = if [80, 443].contains(&port) {
+            String::new()
+        } else {
+            format!(":{}", port)
+        };
+        // No issues
+        info!("Public URI is: {protocol}://localhost{port_text}.");
         None
     };
 
