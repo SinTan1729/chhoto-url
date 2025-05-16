@@ -509,6 +509,8 @@ name = "chhoto-url"
 version = "6.0.1"
 dependencies = [
  "actix-files",
+ "actix-http",
+ "actix-service",
  "actix-session",
  "actix-web",
  "argon2",

@@ -16,6 +16,10 @@ mod database;
 mod services;
 mod utils;
 
+// Tests
+#[cfg(test)]
+mod tests;
+
 // This struct represents state
 struct AppState {
     db: Connection,
