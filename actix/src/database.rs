@@ -22,7 +22,7 @@ pub fn find_url(
 ) -> (Option<String>, Option<i64>, Option<i64>) {
     let now = chrono::Utc::now().timestamp();
     let query = if needhits {
-        "SELECT long_url, hits, expiry_time FROM urls WHERE short_url = ?1 AND (expiry_time > ?2 OR expiry_time) = 0"
+        "SELECT long_url, hits, expiry_time FROM urls WHERE short_url = ?1 AND (expiry_time > ?2 OR expiry_time = 0)"
     } else {
         "SELECT long_url FROM urls WHERE short_url = ?1 AND (expiry_time > ?2 OR expiry_time = 0)"
     };
