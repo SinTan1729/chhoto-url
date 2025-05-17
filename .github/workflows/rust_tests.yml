@@ -27,7 +27,6 @@ jobs:
         restore-keys: |
             debug-${{ runner.os }}-${{ hashFiles('rust-toolchain.toml') }}-
             debug-${{ runner.os }}-
-        working-directory: actix
     - name: Run tests
       run: cargo test --verbose
       working-directory: actix
