@@ -19,9 +19,17 @@ jobs:
 
     steps:
     - uses: actions/checkout@v4
-    - name: Build
-      run: cargo build --verbose
-      working-directory: actix
+    - name: Cache Dependencies
+      uses: actions/cache@v3
+      with:
+        path: |
+          ./target
+          ~/.cargo
+        key: debug-${{ runner.os }}-${{ hashFiles('rust-toolchain.toml') }}-${{ hashFiles('Cargo.lock') }}
+        restore-keys: |
+            debug-${{ runner.os }}-${{ hashFiles('rust-toolchain.toml') }}-
+            debug-${{ runner.os }}-
+        working-directory: actix
     - name: Run tests
       run: cargo test --verbose
       working-directory: actix
