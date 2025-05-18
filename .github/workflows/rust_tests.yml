@@ -15,6 +15,9 @@ env:
 jobs:
   test:
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./actix
     steps:
     - uses: actions/checkout@v4
     - name: Cache Dependencies
@@ -23,10 +26,8 @@ jobs:
         path: |
           ./target
           ~/.cargo
-        key: debug-${{ runner.os }}-${{ hashFiles('rust-toolchain.toml') }}-${{ hashFiles('Cargo.lock') }}
+        key: cargo-${{ runner.os }}-${{ hashFiles('actix/Cargo.lock') }}
         restore-keys: |
-            debug-${{ runner.os }}-${{ hashFiles('rust-toolchain.toml') }}-
-            debug-${{ runner.os }}-
+            cargo-${{ runner.os }}-
     - name: Run tests
       run: cargo test --verbose
-      working-directory: actix
