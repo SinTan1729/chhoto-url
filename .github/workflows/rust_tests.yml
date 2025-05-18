@@ -24,8 +24,8 @@ jobs:
       uses: actions/cache@v4
       with:
         path: |
-          ./target
-          ~/.cargo
+          actix/target
+          actix/.cargo
         key: cargo-${{ runner.os }}-${{ hashFiles('actix/Cargo.lock') }}
         restore-keys: |
             cargo-${{ runner.os }}-
