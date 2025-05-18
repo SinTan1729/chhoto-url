@@ -64,11 +64,11 @@ pub async fn add_link(
     let result = utils::is_api_ok(http, config);
     // If success, add new link
     if result.success {
-        let out = utils::add_link(req, &data.db, config);
-        if out.0 {
+        let (success, reason, expiry_time) = utils::add_link(req, &data.db, config);
+        if success {
             let site_url = config.site_url.clone();
             let shorturl = if let Some(url) = site_url {
-                format!("{url}/{}", out.1)
+                format!("{url}/{}", reason)
             } else {
                 let protocol = if config.port == 443 { "https" } else { "http" };
                 let port_text = if [80, 443].contains(&config.port) {
@@ -76,20 +76,20 @@ pub async fn add_link(
                 } else {
                     format!(":{}", config.port)
                 };
-                format!("{protocol}://localhost{port_text}/{}", out.1)
+                format!("{protocol}://localhost{port_text}/{}", reason)
             };
             let response = CreatedURL {
                 success: true,
                 error: false,
                 shorturl,
-                expiry_time: out.2,
+                expiry_time,
             };
             HttpResponse::Created().json(response)
         } else {
             let response = Response {
                 success: false,
                 error: true,
-                reason: out.1,
+                reason,
             };
             HttpResponse::Conflict().json(response)
         }
@@ -97,11 +97,11 @@ pub async fn add_link(
         HttpResponse::Unauthorized().json(result)
     // If password authentication or public mode is used - keeps backwards compatibility
     } else if config.public_mode || auth::validate(session, config) {
-        let out = utils::add_link(req, &data.db, config);
-        if out.0 {
-            HttpResponse::Created().body(out.1)
+        let (success, reason, _) = utils::add_link(req, &data.db, config);
+        if success {
+            HttpResponse::Created().body(reason)
         } else {
-            HttpResponse::Conflict().body(out.1)
+            HttpResponse::Conflict().body(reason)
         }
     } else {
         HttpResponse::Unauthorized().body("Not logged in!")
@@ -141,17 +141,14 @@ pub async fn getall(
 pub async fn expand(req: String, data: web::Data<AppState>, http: HttpRequest) -> HttpResponse {
     let result = utils::is_api_ok(http, &data.config);
     if result.success {
-        let linkinfo = utils::get_longurl(req, &data.db, true);
-        if let Some(longlink) = linkinfo.0 {
+        let (longurl, hits, expiry_time) = utils::get_longurl(req, &data.db, true);
+        if let Some(longlink) = longurl {
             let body = LinkInfo {
                 success: true,
                 error: false,
                 longurl: longlink,
-                hits: linkinfo
-                    .1
-                    .expect("Error getting hit count for existing shortlink."),
-                expiry_time: linkinfo
-                    .2
+                hits: hits.expect("Error getting hit count for existing shortlink."),
+                expiry_time: expiry_time
                     .expect("Error getting expiry time for existing shortlink."),
             };
             HttpResponse::Ok().json(body)
