@@ -69,7 +69,6 @@ async fn create_app(
             .service(services::version)
             .service(services::add_link)
             .service(services::getall)
-            .service(services::delete_link)
             .service(services::link_handler)
             .service(services::delete_link)
             .service(services::expand),
@@ -144,7 +143,8 @@ async fn link_resolution() {
     let test = "link-resolution";
     let conf = default_config(test);
     let app = create_app(&conf, test).await;
-    let _ = add_link(&app, &conf.api_key.unwrap(), "test1", 10).await;
+    let (status, _) = add_link(&app, &conf.api_key.unwrap(), "test1", 10).await;
+    assert!(status.is_success());
 
     let req = test::TestRequest::get().uri("/test1").to_request();
     let resp = test::call_service(&app, req).await;
@@ -163,7 +163,8 @@ async fn link_deletion() {
     let conf = default_config(test);
     let app = create_app(&conf, test).await;
     let api_key = conf.api_key.clone().unwrap();
-    let _ = add_link(&app, &api_key, "test2", 10).await;
+    let (status, _) = add_link(&app, &api_key, "test2", 10).await;
+    assert!(status.is_success());
 
     let req = test::TestRequest::delete()
         .uri("/api/del/test2")
