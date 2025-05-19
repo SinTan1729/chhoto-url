@@ -125,7 +125,10 @@ pub fn cleanup(db: &Connection) {
     )
     .inspect(|&u| {
         if u > 0 {
-            info!("{u} expired link(s) were deleted.")
+            info!(
+                "{u} expired link{} deleted.",
+                if u == 1 { " was" } else { "s were" }
+            )
         }
     })
     .expect("Error cleaning expired links.");
