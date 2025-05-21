@@ -123,13 +123,10 @@ pub fn cleanup(db: &Connection) {
         "DELETE FROM urls WHERE expiry_time < ?1 AND expiry_time > 0",
         [now],
     )
-    .inspect(|&u| {
-        if u > 0 {
-            info!(
-                "{u} expired link{} deleted.",
-                if u == 1 { " was" } else { "s were" }
-            )
-        }
+    .inspect(|&u| match u {
+        0 => (),
+        1 => info!("1 link was deleted."),
+        _ => info!("{u} links were deleted."),
     })
     .expect("Error cleaning expired links.");
 }
