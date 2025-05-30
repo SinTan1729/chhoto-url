@@ -64,11 +64,11 @@ pub async fn add_link(
     let result = utils::is_api_ok(http, config);
     // If success, add new link
     if result.success {
-        let (success, reason, expiry_time) = utils::add_link(req, &data.db, config);
+        let (success, reply, expiry_time) = utils::add_link(req, &data.db, config);
         if success {
             let site_url = config.site_url.clone();
             let shorturl = if let Some(url) = site_url {
-                format!("{url}/{}", reason)
+                format!("{url}/{}", reply)
             } else {
                 let protocol = if config.port == 443 { "https" } else { "http" };
                 let port_text = if [80, 443].contains(&config.port) {
@@ -76,7 +76,7 @@ pub async fn add_link(
                 } else {
                     format!(":{}", config.port)
                 };
-                format!("{protocol}://localhost{port_text}/{}", reason)
+                format!("{protocol}://localhost{port_text}/{}", reply)
             };
             let response = CreatedURL {
                 success: true,
@@ -89,7 +89,7 @@ pub async fn add_link(
             let response = Response {
                 success: false,
                 error: true,
-                reason,
+                reason: reply,
             };
             HttpResponse::Conflict().json(response)
         }
@@ -97,11 +97,11 @@ pub async fn add_link(
         HttpResponse::Unauthorized().json(result)
     // If password authentication or public mode is used - keeps backwards compatibility
     } else if config.public_mode || auth::validate(session, config) {
-        let (success, reason, _) = utils::add_link(req, &data.db, config);
+        let (success, reply, _) = utils::add_link(req, &data.db, config);
         if success {
-            HttpResponse::Created().body(reason)
+            HttpResponse::Created().body(reply)
         } else {
-            HttpResponse::Conflict().body(reason)
+            HttpResponse::Conflict().body(reply)
         }
     } else {
         HttpResponse::Unauthorized().body("Not logged in!")
