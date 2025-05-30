@@ -29,5 +29,7 @@ jobs:
         key: cargo-${{ runner.os }}-${{ hashFiles('actix/Cargo.lock') }}
         restore-keys: |
             cargo-${{ runner.os }}-
+    - name: Build
+      run: cargo build
     - name: Run tests
       run: cargo test --verbose
