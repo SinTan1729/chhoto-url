@@ -101,7 +101,7 @@ pub fn read() -> Config {
         // If the site_url is encapsulated by quotes (i.e. invalid)
         if first == Option::from('"') || first == Option::from('\'') && first == last {
             // Set the site_url without the quotes
-            warn!("The site_url environment variable is encapsulated by quotes. Automatically adjusting to: {}", url);
+            warn!("The site_url environment variable is encapsulated by quotes. Automatically adjusting to: {url}");
             Some(url.to_string())
         } else {
             info!("Configured Site URL is: {provided_url}");

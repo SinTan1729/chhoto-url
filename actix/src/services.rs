@@ -68,7 +68,7 @@ pub async fn add_link(
         if success {
             let site_url = config.site_url.clone();
             let shorturl = if let Some(url) = site_url {
-                format!("{url}/{}", reply)
+                format!("{url}/{reply}")
             } else {
                 let protocol = if config.port == 443 { "https" } else { "http" };
                 let port_text = if [80, 443].contains(&config.port) {
@@ -76,7 +76,7 @@ pub async fn add_link(
                 } else {
                     format!(":{}", config.port)
                 };
-                format!("{protocol}://localhost{port_text}/{}", reply)
+                format!("{protocol}://localhost{port_text}/{reply}")
             };
             let response = CreatedURL {
                 success: true,
