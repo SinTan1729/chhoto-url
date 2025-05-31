@@ -37,10 +37,7 @@ async fn main() -> Result<()> {
     let secret_key = Key::generate();
 
     eprintln!("----------------------------------------------------------------------");
-    info!(
-        "Starting Chhoto URL Server: v{}...",
-        env!("CARGO_PKG_VERSION")
-    );
+    info!("Starting Chhoto URL Server v{}", env!("CARGO_PKG_VERSION"));
     eprintln!("----------------------------------------------------------------------");
 
     // Read config from env vars
