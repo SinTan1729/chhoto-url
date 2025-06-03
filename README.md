@@ -86,7 +86,7 @@ you can message me through GitHub discussions or mail me.
 [See here.](./CLI.md)
 
 # 3rd Party Tools
-The following tools are 3rd party, and are not supported officially. If you have any problems with them, please file and issue
+The following tools are 3rd party, and are not supported officially. If you have any problems with them, please file an issue
 to the respective repos.
 ## Browser extension
 There's an (unofficial) browser extension maintained by @SolninjaA for shortening URLs easily using Chhoto URL. 
