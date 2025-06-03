@@ -97,7 +97,7 @@ There's an (unofficial) FreeBSD package maintained by @jcpsantiago for installin
 [You can take a look at it here.](https://tangled.sh/@jcpsantiago.xyz/freebsd-ports/tree/main/www/chhoto-url)
 Feel free to discuss any issues or suggestions in [#56](https://github.com/SinTan1729/chhoto-url/discussions/56).
 
-## Notes
+# Notes
 - It started as a fork of [`simply-shorten`](https://gitlab.com/draganczukp/simply-shorten).
 - The list of adjectives and names used for random short url generation is a modified
   version of [this list used by docker](https://github.com/moby/moby/blob/master/pkg/namesgenerator/names-generator.go).
