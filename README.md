@@ -72,6 +72,7 @@ other ways modern web shows how anti-user it is. We all hate those, and they're
 not needed here.
 - **Paywalls** or messages begging for donations. If you want to buy me a coffee, 
 you can message me through GitHub discussions or mail me.
+
 # Screenshots 
 <p align="middle">
   <img src="screenshot-desktop.webp" height="250" alt="desktop screenshot" />
@@ -83,6 +84,18 @@ you can message me through GitHub discussions or mail me.
 
 # Instructions for CLI usage
 [See here.](./CLI.md)
+
+# 3rd Party Tools
+The following tools are 3rd party, and are not supported officially. If you have any problems with them, please file and issue
+to the respective repos.
+## Browser extension
+There's an (unofficial) browser extension maintained by @SolninjaA for shortening URLs easily using Chhoto URL. 
+[You can take a look at it here.](https://github.com/SolninjaA/Chhoto-URL-Extension)
+
+## OpenBSD package
+There's an (unofficial) FreeBSD package maintained by @jcpsantiago for installing Chhoto URL.
+[You can take a look at it here.](https://tangled.sh/@jcpsantiago.xyz/freebsd-ports/tree/main/www/chhoto-url)
+Feel free to discuss any issues or suggestions in [#56](https://github.com/SinTan1729/chhoto-url/discussions/56).
 
 ## Notes
 - It started as a fork of [`simply-shorten`](https://gitlab.com/draganczukp/simply-shorten).
