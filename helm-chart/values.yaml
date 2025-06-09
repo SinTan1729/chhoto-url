@@ -20,6 +20,7 @@ persistence:
 redirect_method: PERMANENT
 slug_style: Pair
 slug_length: 8
+try_longer_slug: False
 public_mode: Disable
 disable_frontend: False
 # cache_control_header: "no-cache, private"

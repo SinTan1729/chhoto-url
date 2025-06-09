@@ -23,6 +23,7 @@ pub struct Config {
     pub api_key: Option<String>,
     pub slug_style: String,
     pub slug_length: usize,
+    pub try_longer_slug: bool,
 }
 
 pub fn read() -> Config {
@@ -129,8 +130,14 @@ pub fn read() -> Config {
         .and_then(|s| s.parse::<usize>().ok())
         .filter(|&s| s >= 4)
         .unwrap_or(8);
+
+    let try_longer_slug = var("try_longer_slug").is_ok_and(|s| s.trim() == "True");
+
     if slug_style == "UID" {
         info!("Using UID slugs with length {slug_length}.");
+        if try_longer_slug {
+            info!("Will retry with a longer slug upon collision.")
+        };
     } else {
         info!("Using adjective-noun pair slugs.");
     }
@@ -149,5 +156,6 @@ pub fn read() -> Config {
         api_key,
         slug_style,
         slug_length,
+        try_longer_slug,
     }
 }

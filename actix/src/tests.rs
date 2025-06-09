@@ -50,6 +50,7 @@ fn default_config(test: &str) -> config::Config {
     api_key: Some(String::from("Z8FNjh2J2v3yfb0xPDIVA58Pj4D0e2jSERVdoqM5pJCbU2w5tmg3PNioD6GUhaQwHHaDLBNZj0EQE8MS4TLKcUyusa05")),
     slug_style: "Pair".to_string(),
     slug_length: 8,
+    try_longer_slug: false,
     };
     conf
 }
@@ -236,6 +237,48 @@ async fn adding_link_with_generated_shortlink_with_uid_slug() {
     assert!(status.is_success());
     let re = Regex::new(r"^https://mydomain.com/[a-z0-9]{12}$").unwrap();
     assert!(re.is_match(reply.shorturl.as_str()));
+
+    let _ = fs::remove_file(format!("/tmp/chhoto-url-test-{test}.sqlite"));
+}
+
+#[test]
+async fn adding_link_with_retry_on_collision() {
+    let test = "retry_on_collision";
+    let mut conf = default_config(test);
+    conf.slug_style = "UID".to_string();
+    conf.slug_length = 1;
+    conf.try_longer_slug = true;
+
+    let app = create_app(&conf, test).await;
+    let api_key = &conf.api_key.unwrap();
+
+    // Add every possible single-character shorturl
+    {
+        #[rustfmt::skip]
+        static CHARS: [char; 36] = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x',
+            'y', 'z', '0', '1', '2', '3', '4', '5', '6', '7', '8', '9'];
+
+        for c in CHARS.iter() {
+            let (status, _) = add_link(&app, api_key, c, 10).await;
+            assert!(status.is_success());
+        }
+    }
+
+    // Generated shorturls should now be 5 characters
+    {
+        let (status, reply) = add_link(&app, api_key, "", 10).await;
+        assert!(status.is_success());
+        assert_eq!(
+            reply.shorturl.chars().count(),
+            "https://mydomain.com/".len() + 5
+        );
+    }
+
+    // But a colliding provided shorturl should fail
+    {
+        let (status, _) = add_link(&app, api_key, "a", 10).await;
+        assert!(status.is_client_error());
+    }
 
     let _ = fs::remove_file(format!("/tmp/chhoto-url-test-{test}.sqlite"));
 }

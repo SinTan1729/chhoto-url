@@ -82,7 +82,7 @@ pub fn add_hit(shortlink: &str, db: &Connection) {
 // Insert a new link
 pub fn add_link(
     shortlink: String,
-    longlink: String,
+    longlink: &str,
     expiry_delay: i64,
     db: &Connection,
 ) -> Result<i64, Error> {

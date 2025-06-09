@@ -141,7 +141,7 @@ pub fn add_link(req: String, db: &Connection, config: &Config) -> (bool, String,
     if validate_link(chunks.shortlink.as_str()) {
         match database::add_link(
             chunks.shortlink.clone(),
-            chunks.longlink,
+            &chunks.longlink,
             chunks.expiry_delay,
             db,
         ) {
@@ -149,9 +149,23 @@ pub fn add_link(req: String, db: &Connection, config: &Config) -> (bool, String,
             Err(error) => {
                 if error.sqlite_error().map(|err| err.extended_code)
                     == Some(SQLITE_CONSTRAINT_UNIQUE)
-                    && shortlink_provided
                 {
-                    (false, String::from("Short URL is already in use!"), 0)
+                    if shortlink_provided {
+                        (false, String::from("Short URL is already in use!"), 0)
+                    } else if config.slug_style == "UID" && config.try_longer_slug {
+                        chunks.shortlink = gen_link(style, len + 4);
+                        match database::add_link(
+                            chunks.shortlink.clone(),
+                            &chunks.longlink,
+                            chunks.expiry_delay,
+                            db,
+                        ) {
+                            Ok(expiry_time) => (true, chunks.shortlink, expiry_time),
+                            Err(_error) => (false, String::from("Something went wrong!"), 0),
+                        }
+                    } else {
+                        (false, String::from("Something went wrong!"), 0)
+                    }
                 } else {
                     // This should be super rare
                     (false, String::from("Something went wrong!"), 0)
