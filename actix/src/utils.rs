@@ -88,6 +88,7 @@ pub fn get_longurl(
     db: &Connection,
     needhits: bool,
 ) -> (Option<String>, Option<i64>, Option<i64>) {
+    // Long link, hits, expiry time
     if validate_link(&shortlink) {
         database::find_url(shortlink.as_str(), db, needhits)
     } else {
@@ -109,6 +110,7 @@ pub fn getall(db: &Connection) -> String {
 
 // Make checks and then request the DB to add a new URL entry
 pub fn add_link(req: String, db: &Connection, config: &Config) -> (bool, String, i64) {
+    // Success status, response string, expiry time
     let mut chunks: URLPair;
     if let Ok(json) = serde_json::from_str(&req) {
         chunks = json;

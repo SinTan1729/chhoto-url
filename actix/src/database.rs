@@ -20,6 +20,7 @@ pub fn find_url(
     db: &Connection,
     needhits: bool,
 ) -> (Option<String>, Option<i64>, Option<i64>) {
+    // Long link, hits, expiry time
     let now = chrono::Utc::now().timestamp();
     let query = if needhits {
         "SELECT long_url, hits, expiry_time FROM urls WHERE short_url = ?1 AND (expiry_time > ?2 OR expiry_time = 0)"
