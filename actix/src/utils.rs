@@ -157,14 +157,14 @@ pub fn add_link(req: String, db: &Connection, config: &Config) -> (bool, String,
                             db,
                         ) {
                             Ok(expiry_time) => (true, chunks.shortlink, expiry_time),
-                            Err(_) => (false, String::from("Something went wrong!"), 0),
+                            Err(_) => (false, String::from("Something went very wrong!"), 0),
                         }
                     } else {
-                        (false, String::from("Something went very wrong!"), 0)
+                        (false, String::from("Something went wrong!"), 0)
                     }
                 } else {
                     // This should be super rare
-                    (false, String::from("Something went wrong!"), 0)
+                    (false, String::from("Something went extremely wrong!"), 0)
                 }
             }
         }
