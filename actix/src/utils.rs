@@ -139,22 +139,32 @@ pub fn add_link(req: String, db: &Connection, config: &Config) -> (bool, String,
     chunks.expiry_delay = chunks.expiry_delay.max(0);
 
     if validate_link(chunks.shortlink.as_str()) {
-        match database::add_link(
-            chunks.shortlink.clone(),
-            chunks.longlink,
-            chunks.expiry_delay,
-            db,
-        ) {
+        match database::add_link(&chunks.shortlink, &chunks.longlink, chunks.expiry_delay, db) {
             Ok(expiry_time) => (true, chunks.shortlink, expiry_time),
             Err(error) => {
                 if error.sqlite_error().map(|err| err.extended_code)
                     == Some(SQLITE_CONSTRAINT_UNIQUE)
-                    && shortlink_provided
                 {
-                    (false, String::from("Short URL is already in use!"), 0)
+                    if shortlink_provided {
+                        (false, String::from("Short URL is already in use!"), 0)
+                    } else if config.slug_style == "UID" && config.try_longer_slug {
+                        // Optionally, retry with a longer slug length
+                        chunks.shortlink = gen_link(style, len + 4);
+                        match database::add_link(
+                            &chunks.shortlink,
+                            &chunks.longlink,
+                            chunks.expiry_delay,
+                            db,
+                        ) {
+                            Ok(expiry_time) => (true, chunks.shortlink, expiry_time),
+                            Err(_) => (false, String::from("Something went very wrong!"), 0),
+                        }
+                    } else {
+                        (false, String::from("Something went wrong!"), 0)
+                    }
                 } else {
                     // This should be super rare
-                    (false, String::from("Something went wrong!"), 0)
+                    (false, String::from("Something went extremely wrong!"), 0)
                 }
             }
         }

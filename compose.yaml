@@ -60,6 +60,8 @@ services:
             # The length is 8 by default, and a minimum of 4 is allowed.
             # - slug_style=Pair
             # - slug_length=8
+            # To retry (once) with a longer UID upon collision, change the following to True.
+            # - try_longer_slug=False
             
             # In case you want to provide public access to adding links (and not 
             # delete, or listing), change the following option to Enable.

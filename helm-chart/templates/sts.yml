@@ -44,6 +44,8 @@ spec:
               value: {{ .Values.slug_style }}
             - name: slug_length
               value: "{{ .Values.slug_length }}"
+            - name: try_longer_slug
+              value: "{{ .Values.try_longer_slug }}"
             - name: public_mode
               value: {{ .Values.public_mode }}
             - name: disable_frontend
