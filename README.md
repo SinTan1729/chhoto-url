@@ -92,6 +92,10 @@ to the respective repos.
 There's an (unofficial) browser extension maintained by @SolninjaA for shortening URLs easily using Chhoto URL. 
 [You can take a look at it here.](https://github.com/SolninjaA/Chhoto-URL-Extension)
 
+## Raycast extension
+There's an (unofficial) Raycast extension maintained by @paranoidPhantom for shortening URLs efficiently using Chhoto URL.
+[You can get it from the Raycast extension store.](https://www.raycast.com/andrei_hudalla/chhoto)
+
 ## OpenBSD package
 There's an (unofficial) FreeBSD package maintained by @jcpsantiago for installing Chhoto URL.
 [You can take a look at it here.](https://tangled.sh/@jcpsantiago.xyz/freebsd-ports/tree/main/www/chhoto-url)
