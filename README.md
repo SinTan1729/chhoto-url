@@ -87,7 +87,7 @@ you can message me through GitHub discussions or mail me.
 
 # 3rd Party Tools
 The following tools are 3rd party, and are not supported officially. If you have any problems with them, please file an issue
-to the respective repos.
+in the respective repos.
 ## Browser extension
 There's an (unofficial) browser extension maintained by @SolninjaA for shortening URLs easily using Chhoto URL. 
 [You can take a look at it here.](https://github.com/SolninjaA/Chhoto-URL-Extension)
