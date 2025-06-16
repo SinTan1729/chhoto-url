@@ -38,6 +38,7 @@ async fn main() -> Result<()> {
 
     eprintln!("----------------------------------------------------------------------");
     info!("Starting Chhoto URL Server v{}", env!("CARGO_PKG_VERSION"));
+    info!("Source: https://github.com/SinTan1729/chhoto-url");
     eprintln!("----------------------------------------------------------------------");
 
     // Read config from env vars
