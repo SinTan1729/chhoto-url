@@ -85,6 +85,10 @@ you can message me through GitHub discussions or mail me.
 # Instructions for CLI usage
 [See here.](./CLI.md)
 
+# Official CLI Application
+It's maintained by me, even though I cannot promise to provide proper support. Take a look at it
+[here](https://github.com/SinTan1729/chhoto-url-cli).
+
 # 3rd Party Tools
 The following tools are 3rd party, and are not supported officially. If you have any problems with them, please file an issue
 in the respective repos.
