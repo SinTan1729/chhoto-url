@@ -1,3 +1,7 @@
+## Official CLI App
+There's an official CLI app for Linux. It's maintained by me, even though I cannot promise to provide proper support. Take a look at it
+[here](https://github.com/SinTan1729/chhoto-url-cli). The instructions below describe how to use all the features using `curl`.
+
 ## Instructions for CLI usage
 The application can be used from the terminal using something like `curl`. In all the examples
 below, replace `http://localhost:4567` with where your instance of `chhoto-url` is accessible.
