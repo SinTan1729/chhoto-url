@@ -68,9 +68,9 @@ pub fn read() -> Config {
         .unwrap_or_default();
     if public_mode {
         if public_mode_expiry_delay > 0 {
-            info!("Enabling public mode with no enforced expiry delay.");
-        } else {
             info!("Enabling public mode with an enforced expiry delay of {public_mode_expiry_delay} seconds.");
+        } else {
+            info!("Enabling public mode with no enforced expiry delay.");
         }
     }
 
