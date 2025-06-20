@@ -16,12 +16,12 @@ pub fn validate_key(key: String, config: &Config) -> bool {
         // Check if API Key is hashed using Argon2. More algorithms maybe added later.
         let authorized = if config.hash_algorithm.is_some() {
             info!("Using Argon2 hash for API key validation.");
-            let hash = PasswordHash::new(&key).expect("The provided password hash in invalid.");
+            let hash = PasswordHash::new(api_key).expect("The provided password hash is invalid.");
             Argon2::default()
-                .verify_password(api_key.as_bytes(), &hash)
+                .verify_password(key.as_bytes(), &hash)
                 .is_ok()
         } else {
-            // If hashing is not enabled, use the plaintext password for matching
+            // If hashing is not enabled, use the plaintext API key for matching
             api_key == &key
         };
         if !authorized {
@@ -58,7 +58,7 @@ pub fn api_header(req: &HttpRequest) -> Option<&str> {
     req.headers().get("X-API-Key")?.to_str().ok()
 }
 
-// Validate a given password
+// Validate a session
 pub fn validate(session: Session, config: &Config) -> bool {
     // If there's no password provided, just return true
     if config.password.is_none() {

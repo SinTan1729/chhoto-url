@@ -222,7 +222,7 @@ pub async fn login(req: String, session: Session, data: web::Data<AppState>) -> 
     let authorized = if let Some(password) = &config.password {
         if config.hash_algorithm.is_some() {
             info!("Using Argon2 hash for password validation.");
-            let hash = PasswordHash::new(password).expect("The provided password hash in invalid.");
+            let hash = PasswordHash::new(password).expect("The provided password hash is invalid.");
             Some(
                 Argon2::default()
                     .verify_password(req.as_bytes(), &hash)
