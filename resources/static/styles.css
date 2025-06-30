@@ -1,10 +1,13 @@
 /* SPDX-FileCopyrightText: 2023 Sayantan Santra <sayantan.santra689@gmail.com> */
 /* SPDX-License-Identifier: MIT */
 
+@import url('https://fonts.googleapis.com/css2?family=Montserrat&display=swap');
 @font-face {
-    font-family: Montserrat;
-    src: url('/assets/Montserrat-VF.woff2');
-}
+    font-family: Montserrat, "Open Sans", Helvetica, Arial, sans-serif;
+    font-optical-sizing: auto;
+    font-weight: 400;
+    font-style: normal;
+} 
 
 :root {
     color-scheme: light dark;
