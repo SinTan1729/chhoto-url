@@ -43,7 +43,7 @@ legend {
 }
 
 * {
-    font-family: Montserrat;
+    font-family: Montserrat !important;
 }
 
 .container {
