@@ -306,7 +306,7 @@ pub async fn delete_link(
             let response = Response {
                 success: true,
                 error: false,
-                reason: format!("Deleted {}", shortlink),
+                reason: format!("Deleted {shortlink}"),
             };
             HttpResponse::Ok().json(response)
         } else {

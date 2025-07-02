@@ -117,7 +117,7 @@ pub fn read() -> Config {
         let port_text = if [80, 443].contains(&port) {
             String::new()
         } else {
-            format!(":{}", port)
+            format!(":{port}")
         };
         // No issues
         info!("Public URI is: {protocol}://localhost{port_text}.");
