@@ -223,11 +223,11 @@ fn gen_link(style: &String, len: usize, allow_capital_letters: bool) -> String {
 		"taussig", "tesla", "tharp", "thompson", "torvalds", "tu", "turing", "varahamihira", "vaughan", "vaughn", "villani", "visvesvaraya", "volhard", 
 		"wescoff", "weierstrass", "wilbur", "wiles", "williams", "williamson", "wilson", "wing", "wozniak", "wright", "wu", "yalow", "yonath", "zhukovsky"];
 
-    static CHARS_SML: [char; 36] = [
+    static CHARS_SMALL: [char; 36] = [
         'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r',
         's', 't', 'u', 'v', 'w', 'x', 'y', 'z', '0', '1', '2', '3', '4', '5', '6', '7', '8', '9',
     ];
-    static CHARS_CAP: [char; 62] = [
+    static CHARS_CAPITAL: [char; 62] = [
         'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R',
         'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z', 'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j',
         'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z', '0', '1',
@@ -236,9 +236,9 @@ fn gen_link(style: &String, len: usize, allow_capital_letters: bool) -> String {
 
     if style == "UID" {
         if allow_capital_letters {
-            nanoid!(len, &CHARS_CAP)
+            nanoid!(len, &CHARS_CAPITAL)
         } else {
-            nanoid!(len, &CHARS_SML)
+            nanoid!(len, &CHARS_SMALL)
         }
     } else {
         format!(
