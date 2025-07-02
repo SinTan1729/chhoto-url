@@ -24,6 +24,7 @@ pub struct Config {
     pub slug_style: String,
     pub slug_length: usize,
     pub try_longer_slug: bool,
+    pub allow_capital_letters: bool,
 }
 
 pub fn read() -> Config {
@@ -142,6 +143,8 @@ pub fn read() -> Config {
         info!("Using adjective-noun pair slugs.");
     }
 
+    let allow_capital_letters = var("allow_capital_letters").is_ok_and(|s| s.trim() == "True");
+
     Config {
         port,
         db_location,
@@ -157,5 +160,6 @@ pub fn read() -> Config {
         slug_style,
         slug_length,
         try_longer_slug,
+        allow_capital_letters,
     }
 }

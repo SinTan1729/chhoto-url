@@ -51,6 +51,7 @@ fn default_config(test: &str) -> config::Config {
     slug_style: "Pair".to_string(),
     slug_length: 8,
     try_longer_slug: false,
+    allow_capital_letters: false,
     };
     conf
 }
