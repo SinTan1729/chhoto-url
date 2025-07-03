@@ -14,13 +14,27 @@
 </head>
 
 <style>
+    @import url('https://fonts.googleapis.com/css2?family=Montserrat&display=swap');
+    @font-face {
+        font-family: Montserrat, "Open Sans", Helvetica, Arial, sans-serif;
+        font-optical-sizing: auto;
+        font-weight: 400;
+        font-style: normal;
+    } 
+    :root {
+        color-scheme: light dark;
+    }
+    * {
+        font-family: Montserrat;
+    }
     body {
+        color: light-dark(black, #e8e6e3);
+        background-color: light-dark(white, #181a1b);
         text-align: center;
     }
     #quote {
         text-indent: 4em;
     }
-
     /* Settings for mobile devices */
     @media (pointer:none),
     (pointer:coarse) {
