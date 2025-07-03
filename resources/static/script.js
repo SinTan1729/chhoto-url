@@ -23,14 +23,14 @@ const getSiteUrl = async () => {
 const getVersion = async () => {
     let ver = await fetch(prepSubdir("/api/version"))
                 .then(res => res.text());
-    return ver;
+    return ver.split(" ")[2];
 }
 
 const showVersion = async () => {
     let version = await getVersion();
     link = document.getElementById("version-number");
-    link.innerText = "v" + version;
-    link.href = "https://github.com/SinTan1729/chhoto-url/releases/tag/" + version;
+    link.innerText = version;
+    link.href = "https://github.com/SinTan1729/chhoto-url/releases/tag/" + version.substring(1);
     link.hidden = false;
 }
 
