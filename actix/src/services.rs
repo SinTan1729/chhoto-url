@@ -187,7 +187,7 @@ pub async fn siteurl(data: web::Data<AppState>) -> HttpResponse {
 // Get the version number
 #[get("/api/version")]
 pub async fn version() -> HttpResponse {
-    HttpResponse::Ok().body(VERSION)
+    HttpResponse::Ok().body(format!("Chhoto URL v{VERSION}"))
 }
 
 // Get some useful backend config

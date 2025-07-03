@@ -116,7 +116,10 @@ async fn basic_site_config() {
     let req = test::TestRequest::get().uri("/api/version").to_request();
     let resp = test::call_service(&app, req).await;
     let body = to_bytes(resp.into_body()).await.unwrap();
-    assert_eq!(body.as_str(), env!("CARGO_PKG_VERSION"));
+    assert_eq!(
+        body.as_str(),
+        format!("Chhoto URL v{}", env!("CARGO_PKG_VERSION"))
+    );
 
     let _ = fs::remove_file(format!("/tmp/chhoto-url-test-{test}.sqlite"));
 }
