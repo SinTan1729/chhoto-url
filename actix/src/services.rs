@@ -33,6 +33,7 @@ struct Response {
 // Defin JSON struct for returning backend config
 #[derive(Serialize)]
 struct BackendConfig {
+    version: String,
     site_url: Option<String>,
     allow_capital_letters: bool,
     public_mode: bool,
@@ -205,6 +206,7 @@ pub async fn getconfig(
     let result = utils::is_api_ok(http, config);
     if result.success || validate(session, config) || data.config.public_mode {
         let backend_config = BackendConfig {
+            version: VERSION.to_string(),
             allow_capital_letters: config.allow_capital_letters,
             public_mode: config.public_mode,
             public_mode_expiry_delay: config.public_mode_expiry_delay,
