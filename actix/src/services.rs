@@ -199,7 +199,7 @@ pub async fn getconfig(
 ) -> HttpResponse {
     let config = &data.config;
     let result = utils::is_api_ok(http, config);
-    if result.success || validate(session, config) {
+    if result.success || validate(session, config) || data.config.public_mode {
         let backend_config = BackendConfig {
             allow_capital_letters: data.config.allow_capital_letters,
             public_mode_expiry_delay: data.config.public_mode_expiry_delay,
