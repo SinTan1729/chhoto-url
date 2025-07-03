@@ -85,6 +85,7 @@ async fn main() -> Result<()> {
             .service(services::getall)
             .service(services::siteurl)
             .service(services::version)
+            .service(services::getconfig)
             .service(services::add_link)
             .service(services::delete_link)
             .service(services::login)

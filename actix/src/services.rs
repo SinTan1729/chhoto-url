@@ -15,9 +15,9 @@ use log::{info, warn};
 use serde::Serialize;
 use std::env;
 
-use crate::utils;
 use crate::AppState;
 use crate::{auth, database};
+use crate::{auth::validate, utils};
 
 // Store the version number
 const VERSION: &str = env!("CARGO_PKG_VERSION");
@@ -28,6 +28,14 @@ struct Response {
     success: bool,
     error: bool,
     reason: String,
+}
+
+// Defin JSON struct for returning backend config
+#[derive(Serialize)]
+struct BackendConfig {
+    site_url: Option<String>,
+    allow_capital_letters: bool,
+    public_mode_expiry_delay: i64,
 }
 
 // Needed to return the short URL to make it easier for programs leveraging the API
@@ -180,6 +188,27 @@ pub async fn siteurl(data: web::Data<AppState>) -> HttpResponse {
 #[get("/api/version")]
 pub async fn version() -> HttpResponse {
     HttpResponse::Ok().body(VERSION)
+}
+
+// Get some useful backend config
+#[get("/api/getconfig")]
+pub async fn getconfig(
+    data: web::Data<AppState>,
+    session: Session,
+    http: HttpRequest,
+) -> HttpResponse {
+    let config = &data.config;
+    let result = utils::is_api_ok(http, config);
+    if result.success || validate(session, config) {
+        let backend_config = BackendConfig {
+            allow_capital_letters: data.config.allow_capital_letters,
+            public_mode_expiry_delay: data.config.public_mode_expiry_delay,
+            site_url: data.config.site_url.clone(),
+        };
+        HttpResponse::Ok().json(backend_config)
+    } else {
+        HttpResponse::Unauthorized().json(result)
+    }
 }
 
 // 404 error page

@@ -58,7 +58,7 @@ pub fn is_api_ok(http: HttpRequest, config: &Config) -> Response {
             Response {
                 success: false,
                 error: false,
-                reason: "X-API-Key header was not found".to_string(),
+                reason: "No valid authentication was found".to_string(),
                 pass: true,
             }
         }
