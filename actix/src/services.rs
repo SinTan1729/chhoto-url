@@ -35,7 +35,11 @@ struct Response {
 struct BackendConfig {
     site_url: Option<String>,
     allow_capital_letters: bool,
+    public_mode: bool,
     public_mode_expiry_delay: i64,
+    slug_style: String,
+    slug_length: usize,
+    try_longer_slug: bool,
 }
 
 // Needed to return the short URL to make it easier for programs leveraging the API
@@ -201,9 +205,13 @@ pub async fn getconfig(
     let result = utils::is_api_ok(http, config);
     if result.success || validate(session, config) || data.config.public_mode {
         let backend_config = BackendConfig {
-            allow_capital_letters: data.config.allow_capital_letters,
-            public_mode_expiry_delay: data.config.public_mode_expiry_delay,
-            site_url: data.config.site_url.clone(),
+            allow_capital_letters: config.allow_capital_letters,
+            public_mode: config.public_mode,
+            public_mode_expiry_delay: config.public_mode_expiry_delay,
+            site_url: config.site_url.clone(),
+            slug_style: config.slug_style.clone(),
+            slug_length: config.slug_length,
+            try_longer_slug: config.try_longer_slug,
         };
         HttpResponse::Ok().json(backend_config)
     } else {
