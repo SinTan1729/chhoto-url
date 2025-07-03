@@ -20,6 +20,12 @@ const getSiteUrl = async () => {
     }
 }
 
+const getConfig = async () => {
+    let conf = await fetch(prepSubdir("/api/getconfig"))
+                .then(res => res.json());
+    return conf;
+}
+
 const getVersion = async () => {
     let ver = await fetch(prepSubdir("/api/version"))
                 .then(res => res.text());
@@ -74,6 +80,14 @@ const displayData = async (data) => {
     admin_button.innerText = "logout";
     admin_button.href = "javascript:logOut()";
     admin_button.hidden = false;
+
+    let conf = await getConfig();
+    if (conf.allow_capital_letters) {
+        let input_box = document.getElementById("shortUrl");
+        input_box.pattern = "[A-Za-z0-9\-_]+";
+        input_box.title = "Only A-Z, a-z, 0-9, - and _ are allowed";
+        input_box.placeholder = "Only A-Z, a-z, 0-9, - and _ are allowed";
+    }
 
     table_box = document.getElementById("table-box");
     loading_text = document.getElementById("loading-text");
