@@ -126,7 +126,10 @@ pub fn read() -> Config {
         None
     };
 
-    let slug_style = var("slug_style").unwrap_or(String::from("Pair"));
+    let slug_style = var("slug_style")
+        .ok()
+        .filter(|s| !s.trim().is_empty())
+        .unwrap_or(String::from("Pair"));
     let slug_length = var("slug_length")
         .ok()
         .and_then(|s| s.parse::<usize>().ok())
@@ -147,8 +150,9 @@ pub fn read() -> Config {
     let allow_capital_letters = var("allow_capital_letters").is_ok_and(|s| s.trim() == "True");
 
     let custom_landing_directory = var("custom_landing_directory")
+        .ok()
         .map(|s| s.trim().to_string())
-        .ok();
+        .filter(|s| !s.is_empty());
 
     Config {
         port,
