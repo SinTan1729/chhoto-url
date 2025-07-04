@@ -1,6 +1,7 @@
 use actix_http::{Request, StatusCode};
 use actix_service::Service;
-use actix_web::{body::to_bytes, dev::ServiceResponse, test, web::Bytes, App, Error};
+use actix_web::test;
+use actix_web::{body::to_bytes, dev::ServiceResponse, web::Bytes, App, Error};
 use regex::Regex;
 use serde::Deserialize;
 use std::{fmt::Display, fs, thread::sleep, time::Duration};
@@ -35,6 +36,12 @@ struct CreatedURL {
     longurl: String,
 }
 
+#[derive(Deserialize)]
+struct BackendConfig {
+    version: String,
+    slug_length: usize,
+}
+
 fn default_config(test: &str) -> config::Config {
     let conf = config::Config {
     port: 4567,
@@ -51,6 +58,7 @@ fn default_config(test: &str) -> config::Config {
     slug_style: "Pair".to_string(),
     slug_length: 8,
     try_longer_slug: false,
+    allow_capital_letters: false,
     };
     conf
 }
@@ -68,6 +76,7 @@ async fn create_app(
             }))
             .service(services::siteurl)
             .service(services::version)
+            .service(services::getconfig)
             .service(services::add_link)
             .service(services::getall)
             .service(services::link_handler)
@@ -115,7 +124,21 @@ async fn basic_site_config() {
     let req = test::TestRequest::get().uri("/api/version").to_request();
     let resp = test::call_service(&app, req).await;
     let body = to_bytes(resp.into_body()).await.unwrap();
-    assert_eq!(body.as_str(), env!("CARGO_PKG_VERSION"));
+    assert_eq!(
+        body.as_str(),
+        format!("Chhoto URL v{}", env!("CARGO_PKG_VERSION"))
+    );
+
+    let req = test::TestRequest::get()
+        .uri("/api/getconfig")
+        .insert_header(("X-API-Key", conf.api_key.unwrap()))
+        .to_request();
+    let resp = test::call_service(&app, req).await;
+    assert!(resp.status().is_success());
+    let body = to_bytes(resp.into_body()).await.unwrap();
+    let conf: BackendConfig = serde_json::from_str(body.as_str()).unwrap();
+    assert_eq!(conf.version, env!("CARGO_PKG_VERSION"));
+    assert_eq!(conf.slug_length, 8);
 
     let _ = fs::remove_file(format!("/tmp/chhoto-url-test-{test}.sqlite"));
 }
@@ -133,6 +156,26 @@ async fn adding_link_with_shortlink() {
     }
 
     let (status, reply) = add_link(&app, &api_key, "test1", 10).await;
+    assert!(status.is_client_error());
+    assert_eq!(reply.reason, "Short URL is already in use!");
+
+    let _ = fs::remove_file(format!("/tmp/chhoto-url-test-{test}.sqlite"));
+}
+
+#[test]
+async fn adding_link_with_shortlink_capital_letters() {
+    let test = "adding-capital";
+    let mut conf = default_config(test);
+    conf.allow_capital_letters = true;
+    let app = create_app(&conf, test).await;
+    let api_key = conf.api_key.unwrap();
+    for shortlink in ["Test1", "Test2", "Test3"] {
+        let (status, reply) = add_link(&app, &api_key, shortlink, 10).await;
+        assert!(status.is_success());
+        assert_eq!(reply.shorturl, format!("https://mydomain.com/{shortlink}"));
+    }
+
+    let (status, reply) = add_link(&app, &api_key, "Test1", 10).await;
     assert!(status.is_client_error());
     assert_eq!(reply.reason, "Short URL is already in use!");
 
@@ -227,7 +270,7 @@ async fn adding_link_with_generated_shortlink_with_pair_slug() {
 
 #[test]
 async fn adding_link_with_generated_shortlink_with_uid_slug() {
-    let test = "shortlink-with-uid-slug";
+    let test = "autogen-with-uid-slug";
     let mut conf = default_config(test);
     conf.slug_style = "UID".to_string();
     conf.slug_length = 12;
@@ -236,6 +279,23 @@ async fn adding_link_with_generated_shortlink_with_uid_slug() {
 
     assert!(status.is_success());
     let re = Regex::new(r"^https://mydomain.com/[a-z0-9]{12}$").unwrap();
+    assert!(re.is_match(reply.shorturl.as_str()));
+
+    let _ = fs::remove_file(format!("/tmp/chhoto-url-test-{test}.sqlite"));
+}
+
+#[test]
+async fn adding_link_with_generated_shortlink_with_uid_slug_capital_letters() {
+    let test = "autogen-with-uid-slug-capital";
+    let mut conf = default_config(test);
+    conf.slug_style = "UID".to_string();
+    conf.slug_length = 12;
+    conf.allow_capital_letters = true;
+    let app = create_app(&conf, test).await;
+    let (status, reply) = add_link(&app, &conf.api_key.unwrap(), "", 10).await;
+
+    assert!(status.is_success());
+    let re = Regex::new(r"^https://mydomain.com/[A-Za-z0-9]{12}$").unwrap();
     assert!(re.is_match(reply.shorturl.as_str()));
 
     let _ = fs::remove_file(format!("/tmp/chhoto-url-test-{test}.sqlite"));

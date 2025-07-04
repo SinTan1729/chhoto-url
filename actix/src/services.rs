@@ -15,9 +15,9 @@ use log::{info, warn};
 use serde::Serialize;
 use std::env;
 
-use crate::utils;
 use crate::AppState;
 use crate::{auth, database};
+use crate::{auth::validate, utils};
 
 // Store the version number
 const VERSION: &str = env!("CARGO_PKG_VERSION");
@@ -28,6 +28,19 @@ struct Response {
     success: bool,
     error: bool,
     reason: String,
+}
+
+// Defin JSON struct for returning backend config
+#[derive(Serialize)]
+struct BackendConfig {
+    version: String,
+    site_url: Option<String>,
+    allow_capital_letters: bool,
+    public_mode: bool,
+    public_mode_expiry_delay: i64,
+    slug_style: String,
+    slug_length: usize,
+    try_longer_slug: bool,
 }
 
 // Needed to return the short URL to make it easier for programs leveraging the API
@@ -141,7 +154,8 @@ pub async fn getall(
 pub async fn expand(req: String, data: web::Data<AppState>, http: HttpRequest) -> HttpResponse {
     let result = utils::is_api_ok(http, &data.config);
     if result.success {
-        let (longurl, hits, expiry_time) = utils::get_longurl(req, &data.db, true);
+        let (longurl, hits, expiry_time) =
+            utils::get_longurl(req, &data.db, true, data.config.allow_capital_letters);
         if let Some(longlink) = longurl {
             let body = LinkInfo {
                 success: true,
@@ -166,6 +180,8 @@ pub async fn expand(req: String, data: web::Data<AppState>, http: HttpRequest) -
 }
 
 // Get the site URL
+// This is deprecated, and might be removed in the future.
+// Use /api/getconfig instead
 #[get("/api/siteurl")]
 pub async fn siteurl(data: web::Data<AppState>) -> HttpResponse {
     if let Some(url) = &data.config.site_url {
@@ -176,9 +192,37 @@ pub async fn siteurl(data: web::Data<AppState>) -> HttpResponse {
 }
 
 // Get the version number
+// This is deprecated, and might be removed in the future.
+// Use /api/getconfig instead
 #[get("/api/version")]
 pub async fn version() -> HttpResponse {
-    HttpResponse::Ok().body(VERSION)
+    HttpResponse::Ok().body(format!("Chhoto URL v{VERSION}"))
+}
+
+// Get some useful backend config
+#[get("/api/getconfig")]
+pub async fn getconfig(
+    data: web::Data<AppState>,
+    session: Session,
+    http: HttpRequest,
+) -> HttpResponse {
+    let config = &data.config;
+    let result = utils::is_api_ok(http, config);
+    if result.success || validate(session, config) || data.config.public_mode {
+        let backend_config = BackendConfig {
+            version: VERSION.to_string(),
+            allow_capital_letters: config.allow_capital_letters,
+            public_mode: config.public_mode,
+            public_mode_expiry_delay: config.public_mode_expiry_delay,
+            site_url: config.site_url.clone(),
+            slug_style: config.slug_style.clone(),
+            slug_length: config.slug_length,
+            try_longer_slug: config.try_longer_slug,
+        };
+        HttpResponse::Ok().json(backend_config)
+    } else {
+        HttpResponse::Unauthorized().json(result)
+    }
 }
 
 // 404 error page
@@ -196,7 +240,14 @@ pub async fn link_handler(
     data: web::Data<AppState>,
 ) -> impl Responder {
     let shortlink_str = shortlink.to_string();
-    if let Some(longlink) = utils::get_longurl(shortlink_str, &data.db, false).0 {
+    if let Some(longlink) = utils::get_longurl(
+        shortlink_str,
+        &data.db,
+        false,
+        data.config.allow_capital_letters,
+    )
+    .0
+    {
         database::add_hit(shortlink.as_str(), &data.db);
         if data.config.use_temp_redirect {
             Either::Left(Redirect::to(longlink))
@@ -302,7 +353,11 @@ pub async fn delete_link(
     let result = utils::is_api_ok(http, config);
     // If success, delete shortlink
     if result.success {
-        if utils::delete_link(shortlink.to_string(), &data.db) {
+        if utils::delete_link(
+            shortlink.to_string(),
+            &data.db,
+            data.config.allow_capital_letters,
+        ) {
             let response = Response {
                 success: true,
                 error: false,
@@ -321,7 +376,11 @@ pub async fn delete_link(
         HttpResponse::Unauthorized().json(result)
     // If "pass" is true - keeps backwards compatibility
     } else if auth::validate(session, config) {
-        if utils::delete_link(shortlink.to_string(), &data.db) {
+        if utils::delete_link(
+            shortlink.to_string(),
+            &data.db,
+            data.config.allow_capital_letters,
+        ) {
             HttpResponse::Ok().body(format!("Deleted {shortlink}"))
         } else {
             HttpResponse::NotFound().body("Not found!")

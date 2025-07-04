@@ -58,7 +58,7 @@ pub fn is_api_ok(http: HttpRequest, config: &Config) -> Response {
             Response {
                 success: false,
                 error: false,
-                reason: "X-API-Key header was not found".to_string(),
+                reason: "No valid authentication was found".to_string(),
                 pass: true,
             }
         }
@@ -87,9 +87,10 @@ pub fn get_longurl(
     shortlink: String,
     db: &Connection,
     needhits: bool,
+    allow_capital_letters: bool,
 ) -> (Option<String>, Option<i64>, Option<i64>) {
     // Long link, hits, expiry time
-    if validate_link(&shortlink) {
+    if validate_link(&shortlink, allow_capital_letters) {
         database::find_url(shortlink.as_str(), db, needhits)
     } else {
         (None, None, None)
@@ -97,8 +98,12 @@ pub fn get_longurl(
 }
 
 // Only have a-z, 0-9, - and _ as valid characters in a shortlink
-fn validate_link(link: &str) -> bool {
-    let re = Regex::new("^[a-z0-9-_]+$").expect("Regex generation failed.");
+fn validate_link(link: &str, allow_capital_letters: bool) -> bool {
+    let re = if allow_capital_letters {
+        Regex::new("^[A-Za-z0-9-_]+$").expect("Regex generation failed.")
+    } else {
+        Regex::new("^[a-z0-9-_]+$").expect("Regex generation failed.")
+    };
     re.is_match(link)
 }
 
@@ -120,8 +125,9 @@ pub fn add_link(req: String, db: &Connection, config: &Config) -> (bool, String,
 
     let style = &config.slug_style;
     let len = config.slug_length;
+    let allow_capital_letters = config.allow_capital_letters;
     let shortlink_provided = if chunks.shortlink.is_empty() {
-        chunks.shortlink = gen_link(style, len);
+        chunks.shortlink = gen_link(style, len, allow_capital_letters);
         false
     } else {
         true
@@ -140,7 +146,7 @@ pub fn add_link(req: String, db: &Connection, config: &Config) -> (bool, String,
     chunks.expiry_delay = chunks.expiry_delay.min(157784760);
     chunks.expiry_delay = chunks.expiry_delay.max(0);
 
-    if validate_link(chunks.shortlink.as_str()) {
+    if validate_link(chunks.shortlink.as_str(), allow_capital_letters) {
         match database::add_link(&chunks.shortlink, &chunks.longlink, chunks.expiry_delay, db) {
             Ok(expiry_time) => (true, chunks.shortlink, expiry_time),
             Err(error) => {
@@ -151,7 +157,7 @@ pub fn add_link(req: String, db: &Connection, config: &Config) -> (bool, String,
                         (false, String::from("Short URL is already in use!"), 0)
                     } else if config.slug_style == "UID" && config.try_longer_slug {
                         // Optionally, retry with a longer slug length
-                        chunks.shortlink = gen_link(style, len + 4);
+                        chunks.shortlink = gen_link(style, len + 4, allow_capital_letters);
                         match database::add_link(
                             &chunks.shortlink,
                             &chunks.longlink,
@@ -176,8 +182,8 @@ pub fn add_link(req: String, db: &Connection, config: &Config) -> (bool, String,
 }
 
 // Check if link, and request DB to delete it if exists
-pub fn delete_link(shortlink: String, db: &Connection) -> bool {
-    if validate_link(shortlink.as_str()) {
+pub fn delete_link(shortlink: String, db: &Connection, allow_capital_letters: bool) -> bool {
+    if validate_link(shortlink.as_str(), allow_capital_letters) {
         database::delete_link(shortlink, db)
     } else {
         false
@@ -185,7 +191,7 @@ pub fn delete_link(shortlink: String, db: &Connection) -> bool {
 }
 
 // Generate a random link using either adjective-name pair (default) of a slug or a-z, 0-9
-fn gen_link(style: &String, len: usize) -> String {
+fn gen_link(style: &String, len: usize, allow_capital_letters: bool) -> String {
     #[rustfmt::skip]
     static ADJECTIVES: [&str; 108] = ["admiring", "adoring", "affectionate", "agitated", "amazing", "angry", "awesome", "beautiful", 
 		"blissful", "bold", "boring", "brave", "busy", "charming", "clever", "compassionate", "competent", "condescending", "confident", "cool", 
@@ -217,12 +223,23 @@ fn gen_link(style: &String, len: usize) -> String {
 		"taussig", "tesla", "tharp", "thompson", "torvalds", "tu", "turing", "varahamihira", "vaughan", "vaughn", "villani", "visvesvaraya", "volhard", 
 		"wescoff", "weierstrass", "wilbur", "wiles", "williams", "williamson", "wilson", "wing", "wozniak", "wright", "wu", "yalow", "yonath", "zhukovsky"];
 
-    #[rustfmt::skip]
-    static CHARS: [char; 36] = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x',
-        'y', 'z', '0', '1', '2', '3', '4', '5', '6', '7', '8', '9'];
+    static CHARS_SMALL: [char; 36] = [
+        'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r',
+        's', 't', 'u', 'v', 'w', 'x', 'y', 'z', '0', '1', '2', '3', '4', '5', '6', '7', '8', '9',
+    ];
+    static CHARS_CAPITAL: [char; 62] = [
+        'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R',
+        'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z', 'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j',
+        'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z', '0', '1',
+        '2', '3', '4', '5', '6', '7', '8', '9',
+    ];
 
     if style == "UID" {
-        nanoid!(len, &CHARS)
+        if allow_capital_letters {
+            nanoid!(len, &CHARS_CAPITAL)
+        } else {
+            nanoid!(len, &CHARS_SMALL)
+        }
     } else {
         format!(
             "{0}-{1}",

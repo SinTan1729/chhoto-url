@@ -1,6 +1,10 @@
 // SPDX-FileCopyrightText: 2023 Sayantan Santra <sayantan.santra689@gmail.com>
 // SPDX-License-Identifier: MIT
 
+var VERSION = null;
+var SITE_URL = "-";
+var CONFIG = null;
+
 const prepSubdir = (link) => {
     let thisPage = new URL(window.location.href);
     let subdir = thisPage.pathname;
@@ -9,28 +13,25 @@ const prepSubdir = (link) => {
     return (subdir + link).replace('//', '/');
 }
 
-const getSiteUrl = async () => {
-    let url = await fetch(prepSubdir("/api/siteurl"))
-                .then(res => res.text());
-    if (url == "unset") {
-        return window.location.host.replace(/\/$/, '');
+const getConfig = async () => {
+    if (!CONFIG) {
+        CONFIG = await fetch(prepSubdir("/api/getconfig"))
+                    .then(res => res.json());
+        if (CONFIG.site_url == null) {
+            SITE_URL = window.location.host.replace(/\/$/, '');
+        }
+        else {
+            SITE_URL = CONFIG.site_url.replace(/\/$/, '').replace(/^"/, '').replace(/"$/, '');
+        }
+        VERSION = CONFIG.version;
     }
-    else {
-        return url.replace(/\/$/, '').replace(/^"/, '').replace(/"$/, '');
-    }
-}
-
-const getVersion = async () => {
-    let ver = await fetch(prepSubdir("/api/version"))
-                .then(res => res.text());
-    return ver;
 }
 
 const showVersion = async () => {
-    let version = await getVersion();
+    await getConfig();
     link = document.getElementById("version-number");
-    link.innerText = "v" + version;
-    link.href = "https://github.com/SinTan1729/chhoto-url/releases/tag/" + version;
+    link.innerText = "v" + VERSION;
+    link.href = "https://github.com/SinTan1729/chhoto-url/releases/tag/" + VERSION;
     link.hidden = false;
 }
 
@@ -68,12 +69,19 @@ const refreshData = async () => {
 }
 
 const displayData = async (data) => {
-    showVersion();
-    let site = await getSiteUrl();
+    await getConfig();
+    await showVersion();
     admin_button = document.getElementById("admin-button");
     admin_button.innerText = "logout";
     admin_button.href = "javascript:logOut()";
     admin_button.hidden = false;
+
+    if (CONFIG.allow_capital_letters) {
+        let input_box = document.getElementById("shortUrl");
+        input_box.pattern = "[A-Za-z0-9\-_]+";
+        input_box.title = "Only A-Z, a-z, 0-9, - and _ are allowed";
+        input_box.placeholder = "Only A-Z, a-z, 0-9, - and _ are allowed";
+    }
 
     table_box = document.getElementById("table-box");
     loading_text = document.getElementById("loading-text");
@@ -92,7 +100,7 @@ const displayData = async (data) => {
         }
         table_box.hidden = false;
         table.innerHTML = '';
-        data.forEach(tr => table.appendChild(TR(tr, site)));
+        data.forEach(tr => table.appendChild(TR(tr)));
     }
 }
 
@@ -137,7 +145,7 @@ const TD = (s, u) => {
     return td;
 }
 
-const TR = (row, site) => {
+const TR = (row) => {
     const tr = document.createElement("tr");
     const longTD = TD(A_LONG(row["longlink"]), "Long URL");
     var shortTD = null;
@@ -145,10 +153,10 @@ const TR = (row, site) => {
     // For now, we disable copying on WebKit due to a possible bug. Manual copying is enabled instead.
     // Take a look at https://github.com/SinTan1729/chhoto-url/issues/36
     if (window.isSecureContext && !(isSafari)) {
-        shortTD = TD(A_SHORT(row["shortlink"], site), "Short URL");
+        shortTD = TD(A_SHORT(row["shortlink"], SITE_URL), "Short URL");
     }
     else {
-        shortTD = TD(A_SHORT_INSECURE(row["shortlink"], site), "Short URL");
+        shortTD = TD(A_SHORT_INSECURE(row["shortlink"], SITE_URL), "Short URL");
     }
     let hitsTD = TD(row["hits"]);
     hitsTD.setAttribute("label", "Hits");
@@ -182,13 +190,13 @@ const TR = (row, site) => {
 }
 
 const copyShortUrl = async (link) => {
-    const site = await getSiteUrl();
+    await getConfig();
     try {
-        navigator.clipboard.writeText(`${site}/${link}`);
+        navigator.clipboard.writeText(`${SITE_URL}/${link}`);
         showAlert(`Short URL ${link} was copied to clipboard!`, "light-dark(green, #72ff72)");
     } catch (e) {
         console.log(e);
-        showAlert(`Could not copy short URL to clipboard, please do it manually: <a href=${site}/${link}>${site}/${link}</a>`, "light-dark(red, #ff1a1a)");
+        showAlert(`Could not copy short URL to clipboard, please do it manually: <a href=${SITE_URL}/${link}>${SITE_URL}/${link}</a>`, "light-dark(red, #ff1a1a)");
     }
 
 }

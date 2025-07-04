@@ -70,6 +70,9 @@ the `slug_length` variable. It defaults to 8, and a minimum of 4 is supported. I
 intend to have more than a few thousand shortlinks, it's strongly recommended that you 
 use the UID `slug_style` with a `slug_length` of 16 or more.
 
+If you want to use capital letters in the shortlink, set the `allow_capital_letters` variable
+to `True`. This will also allow capital letters in UID slugs, if it is enabled.
+
 If you do choose to use a short UID despite anticipating collisions, set `try_longer_slug` to `True`. 
 In the event of a collision, this variable will result in a single retry attempt using 
 a UID four digits longer than `slug_length`. It has no effect for adjective-name slugs.

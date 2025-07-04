@@ -62,6 +62,9 @@ services:
             # - slug_length=8
             # To retry (once) with a longer UID upon collision, change the following to True.
             # - try_longer_slug=False
+            # If you want to use capital letters in the shortlink, change the following to
+            # True. This will also allow capital letters in UID slugs, if it is enabled.
+            # - allow_capital_letters=False
             
             # In case you want to provide public access to adding links (and not 
             # delete, or listing), change the following option to Enable.
