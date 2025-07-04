@@ -22,7 +22,10 @@ slug_style: Pair
 slug_length: 8
 try_longer_slug: False
 public_mode: Disable
+public_mode_expiry_delay: 0
 disable_frontend: False
+allow_capital_letters: False
+# custom_landing_directory: "/custom/dir/location"
 # cache_control_header: "no-cache, private"
 
 protocol: https

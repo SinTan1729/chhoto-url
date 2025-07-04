@@ -48,8 +48,16 @@ spec:
               value: "{{ .Values.try_longer_slug }}"
             - name: public_mode
               value: {{ .Values.public_mode }}
+            - name: public_mode_expiry_delay
+              value: {{ .Values.public_mode_expiry_delay }}
             - name: disable_frontend
               value: {{ .Values.disable_frontend }}
+            - name: allow_capital_letters 
+              value: {{ .Values.allow_capital_letters }}
+            {{- if .Values.custom_landing_directory }}
+            - name: custom_landing_directory
+              value: {{ .Values.custom_landing_directory }}
+            {{- end }}
             {{- if .Values.cache_control_header }}
             - name: cache_control_header
               value: {{ .Values.cache_control_header }}
