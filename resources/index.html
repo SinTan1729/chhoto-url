@@ -11,6 +11,11 @@
     <meta http-equiv="X-UA-Compatible" content="ie=edge" />
 
     <title>Chhoto URL</title>
+    <script type="text/javascript">
+        if (!document.head.baseURI.match(/\/$/)) {
+            window.location.replace(window.location.href + "/");
+        }
+    </script>
     <meta name="description" content="A simple selfhosted URL shortener with no unnecessary features." />
     <meta name="keywords" content="url shortener, link shortener, self hosted, open source" />
     <link rel="icon" type="image/x-icon" href="assets/favicon.ico" sizes="any" />
