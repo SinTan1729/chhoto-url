@@ -37,7 +37,7 @@ To get the config for the backend:
 ``` bash
 curl -H "X-API-Key: <YOUR_API_KEY>" -d '<shortlink>' http://localhost:4567/api/getconfig
 ```
-(This would work without authentication in public mode.)
+(This would work without authentication in public mode.)  
 The server will reply in the following format.
 ```
 {"version":<version>,"site_url":<site_url>,"allow_capital_letters":bool,"public_mode":bool,"public_mode_expiry_delay":<delay>,"slug_style":<style>,"slug_length":<len>,"try_longer_slug":bool}
