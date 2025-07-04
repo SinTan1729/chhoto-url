@@ -76,6 +76,10 @@ services:
             # In case you want to completely disable the frontend, change the following
             # to True.
             # - disable_frontend=False
+            # If you want to serve a custom landing page, put all your site related files, along with an
+            # index.html file in a directory, and set the following to the path of the directory. Remember to first 
+            # mount the directory inside the container. The admin page will then be located at /admin/manage.
+            # - custom_landing_directory=/custom/dir/location
             
             # By default, the server sends no Cache-Control headers. You can supply a 
             # comma separated list of valid header as per RFC 7234 §5.2 to send those

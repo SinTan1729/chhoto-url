@@ -94,7 +94,10 @@ To enable public mode, set `public_mode` to `Enable`. With this, anyone will be 
 links. Listing existing links or deleting links will need admin access using the password. If
 `public_mode` is enabled, and `public_mode_expiry_delay` is set to a positive value, submitted links
 will expire in that given time. The user can still choose a shorter expiry delay.
-To completely disable the frontend, set `disable_frontend` to `True`.
+To completely disable the frontend, set `disable_frontend` to `True`. If you want to serve a custom
+landing page, put all your site related files, along with an `index.html` file in a directory, and
+set `custom_landing_directory` to the path of the directory. If using docker, you need to first
+mount the directory inside the container. The admin page will then be located at `/admin/manage`.
 
 By default, the server sends no Cache-Control headers. You can set custom `cache_control_header` 
 to send your desired headers. It must be a comma separated list of valid 
