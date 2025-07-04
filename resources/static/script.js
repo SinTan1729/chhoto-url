@@ -9,7 +9,7 @@ const prepSubdir = (link) => {
     let thisPage = new URL(window.location.href);
     let subdir = thisPage.pathname;
     let out = (subdir + link).replace('//', '/');
-    return out.replace("/admin/manage/", "/");
+    return out.replace(/\/admin\/manage\/$/, "/");
 }
 
 const getConfig = async () => {
