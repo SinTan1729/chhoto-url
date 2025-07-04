@@ -180,6 +180,8 @@ pub async fn expand(req: String, data: web::Data<AppState>, http: HttpRequest) -
 }
 
 // Get the site URL
+// This is deprecated, and might be removed in the future.
+// Use /api/getconfig instead
 #[get("/api/siteurl")]
 pub async fn siteurl(data: web::Data<AppState>) -> HttpResponse {
     if let Some(url) = &data.config.site_url {
@@ -190,6 +192,8 @@ pub async fn siteurl(data: web::Data<AppState>) -> HttpResponse {
 }
 
 // Get the version number
+// This is deprecated, and might be removed in the future.
+// Use /api/getconfig instead
 #[get("/api/version")]
 pub async fn version() -> HttpResponse {
     HttpResponse::Ok().body(format!("Chhoto URL v{VERSION}"))
