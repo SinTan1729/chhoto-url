@@ -65,6 +65,7 @@ async fn main() -> Result<()> {
         let mut app = App::new()
             .wrap(middleware::Logger::default())
             .wrap(middleware::Compress::default())
+            .wrap(middleware::NormalizePath::trim())
             .wrap(
                 SessionMiddleware::builder(CookieSessionStore::default(), secret_key.clone())
                     .cookie_same_site(actix_web::cookie::SameSite::Strict)
@@ -93,7 +94,13 @@ async fn main() -> Result<()> {
             .service(services::expand);
 
         if !conf.disable_frontend {
-            app = app.service(Files::new("/", "./resources/").index_file("index.html"));
+            if let Some(dir) = &conf.custom_landing_directory {
+                app = app
+                    .service(Files::new("/admin/manage", "./resources/").index_file("index.html"));
+                app = app.service(Files::new("/", dir).index_file("index.html"));
+            } else {
+                app = app.service(Files::new("/", "./resources/").index_file("index.html"));
+            }
         }
 
         app.default_service(actix_web::web::get().to(services::error404))

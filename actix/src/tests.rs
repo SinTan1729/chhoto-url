@@ -59,6 +59,7 @@ fn default_config(test: &str) -> config::Config {
     slug_length: 8,
     try_longer_slug: false,
     allow_capital_letters: false,
+    custom_landing_directory: None,
     };
     conf
 }

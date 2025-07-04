@@ -25,6 +25,7 @@ pub struct Config {
     pub slug_length: usize,
     pub try_longer_slug: bool,
     pub allow_capital_letters: bool,
+    pub custom_landing_directory: Option<String>,
 }
 
 pub fn read() -> Config {
@@ -145,6 +146,10 @@ pub fn read() -> Config {
 
     let allow_capital_letters = var("allow_capital_letters").is_ok_and(|s| s.trim() == "True");
 
+    let custom_landing_directory = var("custom_landing_directory")
+        .map(|s| s.trim().to_string())
+        .ok();
+
     Config {
         port,
         db_location,
@@ -161,5 +166,6 @@ pub fn read() -> Config {
         slug_length,
         try_longer_slug,
         allow_capital_letters,
+        custom_landing_directory,
     }
 }
