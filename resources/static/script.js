@@ -4,12 +4,14 @@
 var VERSION = null;
 var SITE_URL = "-";
 var CONFIG = null;
+var SUBDIR = null;
 
 const prepSubdir = (link) => {
-    let thisPage = new URL(window.location.href);
-    let subdir = thisPage.pathname;
-    let out = (subdir + link).replace('//', '/');
-    return out.replace(/\/admin\/manage\/$/, "/");
+    if (!SUBDIR) {
+        let thisPage = new URL(window.location.href);
+        SUBDIR = thisPage.pathname.replace(/\/admin\/manage\/$/, "/");
+    }
+    return (SUBDIR + link).replace('//', '/');
 }
 
 const getConfig = async () => {
