@@ -108,7 +108,7 @@ pub fn cleanup(db: &Connection) {
     let now = chrono::Utc::now().timestamp();
 
     let mut statement = db
-        .prepare_cached("SELECT short_url FROM urls WHERE ?1 > expiry_time AND expiry_time > 0")
+        .prepare_cached("SELECT short_url FROM urls WHERE ?1 >= expiry_time AND expiry_time > 0")
         .expect("Error preparing SQL statement for cleanup.");
 
     let mut data = statement
@@ -123,7 +123,7 @@ pub fn cleanup(db: &Connection) {
     }
 
     db.execute(
-        "DELETE FROM urls WHERE expiry_time < ?1 AND expiry_time > 0",
+        "DELETE FROM urls WHERE ?1 >= expiry_time AND expiry_time > 0",
         [now],
     )
     .inspect(|&u| match u {

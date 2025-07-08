@@ -376,8 +376,8 @@ async fn link_expiry() {
 
     let (status, _) = add_link(&app, &api_key, "test1", 1).await;
     assert!(status.is_success());
-    let two_seconds = Duration::from_secs(2);
-    sleep(two_seconds);
+    let one_second = Duration::from_secs(1);
+    sleep(one_second);
 
     let req = test::TestRequest::get().uri("/test1").to_request();
     let resp = test::call_service(&app, req).await;
