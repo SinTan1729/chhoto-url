@@ -11,6 +11,7 @@
 
 :root {
     color-scheme: light dark;
+    font-family: Montserrat;
 }
 
 body {
@@ -18,32 +19,31 @@ body {
     background-color: light-dark(white, #181a1b);
 }
 
-.pure-button {
+.chhoto-button {
     background-color: light-dark(#0078e7, #0060b9);
 }
 
-input {
-    border-color: light-dark(#cccccc, #3e4446) !important;
-    box-shadow: light-dark(#dddddd, #2b2f31) 0px 1px 3px inset !important;
+.pure-form input.chhoto-input {
+    border-color: light-dark(#cccccc, #3e4446);
+    box-shadow: light-dark(#dddddd, #2b2f31) 0px 1px 3px inset;
+}
+.pure-form input.chhoto-input:focus {
+    border-color: light-dark(#cccccc, #3e4446);
 }
 
-select {
-    background-color: light-dark(white, #2b2a33) !important;
-    border-color: light-dark(#cccccc, #3e4446) !important;
-    box-shadow: light-dark(#dddddd, #2b2f31) 0px 1px 3px inset !important;
+#expiryDelay {
+    background-color: light-dark(white, #2b2a33);
+    border-color: light-dark(#cccccc, #3e4446);
+    box-shadow: light-dark(#dddddd, #2b2f31) 0px 1px 3px inset;
 }
 
 ::placeholder {
     color: light-dark(#757575, #636061);
 }
 
-legend {
-    color: light-dark(#333333, #c8c3bc) !important;
-    border-bottom-color: light-dark(#e5e5e5 ,#373c3e) !important;
-}
-
-* {
-    font-family: Montserrat !important;
+#logo {
+    color: light-dark(#333333, #c8c3bc);
+    border-bottom-color: light-dark(#e5e5e5 ,#373c3e);
 }
 
 .container {
@@ -55,12 +55,16 @@ a {
     color: light-dark(blue, #3391ff);
 }
 
-table tr td div {
+.chhoto-table tr td div {
     max-height: 75px;
     line-height: 25px;
     word-wrap: break-word;
     max-width: 575px;
     overflow: auto;
+}
+
+.chhoto-table caption {
+    font-family: Montserrat;
 }
 
 .pure-table {
@@ -206,22 +210,22 @@ div[name="links-div"] {
         width: 98%;
     }
 
-    table tr {
+    .chhoto-table tr {
         border-bottom: 1px solid #999;
     }
 
-    table thead {
+    .chhoto-table thead {
         display: none;
     }
 
-    table td {
+    .chhoto-table td {
         display: flex;
-        justify-content: left !important;
+        justify-content: left;
         width: 98vw;
-        padding: .5em .1em !important;
+        padding: .5em .1em;
     }
 
-    table td::before {
+    .chhoto-table td::before {
         content: attr(label);
         font-weight: bold;
         width: 120px;

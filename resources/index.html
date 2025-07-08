@@ -37,17 +37,17 @@
                 <legend id="logo"><img src="assets/favicon.svg" width="26px" alt="logo"> Chhoto URL</legend>
                 <div class="pure-control-group">
                     <label for="longUrl">Long URL</label>
-                    <input type="url" name="longUrl" id="longUrl" placeholder="Please enter a valid URL"
+                    <input class="chhoto-input" type="url" name="longUrl" id="longUrl" placeholder="Please enter a valid URL"
                         onblur="addProtocol(this)" required />
                 </div>
                 <div class="pure-control-group">
                     <label for="shortUrl">Short URL (optional)</label>
-                    <input type="text" name="shortUrl" id="shortUrl" placeholder="Only a-z, 0-9, - and _ are allowed"
+                    <input class="chhoto-input" type="text" name="shortUrl" id="shortUrl" placeholder="Only a-z, 0-9, - and _ are allowed"
                         pattern="[a-z0-9\-_]+" title="Only a-z, 0-9, - and _ are allowed" autocapitalize="off"/>
                 </div>
                 <div class="pure-control-group">
                     <label for="expiryDelay">Expiry</label>
-                    <select name="expiryDelay" id="expiryDelay">
+                    <select class="chhoto-select" name="expiryDelay" id="expiryDelay">
                         <option value=0>Never</option>
                         <option value=600>10 Minutes</option>
                         <option value=1800>30 Minutes</option>
@@ -62,14 +62,14 @@
                     </select>
                 </div>
                 <div class="pure-controls" id="controls">
-                    <button class="pure-button pure-button-primary">Shorten!</button>
+                    <button class="chhoto-button pure-button pure-button-primary">Shorten!</button>
                     <p id="alert-box">&nbsp;</p>
                 </div>
             </fieldset>
         </form>
 
         <p id="loading-text">Loading links table...</p>
-        <table class="pure-table" id="table-box" hidden>
+        <table class="chhoto-table pure-table" id="table-box" hidden>
             <caption>Active links</caption>
             <br />
             <thead>
@@ -98,8 +98,8 @@
     <dialog id="login-dialog">
         <form class="pure-form" name="login-form">
             <p>Please enter password to access this website</p>
-            <input type="password" id="password" />
-            <button class="pure-button pure-button-primary" value="default">Log in</button>
+            <input class="chhoto-input" type="password" id="password" />
+            <button class="chhoto-button pure-button pure-button-primary" value="default">Log in</button>
             <p id="wrong-pass" hidden>Wrong password!</p>
         </form>
     </dialog>
