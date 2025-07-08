@@ -4,7 +4,7 @@
 # .env file has the variables $DOCKER_USERNAME and $PASSWORD defined
 include .env
 
-.PHONY: clean test setup build-dev docker-local docker-stop docker-test build-release docker-release
+.PHONY: clean test setup build-dev docker-local docker-stop docker-test build-release docker-release tag
 
 setup:
 	cargo install cross
@@ -37,10 +37,20 @@ build-release: test
 	cross build --release --locked --manifest-path=actix/Cargo.toml --target armv7-unknown-linux-musleabihf
 	cross build --release --locked --manifest-path=actix/Cargo.toml --target x86_64-unknown-linux-musl
 
+conf_tag := $(shell cat actix/Cargo.toml | sed -rn 's/^version = "(.+)"$$/\1/p')
+last_tag := $(shell git tag -l | tail -1)
+bumped := $(shell git log -1 --pretty=%B | grep "build: Bumped version to " | wc -l)
+tag:
+ifneq (${conf_tag}, ${last_tag})
+ifeq (${bumped}, 1)
+	git tag ${conf_tag} -m "Version ${conf_tag}"
+endif
+endif
+
 v_patch := $(shell cat actix/Cargo.toml | sed -rn 's/^version = "(.+)"$$/\1/p')
 v_minor := $(shell cat actix/Cargo.toml | sed -rn 's/^version = "(.+)\..+"$$/\1/p')
 v_major := $(shell cat actix/Cargo.toml | sed -rn 's/^version = "(.+)\..+\..+"$$/\1/p')
-docker-release: build-release
+docker-release: build-release tag
 	docker buildx build --push --tag ${docker_username}/chhoto-url:${v_major} --tag ${docker_username}/chhoto-url:${v_minor} \
 		--tag ${docker_username}/chhoto-url:${v_patch} --tag ${docker_username}/chhoto-url:latest \
 		--platform linux/amd64,linux/arm64,linux/arm/v7 -f Dockerfile.multiarch .
