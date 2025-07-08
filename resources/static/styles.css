@@ -55,6 +55,14 @@ a {
     color: light-dark(blue, #3391ff);
 }
 
+.chhoto-table {
+    border-collapse: separate;
+    overflow: hidden;
+    border-spacing: 0px;
+    border-radius: 5px;
+    border-color: light-dark(black, #867d6e);
+}
+
 .chhoto-table tr td div {
     max-height: 75px;
     line-height: 25px;
@@ -65,40 +73,37 @@ a {
 
 .chhoto-table caption {
     font-family: Montserrat;
-}
-
-.pure-table {
-    border-color: light-dark(black, #867d6e);
-}
-
-.pure-table caption {
     color: light-dark(black, #e8e6e3);
 }
 
-.pure-table thead {
+.chhoto-table thead {
     color: light-dark(black, #e8e6e3);
     background-color: light-dark(#e0e0e0, #2a2d2f);
 }
 
-.pure-table td {
+.chhoto-table th {
     border-left: none;
 }
 
-td[name="hitsColumn"] {
+.chhoto-table td {
+    border-left: none;
+}
+
+th[name="hitsColumn"] {
     text-align: right;
 }
 
-td[name="expiryColumn"] {
+th[name="expiryColumn"] {
     text-align: center;
 }
 
-td[name="deleteBtn"] div {
+th[name="deleteBtn"] div {
     display: flex;
     align-items: center;
     justify-content: center;
 }
 
-td[name="deleteBtn"] {
+th[name="deleteBtn"] {
     text-align: center;
 }
 
@@ -128,11 +133,11 @@ div[name="links-div"] {
     top: 0.5%;
 }
 
-.pure-table {
+.chhoto-table {
     width: 98%;
 }
 
-.pure-table caption {
+.chhoto-table caption {
     font-size: 22px;
     text-align: left;
     font-style: normal;
@@ -167,8 +172,8 @@ div[name="links-div"] {
 .tooltip .tooltiptext {
   visibility: hidden;
   width: 120px;
-  background-color: #555;
-  color: #fff;
+  background-color: light-dark(#eeeeee, #282a2b);
+  color: light-dark(black, #e8e6e3);
   text-align: center;
   padding: 5px 0;
   border-radius: 6px;
@@ -191,7 +196,7 @@ div[name="links-div"] {
   margin-left: -5px;
   border-width: 5px;
   border-style: solid;
-  border-color: #555 transparent transparent transparent;
+  border-color: light-dark(#eeeeee, #282a2b) transparent transparent transparent;
 }
 
 .tooltip:hover .tooltiptext {
@@ -210,8 +215,12 @@ div[name="links-div"] {
         width: 98%;
     }
 
+    .chhoto-table {
+        border-collapse: collapse;
+    }
+
     .chhoto-table tr {
-        border-bottom: 1px solid #999;
+        border-bottom: 1px solid light-dark(black, #867d6e);
     }
 
     .chhoto-table thead {
@@ -233,7 +242,7 @@ div[name="links-div"] {
         text-align: left;
     }
 
-    .pure-table caption {
+    .chhoto-table caption {
         padding-top: 0px;
     }
 }
