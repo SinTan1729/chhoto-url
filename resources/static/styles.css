@@ -71,6 +71,10 @@ a {
     overflow: auto;
 }
 
+.chhoto-table tr:nth-child(even) {
+    background-color: light-dark(#f2f2f2, #080a0b);
+}
+
 .chhoto-table caption {
     font-family: Montserrat;
     color: light-dark(black, #e8e6e3);
@@ -166,42 +170,42 @@ div[name="links-div"] {
 }
 
 .tooltip {
-  position: relative;
+    position: relative;
 }
 
 .tooltip .tooltiptext {
-  visibility: hidden;
-  width: 120px;
-  background-color: light-dark(#eeeeee, #282a2b);
-  color: light-dark(black, #e8e6e3);
-  text-align: center;
-  padding: 5px 0;
-  border-radius: 6px;
+    visibility: hidden;
+    width: 120px;
+    background-color: light-dark(#eeeeee, #282a2b);
+    color: light-dark(black, #e8e6e3);
+    text-align: center;
+    padding: 5px 0;
+    border-radius: 6px;
 
-  position: absolute;
-  z-index: 1;
-  bottom: 125%;
-  left: 50%;
-  margin-left: -60px;
+    position: absolute;
+    z-index: 1;
+    bottom: 125%;
+    left: 50%;
+    margin-left: -60px;
 
-  opacity: 0;
-  transition: opacity 0.3s;
+    opacity: 0;
+    transition: opacity 0.3s;
 }
 
 .tooltip .tooltiptext::after {
-  content: "";
-  position: absolute;
-  top: 100%;
-  left: 50%;
-  margin-left: -5px;
-  border-width: 5px;
-  border-style: solid;
-  border-color: light-dark(#eeeeee, #282a2b) transparent transparent transparent;
+    content: "";
+    position: absolute;
+    top: 100%;
+    left: 50%;
+    margin-left: -5px;
+    border-width: 5px;
+    border-style: solid;
+    border-color: light-dark(#eeeeee, #282a2b) transparent transparent transparent;
 }
 
 .tooltip:hover .tooltiptext {
-  visibility: visible;
-  opacity: 1;
+    visibility: visible;
+    opacity: 1;
 }
 
 /* Settings for mobile devices */
@@ -221,6 +225,10 @@ div[name="links-div"] {
 
     .chhoto-table tr {
         border-bottom: 1px solid light-dark(black, #867d6e);
+    }
+
+    .chhoto-table tr:nth-child(even) {
+        background-color: light-dark(white, #181a1b);
     }
 
     .chhoto-table thead {
