@@ -87,6 +87,8 @@ pub fn add_link(
     expiry_delay: i64,
     db: &Connection,
 ) -> Result<i64, Error> {
+    cleanup(db); // So that expired links don't block new ones from being added
+
     let now = chrono::Utc::now().timestamp();
     let expiry_time = if expiry_delay == 0 {
         0
