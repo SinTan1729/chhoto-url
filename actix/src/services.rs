@@ -77,7 +77,7 @@ pub async fn add_link(
     let result = utils::is_api_ok(http, config);
     // If success, add new link
     if result.success {
-        let (success, reply, expiry_time) = utils::add_link(req, &data.db, config);
+        let (success, reply, expiry_time) = utils::add_link(req, &data.db, config, false);
         if success {
             let site_url = config.site_url.clone();
             let shorturl = if let Some(url) = site_url {
@@ -109,15 +109,19 @@ pub async fn add_link(
     } else if result.error {
         HttpResponse::Unauthorized().json(result)
     // If password authentication or public mode is used - keeps backwards compatibility
-    } else if config.public_mode || auth::validate(session, config) {
-        let (success, reply, _) = utils::add_link(req, &data.db, config);
+    } else {
+        let (success, reply, _) = if auth::validate(session, config) {
+            utils::add_link(req, &data.db, config, false)
+        } else if config.public_mode {
+            utils::add_link(req, &data.db, config, true)
+        } else {
+            return HttpResponse::Unauthorized().body("Not logged in!");
+        };
         if success {
             HttpResponse::Created().body(reply)
         } else {
             HttpResponse::Conflict().body(reply)
         }
-    } else {
-        HttpResponse::Unauthorized().body("Not logged in!")
     }
 }
 

@@ -114,7 +114,12 @@ pub fn getall(db: &Connection) -> String {
 }
 
 // Make checks and then request the DB to add a new URL entry
-pub fn add_link(req: String, db: &Connection, config: &Config) -> (bool, String, i64) {
+pub fn add_link(
+    req: String,
+    db: &Connection,
+    config: &Config,
+    using_public_mode: bool,
+) -> (bool, String, i64) {
     // Success status, response string, expiry time
     let mut chunks: URLPair;
     if let Ok(json) = serde_json::from_str(&req) {
@@ -134,7 +139,7 @@ pub fn add_link(req: String, db: &Connection, config: &Config) -> (bool, String,
     };
 
     // In public mode, set automatic expiry delay
-    if config.public_mode && config.public_mode_expiry_delay > 0 {
+    if using_public_mode && config.public_mode_expiry_delay > 0 {
         if chunks.expiry_delay == 0 {
             chunks.expiry_delay = config.public_mode_expiry_delay;
         } else {
