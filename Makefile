@@ -41,16 +41,18 @@ conf_tag := $(shell cat actix/Cargo.toml | sed -rn 's/^version = "(.+)"$$/\1/p')
 last_tag := $(shell git tag -l | tail -1)
 bumped := $(shell git log -1 --pretty=%B | grep "build: Bumped version to " | wc -l)
 tag:
-ifneq (${conf_tag}, ${last_tag})
 ifeq (${bumped}, 1)
+ifneq (${conf_tag}, ${last_tag})
 	git tag ${conf_tag} -m "Version ${conf_tag}"
 endif
+else
+	false;
 endif
 
 v_patch := $(shell cat actix/Cargo.toml | sed -rn 's/^version = "(.+)"$$/\1/p')
 v_minor := $(shell cat actix/Cargo.toml | sed -rn 's/^version = "(.+)\..+"$$/\1/p')
 v_major := $(shell cat actix/Cargo.toml | sed -rn 's/^version = "(.+)\..+\..+"$$/\1/p')
-docker-release: build-release tag
+docker-release: tag build-release
 	docker buildx build --push --tag ${docker_username}/chhoto-url:${v_major} --tag ${docker_username}/chhoto-url:${v_minor} \
 		--tag ${docker_username}/chhoto-url:${v_patch} --tag ${docker_username}/chhoto-url:latest \
 		--platform linux/amd64,linux/arm64,linux/arm/v7 -f Dockerfile.multiarch .
