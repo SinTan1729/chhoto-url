@@ -40,8 +40,12 @@ build-release: test
 conf_tag := $(shell cat actix/Cargo.toml | sed -rn 's/^version = "(.+)"$$/\1/p')
 last_tag := $(shell git tag -l | tail -1)
 bumped := $(shell git log -1 --pretty=%B | grep "build: Bumped version to " | wc -l)
+uncommitted := $(shell git status --porcelain=v1 2>/dev/null | wc -l)
 tag:
 ifeq (${bumped}, 1)
+ifneq (${uncommited}, 0)
+	false;
+endif
 ifneq (${conf_tag}, ${last_tag})
 	git tag ${conf_tag} -m "Version ${conf_tag}"
 endif
