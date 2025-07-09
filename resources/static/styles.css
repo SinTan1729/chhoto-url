@@ -85,29 +85,25 @@ a {
     background-color: light-dark(#e0e0e0, #2a2d2f);
 }
 
-.chhoto-table th {
+.chhoto-table th, .chhoto-table td {
     border-left: none;
 }
 
-.chhoto-table td {
-    border-left: none;
-}
-
-th[name="hitsColumn"] {
+th[name="hitsColumn"], td[name = "hitsColumn"] {
     text-align: right;
 }
 
-th[name="expiryColumn"] {
+th[name="expiryColumn"], td[name = "expiryColumn"] {
     text-align: center;
 }
 
-th[name="deleteBtn"] div {
+td[name="deleteBtn"] div {
     display: flex;
     align-items: center;
     justify-content: center;
 }
 
-th[name="deleteBtn"] {
+th[name="deleteBtn"], td[name = "deleteBtn"] {
     text-align: center;
 }
 
