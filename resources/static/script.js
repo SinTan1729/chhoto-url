@@ -102,6 +102,7 @@ const displayData = async (data) => {
         table_box.hidden = false;
         table.innerHTML = '';
         data.forEach(tr => table.appendChild(TR(tr)));
+        setTimeout(refreshExpiryTimes, 1000);
     }
 }
 
@@ -115,8 +116,24 @@ const showAlert = async (text, col) => {
     controls.appendChild(alertBox);
 }
 
+const refreshExpiryTimes = async () =>  {
+    const tds = document.getElementsByClassName("tooltip");
+    for (let i = 0; i < tds.length; i++) {
+        let td = tds[i];
+        let expiryTimeParsed = new Date(td.getAttribute("data-time") * 1000);
+        let relativeTime = formatRelativeTime(expiryTimeParsed);
+        if (relativeTime == "expired") {
+            td.style.color = "light-dark(red, #ff1a1a)";
+        }
+        td.firstChild.innerText = relativeTime;
+    }
+    if (tds.length > 0) {
+        setTimeout(refreshExpiryTimes, 1000);
+    }
+}
+
 const formatRelativeTime = (timestamp) => {
-    now = new Date();
+    const now = new Date();
     // in miliseconds
     var units = {
         year  : 31536000000,
@@ -128,6 +145,9 @@ const formatRelativeTime = (timestamp) => {
     };
 
     var diff = (timestamp) - now;
+    if (diff <= 0) {
+        return "expired";
+    }
     var rtf = new Intl.RelativeTimeFormat('en', { numeric: 'auto' });
       // "Math.abs" accounts for both "past" & "future" scenarios
     for (var u in units) {
@@ -166,14 +186,16 @@ const TR = (row) => {
     let expiryTime = row["expiry_time"];
     let expiryHTML = "-";
     if (expiryTime > 0) {
-        expiryTime = new Date(expiryTime * 1000);
-        relativeExpiryTime = formatRelativeTime(expiryTime);
-        accurateExpiryTime = expiryTime.toLocaleString();
+        let expiryTimeParsed = new Date(expiryTime * 1000);
+        let relativeExpiryTime = formatRelativeTime(expiryTimeParsed);
+        let accurateExpiryTime = expiryTimeParsed.toLocaleString();
         expiryHTML = relativeExpiryTime + '<span class="tooltiptext">' + accurateExpiryTime + '</span>';
     }
 
     let expiryTD = TD(expiryHTML);
     if (expiryTime > 0) {
+        expiryTD.width = "160px";
+        expiryTD.setAttribute("data-time", expiryTime);
         expiryTD.classList.add("tooltip");
     }
     expiryTD.setAttribute("label", "Expiry");
