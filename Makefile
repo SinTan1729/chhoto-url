@@ -43,7 +43,7 @@ bumped := $(shell git log -1 --pretty=%B | grep "build: Bumped version to " | wc
 uncommitted := $(shell git status --porcelain=v1 2>/dev/null | wc -l)
 tag:
 ifeq (${bumped}, 1)
-ifneq (${uncommited}, 0)
+ifneq (${uncommitted}, 0)
 	false;
 endif
 ifneq (${conf_tag}, ${last_tag})
