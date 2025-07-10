@@ -56,10 +56,11 @@ a {
 }
 
 .chhoto-table {
+    width: 98%;
     border-collapse: separate;
-    overflow: hidden;
     border-spacing: 0px;
     border-radius: 5px;
+    box-shadow:0 0 0 1px light-dark(#e0e0e0, #2a2d2f);
     border-color: light-dark(black, #867d6e);
 }
 
@@ -76,9 +77,13 @@ a {
 }
 
 .chhoto-table caption {
-    font-family: Montserrat;
     color: light-dark(black, #e8e6e3);
+    text-align: left;
+    font-size: 22px;
+    font-style: normal;
+    font-family: Montserrat;
 }
+
 
 .chhoto-table thead {
     color: light-dark(black, #e8e6e3);
@@ -133,16 +138,6 @@ div[name="links-div"] {
     top: 0.5%;
 }
 
-.chhoto-table {
-    width: 98%;
-}
-
-.chhoto-table caption {
-    font-size: 22px;
-    text-align: left;
-    font-style: normal;
-}
-
 #logo {
     font-size: 32px;
 }
@@ -172,18 +167,16 @@ div[name="links-div"] {
 .tooltip .tooltiptext {
     visibility: hidden;
     width: 120px;
-    background-color: light-dark(#eeeeee, #282a2b);
+    background-color: light-dark(#eeeeee, #484a4b);
     color: light-dark(black, #e8e6e3);
     text-align: center;
     padding: 5px 0;
     border-radius: 6px;
-
     position: absolute;
     z-index: 1;
     bottom: 125%;
     left: 50%;
     margin-left: -60px;
-
     opacity: 0;
     transition: opacity 0.3s;
 }
@@ -196,7 +189,7 @@ div[name="links-div"] {
     margin-left: -5px;
     border-width: 5px;
     border-style: solid;
-    border-color: light-dark(#eeeeee, #282a2b) transparent transparent transparent;
+    border-color: light-dark(#eeeeee, #484a4b) transparent transparent transparent;
 }
 
 .tooltip:hover .tooltiptext {

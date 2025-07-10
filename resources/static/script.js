@@ -125,7 +125,8 @@ const refreshExpiryTimes = async () =>  {
         if (relativeTime == "expired") {
             td.style.color = "light-dark(red, #ff1a1a)";
         }
-        td.firstChild.innerText = relativeTime;
+        let div = td.firstChild;
+        div.innerHTML = div.innerHTML.replace(div.innerText, relativeTime);
     }
     if (tds.length > 0) {
         setTimeout(refreshExpiryTimes, 1000);
