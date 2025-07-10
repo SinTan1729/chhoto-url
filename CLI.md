@@ -34,7 +34,9 @@ The server will reply in the following format.
     "shorturl": "<shortlink>",
     "expiry_time": <expiry_time>
 }
+```
 or
+```json
 {
     "success": false,
     "error": true,
@@ -59,7 +61,9 @@ The server will reply in the following format.
     "slug_length": "<len>",
     "try_longer_slug": true/false
 }
-or
+```
+
+```json
 {
     "success": false,
     "error": true,
@@ -80,7 +84,9 @@ The server will reply in the following format.
     "hits": "<hits>",
     "expiry_time": <expiry_time>
 }
+```
 or
+```json
 {
     "success": false,
     "error": true,
