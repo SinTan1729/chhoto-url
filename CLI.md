@@ -20,50 +20,82 @@ validation (see section above). If the API key is insecure, a warning will be ou
 Example Linux command for generating a secure API key: `tr -dc A-Za-z0-9 </dev/urandom | head -c 128`
 
 To add a link:
-``` bash
+```bash
 curl -X POST -H "X-API-Key: <YOUR_API_KEY>" -d '{"shortlink":"<shortlink>", "longlink":"<longlink>", "expiry_delay": <expiry_delay>}' http://localhost:4567/api/new
 ```
 An empty or missing `<shortlink>` will result in it being auto-generated. 
 Expiry delay is in seconds. It is capped to a maximum of 5 years. A missing `<expiry_delay>` or a value of 0 will disable expiry.
 
 The server will reply in the following format.
-```
-{"success":true,"error":false,"shorturl":<shortlink>,"expiry_time":<expiry_time>}
+```json
+{
+    "success": true,
+    "error": false,
+    "shorturl": "<shortlink>",
+    "expiry_time": <expiry_time>
+}
 or
-{"success":false,"error":true,"reason":<reason>}
+{
+    "success": false,
+    "error": true,
+    "reason": "<reason>"
+}
 ```
 
 To get the config for the backend:
-``` bash
+```bash
 curl -H "X-API-Key: <YOUR_API_KEY>" -d '<shortlink>' http://localhost:4567/api/getconfig
 ```
 (This would work without authentication in public mode.)  
 The server will reply in the following format.
-```
-{"version":<version>,"site_url":<site_url>,"allow_capital_letters":bool,"public_mode":bool,"public_mode_expiry_delay":<delay>,"slug_style":<style>,"slug_length":<len>,"try_longer_slug":bool}
+```json
+{
+    "version": "<version>",
+    "site_url": "<site_url>",
+    "allow_capital_letters": true/false,
+    "public_mode": true/false,
+    "public_mode_expiry_delay": "<delay>",
+    "slug_style": "<style>",
+    "slug_length": "<len>",
+    "try_longer_slug": true/false
+}
 or
-{"success":false,"error":true,"reason":<reason>}
+{
+    "success": false,
+    "error": true,
+    "reason": "<reason>"
+}
 ```
 
 To get information about a single shortlink:
-``` bash
+```bash
 curl -H "X-API-Key: <YOUR_API_KEY>" -d '<shortlink>' http://localhost:4567/api/expand
 ```
 The server will reply in the following format.
-```
-{"success":true,"error":false,"longurl":<longurl>,"hits":<hits>,"expiry_time":<expiry_time>}
+```json
+{
+    "success": true,
+    "error": false,
+    "longurl": "<longurl>",
+    "hits": "<hits>",
+    "expiry_time": <expiry_time>
+}
 or
-{"success":false,"error":true,"reason":<reason>}
+{
+    "success": false,
+    "error": true,
+    "reason": "<reason>"
+}
 ```
 (This route is not accessible using cookie validation.)
 
 To get a list of all the currently available links:
-``` bash
+```bash
 curl -H "X-API-Key: <YOUR_API_KEY>" http://localhost:4567/api/all
 ```
 
 To delete a link:
-``` bash
+```bash
 curl -X DELETE -H "X-API-Key: <YOUR_API_KEY>" http://localhost:4567/api/del/<shortlink>
 ```
 Where `<shortlink>` is name of the shortened link you would like to delete. For example, if the shortened link is
