@@ -6,18 +6,18 @@ on:
   workflow_dispatch:
 env:
   CARGO_TERM_COLOR: always
-  IMAGE_NAME: ${{ github.repository }}
+  IMAGE_NAME: chhoto-url
 
 jobs:
   build:
-    name: Release - ${{ matrix.platform.os-name }}
+    name: Build and Test - ${{ matrix.platform.os-name }}
     strategy:
       matrix:
-        include:
+        platform:
           - os-name: Linux-x86_64
             target: x86_64-unknown-linux-musl
 
-          - os-name: Linux-aarch64
+          - os-name: Linux-arm64
             target: aarch64-unknown-linux-musl
 
           - os-name: Linux-armv7
@@ -27,31 +27,48 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-      - name: Build binary
+      - name: Build binary and test
         uses: houseabsolute/actions-rust-cross@v1
         with:
           command: both
-          target: ${{ matrix.include.target }}
+          target: ${{ matrix.platform.target }}
           args: "--locked --release --manifest-path=actix/Cargo.toml"
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: ${{ matrix.include.target }}
-          path: ./actix/target/${{ matrix.include.target }}/release/${{ github.repository }}
+          name: ${{ matrix.platform.target }}
+          path: ./actix/target/${{ matrix.platform.target }}/release/${{ env.IMAGE_NAME }}
           retention-days: 1
           if-no-files-found: error
 
   merge:
+    name: Docker Release
     runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: read
+      packages: write
+      attestations: write
     needs: build
     steps:
-      - name: Download artifacts
-        uses: actions/download-artifact@v4
-      - name: Display structure of downloaded files
-        run: ls -R
       - name: Checkout repository
         uses: actions/checkout@v4
-
+      - name: Download artifacts
+        uses: actions/download-artifact@v4
+      - name: Move stuff around
+        run: |
+          for f in *-unknown-linux-musl*
+          do
+            mkdir -p actix/target/$f/release
+            mv $f/chhoto-url actix/target/$f/release/
+          done
+      - name: Display current directory structure
+        run: ls -R
+      - name: Log in to the Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
       - name: Log in to the Container registry
         uses: docker/login-action@v3
         with:
@@ -62,28 +79,33 @@ jobs:
       - name: Extract metadata (tags, labels) for Docker
         id: meta
         uses: docker/metadata-action@v5
+        env:
+          DOCKER_METADATA_ANNOTATIONS_LEVELS: manifest,index
         with:
-          images: ghcr.io/${{ env.IMAGE_NAME }}
+          images: |
+            sintan1729/${{ env.IMAGE_NAME }}
+            ghcr.io/sintan1729/${{ env.IMAGE_NAME }}
           tags: |
             type=semver,pattern={{major}}
             type=semver,pattern={{major}}.{{minor}}
             type=semver,pattern={{version}}
             type=raw,value=dev,enable=${{ github.ref == format('refs/heads/{0}', 'ci-testing') }}
-
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
       - name: Build and push Docker image
         id: push
         uses: docker/build-push-action@v6
         with:
           context: .
           push: true
+          file: Dockerfile.multiarch
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
+          platforms: linux/amd64,linux/arm64,linux/arm/v7
+          annotations: ${{ steps.meta.outputs.annotations }}
       
       - name: Generate artifact attestation
         uses: actions/attest-build-provenance@v2
         with:
-          file: "{context}/Dockerfile.multiarch"
-          subject-name: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME}}
+          subject-name: ghcr.io/sintan1729/${{ env.IMAGE_NAME }}
           subject-digest: ${{ steps.push.outputs.digest }}
-          push-to-registry: true
-          platforms: linux/amd64,linux/arm64,linux/arm/v7
