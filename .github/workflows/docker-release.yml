@@ -174,7 +174,7 @@ jobs:
         with:
           subject-name: sintan1729/${{ env.IMAGE_NAME }}
           subject-digest: ${{ steps.push-scratch.outputs.digest }}
-      - name: Generate artifact attestation - alpine
+      - name: Generate artifact attestation - dev
         uses: actions/attest-build-provenance@v2
         if: github.ref_type != 'tag'
         with:
@@ -195,5 +195,5 @@ jobs:
         uses: softprops/action-gh-release@v2
         if: github.ref_type == 'tag'
         with:
-          body: ${{ steps.git-cliff.outputs.content }}
+          body: ${{ steps.git-cliff.outputs.changelog }}
           make_latest: true
