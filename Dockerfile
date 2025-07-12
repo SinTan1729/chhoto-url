@@ -1,7 +1,7 @@
 # SPDX-FileCopyrightText: 2023 Sayantan Santra <sayantan.santra689@gmail.com>
 # SPDX-License-Identifier: MIT
 
-FROM lukemathwalker/cargo-chef:latest-rust-slim AS chef
+FROM docker.io/lukemathwalker/cargo-chef:latest-rust-slim AS chef
 WORKDIR /chhoto-url
 
 FROM chef AS planner
