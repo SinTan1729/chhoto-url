@@ -57,12 +57,13 @@ jobs:
         uses: actions/checkout@v4
       - name: Download artifacts
         uses: actions/download-artifact@v4
-      - name: Move stuff around
+      - name: Move stuff around and fix permissions
         run: |
           for f in *-unknown-linux-musl*
           do
             mkdir -p actix/target/$f/release
             mv $f/chhoto-url actix/target/$f/release/
+            chmod +x actix/target/$f/release/chhoto-url
           done
       - name: Display current directory structure
         run: ls -R
