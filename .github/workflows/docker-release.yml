@@ -66,6 +66,7 @@ jobs:
         run: ls -R
       - name: Log in to the Docker Hub
         uses: docker/login-action@v3
+        if: github.ref_type == 'tag'
         with:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
@@ -90,10 +91,10 @@ jobs:
             type=semver,pattern={{major}}
             type=semver,pattern={{major}}.{{minor}}
             type=semver,pattern={{version}}
-            type=raw,value=dev,enable=${{ github.ref == format('refs/heads/{0}', 'ci-testing') }}
       - name: Extract metadata (tags, labels) for Docker - alpine
         id: meta-alpine
         uses: docker/metadata-action@v5
+        if: github.ref_type == 'tag'
         env:
           DOCKER_METADATA_ANNOTATIONS_LEVELS: manifest,index
         with:
@@ -106,7 +107,17 @@ jobs:
             type=semver,pattern={{major}}
             type=semver,pattern={{major}}.{{minor}}
             type=semver,pattern={{version}}
-            type=raw,value=dev,enable=${{ github.ref == format('refs/heads/{0}', 'ci-testing') }}
+      - name: Extract metadata (tags, labels) for Docker - dev
+        id: meta-dev
+        uses: docker/metadata-action@v5
+        if: github.ref_type != 'tag'
+        env:
+          DOCKER_METADATA_ANNOTATIONS_LEVELS: manifest,index
+        with:
+          images: |
+            ghcr.io/sintan1729/${{ env.IMAGE_NAME }}
+          tags: |
+            type=raw,value=dev
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
@@ -125,6 +136,7 @@ jobs:
       - name: Build and push Docker image - alpine
         id: push-alpine
         uses: docker/build-push-action@v6
+        if: github.ref_type == 'tag'
         with:
           context: .
           push: true
@@ -133,17 +145,37 @@ jobs:
           labels: ${{ steps.meta-alpine.outputs.labels }}
           platforms: linux/amd64,linux/arm64,linux/arm/v7
           annotations: ${{ steps.meta-alpine.outputs.annotations }}
+      - name: Build and push Docker image - dev
+        id: push-dev
+        uses: docker/build-push-action@v6
+        if: github.ref_type != 'tag'
+        with:
+          context: .
+          push: true
+          file: Dockerfile.alpine
+          tags: ${{ steps.meta-dev.outputs.tags }}
+          labels: ${{ steps.meta-dev.outputs.labels }}
+          platforms: linux/amd64,linux/arm64,linux/arm/v7
       
       - name: Generate artifact attestation - scratch
         uses: actions/attest-build-provenance@v2
+        if: github.ref_type == 'tag'
         with:
           subject-name: sintan1729/${{ env.IMAGE_NAME }}
           subject-digest: ${{ steps.push-scratch.outputs.digest }}
       - name: Generate artifact attestation - alpine
         uses: actions/attest-build-provenance@v2
+        if: github.ref_type == 'tag'
         with:
           subject-name: sintan1729/${{ env.IMAGE_NAME }}
           subject-digest: ${{ steps.push-alpine.outputs.digest }}
+      - name: Generate artifact attestation - alpine
+        uses: actions/attest-build-provenance@v2
+        if: github.ref_type != 'tag'
+        with:
+          subject-name: sintan1729/${{ env.IMAGE_NAME }}
+          subject-digest: ${{ steps.push-dev.outputs.digest }}
+
 
       - name: Generate a changelog
         uses: orhun/git-cliff-action@v4
