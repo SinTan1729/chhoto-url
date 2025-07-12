@@ -8,7 +8,8 @@ and confirm that it's indeed built from source and nothing silly is going on.
 The images come in two flavors. The default one is made from scratch, and is as light as possible.
 The tags with `-alpine` suffix are built on top of alpine, so are a little bit larger. But they have
 the basic UNIX tools for debugging, so might be worth using in case you want to play around with the image.
-The `dev` tags are always built on top of alpine.
+The `dev` tags are always built on top of alpine. All of these images are available both on the Docker Hub (recommended)
+and GHCR, except the `dev` builds which are only available on GHCR.
 
 You can use the compose file as a base, modifying it as needed. Run it with
 ```
