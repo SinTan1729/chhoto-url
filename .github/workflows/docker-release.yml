@@ -47,7 +47,7 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       id-token: write
-      contents: read
+      contents: write
       packages: write
       attestations: write
     needs: build
@@ -105,7 +105,7 @@ jobs:
             sintan1729/${{ env.IMAGE_NAME }}
             ghcr.io/sintan1729/${{ env.IMAGE_NAME }}
           flavor: |
-            suffix=alpine,onlatest=true
+            suffix=-alpine,onlatest=true
           tags: |
             type=semver,pattern={{major}}
             type=semver,pattern={{major}}.{{minor}}
