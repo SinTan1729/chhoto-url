@@ -189,12 +189,16 @@ jobs:
         id: git-cliff
         with:
           config: .github/cliff.toml
-          args: -vv --latest --strip header
+          args: --latest --strip header
         env:
           GITHUB_REPO: ${{ github.repository }}
+          OUTPUT: CHANGELOG.md
+      - name: Show the changelog
+        if: github.ref_type == 'tag'
+        run: cat CHANGELOG.md
       - name: Release
         uses: softprops/action-gh-release@v2
         if: github.ref_type == 'tag'
         with:
-          body: ${{ steps.git-cliff.outputs.changelog }}
+          body_path: ${{ steps.git-cliff.outputs.changelog }}
           make_latest: true
