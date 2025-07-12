@@ -11,8 +11,8 @@
 
 # What is it?
 A simple selfhosted URL shortener with no unnecessary features. Simplicity
-and speed are the main foci of this project. The docker image is ~6 MB (compressed),
-and it uses <10 MB of RAM under regular use.
+and speed are the main foci of this project. The scratch docker image is ~6 MB (compressed),
+the alpine one is ~9 MB (compressed), and it uses <10 MB of RAM under regular use.
 
 Don't worry if you see no activity for a long time. I consider this project
 to be complete, not dead. I'm unlikely to add any new features, but I will try

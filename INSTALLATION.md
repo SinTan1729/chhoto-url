@@ -2,8 +2,13 @@
 ## Using `docker compose` (Recommended method)
 There is a sample `compose.yaml` file in this repository. It contains
 everything needed for a basic install. The OCI image itself is built with
-a GitHub action, and you can [check the workflow for yourself](./.github/workflows/docker-release.yml)
+a GitHub action (starting from version 6.2.6), and you can [check the workflow for yourself](./.github/workflows/docker-release.yml)
 and confirm that it's indeed built from source and nothing silly is going on.
+
+The images come in two flavors. The default one is made from scratch, and is as light as possible.
+The tags with `-alpine` suffix are built on top of alpine, so are a little bit larger. But they have
+the basic UNIX tools for debugging, so might be worth using in case you want to play around with the image.
+The `dev` tags are always built on top of alpine.
 
 You can use the compose file as a base, modifying it as needed. Run it with
 ```
