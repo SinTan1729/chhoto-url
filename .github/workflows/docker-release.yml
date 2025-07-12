@@ -27,6 +27,7 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        # Build the binaries and upload
       - name: Build binary and test
         uses: houseabsolute/actions-rust-cross@v1
         with:
@@ -51,6 +52,7 @@ jobs:
       attestations: write
     needs: build
     steps:
+      # Prep the files
       - name: Checkout repository
         uses: actions/checkout@v4
       - name: Download artifacts
@@ -77,6 +79,7 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
+      # Extract metadata
       - name: Extract metadata (tags, labels) for Docker - scratch
         id: meta-scratch
         uses: docker/metadata-action@v5
@@ -119,6 +122,7 @@ jobs:
           tags: |
             type=raw,value=dev
 
+      # Build and push docker images
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
       - name: Build and push Docker image - scratch
@@ -156,7 +160,8 @@ jobs:
           tags: ${{ steps.meta-dev.outputs.tags }}
           labels: ${{ steps.meta-dev.outputs.labels }}
           platforms: linux/amd64,linux/arm64,linux/arm/v7
-      
+
+      # Attestation
       - name: Generate artifact attestation - scratch
         uses: actions/attest-build-provenance@v2
         if: github.ref_type == 'tag'
@@ -176,7 +181,7 @@ jobs:
           subject-name: sintan1729/${{ env.IMAGE_NAME }}
           subject-digest: ${{ steps.push-dev.outputs.digest }}
 
-
+      # Create a release with changelog
       - name: Generate a changelog
         uses: orhun/git-cliff-action@v4
         if: github.ref_type == 'tag'
