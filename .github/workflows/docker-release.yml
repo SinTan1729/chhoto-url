@@ -80,20 +80,6 @@ jobs:
           password: ${{ secrets.GITHUB_TOKEN }}
 
       # Extract metadata
-      - name: Extract metadata (tags, labels) for Docker - scratch
-        id: meta-scratch
-        uses: docker/metadata-action@v5
-        if: github.ref_type == 'tag'
-        env:
-          DOCKER_METADATA_ANNOTATIONS_LEVELS: manifest,index
-        with:
-          images: |
-            sintan1729/${{ env.IMAGE_NAME }}
-            ghcr.io/sintan1729/${{ env.IMAGE_NAME }}
-          tags: |
-            type=semver,pattern={{major}}
-            type=semver,pattern={{major}}.{{minor}}
-            type=semver,pattern={{version}}
       - name: Extract metadata (tags, labels) for Docker - alpine
         id: meta-alpine
         uses: docker/metadata-action@v5
@@ -106,6 +92,20 @@ jobs:
             ghcr.io/sintan1729/${{ env.IMAGE_NAME }}
           flavor: |
             suffix=-alpine,onlatest=true
+          tags: |
+            type=semver,pattern={{major}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=semver,pattern={{version}}
+      - name: Extract metadata (tags, labels) for Docker - scratch
+        id: meta-scratch
+        uses: docker/metadata-action@v5
+        if: github.ref_type == 'tag'
+        env:
+          DOCKER_METADATA_ANNOTATIONS_LEVELS: manifest,index
+        with:
+          images: |
+            sintan1729/${{ env.IMAGE_NAME }}
+            ghcr.io/sintan1729/${{ env.IMAGE_NAME }}
           tags: |
             type=semver,pattern={{major}}
             type=semver,pattern={{major}}.{{minor}}
@@ -125,18 +125,6 @@ jobs:
       # Build and push docker images
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
-      - name: Build and push Docker image - scratch
-        id: push-scratch
-        uses: docker/build-push-action@v6
-        if: github.ref_type == 'tag'
-        with:
-          context: .
-          push: true
-          file: Dockerfile.scratch
-          tags: ${{ steps.meta-scratch.outputs.tags }}
-          labels: ${{ steps.meta-scratch.outputs.labels }}
-          platforms: linux/amd64,linux/arm64,linux/arm/v7
-          annotations: ${{ steps.meta-scratch.outputs.annotations }}
       - name: Build and push Docker image - alpine
         id: push-alpine
         uses: docker/build-push-action@v6
@@ -149,6 +137,18 @@ jobs:
           labels: ${{ steps.meta-alpine.outputs.labels }}
           platforms: linux/amd64,linux/arm64,linux/arm/v7
           annotations: ${{ steps.meta-alpine.outputs.annotations }}
+      - name: Build and push Docker image - scratch
+        id: push-scratch
+        uses: docker/build-push-action@v6
+        if: github.ref_type == 'tag'
+        with:
+          context: .
+          push: true
+          file: Dockerfile.scratch
+          tags: ${{ steps.meta-scratch.outputs.tags }}
+          labels: ${{ steps.meta-scratch.outputs.labels }}
+          platforms: linux/amd64,linux/arm64,linux/arm/v7
+          annotations: ${{ steps.meta-scratch.outputs.annotations }}
       - name: Build and push Docker image - dev
         id: push-dev
         uses: docker/build-push-action@v6
@@ -162,18 +162,18 @@ jobs:
           platforms: linux/amd64,linux/arm64,linux/arm/v7
 
       # Attestation
-      - name: Generate artifact attestation - scratch
-        uses: actions/attest-build-provenance@v2
-        if: github.ref_type == 'tag'
-        with:
-          subject-name: sintan1729/${{ env.IMAGE_NAME }}
-          subject-digest: ${{ steps.push-scratch.outputs.digest }}
       - name: Generate artifact attestation - alpine
         uses: actions/attest-build-provenance@v2
         if: github.ref_type == 'tag'
         with:
           subject-name: sintan1729/${{ env.IMAGE_NAME }}
           subject-digest: ${{ steps.push-alpine.outputs.digest }}
+      - name: Generate artifact attestation - scratch
+        uses: actions/attest-build-provenance@v2
+        if: github.ref_type == 'tag'
+        with:
+          subject-name: sintan1729/${{ env.IMAGE_NAME }}
+          subject-digest: ${{ steps.push-scratch.outputs.digest }}
       - name: Generate artifact attestation - alpine
         uses: actions/attest-build-provenance@v2
         if: github.ref_type != 'tag'
