@@ -5,7 +5,7 @@ everything needed for a basic install. The OCI image itself is built with
 a GitHub action, and you can [check the workflow for yourself](./.github/workflows/docker-release.yml)
 and confirm that it's indeed built from source and nothing silly is going on.
 
-You can use it as a base, modifying it as needed. Run it with
+You can use the compose file as a base, modifying it as needed. Run it with
 ```
 docker compose up -d
 ```
