@@ -112,6 +112,11 @@ th[name="deleteBtn"], td[name = "deleteBtn"] {
     text-align: center;
 }
 
+td[name="deleteBtn"], td[name="deleteBtn"] div {
+    align-items: center;
+    justify-items: center;
+}
+
 td[name="deleteBtn"] div button {
     border-radius: 100%;
     aspect-ratio: 1;
