@@ -1,0 +1,84 @@
+# git-cliff ~ configuration file
+# https://git-cliff.org/docs/configuration
+
+[changelog]
+# A Tera template to be rendered as the changelog's header.
+# See https://keats.github.io/tera/docs/#introduction
+header = ""
+body = """
+{% for group, commits in commits | group_by(attribute="group") %}
+    ### {{ group | striptags | trim | upper_first }}
+    {%- for commit in commits %}
+        - {{ commit.message | split(pat="\n") | first | upper_first | trim }}\
+            {% if commit.remote.username %} by @{{ commit.remote.username }}{%- endif -%}
+            {% if commit.remote.pr_number %} in \
+            [#{{ commit.remote.pr_number }}]({{ self::remote_url() }}/pull/{{ commit.remote.pr_number }}) \
+            {%- endif -%}
+    {% endfor %}
+{% endfor %}
+
+{%- if github.contributors | filter(attribute="is_first_time", value=true) | length != 0 %}
+  ## New Contributors
+{%- endif -%}
+
+{% for contributor in github.contributors | filter(attribute="is_first_time", value=true) %}
+  * @{{ contributor.username }} made their first contribution
+    {%- if contributor.pr_number %} in \
+      [#{{ contributor.pr_number }}]({{ self::remote_url() }}/pull/{{ contributor.pr_number }}) \
+    {%- endif %}
+{%- endfor %}\n
+"""
+# A Tera template to be rendered as the changelog's footer.
+# See https://keats.github.io/tera/docs/#introduction
+footer = """
+{%- macro remote_url() -%}
+  https://github.com/{{ remote.github.owner }}/{{ remote.github.repo }}
+{%- endmacro -%}
+
+{% for release in releases -%}
+    {% if release.version -%}
+        {% if release.previous.version -%}
+            Full Changelog: \
+                {{ self::remote_url() }}/compare/{{ release.previous.version }}..{{ release.version }}
+                [Link to Docker Hub](https://hub.docker.com/r/sintan1729/{{ remote.github.repo }})
+        {% endif -%}
+    {% else -%}
+        Full Changelog: {{ self::remote_url() }}/compare/{{ release.previous.version }}..HEAD
+        [Link to Docker Hub](https://hub.docker.com/r/sintan1729/{{ remote.github.repo }})
+    {% endif -%}
+{% endfor %}
+"""
+# Remove leading and trailing whitespaces from the changelog's body.
+trim = true
+
+[git]
+# Parse commits according to the conventional commits specification.
+# See https://www.conventionalcommits.org
+conventional_commits = true
+# Exclude commits that do not match the conventional commits specification.
+filter_unconventional = false
+# An array of regex based parsers to modify commit messages prior to further processing.
+commit_preprocessors = [
+  # Remove issue numbers.
+  { pattern = '\((\w+\s)?#([0-9]+)\)', replace = "" },
+]
+# An array of regex based parsers for extracting data from the commit message.
+# Assigns commits to groups.
+# Optionally sets the commit's scope and can decide to exclude commits from further processing.
+commit_parsers = [
+  { message = "^[a|A]dd", group = "<0>New" },
+  { message = "^[n|N]ew", group = "<0>New" },
+  { message = "^[f|F]eat", group = "<0>New" },
+  { message = "^[f|F]ix", group = "<1>Fixes" },
+  { message = "^[c|C]hange", group = "<2>Changes" },
+  { message = "^[c|C]hg", group = "<2>Changes" },
+  { message = "^[r|R]emove", group = "<3>Removed" },
+  { message = "^[r|R]mv", group = "<3>Removed" },
+]
+# Exclude commits that are not matched by any commit parser.
+filter_commits = true
+# Order releases topologically instead of chronologically.
+topo_order = false
+# Order of commits in each group/release within the changelog.
+# Allowed values: newest, oldest
+sort_commits = "newest"

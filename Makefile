@@ -16,7 +16,7 @@ build-dev:
 	cargo build --release --locked --manifest-path=actix/Cargo.toml --target x86_64-unknown-linux-musl
 
 docker-local: build-dev
-	docker build --tag chhoto-url --build-arg TARGETARCH=amd64 -f Dockerfile.multiarch .
+	docker build --tag chhoto-url --build-arg TARGETARCH=amd64 -f Dockerfile.alpine .
 
 docker-stop:
 	docker ps -q --filter "name=chhoto-url" | xargs -r docker stop
@@ -30,12 +30,12 @@ docker-test: docker-local docker-stop test
 	docker logs chhoto-url -f 
 
 docker-dev: test build-dev
-	docker build --push --tag ghcr.io/${github_username}/chhoto-url:dev --build-arg TARGETARCH=amd64 -f Dockerfile.multiarch .
+	docker build --push --tag ghcr.io/${github_username}/chhoto-url:dev --build-arg TARGETARCH=amd64 -f Dockerfile.alpine .
 
-build-release: test
-	cross build --release --locked --manifest-path=actix/Cargo.toml --target aarch64-unknown-linux-musl
-	cross build --release --locked --manifest-path=actix/Cargo.toml --target armv7-unknown-linux-musleabihf
-	cross build --release --locked --manifest-path=actix/Cargo.toml --target x86_64-unknown-linux-musl
+# build-release: test
+# 	cross build --release --locked --manifest-path=actix/Cargo.toml --target aarch64-unknown-linux-musl
+# 	cross build --release --locked --manifest-path=actix/Cargo.toml --target armv7-unknown-linux-musleabihf
+# 	cross build --release --locked --manifest-path=actix/Cargo.toml --target x86_64-unknown-linux-musl
 
 conf_tag := $(shell cat actix/Cargo.toml | sed -rn 's/^version = "(.+)"$$/\1/p')
 last_tag := $(shell git tag -l | tail -1)
@@ -53,16 +53,16 @@ else
 	false;
 endif
 
-v_patch := $(shell cat actix/Cargo.toml | sed -rn 's/^version = "(.+)"$$/\1/p')
-v_minor := $(shell cat actix/Cargo.toml | sed -rn 's/^version = "(.+)\..+"$$/\1/p')
-v_major := $(shell cat actix/Cargo.toml | sed -rn 's/^version = "(.+)\..+\..+"$$/\1/p')
-docker-release: tag build-release
-	docker buildx build --push --tag ${docker_username}/chhoto-url:${v_major} --tag ${docker_username}/chhoto-url:${v_minor} \
-		--tag ${docker_username}/chhoto-url:${v_patch} --tag ${docker_username}/chhoto-url:latest \
-		--platform linux/amd64,linux/arm64,linux/arm/v7 -f Dockerfile.multiarch .
-	docker buildx build --push --tag ghcr.io/${github_username}/chhoto-url:${v_major} --tag ghcr.io/${github_username}/chhoto-url:${v_minor} \
-		--tag ghcr.io/${github_username}/chhoto-url:${v_patch} --tag ghcr.io/${github_username}/chhoto-url:latest \
-		--platform linux/amd64,linux/arm64,linux/arm/v7 -f Dockerfile.multiarch .
+# v_patch := $(shell cat actix/Cargo.toml | sed -rn 's/^version = "(.+)"$$/\1/p')
+# v_minor := $(shell cat actix/Cargo.toml | sed -rn 's/^version = "(.+)\..+"$$/\1/p')
+# v_major := $(shell cat actix/Cargo.toml | sed -rn 's/^version = "(.+)\..+\..+"$$/\1/p')
+# docker-release: tag build-release
+# 	docker buildx build --push --tag ${docker_username}/chhoto-url:${v_major} --tag ${docker_username}/chhoto-url:${v_minor} \
+# 		--tag ${docker_username}/chhoto-url:${v_patch} --tag ${docker_username}/chhoto-url:latest \
+# 		--platform linux/amd64,linux/arm64,linux/arm/v7 -f Dockerfile.scratch .
+# 	docker buildx build --push --tag ghcr.io/${github_username}/chhoto-url:${v_major} --tag ghcr.io/${github_username}/chhoto-url:${v_minor} \
+# 		--tag ghcr.io/${github_username}/chhoto-url:${v_patch} --tag ghcr.io/${github_username}/chhoto-url:latest \
+# 		--platform linux/amd64,linux/arm64,linux/arm/v7 -f Dockerfile.scratch .
 
 clean:
 	docker ps -q --filter "name=chhoto-url" | xargs -r docker stop
