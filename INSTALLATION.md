@@ -5,13 +5,15 @@ everything needed for a basic install. The OCI image itself is built with
 a GitHub action (starting from version 6.2.6), and you can [check the workflow for yourself](./.github/workflows/docker-release.yml)
 and confirm that it's indeed built from source and nothing silly is going on.
 
-The images come in two flavors. The default one is made from scratch, and is as light as possible.
+The container images come in two flavors. The default one is made from scratch, and is as light as possible.
 The tags with `-alpine` suffix are built on top of alpine, so are a little bit larger. But they have
 the basic UNIX tools for debugging, so might be worth using in case you want to play around with the image.
 The `dev` tags are always built on top of alpine. All of these images are available both on the Docker Hub (recommended)
-and GHCR, except the `dev` builds which are only available on GHCR.
+and GHCR, except the `dev` builds which are only available on GHCR. All of these images are available for `linux/amd64`, 
+`linux/arm64`, and `linux/arm/v7` architectures on Linux. These should also work just fine with `podman`, or any other 
+container engine supporting OCI images.
 
-You can use the compose file as a base, modifying it as needed. Run it with
+You can use the provided compose file as a base, modifying it as needed. Run it with
 ```
 docker compose up -d
 ```
@@ -30,8 +32,8 @@ For building on `arm64` or `arm/v7`, use the following:
 docker build . -t chhoto-url --build-arg target=<desired-target>
 ```
 Make sure that the desired target is a `musl` one, since the docker image is built from `scratch`.
-For cross-compilation, take a look at the `Makefile`. It builds and pushes for `linux/amd64`, `linux/aarch64`
-and `linux/arm/v7` architectures. For any other architectures, open a discussion, and I'll try to help you out.
+For cross-compilation, take a look at the `Makefile`. It has instructions to build the architectures
+mentioned above., For any other architectures, open a discussion, and I'll try to help you out.
 1. Run the image
 ```
 docker run -p 4567:4567
