@@ -34,6 +34,7 @@ jobs:
           command: both
           target: ${{ matrix.platform.target }}
           args: "--locked --release --manifest-path=actix/Cargo.toml"
+          rust-cache-parameters: '{"workspaces":"actix -> target"}'
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
