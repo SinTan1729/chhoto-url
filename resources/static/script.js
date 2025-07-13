@@ -5,6 +5,7 @@ let VERSION = null;
 let SITE_URL = "-";
 let CONFIG = null;
 let SUBDIR = null;
+let ADMIN = false;
 
 // in miliseconds
 const UNITS = {
@@ -56,10 +57,10 @@ const refreshData = async () => {
     if (!res.ok) {
         document.getElementById("table-box").hidden = true;
         document.getElementById("loading-text").hidden = false;
+        ADMIN = false;
         const admin_button = document.getElementById("admin-button");
         admin_button.innerText = "login";
         admin_button.hidden = false;
-        admin_button.href = "javascript:showLogin()";
 
         const errorMsg = await res.text();
         document.getElementById("url-table").innerHTML = '';
@@ -161,10 +162,16 @@ const formatRelativeTime = (timestamp) => {
     }
 }
 
-const TD = (s, u) => {
+const TD = (s, u, copy_link) => {
     const td = document.createElement("td");
     const div = document.createElement("div");
     div.innerHTML = s;
+    if (copy_link) {
+        div.children.item(0).onclick = async (e) => {
+            e.preventDefault();
+            await copyShortUrl(copy_link);
+        };
+    }
     td.appendChild(div);
     if (u !== null) td.setAttribute("label", u);
     return td;
@@ -172,18 +179,22 @@ const TD = (s, u) => {
 
 const TR = (row) => {
     const tr = document.createElement("tr");
-    const longTD = TD(A_LONG(row["longlink"]), "Long URL");
+    const longTD = TD(A_LONG(row["longlink"]), "Long URL", false);
     let shortTD;
     const isSafari = /Safari/.test(navigator.userAgent) && /Apple Computer/.test(navigator.vendor);
     // For now, we disable copying on WebKit due to a possible bug. Manual copying is enabled instead.
     // Take a look at https://github.com/SinTan1729/chhoto-url/issues/36
     if (window.isSecureContext && !(isSafari)) {
-        shortTD = TD(A_SHORT(row["shortlink"]), "Short URL");
+        if (CONFIG.open_url) {
+            shortTD = TD(A_SHORT(row["shortlink"]), "Short URL", false);
+        } else {
+            shortTD = TD(A_SHORT(row["shortlink"]), "Short URL", row["shortlink"]);
+        }
     }
     else {
-        shortTD = TD(A_SHORT_INSECURE(row["shortlink"], SITE_URL), "Short URL");
+        shortTD = TD(A_SHORT_INSECURE(row["shortlink"], SITE_URL), "Short URL", false);
     }
-    const hitsTD = TD(row["hits"], null);
+    const hitsTD = TD(row["hits"], null, false);
     hitsTD.setAttribute("label", "Hits");
     hitsTD.setAttribute("name", "hitsColumn");
 
@@ -196,7 +207,7 @@ const TR = (row) => {
         expiryHTML = relativeExpiryTime + '<span class="tooltiptext">' + accurateExpiryTime + '</span>';
     }
 
-    let expiryTD = TD(expiryHTML, null);
+    let expiryTD = TD(expiryHTML, null, false);
     if (expiryTime > 0) {
         expiryTD.width = "160px";
         expiryTD.setAttribute("data-time", expiryTime);
@@ -238,7 +249,7 @@ const addProtocol = (input) => {
 }
 
 const A_LONG = (s) => `<a href='${s}'>${s}</a>`;
-const A_SHORT = (s, t) => `<a href="javascript:copyShortUrl('${s}');">${s}</a>`;
+const A_SHORT = (s) => `<a href="${SITE_URL}/${s}">${s}</a>`;
 const A_SHORT_INSECURE = (s, t) => `<a href="${t}/${s}">${s}</a>`;
 
 const deleteButton = (shortUrl) => {
@@ -320,6 +331,7 @@ const submitLogin = () => {
             document.getElementById("login-dialog").close();
             password.value = '';
             document.getElementById("wrong-pass").hidden = true;
+            ADMIN = true;
             await refreshData();
         } else {
             document.getElementById("wrong-pass").hidden = false;
@@ -342,6 +354,15 @@ const logOut = async () => {
         e.preventDefault();
         submitForm();
     }
+
+    document.getElementById("admin-button").onclick = (e) => {
+        e.preventDefault();
+        if (ADMIN) {
+            logOut();
+        } else {
+            showLogin();
+        }
+    };
 
     const login_form = document.forms.namedItem("login-form");
     login_form.onsubmit = e => {
