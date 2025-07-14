@@ -3,7 +3,12 @@
 
 use actix_files::Files;
 use actix_session::{storage::CookieSessionStore, SessionMiddleware};
-use actix_web::{cookie::Key, middleware, web, App, HttpServer};
+use actix_web::{
+    cookie::Key,
+    middleware,
+    web::{self, Redirect},
+    App, HttpServer,
+};
 use log::info;
 use rusqlite::Connection;
 pub(crate) use std::io::Result;
@@ -65,7 +70,6 @@ async fn main() -> Result<()> {
         let mut app = App::new()
             .wrap(middleware::Logger::default())
             .wrap(middleware::Compress::default())
-            .wrap(middleware::NormalizePath::trim())
             .wrap(
                 SessionMiddleware::builder(CookieSessionStore::default(), secret_key.clone())
                     .cookie_same_site(actix_web::cookie::SameSite::Strict)
@@ -96,8 +100,9 @@ async fn main() -> Result<()> {
         if !conf.disable_frontend {
             if let Some(dir) = &conf.custom_landing_directory {
                 app = app
-                    .service(Files::new("/admin/manage", "./resources/").index_file("index.html"));
-                app = app.service(Files::new("/", dir).index_file("index.html"));
+                    .service(Redirect::new("/admin/manage", "/admin/manage/"))
+                    .service(Files::new("/admin/manage/", "./resources/").index_file("index.html"))
+                    .service(Files::new("/", dir).index_file("index.html"));
             } else {
                 app = app.service(Files::new("/", "./resources/").index_file("index.html"));
             }
