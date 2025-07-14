@@ -162,14 +162,14 @@ const formatRelativeTime = (timestamp) => {
     }
 }
 
-const TD = (s, u, copy_link) => {
+const TD = (s, u, t) => {
     const td = document.createElement("td");
     const div = document.createElement("div");
     div.innerHTML = s;
-    if (copy_link) {
-        div.children.item(0).onclick = async (e) => {
+    if (t != null) {
+        div.onclick = async (e) => {
             e.preventDefault();
-            await copyShortUrl(copy_link);
+            await copyShortUrl(t);
         };
     }
     td.appendChild(div);
@@ -179,22 +179,19 @@ const TD = (s, u, copy_link) => {
 
 const TR = (row) => {
     const tr = document.createElement("tr");
-    const longTD = TD(A_LONG(row["longlink"]), "Long URL", false);
+    const longTD = TD(A_LONG(row["longlink"]), "Long URL", null);
     let shortTD;
     const isSafari = /Safari/.test(navigator.userAgent) && /Apple Computer/.test(navigator.vendor);
     // For now, we disable copying on WebKit due to a possible bug. Manual copying is enabled instead.
     // Take a look at https://github.com/SinTan1729/chhoto-url/issues/36
     if (window.isSecureContext && !(isSafari)) {
-        if (CONFIG.open_url) {
-            shortTD = TD(A_SHORT(row["shortlink"]), "Short URL", false);
-        } else {
-            shortTD = TD(A_SHORT(row["shortlink"]), "Short URL", row["shortlink"]);
-        }
+        let shortlink = row["shortlink"];
+        shortTD = TD(A_SHORT(shortlink, "Short URL"), "Short URL", shortlink);
     }
     else {
-        shortTD = TD(A_SHORT_INSECURE(row["shortlink"], SITE_URL), "Short URL", false);
+        shortTD = TD(A_SHORT_INSECURE(row["shortlink"]), "Short URL", null);
     }
-    const hitsTD = TD(row["hits"], null, false);
+    const hitsTD = TD(row["hits"], null, null);
     hitsTD.setAttribute("label", "Hits");
     hitsTD.setAttribute("name", "hitsColumn");
 
@@ -207,7 +204,7 @@ const TR = (row) => {
         expiryHTML = relativeExpiryTime + '<span class="tooltiptext">' + accurateExpiryTime + '</span>';
     }
 
-    let expiryTD = TD(expiryHTML, null, false);
+    let expiryTD = TD(expiryHTML, null, null);
     if (expiryTime > 0) {
         expiryTD.width = "160px";
         expiryTD.setAttribute("data-time", expiryTime);
@@ -231,10 +228,10 @@ const copyShortUrl = async (short_link) => {
     const full_link = `${SITE_URL}/${short_link}`;
     try {
         await navigator.clipboard.writeText(full_link);
-        showAlert(`Short URL <a href=${full_link}>${full_link}</a> was copied to clipboard!`, "light-dark(green, #72ff72)");
+        showAlert(`Short URL ${full_link} was copied to clipboard!`, "light-dark(green, #72ff72)");
     } catch (e) {
         console.log(e);
-        showAlert(`Could not copy short URL to clipboard, please do it manually: <a href=${full_link}>${full_link}</a>`, "light-dark(red, #ff1a1a)");
+        showAlert(`Could not copy short URL to clipboard, please do it manually: ${full_link}`, "light-dark(red, #ff1a1a)");
     }
 
 }
@@ -249,7 +246,7 @@ const addProtocol = (input) => {
 }
 
 const A_LONG = (s) => `<a href='${s}'>${s}</a>`;
-const A_SHORT = (s) => `<a href="${SITE_URL}/${s}">${s}</a>`;
+const A_SHORT = (s) => `<a href="#!">${s}</a>`;
 const A_SHORT_INSECURE = (s, t) => `<a href="${t}/${s}">${s}</a>`;
 
 const deleteButton = (shortUrl) => {
