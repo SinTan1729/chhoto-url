@@ -57,14 +57,13 @@ const refreshData = async () => {
     if (!res.ok) {
         document.getElementById("table-box").hidden = true;
         document.getElementById("loading-text").hidden = false;
-        ADMIN = false;
         const admin_button = document.getElementById("admin-button");
         admin_button.innerText = "login";
-        admin_button.hidden = false;
 
         const errorMsg = await res.text();
         document.getElementById("url-table").innerHTML = '';
         if (errorMsg.startsWith("Using public mode.")) {
+            admin_button.hidden = false;
             document.getElementById("admin-button").hidden = false;
             const loading_text = document.getElementById("loading-text");
             loading_text.innerHTML = "Using public mode.";
@@ -81,11 +80,13 @@ const refreshData = async () => {
         }
     } else {
         const data = await res.json();
+        await getConfig();
         displayData(data.reverse());
     }
 }
 
 const displayData = (data) => {
+    showVersion();
     const admin_button = document.getElementById("admin-button");
     admin_button.innerText = "logout";
     admin_button.hidden = false;
@@ -339,11 +340,13 @@ const submitLogin = () => {
 
 const logOut = async () => {
     await fetch(prepSubdir("/api/logout"), {method: "DELETE"});
+    document.getElementById("version-number").hidden = true;
+    document.getElementById("admin-button").hidden = true;
+    ADMIN = false;
     await refreshData();
 }
 
 (async () => {
-    await getConfig();
     await refreshData();
 
     const form = document.forms.namedItem("new-url-form");
