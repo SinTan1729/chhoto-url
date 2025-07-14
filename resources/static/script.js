@@ -55,27 +55,27 @@ const showLogin = () => {
 const refreshData = async () => {
     const res = await fetch(prepSubdir("/api/all"));
     if (!res.ok) {
-        document.getElementById("table-box").hidden = true;
-        document.getElementById("loading-text").hidden = false;
+        const loading_text = document.getElementById("loading-text");
         const admin_button = document.getElementById("admin-button");
+        document.getElementById("table-box").hidden = true;
+        loading_text.hidden = false;
         admin_button.innerText = "login";
 
         const errorMsg = await res.text();
         document.getElementById("url-table").innerHTML = '';
         if (errorMsg.startsWith("Using public mode.")) {
             admin_button.hidden = false;
-            document.getElementById("admin-button").hidden = false;
-            const loading_text = document.getElementById("loading-text");
             loading_text.innerHTML = "Using public mode.";
             const expiry = parseInt(errorMsg.split(" ").pop());
             if (expiry > 0) {
                 loading_text.innerHTML += " Unless chosen a shorter expiry time, submitted links will automatically expire ";
-                time = new Date();
+                const time = new Date();
                 time.setSeconds(time.getSeconds() + expiry);
                 loading_text.innerHTML += formatRelativeTime(time) + ".";
             }
             await getConfig();
             showVersion();
+            updateInputBox();
         } else {
             showLogin();
         }
@@ -87,18 +87,21 @@ const refreshData = async () => {
     }
 }
 
-const displayData = (data) => {
-    showVersion();
-    const admin_button = document.getElementById("admin-button");
-    admin_button.innerText = "logout";
-    admin_button.hidden = false;
-
+const updateInputBox = () => {
     if (CONFIG.allow_capital_letters) {
         const input_box = document.getElementById("shortUrl");
         input_box.pattern = "[A-Za-z0-9\-_]+";
         input_box.title = "Only A-Z, a-z, 0-9, - and _ are allowed";
         input_box.placeholder = "Only A-Z, a-z, 0-9, - and _ are allowed";
     }
+}
+
+const displayData = (data) => {
+    showVersion();
+    const admin_button = document.getElementById("admin-button");
+    admin_button.innerText = "logout";
+    admin_button.hidden = false;
+    updateInputBox();
 
     const table_box = document.getElementById("table-box");
     const loading_text = document.getElementById("loading-text");
@@ -198,7 +201,7 @@ const TR = (row) => {
     hitsTD.setAttribute("label", "Hits");
     hitsTD.setAttribute("name", "hitsColumn");
 
-    let expiryTime = row["expiry_time"];
+    const expiryTime = row["expiry_time"];
     let expiryHTML = "-";
     if (expiryTime > 0) {
         expiryTimeParsed = new Date(expiryTime * 1000);
@@ -341,12 +344,18 @@ const submitLogin = () => {
 }
 
 const logOut = async () => {
-    await fetch(prepSubdir("/api/logout"), {method: "DELETE"});
-    document.getElementById("version-number").hidden = true;
-    document.getElementById("admin-button").hidden = true;
-    showAlert("&nbsp;", "black");
-    ADMIN = false;
-    await refreshData();
+    await fetch(prepSubdir("/api/logout"), {method: "DELETE"})
+    .then(async (res) => {
+        if (res.ok) {
+            document.getElementById("version-number").hidden = true;
+            document.getElementById("admin-button").hidden = true;
+            showAlert("&nbsp;", "black");
+            ADMIN = false;
+            await refreshData();
+        } else {
+            showAlert(`Logout failed. Please try again!`, "light-dark(red, #ff1a1a)");
+        }
+    });
 }
 
 (async () => {
