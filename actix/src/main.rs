@@ -70,6 +70,9 @@ async fn main() -> Result<()> {
         let mut app = App::new()
             .wrap(middleware::Logger::default())
             .wrap(middleware::Compress::default())
+            .wrap(middleware::NormalizePath::new(
+                middleware::TrailingSlash::MergeOnly,
+            ))
             .wrap(
                 SessionMiddleware::builder(CookieSessionStore::default(), secret_key.clone())
                     .cookie_same_site(actix_web::cookie::SameSite::Strict)
