@@ -11,3 +11,6 @@ actix/target
 cookie*
 .idea/
 .DS_Store
+
+# Testing related
+resources/custom_dir
