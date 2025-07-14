@@ -81,6 +81,7 @@ const refreshData = async () => {
     } else {
         const data = await res.json();
         await getConfig();
+        ADMIN = true;
         displayData(data.reverse());
     }
 }
@@ -227,12 +228,13 @@ const TR = (row) => {
 
 const copyShortUrl = async (short_link) => {
     const full_link = `${SITE_URL}/${short_link}`;
+    const link_elt = `<a href=${full_link}>${full_link}</a>`
     try {
         await navigator.clipboard.writeText(full_link);
-        showAlert(`Short URL ${full_link} was copied to clipboard!`, "light-dark(green, #72ff72)");
+        showAlert(`Short URL ${link_elt} was copied to clipboard!`, "light-dark(green, #72ff72)");
     } catch (e) {
         console.log(e);
-        showAlert(`Could not copy short URL to clipboard, please do it manually: ${full_link}`, "light-dark(red, #ff1a1a)");
+        showAlert(`Could not copy short URL to clipboard, please do it manually: ${link_elt}`, "light-dark(red, #ff1a1a)");
     }
 
 }
@@ -260,7 +262,6 @@ const deleteButton = (shortUrl) => {
     btn.onclick = e => {
         e.preventDefault();
         if (confirm("Do you want to delete the entry " + shortUrl + "?")) {
-            document.getElementById("alert-box")?.remove();
             showAlert("&nbsp;", "black");
             fetch(prepSubdir(`/api/del/${shortUrl}`), {
                 method: "DELETE"
@@ -342,6 +343,7 @@ const logOut = async () => {
     await fetch(prepSubdir("/api/logout"), {method: "DELETE"});
     document.getElementById("version-number").hidden = true;
     document.getElementById("admin-button").hidden = true;
+    showAlert("&nbsp;", "black");
     ADMIN = false;
     await refreshData();
 }
