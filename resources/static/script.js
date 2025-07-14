@@ -74,6 +74,7 @@ const refreshData = async () => {
                 time.setSeconds(time.getSeconds() + expiry);
                 loading_text.innerHTML += formatRelativeTime(time) + ".";
             }
+            await getConfig();
             showVersion();
         } else {
             showLogin();
