@@ -1,14 +1,24 @@
 // SPDX-FileCopyrightText: 2023 Sayantan Santra <sayantan.santra689@gmail.com>
 // SPDX-License-Identifier: MIT
 
-var VERSION = null;
-var SITE_URL = "-";
-var CONFIG = null;
-var SUBDIR = null;
+let VERSION = null;
+let SITE_URL = "-";
+let CONFIG = null;
+let SUBDIR = null;
+
+// in miliseconds
+const UNITS = {
+    year  : 31536000000,
+    month : 2592000000,
+    day   : 86400000,
+    hour  : 3600000,
+    minute: 60000,
+    second: 1000,
+};
 
 const prepSubdir = (link) => {
     if (!SUBDIR) {
-        let thisPage = new URL(window.location.href);
+        const thisPage = new URL(window.location.href);
         SUBDIR = thisPage.pathname.replace(/\/admin\/manage\/$/, "/");
     }
     return (SUBDIR + link).replace('//', '/');
@@ -28,31 +38,36 @@ const getConfig = async () => {
     }
 }
 
-const showVersion = async () => {
-    await getConfig();
-    link = document.getElementById("version-number");
+const showVersion = () => {
+    const link = document.getElementById("version-number");
     link.innerText = "v" + VERSION;
     link.href = "https://github.com/SinTan1729/chhoto-url/releases/tag/" + VERSION;
     link.hidden = false;
 }
 
-const getLogin = async () => {
+const showLogin = () => {
     document.getElementById("container").style.filter = "blur(2px)";
     document.getElementById("login-dialog").showModal();
     document.getElementById("password").focus();
 }
 
 const refreshData = async () => {
-    let res = await fetch(prepSubdir("/api/all"));
+    const res = await fetch(prepSubdir("/api/all"));
     if (!res.ok) {
-        let errorMsg = await res.text();
+        document.getElementById("table-box").hidden = true;
+        document.getElementById("loading-text").hidden = false;
+        const admin_button = document.getElementById("admin-button");
+        admin_button.innerText = "login";
+        admin_button.hidden = false;
+        admin_button.href = "javascript:showLogin()";
+
+        const errorMsg = await res.text();
         document.getElementById("url-table").innerHTML = '';
-        console.log(errorMsg);
         if (errorMsg.startsWith("Using public mode.")) {
             document.getElementById("admin-button").hidden = false;
-            let loading_text = document.getElementById("loading-text");
+            const loading_text = document.getElementById("loading-text");
             loading_text.innerHTML = "Using public mode.";
-            let expiry = parseInt(errorMsg.split(" ").pop());
+            const expiry = parseInt(errorMsg.split(" ").pop());
             if (expiry > 0) {
                 loading_text.innerHTML += " Unless chosen a shorter expiry time, submitted links will automatically expire ";
                 time = new Date();
@@ -61,34 +76,31 @@ const refreshData = async () => {
             }
             showVersion();
         } else {
-            getLogin();
+            showLogin();
         }
     } else {
-        let data = await res.json();
+        const data = await res.json();
         displayData(data.reverse());
     }
 }
 
-const displayData = async (data) => {
-    await getConfig();
-    await showVersion();
-    admin_button = document.getElementById("admin-button");
+const displayData = (data) => {
+    const admin_button = document.getElementById("admin-button");
     admin_button.innerText = "logout";
-    admin_button.href = "javascript:logOut()";
     admin_button.hidden = false;
 
     if (CONFIG.allow_capital_letters) {
-        let input_box = document.getElementById("shortUrl");
+        const input_box = document.getElementById("shortUrl");
         input_box.pattern = "[A-Za-z0-9\-_]+";
         input_box.title = "Only A-Z, a-z, 0-9, - and _ are allowed";
         input_box.placeholder = "Only A-Z, a-z, 0-9, - and _ are allowed";
     }
 
-    table_box = document.getElementById("table-box");
-    loading_text = document.getElementById("loading-text");
+    const table_box = document.getElementById("table-box");
+    const loading_text = document.getElementById("loading-text");
     const table = document.getElementById("url-table");
 
-    if (data.length == 0) {
+    if (data.length === 0) {
         table_box.hidden = true;
         loading_text.innerHTML = "No active links.";
         loading_text.hidden = false;
@@ -106,7 +118,7 @@ const displayData = async (data) => {
     }
 }
 
-const showAlert = async (text, col) => {
+const showAlert = (text, col) => {
     document.getElementById("alert-box")?.remove();
     const controls = document.getElementById("controls");
     const alertBox = document.createElement("p");
@@ -135,25 +147,16 @@ const refreshExpiryTimes = async () =>  {
 
 const formatRelativeTime = (timestamp) => {
     const now = new Date();
-    // in miliseconds
-    var units = {
-        year  : 31536000000,
-        month : 2592000000,
-        day   : 86400000,
-        hour  : 3600000,
-        minute: 60000,
-        second: 1000,
-    };
 
-    var diff = (timestamp) - now;
+    const diff = (timestamp) - now;
+    const rtf = new Intl.RelativeTimeFormat('en', { numeric: 'auto' });
     if (diff <= 0) {
         return "expired";
     }
-    var rtf = new Intl.RelativeTimeFormat('en', { numeric: 'auto' });
       // "Math.abs" accounts for both "past" & "future" scenarios
-    for (var u in units) {
-        if (Math.abs(diff) > units[u] || u == 'second') {
-            return rtf.format(Math.round(diff/units[u]), u);
+    for (const u in UNITS) {
+        if (Math.abs(diff) > UNITS[u] || u === 'second') {
+            return rtf.format(Math.round(diff/UNITS[u]), u);
         }
     }
 }
@@ -163,37 +166,37 @@ const TD = (s, u) => {
     const div = document.createElement("div");
     div.innerHTML = s;
     td.appendChild(div);
-    td.setAttribute("label", u);
+    if (u !== null) td.setAttribute("label", u);
     return td;
 }
 
 const TR = (row) => {
     const tr = document.createElement("tr");
     const longTD = TD(A_LONG(row["longlink"]), "Long URL");
-    var shortTD = null;
-    var isSafari = /Safari/.test(navigator.userAgent) && /Apple Computer/.test(navigator.vendor);
+    let shortTD;
+    const isSafari = /Safari/.test(navigator.userAgent) && /Apple Computer/.test(navigator.vendor);
     // For now, we disable copying on WebKit due to a possible bug. Manual copying is enabled instead.
     // Take a look at https://github.com/SinTan1729/chhoto-url/issues/36
     if (window.isSecureContext && !(isSafari)) {
-        shortTD = TD(A_SHORT(row["shortlink"], SITE_URL), "Short URL");
+        shortTD = TD(A_SHORT(row["shortlink"]), "Short URL");
     }
     else {
         shortTD = TD(A_SHORT_INSECURE(row["shortlink"], SITE_URL), "Short URL");
     }
-    let hitsTD = TD(row["hits"]);
+    const hitsTD = TD(row["hits"], null);
     hitsTD.setAttribute("label", "Hits");
     hitsTD.setAttribute("name", "hitsColumn");
-    
+
     let expiryTime = row["expiry_time"];
     let expiryHTML = "-";
     if (expiryTime > 0) {
-        let expiryTimeParsed = new Date(expiryTime * 1000);
-        let relativeExpiryTime = formatRelativeTime(expiryTimeParsed);
-        let accurateExpiryTime = expiryTimeParsed.toLocaleString();
+        expiryTimeParsed = new Date(expiryTime * 1000);
+        const relativeExpiryTime = formatRelativeTime(expiryTimeParsed);
+        const accurateExpiryTime = expiryTimeParsed.toLocaleString();
         expiryHTML = relativeExpiryTime + '<span class="tooltiptext">' + accurateExpiryTime + '</span>';
     }
 
-    let expiryTD = TD(expiryHTML);
+    let expiryTD = TD(expiryHTML, null);
     if (expiryTime > 0) {
         expiryTD.width = "160px";
         expiryTD.setAttribute("data-time", expiryTime);
@@ -213,21 +216,21 @@ const TR = (row) => {
     return tr;
 }
 
-const copyShortUrl = async (link) => {
-    await getConfig();
+const copyShortUrl = async (short_link) => {
+    const full_link = `${SITE_URL}/${short_link}`;
     try {
-        navigator.clipboard.writeText(`${SITE_URL}/${link}`);
-        showAlert(`Short URL <a href=${SITE_URL}/${link}>${SITE_URL}/${link}</a> was copied to clipboard!`, "light-dark(green, #72ff72)");
+        await navigator.clipboard.writeText(full_link);
+        showAlert(`Short URL <a href=${full_link}>${full_link}</a> was copied to clipboard!`, "light-dark(green, #72ff72)");
     } catch (e) {
         console.log(e);
-        showAlert(`Could not copy short URL to clipboard, please do it manually: <a href=${SITE_URL}/${link}>${SITE_URL}/${link}</a>`, "light-dark(red, #ff1a1a)");
+        showAlert(`Could not copy short URL to clipboard, please do it manually: <a href=${full_link}>${full_link}</a>`, "light-dark(red, #ff1a1a)");
     }
 
 }
 
 const addProtocol = (input) => {
-    var url = input.value.trim();
-    if (url != "" && !~url.indexOf("://") && !~url.indexOf("magnet:")) {
+    let url = input.value.trim();
+    if (url !== "" && !~url.indexOf("://") && !~url.indexOf("magnet:")) {
         url = "https://" + url;
     }
     input.value = url;
@@ -252,13 +255,11 @@ const deleteButton = (shortUrl) => {
             showAlert("&nbsp;", "black");
             fetch(prepSubdir(`/api/del/${shortUrl}`), {
                 method: "DELETE"
-            }).then(res => {
-                if (res.ok) {
-                    console.log("Deleted " + shortUrl);
-                } else {
+            }).then(async (res) => {
+                if (!res.ok) {
                     console.log("Unable to delete " + shortUrl);
                 }
-                refreshData();
+                await refreshData();
             });
         }
     };
@@ -271,10 +272,13 @@ const deleteButton = (shortUrl) => {
 
 const submitForm = () => {
     const form = document.forms.namedItem("new-url-form");
+    const longUrl = form.elements["longUrl"];
+    const shortUrl = form.elements["shortUrl"];
+    const expiryDelay = form.elements["expiryDelay"];
     const data = {
-        "longlink": form.elements["longUrl"].value,
-        "shortlink": form.elements["shortUrl"].value,
-        "expiry_delay": parseInt(form.elements["expiryDelay"].value),
+        "longlink": longUrl.value,
+        "shortlink": shortUrl.value,
+        "expiry_delay": parseInt(expiryDelay.value),
     };
 
     const url = prepSubdir("/api/new");
@@ -291,16 +295,16 @@ const submitForm = () => {
             ok = res.ok;
             return res.text();
         })
-        .then(text => {
+        .then(async (text) => {
             if (!ok) {
                 showAlert(text, "light-dark(red, #ff1a1a)");
             }
             else {
-                copyShortUrl(text);
+                await copyShortUrl(text);
                 longUrl.value = "";
                 shortUrl.value = "";
                 expiryDelay.value = 0;
-                refreshData();
+                await refreshData();
             }
         })
 }
@@ -310,13 +314,13 @@ const submitLogin = () => {
     fetch(prepSubdir("/api/login"), {
         method: "POST",
         body: password.value
-    }).then(res => {
+    }).then(async (res) => {
         if (res.ok) {
             document.getElementById("container").style.filter = "blur(0px)"
             document.getElementById("login-dialog").close();
             password.value = '';
             document.getElementById("wrong-pass").hidden = true;
-            refreshData();
+            await refreshData();
         } else {
             document.getElementById("wrong-pass").hidden = false;
             password.focus();
@@ -325,18 +329,12 @@ const submitLogin = () => {
 }
 
 const logOut = async () => {
-    let reply = await fetch(prepSubdir("/api/logout"), {method: "DELETE"}).then(res => res.text());
-    console.log(reply);
-    document.getElementById("table-box").hidden = true;
-    document.getElementById("loading-text").hidden = false;
-    admin_button = document.getElementById("admin-button");
-    admin_button.innerText = "login";
-    admin_button.href = "javascript:getLogin()";
-    admin_button.hidden = false;
-    refreshData();
+    await fetch(prepSubdir("/api/logout"), {method: "DELETE"});
+    await refreshData();
 }
 
 (async () => {
+    await getConfig();
     await refreshData();
 
     const form = document.forms.namedItem("new-url-form");
