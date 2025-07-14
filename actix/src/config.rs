@@ -122,7 +122,7 @@ pub fn read() -> Config {
             format!(":{port}")
         };
         // No issues
-        info!("Public URI is: {protocol}://localhost{port_text}.");
+        info!("Public URL is: {protocol}://localhost{port_text}.");
         None
     };
 
@@ -152,7 +152,11 @@ pub fn read() -> Config {
     let custom_landing_directory = var("custom_landing_directory")
         .ok()
         .map(|s| s.trim().to_string())
-        .filter(|s| !s.is_empty());
+        .filter(|s| !s.is_empty())
+        .inspect(|s| {
+            info!("Custom landing directory is set to {s}.");
+            info!("The dashboard will be available at /admin/manage/")
+        });
 
     Config {
         port,
