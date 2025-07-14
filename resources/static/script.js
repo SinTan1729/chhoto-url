@@ -217,7 +217,7 @@ const copyShortUrl = async (link) => {
     await getConfig();
     try {
         navigator.clipboard.writeText(`${SITE_URL}/${link}`);
-        showAlert(`Short URL ${link} was copied to clipboard!`, "light-dark(green, #72ff72)");
+        showAlert(`Short URL <a href=${SITE_URL}/${link}>${SITE_URL}/${link}</a> was copied to clipboard!`, "light-dark(green, #72ff72)");
     } catch (e) {
         console.log(e);
         showAlert(`Could not copy short URL to clipboard, please do it manually: <a href=${SITE_URL}/${link}>${SITE_URL}/${link}</a>`, "light-dark(red, #ff1a1a)");
