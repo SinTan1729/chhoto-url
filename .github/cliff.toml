@@ -30,7 +30,7 @@ body = """
     {%- if contributor.pr_number %} in \
       [#{{ contributor.pr_number }}]({{ self::remote_url() }}/pull/{{ contributor.pr_number }}) \
     {%- endif %}
-{%- endfor %}\n
+{%- endfor %}\n\n
 """
 # A Tera template to be rendered as the changelog's footer.
 # See https://keats.github.io/tera/docs/#introduction
@@ -42,12 +42,12 @@ footer = """
 {% for release in releases -%}
     {% if release.version -%}
         {% if release.previous.version -%}
-            Full Changelog: \
+            **Full Changelog:** \
                 {{ self::remote_url() }}/compare/{{ release.previous.version }}..{{ release.version }}
                 [Link to Docker Hub](https://hub.docker.com/r/sintan1729/{{ remote.github.repo }})
         {% endif -%}
     {% else -%}
-        Full Changelog: {{ self::remote_url() }}/compare/{{ release.previous.version }}..HEAD
+        **Full Changelog:** {{ self::remote_url() }}/compare/{{ release.previous.version }}..HEAD
         [Link to Docker Hub](https://hub.docker.com/r/sintan1729/{{ remote.github.repo }})
     {% endif -%}
 {% endfor %}
