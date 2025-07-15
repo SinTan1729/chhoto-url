@@ -54,36 +54,41 @@ const showLogin = () => {
 
 const refreshData = async () => {
     const res = await fetch(prepSubdir("/api/all"));
-    if (!res.ok) {
-        const loading_text = document.getElementById("loading-text");
-        const admin_button = document.getElementById("admin-button");
-        document.getElementById("table-box").hidden = true;
-        loading_text.hidden = false;
-        admin_button.innerText = "login";
-
-        const errorMsg = await res.text();
-        document.getElementById("url-table").innerHTML = '';
-        if (errorMsg.startsWith("Using public mode.")) {
-            admin_button.hidden = false;
-            loading_text.innerHTML = "Using public mode.";
-            const expiry = parseInt(errorMsg.split(" ").pop());
-            if (expiry > 0) {
-                loading_text.innerHTML += " Unless chosen a shorter expiry time, submitted links will automatically expire ";
-                const time = new Date();
-                time.setSeconds(time.getSeconds() + expiry);
-                loading_text.innerHTML += formatRelativeTime(time) + ".";
-            }
+    switch (res.status) {
+        case 200:
+            const data = await res.json();
             await getConfig();
-            showVersion();
-            updateInputBox();
-        } else {
-            showLogin();
-        }
-    } else {
-        const data = await res.json();
-        await getConfig();
-        ADMIN = true;
-        displayData(data.reverse());
+            ADMIN = true;
+            displayData(data.reverse());
+            break;
+        case 401:
+            const loading_text = document.getElementById("loading-text");
+            const admin_button = document.getElementById("admin-button");
+            document.getElementById("table-box").hidden = true;
+            loading_text.hidden = false;
+            admin_button.innerText = "login";
+
+            const errorMsg = await res.text();
+            document.getElementById("url-table").innerHTML = '';
+            if (errorMsg.startsWith("Using public mode.")) {
+                admin_button.hidden = false;
+                loading_text.innerHTML = "Using public mode.";
+                const expiry = parseInt(errorMsg.split(" ").pop());
+                if (expiry > 0) {
+                    loading_text.innerHTML += " Unless chosen a shorter expiry time, submitted links will automatically expire ";
+                    const time = new Date();
+                    time.setSeconds(time.getSeconds() + expiry);
+                    loading_text.innerHTML += formatRelativeTime(time) + ".";
+                }
+                await getConfig();
+                showVersion();
+                updateInputBox();
+            } else {
+                showLogin();
+            }
+            break;
+        default:
+            if(!alert("Something went wrong! Click Ok to refresh page.")){window.location.reload();}
     }
 }
 
@@ -271,7 +276,7 @@ const deleteButton = (shortUrl) => {
                 method: "DELETE"
             }).then(async (res) => {
                 if (!res.ok) {
-                    console.log("Unable to delete " + shortUrl);
+                    showAlert("Unable to delete " + shortUrl + ". Please try again!", "light-dark(red, #ff1a1a)");
                 }
                 await refreshData();
             });
@@ -312,6 +317,7 @@ const submitForm = () => {
         .then(async (text) => {
             if (!ok) {
                 showAlert(text, "light-dark(red, #ff1a1a)");
+                await refreshData();
             }
             else {
                 await copyShortUrl(text);
@@ -329,16 +335,21 @@ const submitLogin = () => {
         method: "POST",
         body: password.value
     }).then(async (res) => {
-        if (res.ok) {
-            document.getElementById("container").style.filter = "blur(0px)"
-            document.getElementById("login-dialog").close();
-            password.value = '';
-            document.getElementById("wrong-pass").hidden = true;
-            ADMIN = true;
-            await refreshData();
-        } else {
-            document.getElementById("wrong-pass").hidden = false;
-            password.focus();
+        switch (res.status) {
+            case 200:
+                document.getElementById("container").style.filter = "blur(0px)"
+                document.getElementById("login-dialog").close();
+                password.value = '';
+                document.getElementById("wrong-pass").hidden = true;
+                ADMIN = true;
+                await refreshData();
+                break;
+            case 401:
+                document.getElementById("wrong-pass").hidden = false;
+                password.focus();
+                break;
+            default:
+                if(!alert("Something went wrong! Click Ok to refresh page.")){window.location.reload();}
         }
     })
 }
