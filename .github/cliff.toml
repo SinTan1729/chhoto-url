@@ -43,11 +43,11 @@ footer = """
     {% if release.version -%}
         {% if release.previous.version -%}
             **Full Changelog:** \
-                {{ self::remote_url() }}/compare/{{ release.previous.version }}..{{ release.version }}
+                {{ self::remote_url() }}/compare/{{ release.previous.version }}...{{ release.version }}
                 [Link to Docker Hub](https://hub.docker.com/r/sintan1729/{{ remote.github.repo }})
         {% endif -%}
     {% else -%}
-        **Full Changelog:** {{ self::remote_url() }}/compare/{{ release.previous.version }}..HEAD
+        **Full Changelog:** {{ self::remote_url() }}/compare/{{ release.previous.version }}...HEAD
         [Link to Docker Hub](https://hub.docker.com/r/sintan1729/{{ remote.github.repo }})
     {% endif -%}
 {% endfor %}
