@@ -248,7 +248,8 @@ const copyShortUrl = async (short_link) => {
 
 }
 
-const addProtocol = (input) => {
+const addProtocol = () => {
+    const input = document.getElementById("longUrl")
     let url = input.value.trim();
     if (url !== "" && !~url.indexOf("://") && !~url.indexOf("magnet:")) {
         url = "https://" + url;
@@ -372,6 +373,7 @@ const logOut = async () => {
 (async () => {
     await refreshData();
 
+    document.getElementById("longUrl").onblur = addProtocol;
     const form = document.forms.namedItem("new-url-form");
     form.onsubmit = e => {
         e.preventDefault();
