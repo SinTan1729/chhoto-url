@@ -218,11 +218,7 @@ div[name="links-div"] {
     }
 
     .chhoto-table tr {
-        border-bottom: 1px solid light-dark(black, #867d6e);
-    }
-
-    .chhoto-table tr:nth-child(even) {
-        background-color: light-dark(white, #181a1b);
+        border-bottom: 2px dotted light-dark(black, #867d6e);
     }
 
     .chhoto-table thead {
