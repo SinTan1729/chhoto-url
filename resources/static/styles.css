@@ -13,7 +13,6 @@
   color-scheme: light dark;
   font-family: Montserrat;
 }
-
 body {
   color: light-dark(black, #e8e6e3);
   background-color: light-dark(white, #181a1b);
@@ -22,7 +21,6 @@ body {
 .chhoto-button {
   background-color: light-dark(#0078e7, #0060b9);
 }
-
 .pure-form input.chhoto-input {
   border-color: light-dark(#cccccc, #3e4446);
   box-shadow: light-dark(#dddddd, #2b2f31) 0px 1px 3px inset;
@@ -44,6 +42,7 @@ body {
 #logo {
   color: light-dark(#333333, #c8c3bc);
   border-bottom-color: light-dark(#e5e5e5, #373c3e);
+  font-size: 32px;
 }
 
 .container {
@@ -63,7 +62,6 @@ a {
   box-shadow: 0 0 0 1px light-dark(#e0e0e0, #2a2d2f);
   border-color: light-dark(black, #867d6e);
 }
-
 .chhoto-table tr td div {
   max-height: 75px;
   line-height: 25px;
@@ -71,11 +69,9 @@ a {
   max-width: 575px;
   overflow: auto;
 }
-
 .chhoto-table tr:nth-child(even) {
   background-color: light-dark(#f2f2f2, #080a0b);
 }
-
 .chhoto-table caption {
   color: light-dark(black, #e8e6e3);
   text-align: left;
@@ -83,12 +79,10 @@ a {
   font-style: normal;
   font-family: Montserrat;
 }
-
 .chhoto-table thead {
   color: light-dark(black, #e8e6e3);
   background-color: light-dark(#e0e0e0, #2a2d2f);
 }
-
 .chhoto-table th,
 .chhoto-table td {
   border-left: none;
@@ -109,18 +103,15 @@ td[name="deleteBtn"] div {
   align-items: center;
   justify-content: center;
 }
-
 th[name="deleteBtn"],
 td[name="deleteBtn"] {
   text-align: center;
 }
-
 td[name="deleteBtn"],
 td[name="deleteBtn"] div {
   align-items: center;
   justify-items: center;
 }
-
 td[name="deleteBtn"] div button {
   border-radius: 100%;
   aspect-ratio: 1;
@@ -136,7 +127,6 @@ td[name="deleteBtn"] div button {
 input {
   width: 65%;
 }
-
 form input[name="shortUrl"]::placeholder {
   text-transform: none;
 }
@@ -147,32 +137,25 @@ div[name="links-div"] {
   top: 0.5%;
 }
 
-#logo {
-  font-size: 32px;
-}
-
 #password {
   width: 100%;
   margin-bottom: 10px;
+}
+#wrong-pass {
+  color: light-dark(red, #ff1a1a);
 }
 
 #login-dialog {
   border-radius: 10px;
   border-width: 2px;
 }
-
 #login-dialog form {
   text-align: center;
-}
-
-#wrong-pass {
-  color: light-dark(red, #ff1a1a);
 }
 
 .tooltip {
   position: relative;
 }
-
 .tooltip .tooltiptext {
   visibility: hidden;
   width: 120px;
@@ -189,7 +172,6 @@ div[name="links-div"] {
   opacity: 0;
   transition: opacity 0.3s;
 }
-
 .tooltip .tooltiptext::after {
   content: "";
   position: absolute;
@@ -200,7 +182,6 @@ div[name="links-div"] {
   border-style: solid;
   border-color: light-dark(#eeeeee, #484a4b) transparent transparent transparent;
 }
-
 .tooltip:hover .tooltiptext {
   visibility: visible;
   opacity: 1;
@@ -211,7 +192,6 @@ div[name="links-div"] {
   .container {
     max-width: 100vw;
   }
-
   .pure-control-group input {
     width: 98%;
   }
@@ -219,7 +199,6 @@ div[name="links-div"] {
   .chhoto-table {
     border-collapse: collapse;
   }
-
   .chhoto-table tr {
     border-bottom: 2px dotted light-dark(black, #867d6e);
   }
@@ -232,7 +211,13 @@ div[name="links-div"] {
     display: flex;
     justify-content: left;
     width: 98vw;
-    padding: 0.5em 0.1em;
+    padding: 0.1em;
+  }
+  .chhoto-table tr td:last-child {
+    padding-bottom: 0.5em;
+  }
+  .chhoto-table tr td:first-child {
+    padding-top: 0.5em;
   }
 
   .chhoto-table td::before {
