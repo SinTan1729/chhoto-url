@@ -1,5 +1,6 @@
 # Ignore build outputs
 actix/target
+resources-final
 
 # Ignore SQLite file
 *.sqlite
