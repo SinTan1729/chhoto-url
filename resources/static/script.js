@@ -28,7 +28,10 @@ const prepSubdir = (link) => {
 const getConfig = async () => {
     if (!CONFIG) {
         CONFIG = await fetch(prepSubdir("/api/getconfig"))
-                    .then(res => res.json());
+                    .then(res => res.json())
+                    .catch(err => {
+                        console.log("Error while fetching config.");
+                    });
         if (CONFIG.site_url == null) {
             SITE_URL = window.location.host.replace(/\/$/, '');
         }
@@ -53,42 +56,47 @@ const showLogin = () => {
 }
 
 const refreshData = async () => {
-    const res = await fetch(prepSubdir("/api/all"));
-    switch (res.status) {
-        case 200:
-            const data = await res.json();
-            await getConfig();
-            ADMIN = true;
-            displayData(data.reverse());
-            break;
-        case 401:
-            const loading_text = document.getElementById("loading-text");
-            const admin_button = document.getElementById("admin-button");
-            document.getElementById("table-box").hidden = true;
-            loading_text.hidden = false;
-            admin_button.innerText = "login";
-
-            const errorMsg = await res.text();
-            document.getElementById("url-table").innerHTML = '';
-            if (errorMsg.startsWith("Using public mode.")) {
-                admin_button.hidden = false;
-                loading_text.innerHTML = "Using public mode.";
-                const expiry = parseInt(errorMsg.split(" ").pop());
-                if (expiry > 0) {
-                    loading_text.innerHTML += " Unless chosen a shorter expiry time, submitted links will automatically expire ";
-                    const time = new Date();
-                    time.setSeconds(time.getSeconds() + expiry);
-                    loading_text.innerHTML += formatRelativeTime(time) + ".";
-                }
+    try {
+        const res = await fetch(prepSubdir("/api/all"));
+        switch (res.status) {
+            case 200:
+                const data = await res.json();
                 await getConfig();
-                showVersion();
-                updateInputBox();
-            } else {
-                showLogin();
-            }
-            break;
-        default:
-            if(!alert("Something went wrong! Click Ok to refresh page.")){window.location.reload();}
+                ADMIN = true;
+                displayData(data.reverse());
+                break;
+            case 401:
+                const loading_text = document.getElementById("loading-text");
+                const admin_button = document.getElementById("admin-button");
+                document.getElementById("table-box").hidden = true;
+                loading_text.hidden = false;
+                admin_button.innerText = "login";
+
+                const errorMsg = await res.text();
+                document.getElementById("url-table").innerHTML = '';
+                if (errorMsg.startsWith("Using public mode.")) {
+                    admin_button.hidden = false;
+                    loading_text.innerHTML = "Using public mode.";
+                    const expiry = parseInt(errorMsg.split(" ").pop());
+                    if (expiry > 0) {
+                        loading_text.innerHTML += " Unless chosen a shorter expiry time, submitted links will automatically expire ";
+                        const time = new Date();
+                        time.setSeconds(time.getSeconds() + expiry);
+                        loading_text.innerHTML += formatRelativeTime(time) + ".";
+                    }
+                    await getConfig();
+                    showVersion();
+                    updateInputBox();
+                } else {
+                    showLogin();
+                }
+                break;
+            default:
+                if(!alert("Something went wrong! Click Ok to refresh page.")){window.location.reload();}
+        }
+    } catch (err) {
+        console.log(err);
+        showAlert(`Could not copy short URL to clipboard, please do it manually: ${link_elt}`, "light-dark(red, #ff1a1a)");
     }
 }
 
@@ -241,8 +249,8 @@ const copyShortUrl = async (short_link) => {
     try {
         await navigator.clipboard.writeText(full_link);
         showAlert(`Short URL ${link_elt} was copied to clipboard!`, "light-dark(green, #72ff72)");
-    } catch (e) {
-        console.log(e);
+    } catch (err) {
+        console.log(err);
         showAlert(`Could not copy short URL to clipboard, please do it manually: ${link_elt}`, "light-dark(red, #ff1a1a)");
     }
 
@@ -277,9 +285,12 @@ const deleteButton = (shortUrl) => {
                 method: "DELETE"
             }).then(async (res) => {
                 if (!res.ok) {
-                    showAlert("Unable to delete " + shortUrl + ". Please try again!", "light-dark(red, #ff1a1a)");
+                    throw new Error("Could not delete.");
                 }
                 await refreshData();
+            }).catch(err => {
+                console.log("Error:", err)
+                showAlert("Unable to delete " + shortUrl + ". Please try again!", "light-dark(red, #ff1a1a)");
             });
         }
     };
@@ -327,7 +338,10 @@ const submitForm = () => {
                 expiryDelay.value = 0;
                 await refreshData();
             }
-        })
+        }).catch(err => {
+            console.log("Error:", err)
+            if(!alert("Something went wrong! Click Ok to refresh page.")){window.location.reload();}
+        });
 }
 
 const submitLogin = () => {
@@ -350,9 +364,12 @@ const submitLogin = () => {
                 password.focus();
                 break;
             default:
-                if(!alert("Something went wrong! Click Ok to refresh page.")){window.location.reload();}
+                throw new Error("Got status " + res.status);
         }
-    })
+    }).catch(err => {
+        console.log("Error:", err)
+        if(!alert("Something went wrong! Click Ok to refresh page.")){window.location.reload();}
+    });
 }
 
 const logOut = async () => {
@@ -367,6 +384,9 @@ const logOut = async () => {
         } else {
             showAlert(`Logout failed. Please try again!`, "light-dark(red, #ff1a1a)");
         }
+    }).catch(err => {
+        console.log("Error:", err)
+        if(!alert("Something went wrong! Click Ok to refresh page.")){window.location.reload();}
     });
 }
 
