@@ -2,7 +2,7 @@ name: Test and Docker Release
 on:
   push:
     tags:
-      - '*'
+      - "*"
   workflow_dispatch:
 env:
   CARGO_TERM_COLOR: always
@@ -66,6 +66,11 @@ jobs:
             mv $f/chhoto-url actix/target/$f/release/
             chmod +x actix/target/$f/release/chhoto-url
           done
+      - name: Minify resources
+        run: |
+          sudo apt update
+          sudo apt install minify
+          minify -r -o resources-mini/ resources/
       - name: Display current directory structure
         run: ls -R
       - name: Log in to the Docker Hub

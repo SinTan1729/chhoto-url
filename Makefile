@@ -16,7 +16,9 @@ build-dev:
 	cargo build --release --locked --manifest-path=actix/Cargo.toml --target x86_64-unknown-linux-musl
 
 docker-local: build-dev
+	minify -r -o resources-mini/ resources/
 	docker build --tag chhoto-url --build-arg TARGETARCH=amd64 -f Dockerfile.alpine .
+	rm -rf resources-mini/
 
 docker-stop:
 	docker ps -q --filter "name=chhoto-url" | xargs -r docker stop
@@ -57,12 +59,14 @@ endif
 # v_minor := $(shell cat actix/Cargo.toml | sed -rn 's/^version = "(.+)\..+"$$/\1/p')
 # v_major := $(shell cat actix/Cargo.toml | sed -rn 's/^version = "(.+)\..+\..+"$$/\1/p')
 # docker-release: tag build-release
+#	minify -r -o resources-mini/ resources/
 # 	docker buildx build --push --tag ${docker_username}/chhoto-url:${v_major} --tag ${docker_username}/chhoto-url:${v_minor} \
 # 		--tag ${docker_username}/chhoto-url:${v_patch} --tag ${docker_username}/chhoto-url:latest \
-# 		--platform linux/amd64,linux/arm64,linux/arm/v7 -f Dockerfile.scratch .
+# 		--platform linux/amd64,linux/arm64,linux/arm/v7 -f Dockerfile.alpine .
 # 	docker buildx build --push --tag ghcr.io/${github_username}/chhoto-url:${v_major} --tag ghcr.io/${github_username}/chhoto-url:${v_minor} \
 # 		--tag ghcr.io/${github_username}/chhoto-url:${v_patch} --tag ghcr.io/${github_username}/chhoto-url:latest \
 # 		--platform linux/amd64,linux/arm64,linux/arm/v7 -f Dockerfile.scratch .
+#	rm -rf resources-mini/
 
 clean:
 	docker ps -q --filter "name=chhoto-url" | xargs -r docker stop
