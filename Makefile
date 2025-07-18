@@ -32,7 +32,9 @@ docker-test: docker-local docker-stop test
 	docker logs chhoto-url -f 
 
 docker-dev: test build-dev
+	minify -r -o resources-mini/ resources/
 	docker build --push --tag ghcr.io/${github_username}/chhoto-url:dev --build-arg TARGETARCH=amd64 -f Dockerfile.alpine .
+	rm -rf resources-mini/
 
 # build-release: test
 # 	cross build --release --locked --manifest-path=actix/Cargo.toml --target aarch64-unknown-linux-musl
