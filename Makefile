@@ -61,14 +61,14 @@ endif
 # v_minor := $(shell cat actix/Cargo.toml | sed -rn 's/^version = "(.+)\..+"$$/\1/p')
 # v_major := $(shell cat actix/Cargo.toml | sed -rn 's/^version = "(.+)\..+\..+"$$/\1/p')
 # docker-release: tag build-release
-#	minify -rs -o resources-final/ resources/
+#	minify -rsi resources/
 # 	docker buildx build --push --tag ${docker_username}/chhoto-url:${v_major} --tag ${docker_username}/chhoto-url:${v_minor} \
 # 		--tag ${docker_username}/chhoto-url:${v_patch} --tag ${docker_username}/chhoto-url:latest \
 # 		--platform linux/amd64,linux/arm64,linux/arm/v7 -f Dockerfile.alpine .
 # 	docker buildx build --push --tag ghcr.io/${github_username}/chhoto-url:${v_major} --tag ghcr.io/${github_username}/chhoto-url:${v_minor} \
 # 		--tag ghcr.io/${github_username}/chhoto-url:${v_patch} --tag ghcr.io/${github_username}/chhoto-url:latest \
 # 		--platform linux/amd64,linux/arm64,linux/arm/v7 -f Dockerfile.scratch .
-#	rm -rf resources-final/
+#	git restore resources/
 
 clean:
 	docker ps -q --filter "name=chhoto-url" | xargs -r docker stop

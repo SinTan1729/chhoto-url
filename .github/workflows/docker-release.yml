@@ -68,15 +68,12 @@ jobs:
             mv $f/chhoto-url actix/target/$f/release/
             chmod +x actix/target/$f/release/chhoto-url
           done
-      - name: Move resouces to expected place without minifying
-        if: github.ref_type != 'tag'
-        run: mv resources/ resources-final/
-      - name: Minify resources
+      - name: Minify resources for release
         if: github.ref_type == 'tag'
         run: |
           sudo apt update
           sudo apt install minify
-          minify -rs -o resources-final/ resources/
+          minify -rsi resources/
       - name: Display current directory structure
         run: ls -R
       - name: Log in to the Docker Hub
