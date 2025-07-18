@@ -7,9 +7,9 @@ include .env
 .PHONY: clean test setup build-dev docker-local docker-stop docker-test build-release docker-release tag
 
 setup:
-	cargo install cross
+	# cargo install cross
 	rustup target add x86_64-unknown-linux-musl
-	docker buildx create --use --platform=linux/arm64,linux/amd64 --name multi-platform-builder
+	# docker buildx create --use --platform=linux/arm64,linux/amd64,linux/arm/v7 --name multi-platform-builder
 	docker buildx inspect --bootstrap
 
 build-dev:
