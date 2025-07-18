@@ -1,246 +1,249 @@
 /* SPDX-FileCopyrightText: 2023 Sayantan Santra <sayantan.santra689@gmail.com> */
 /* SPDX-License-Identifier: MIT */
 
-@import url('https://fonts.googleapis.com/css2?family=Montserrat&display=swap');
+@import url("https://fonts.googleapis.com/css2?family=Montserrat&display=swap");
 @font-face {
-    font-family: Montserrat, "Open Sans", Helvetica, Arial, sans-serif;
-    font-optical-sizing: auto;
-    font-weight: 400;
-    font-style: normal;
-} 
+  font-family: Montserrat, "Open Sans", Helvetica, Arial, sans-serif;
+  font-optical-sizing: auto;
+  font-weight: 400;
+  font-style: normal;
+}
 
 :root {
-    color-scheme: light dark;
-    font-family: Montserrat;
+  color-scheme: light dark;
+  font-family: Montserrat;
 }
 
 body {
-    color: light-dark(black, #e8e6e3);
-    background-color: light-dark(white, #181a1b);
+  color: light-dark(black, #e8e6e3);
+  background-color: light-dark(white, #181a1b);
 }
 
 .chhoto-button {
-    background-color: light-dark(#0078e7, #0060b9);
+  background-color: light-dark(#0078e7, #0060b9);
 }
 
 .pure-form input.chhoto-input {
-    border-color: light-dark(#cccccc, #3e4446);
-    box-shadow: light-dark(#dddddd, #2b2f31) 0px 1px 3px inset;
+  border-color: light-dark(#cccccc, #3e4446);
+  box-shadow: light-dark(#dddddd, #2b2f31) 0px 1px 3px inset;
 }
 .pure-form input.chhoto-input:focus {
-    border-color: light-dark(#cccccc, #3e4446);
+  border-color: light-dark(#cccccc, #3e4446);
 }
 
 #expiryDelay {
-    background-color: light-dark(white, #2b2a33);
-    border-color: light-dark(#cccccc, #3e4446);
-    box-shadow: light-dark(#dddddd, #2b2f31) 0px 1px 3px inset;
+  background-color: light-dark(white, #2b2a33);
+  border-color: light-dark(#cccccc, #3e4446);
+  box-shadow: light-dark(#dddddd, #2b2f31) 0px 1px 3px inset;
 }
 
 ::placeholder {
-    color: light-dark(#757575, #636061);
+  color: light-dark(#757575, #636061);
 }
 
 #logo {
-    color: light-dark(#333333, #c8c3bc);
-    border-bottom-color: light-dark(#e5e5e5 ,#373c3e);
+  color: light-dark(#333333, #c8c3bc);
+  border-bottom-color: light-dark(#e5e5e5, #373c3e);
 }
 
 .container {
-    max-width: 1200px;
-    margin: 20px auto auto;
+  max-width: 1200px;
+  margin: 20px auto auto;
 }
 
 a {
-    color: light-dark(blue, #3391ff);
+  color: light-dark(blue, #3391ff);
 }
 
 .chhoto-table {
-    width: 98%;
-    border-collapse: separate;
-    border-spacing: 0px;
-    border-radius: 5px;
-    box-shadow:0 0 0 1px light-dark(#e0e0e0, #2a2d2f);
-    border-color: light-dark(black, #867d6e);
+  width: 98%;
+  border-collapse: separate;
+  border-spacing: 0px;
+  border-radius: 5px;
+  box-shadow: 0 0 0 1px light-dark(#e0e0e0, #2a2d2f);
+  border-color: light-dark(black, #867d6e);
 }
 
 .chhoto-table tr td div {
-    max-height: 75px;
-    line-height: 25px;
-    word-wrap: break-word;
-    max-width: 575px;
-    overflow: auto;
+  max-height: 75px;
+  line-height: 25px;
+  word-wrap: break-word;
+  max-width: 575px;
+  overflow: auto;
 }
 
 .chhoto-table tr:nth-child(even) {
-    background-color: light-dark(#f2f2f2, #080a0b);
+  background-color: light-dark(#f2f2f2, #080a0b);
 }
 
 .chhoto-table caption {
-    color: light-dark(black, #e8e6e3);
-    text-align: left;
-    font-size: 22px;
-    font-style: normal;
-    font-family: Montserrat;
+  color: light-dark(black, #e8e6e3);
+  text-align: left;
+  font-size: 22px;
+  font-style: normal;
+  font-family: Montserrat;
 }
-
 
 .chhoto-table thead {
-    color: light-dark(black, #e8e6e3);
-    background-color: light-dark(#e0e0e0, #2a2d2f);
+  color: light-dark(black, #e8e6e3);
+  background-color: light-dark(#e0e0e0, #2a2d2f);
 }
 
-.chhoto-table th, .chhoto-table td {
-    border-left: none;
+.chhoto-table th,
+.chhoto-table td {
+  border-left: none;
 }
 
-th[name="hitsColumn"], td[name = "hitsColumn"] {
-    text-align: right;
+th[name="hitsColumn"],
+td[name="hitsColumn"] {
+  text-align: right;
 }
 
-th[name="expiryColumn"], td[name = "expiryColumn"] {
-    text-align: center;
+th[name="expiryColumn"],
+td[name="expiryColumn"] {
+  text-align: center;
 }
 
 td[name="deleteBtn"] div {
-    display: flex;
-    align-items: center;
-    justify-content: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
-th[name="deleteBtn"], td[name = "deleteBtn"] {
-    text-align: center;
+th[name="deleteBtn"],
+td[name="deleteBtn"] {
+  text-align: center;
 }
 
-td[name="deleteBtn"], td[name="deleteBtn"] div {
-    align-items: center;
-    justify-items: center;
+td[name="deleteBtn"],
+td[name="deleteBtn"] div {
+  align-items: center;
+  justify-items: center;
 }
 
 td[name="deleteBtn"] div button {
-    border-radius: 100%;
-    aspect-ratio: 1;
-    border-style: solid;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-weight: bold;
-    background-color: transparent;
+  border-radius: 100%;
+  aspect-ratio: 1;
+  border-style: solid;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: bold;
+  background-color: transparent;
 }
 
 input {
-    width: 65%;
+  width: 65%;
 }
 
 form input[name="shortUrl"]::placeholder {
-    text-transform: none;
+  text-transform: none;
 }
 
 div[name="links-div"] {
-    position: absolute;
-    right: 0.5%;
-    top: 0.5%;
+  position: absolute;
+  right: 0.5%;
+  top: 0.5%;
 }
 
 #logo {
-    font-size: 32px;
+  font-size: 32px;
 }
 
 #password {
-    width: 100%;
-    margin-bottom: 10px;
+  width: 100%;
+  margin-bottom: 10px;
 }
 
 #login-dialog {
-    border-radius: 10px;
-    border-width: 2px;
+  border-radius: 10px;
+  border-width: 2px;
 }
 
 #login-dialog form {
-    text-align: center;
+  text-align: center;
 }
 
 #wrong-pass {
-    color: light-dark(red, #ff1a1a);
+  color: light-dark(red, #ff1a1a);
 }
 
 .tooltip {
-    position: relative;
+  position: relative;
 }
 
 .tooltip .tooltiptext {
-    visibility: hidden;
-    width: 120px;
-    background-color: light-dark(#eeeeee, #484a4b);
-    color: light-dark(black, #e8e6e3);
-    text-align: center;
-    padding: 5px 0;
-    border-radius: 6px;
-    position: absolute;
-    z-index: 1;
-    bottom: 125%;
-    left: 50%;
-    margin-left: -60px;
-    opacity: 0;
-    transition: opacity 0.3s;
+  visibility: hidden;
+  width: 120px;
+  background-color: light-dark(#eeeeee, #484a4b);
+  color: light-dark(black, #e8e6e3);
+  text-align: center;
+  padding: 5px 0;
+  border-radius: 6px;
+  position: absolute;
+  z-index: 1;
+  bottom: 125%;
+  left: 50%;
+  margin-left: -60px;
+  opacity: 0;
+  transition: opacity 0.3s;
 }
 
 .tooltip .tooltiptext::after {
-    content: "";
-    position: absolute;
-    top: 100%;
-    left: 50%;
-    margin-left: -5px;
-    border-width: 5px;
-    border-style: solid;
-    border-color: light-dark(#eeeeee, #484a4b) transparent transparent transparent;
+  content: "";
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  margin-left: -5px;
+  border-width: 5px;
+  border-style: solid;
+  border-color: light-dark(#eeeeee, #484a4b) transparent transparent transparent;
 }
 
 .tooltip:hover .tooltiptext {
-    visibility: visible;
-    opacity: 1;
+  visibility: visible;
+  opacity: 1;
 }
 
 /* Settings for mobile devices */
-@media (pointer:none),
-(pointer:coarse) {
-    .container {
-        max-width: 100vw;
-    }
+@media (pointer: none), (pointer: coarse) {
+  .container {
+    max-width: 100vw;
+  }
 
-    .pure-control-group input {
-        width: 98%;
-    }
+  .pure-control-group input {
+    width: 98%;
+  }
 
-    .chhoto-table {
-        border-collapse: collapse;
-    }
+  .chhoto-table {
+    border-collapse: collapse;
+  }
 
-    .chhoto-table tr {
-        border-bottom: 2px dotted light-dark(black, #867d6e);
-    }
+  .chhoto-table tr {
+    border-bottom: 2px dotted light-dark(black, #867d6e);
+  }
 
-    .chhoto-table thead {
-        display: none;
-    }
+  .chhoto-table thead {
+    display: none;
+  }
 
-    .chhoto-table td {
-        display: flex;
-        justify-content: left;
-        width: 98vw;
-        padding: .5em .1em;
-    }
+  .chhoto-table td {
+    display: flex;
+    justify-content: left;
+    width: 98vw;
+    padding: 0.5em 0.1em;
+  }
 
-    .chhoto-table td::before {
-        content: attr(label);
-        font-weight: bold;
-        width: 120px;
-        min-width: 120px;
-        text-align: left;
-    }
+  .chhoto-table td::before {
+    content: attr(label);
+    font-weight: bold;
+    width: 120px;
+    min-width: 120px;
+    text-align: left;
+  }
 
-    .chhoto-table caption {
-        padding-top: 0px;
-    }
+  .chhoto-table caption {
+    padding-top: 0px;
+  }
 }

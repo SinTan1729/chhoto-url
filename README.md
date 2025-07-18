@@ -1,5 +1,6 @@
 <!-- SPDX-FileCopyrightText: 2023 Sayantan Santra <sayantan.santra689@gmail.com> -->
 <!-- SPDX-License-Identifier: MIT -->
+
 [![github-tests-badge](https://github.com/SinTan1729/chhoto-url/actions/workflows/rust_tests.yml/badge.svg)](https://github.com/SinTan1729/chhoto-url/actions/workflows/rust_tests.yml)
 [![docker-pulls-badge](https://img.shields.io/docker/pulls/sintan1729/chhoto-url)](https://hub.docker.com/r/sintan1729/chhoto-url)
 [![maintainer-badge](https://img.shields.io/badge/maintainer-SinTan1729-blue)](https://github.com/SinTan1729)
@@ -10,6 +11,7 @@
 # ![Logo](resources/assets/favicon-32.png) <span style="font-size:42px">Chhoto URL</span>
 
 # What is it?
+
 A simple selfhosted URL shortener with no unnecessary features. Simplicity
 and speed are the main foci of this project. The scratch docker image is <6 MB (compressed),
 the alpine one is <10 MB (compressed), and it uses <15 MB of RAM under regular use.
@@ -23,6 +25,7 @@ If you feel like a feature is missing, please let me know by creating an issue
 using the "feature request" template.
 
 ## But why another URL shortener?
+
 Most URL shorteners are either bloated with unnecessary features, or are a pain to set up.
 Even fewer are written with simplicity and lightness in mind. When I saw the `simply-shorten`
 project (linked below), I really liked the idea but thought that it missed some features. Also,
@@ -31,10 +34,12 @@ included java runtime). So, I decided to rewrite it in Rust and add some feature
 thought were essential (e.g. hit counting).
 
 ## What does the name mean?
+
 Chhoto (ছোট, [IPA](https://en.wikipedia.org/wiki/Help:IPA/Bengali): /tʃʰoʈo/) is the Bangla word
 for small. URL means, well... URL. So the name simply means Small URL.
 
 # Features
+
 - Shortens URLs of any length to a randomly generated link.
 - Automatic expiry of links after a chosen time.
 - (Optional) Allows you to specify the shortened URL instead of the generated
@@ -48,9 +53,9 @@ for small. URL means, well... URL. So the name simply means Small URL.
 - Supports operation using API key, and lets the user provide hashed password and API key.
 - Has a mobile friendly UI, and automatic dark mode.
 - Can serve a custom landing page, if needed.
-- Has a public mode, where anyone can add links without authentication. Deleting 
-  or listing available links will need admin access using the password. It's also 
-  possible to completely disable the frontend. It's also possible to force an expiry 
+- Has a public mode, where anyone can add links without authentication. Deleting
+  or listing available links will need admin access using the password. It's also
+  possible to completely disable the frontend. It's also possible to force an expiry
   time for public instances, which might be useful.
 - Allows setting the URL of your website, in case you want to conveniently
   generate short links locally.
@@ -60,53 +65,64 @@ for small. URL means, well... URL. So the name simply means Small URL.
   written in plain HTML and vanilla JS, using [Pure CSS](https://purecss.io/)
   for styling.
 - Uses very basic authentication using a provided password. It's not encrypted in transport.
-  I  recommend using a reverse proxy such as [caddy](https://caddyserver.com/) to
+  I recommend using a reverse proxy such as [caddy](https://caddyserver.com/) to
   encrypt the connection by SSL.
-  
-# Bloat that will not be implemented
-- **Tracking or spying of any kind.** The only logs that still exist are
- errors printed to stderr and some basic logging of configs.
-- **User management.** If you need a shortener for your whole organization, either
- run separate containers for everyone or use something else.
-- **Cookies, newsletters**, "we value your privacy" popups or any of the multiple
-other ways modern web shows how anti-user it is. We all hate those, and they're
-not needed here.
-- **Paywalls** or messages begging for donations. If you want to buy me a coffee, 
-you can message me through GitHub discussions or mail me.
 
-# Screenshots 
+# Bloat that will not be implemented
+
+- **Tracking or spying of any kind.** The only logs that still exist are
+  errors printed to stderr and some basic logging of configs.
+- **User management.** If you need a shortener for your whole organization, either
+  run separate containers for everyone or use something else.
+- **Cookies, newsletters**, "we value your privacy" popups or any of the multiple
+  other ways modern web shows how anti-user it is. We all hate those, and they're
+  not needed here.
+- **Paywalls** or messages begging for donations. If you want to buy me a coffee,
+  you can message me through GitHub discussions or mail me.
+
+# Screenshots
+
 <p align="middle">
   <img src="screenshot-desktop.webp" height="250" alt="desktop screenshot" />
   <img src="screenshot-mobile.webp" height="250" alt="mobile screenshot" />
 </p>
 
 # Installation and configuration
+
 [See here.](./INSTALLATION.md)
 
 # Instructions for CLI usage
+
 [See here.](./CLI.md)
 
 # Official CLI application
+
 It's maintained by me, even though I cannot promise to provide proper support. Take a look at it
 [here](https://github.com/SinTan1729/chhoto-url-cli).
 
 # 3rd Party Tools
+
 The following tools are 3rd party, and are not supported officially. If you have any problems with them, please file an issue
 in the respective repos.
+
 ## Browser extension
-There's an (unofficial) browser extension maintained by @SolninjaA for shortening URLs easily using Chhoto URL. 
+
+There's an (unofficial) browser extension maintained by @SolninjaA for shortening URLs easily using Chhoto URL.
 [You can take a look at it here.](https://github.com/SolninjaA/Chhoto-URL-Extension)
 
 ## Raycast extension
+
 There's an (unofficial) Raycast extension maintained by @paranoidPhantom for shortening URLs efficiently using Chhoto URL.
 [You can get it from the Raycast extension store.](https://www.raycast.com/andrei_hudalla/chhoto)
 
 ## FreeBSD port
+
 There's an (unofficial) FreeBSD port maintained by @jcpsantiago for installing Chhoto URL.
 [You can take a look at it here.](https://tangled.sh/@jcpsantiago.xyz/freebsd-ports/tree/main/www/chhoto-url)
 Feel free to discuss any issues or suggestions in [#56](https://github.com/SinTan1729/chhoto-url/discussions/56).
 
 # Notes
+
 - It started as a fork of [`simply-shorten`](https://gitlab.com/draganczukp/simply-shorten).
 - The list of adjectives and names used for random short url generation is a modified
   version of [this list used by docker](https://github.com/moby/moby/blob/master/pkg/namesgenerator/names-generator.go).

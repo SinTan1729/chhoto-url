@@ -1,107 +1,170 @@
 <!-- SPDX-FileCopyrightText: 2023 Sayantan Santra <sayantan.santra689@gmail.com> -->
 <!-- SPDX-License-Identifier: MIT -->
 
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-
-<head>
+  <head>
     <meta charset="UTF-8" />
-    <meta name="viewport"
-        content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0" />
+    <meta
+      name="viewport"
+      content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0"
+    />
     <meta http-equiv="X-UA-Compatible" content="ie=edge" />
 
     <title>Chhoto URL</title>
 
-    <meta name="description" content="A simple selfhosted URL shortener with no unnecessary features." />
+    <meta
+      name="description"
+      content="A simple selfhosted URL shortener with no unnecessary features."
+    />
     <meta property="og:title" content="Chhoto URL" />
-    <meta property="og:description" content="A simple selfhosted URL shortener with no unnecessary features." />
+    <meta
+      property="og:description"
+      content="A simple selfhosted URL shortener with no unnecessary features."
+    />
 
-    <meta name="keywords" content="url shortener, link shortener, self hosted, open source" />
-    <link rel="icon" type="image/x-icon" href="assets/favicon.ico" sizes="any" />
+    <meta
+      name="keywords"
+      content="url shortener, link shortener, self hosted, open source"
+    />
+    <link
+      rel="icon"
+      type="image/x-icon"
+      href="assets/favicon.ico"
+      sizes="any"
+    />
     <link rel="icon" type="image/svg+xml" href="assets/favicon.svg" />
-    <link rel="icon" type="image/png" href="assets/favicon-32.png" sizes="32x32" />
-    <link rel="icon" type="image/png" href="assets/favicon-196.png" sizes="196x196" />
+    <link
+      rel="icon"
+      type="image/png"
+      href="assets/favicon-32.png"
+      sizes="32x32"
+    />
+    <link
+      rel="icon"
+      type="image/png"
+      href="assets/favicon-196.png"
+      sizes="196x196"
+    />
 
     <script src="static/script.js"></script>
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/purecss@3.0.0/build/pure-min.css" 
-        integrity="sha384-X38yfunGUhNzHpBaEBsWLO+A0HDYOQi8ufWDkZ0k9e0eXz/tH3II7uKZ9msv++Ls" crossorigin="anonymous">
-    <link rel="stylesheet" type="text/css" target="_blank" href="static/styles.css" />
-</head>
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/purecss@3.0.0/build/pure-min.css"
+      integrity="sha384-X38yfunGUhNzHpBaEBsWLO+A0HDYOQi8ufWDkZ0k9e0eXz/tH3II7uKZ9msv++Ls"
+      crossorigin="anonymous"
+    />
+    <link
+      rel="stylesheet"
+      type="text/css"
+      target="_blank"
+      href="static/styles.css"
+    />
+  </head>
 
-<body>
-
+  <body>
     <div class="container" id="container">
-        <form class="pure-form pure-form-aligned" name="new-url-form">
-            <fieldset>
-                <legend id="logo"><img src="assets/favicon.svg" width="26px" alt="logo"> Chhoto URL</legend>
-                <div class="pure-control-group">
-                    <label for="longUrl">Long URL</label>
-                    <input class="chhoto-input" type="url" name="longUrl" id="longUrl" placeholder="Please enter a valid URL" required />
-                </div>
-                <div class="pure-control-group">
-                    <label for="shortUrl">Short URL (optional)</label>
-                    <input class="chhoto-input" type="text" name="shortUrl" id="shortUrl" placeholder="Only a-z, 0-9, - and _ are allowed"
-                        pattern="[a-z0-9\-_]+" title="Only a-z, 0-9, - and _ are allowed" autocapitalize="off"/>
-                </div>
-                <div class="pure-control-group">
-                    <label for="expiryDelay">Expiry</label>
-                    <select class="chhoto-select" name="expiryDelay" id="expiryDelay">
-                        <option value=0>Never</option>
-                        <option value=600>10 Minutes</option>
-                        <option value=1800>30 Minutes</option>
-                        <option value=3600>1 Hour</option>
-                        <option value=43200>12 Hours</option>
-                        <option value=86400>1 Day</option>
-                        <option value=604800>1 Week</option>
-                        <option value=2592000>1 Month</option>
-                        <option value=7776000>3 Months</option>
-                        <option value=15552000>6 Months</option>
-                        <option value=31536000>1 Year</option>
-                    </select>
-                </div>
-                <div class="pure-controls" id="controls">
-                    <button class="chhoto-button pure-button pure-button-primary">Shorten!</button>
-                    <p id="alert-box">&nbsp;</p>
-                </div>
-            </fieldset>
-        </form>
+      <form class="pure-form pure-form-aligned" name="new-url-form">
+        <fieldset>
+          <legend id="logo">
+            <img src="assets/favicon.svg" width="26px" alt="logo" /> Chhoto URL
+          </legend>
+          <div class="pure-control-group">
+            <label for="longUrl">Long URL</label>
+            <input
+              class="chhoto-input"
+              type="url"
+              name="longUrl"
+              id="longUrl"
+              placeholder="Please enter a valid URL"
+              required
+            />
+          </div>
+          <div class="pure-control-group">
+            <label for="shortUrl">Short URL (optional)</label>
+            <input
+              class="chhoto-input"
+              type="text"
+              name="shortUrl"
+              id="shortUrl"
+              placeholder="Only a-z, 0-9, - and _ are allowed"
+              pattern="[a-z0-9\-_]+"
+              title="Only a-z, 0-9, - and _ are allowed"
+              autocapitalize="off"
+            />
+          </div>
+          <div class="pure-control-group">
+            <label for="expiryDelay">Expiry</label>
+            <select class="chhoto-select" name="expiryDelay" id="expiryDelay">
+              <option value="0">Never</option>
+              <option value="600">10 Minutes</option>
+              <option value="1800">30 Minutes</option>
+              <option value="3600">1 Hour</option>
+              <option value="43200">12 Hours</option>
+              <option value="86400">1 Day</option>
+              <option value="604800">1 Week</option>
+              <option value="2592000">1 Month</option>
+              <option value="7776000">3 Months</option>
+              <option value="15552000">6 Months</option>
+              <option value="31536000">1 Year</option>
+            </select>
+          </div>
+          <div class="pure-controls" id="controls">
+            <button class="chhoto-button pure-button pure-button-primary">
+              Shorten!
+            </button>
+            <p id="alert-box">&nbsp;</p>
+          </div>
+        </fieldset>
+      </form>
 
-        <p id="loading-text">Loading links table...</p>
-        <table class="chhoto-table pure-table" id="table-box" hidden>
-            <caption>Active links</caption>
-            <br />
-            <thead>
-                <tr>
-                    <th id="short-url-header">Short URL (click to copy)</th>
-                    <th>Long URL</th>
-                    <th name="hitsColumn">Hits</th>
-                    <th name="expiryColumn">Expiry</th>
-                    <th name="deleteBtn">&times;</th>
-                </tr>
-            </thead>
-            <tbody id="url-table">
-                <!-- The links would be inserted here -->
-            </tbody>
-        </table>
+      <p id="loading-text">Loading links table...</p>
+      <table class="chhoto-table pure-table" id="table-box" hidden>
+        <caption>
+          Active links
+        </caption>
+        <br />
+        <thead>
+          <tr>
+            <th id="short-url-header">Short URL (click to copy)</th>
+            <th>Long URL</th>
+            <th name="hitsColumn">Hits</th>
+            <th name="expiryColumn">Expiry</th>
+            <th name="deleteBtn">&times;</th>
+          </tr>
+        </thead>
+        <tbody id="url-table">
+          <!-- The links would be inserted here -->
+        </tbody>
+      </table>
     </div>
 
     <div name="links-div">
-        <a id="admin-button" href="#" hidden>login</a>
-        &nbsp;
-        <a id="version-number" href="https://github.com/SinTan1729/chhoto-url" target="_blank" rel="noopener noreferrer"
-            hidden>Source Code</a>
-        <!-- The version number would be inserted here -->
+      <a id="admin-button" href="#" hidden>login</a>
+      &nbsp;
+      <a
+        id="version-number"
+        href="https://github.com/SinTan1729/chhoto-url"
+        target="_blank"
+        rel="noopener noreferrer"
+        hidden
+        >Source Code</a
+      >
+      <!-- The version number would be inserted here -->
     </div>
 
     <dialog id="login-dialog">
-        <form class="pure-form" name="login-form">
-            <p>Please enter password to access this website</p>
-            <input class="chhoto-input" type="password" id="password" />
-            <button class="chhoto-button pure-button pure-button-primary" value="default">Log in</button>
-            <p id="wrong-pass" hidden>Wrong password!</p>
-        </form>
+      <form class="pure-form" name="login-form">
+        <p>Please enter password to access this website</p>
+        <input class="chhoto-input" type="password" id="password" />
+        <button
+          class="chhoto-button pure-button pure-button-primary"
+          value="default"
+        >
+          Log in
+        </button>
+        <p id="wrong-pass" hidden>Wrong password!</p>
+      </form>
     </dialog>
-
-</body>
-
+  </body>
 </html>

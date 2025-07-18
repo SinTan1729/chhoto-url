@@ -2,93 +2,92 @@
 # SPDX-License-Identifier: MIT
 
 services:
-    chhoto-url:
-        image: sintan1729/chhoto-url:latest
-        restart: unless-stopped
-        container_name: chhoto-url
-        tty: true
-        # You may enable the next two options if you want. Make sure that you run the container as the proper
-        # user. In most cases, user: 1000:1000 should work. You might also need to mount a directory with your
-        # db and not just the file itself. Make sure to adjust db_url accordingly.
-        # It does add extra security, but I don't know enough about docker to help in case it breaks something.
-        # read_only: true
-        # cap_drop:
-        #   - ALL
-        ports:
-            # If you changed the "port" environment variable, adjust accordingly
-            # The number AFTER the colon should match the "port" variable and the number
-            # before the colon is the port where you would access the container from outside.
-            - 4567:4567
-        environment:
-            # Change if you want to mount the database somewhere else.
-            # In this case, you can get rid of the db volume below
-            # and instead do a mount manually by specifying the location.
-            # Make sure that you create an empty file with the correct name 
-            # before starting the container if you do make any changes.
-            # (In fact, I'd suggest that you do that so that you can keep
-            # a copy of your database.)
-            - db_url=/db/urls.sqlite
+  chhoto-url:
+    image: sintan1729/chhoto-url:latest
+    restart: unless-stopped
+    container_name: chhoto-url
+    tty: true
+    # You may enable the next two options if you want. Make sure that you run the container as the proper
+    # user. In most cases, user: 1000:1000 should work. You might also need to mount a directory with your
+    # db and not just the file itself. Make sure to adjust db_url accordingly.
+    # It does add extra security, but I don't know enough about docker to help in case it breaks something.
+    # read_only: true
+    # cap_drop:
+    #   - ALL
+    ports:
+      # If you changed the "port" environment variable, adjust accordingly
+      # The number AFTER the colon should match the "port" variable and the number
+      # before the colon is the port where you would access the container from outside.
+      - 4567:4567
+    environment:
+      # Change if you want to mount the database somewhere else.
+      # In this case, you can get rid of the db volume below
+      # and instead do a mount manually by specifying the location.
+      # Make sure that you create an empty file with the correct name
+      # before starting the container if you do make any changes.
+      # (In fact, I'd suggest that you do that so that you can keep
+      # a copy of your database.)
+      - db_url=/db/urls.sqlite
 
-            # Change this if your server URL is not "http://localhost"
-            # This must not be surrounded by quotes. For example:
-            # site_url="https://www.example.com"   incorrect
-            # site_url=https://www.example.com     correct
-            # This is important to ensure Chhoto URL outputs the shortened link with the correct URL.
-            # - site_url=https://www.example.com
+      # Change this if your server URL is not "http://localhost"
+      # This must not be surrounded by quotes. For example:
+      # site_url="https://www.example.com"   incorrect
+      # site_url=https://www.example.com     correct
+      # This is important to ensure Chhoto URL outputs the shortened link with the correct URL.
+      # - site_url=https://www.example.com
 
-            # If you want to provided hashed password and API Key, uncomment the next line. Read the README
-            # for instructions for the hashing. Make sure to escape $ by $$.
-            # - hash_algorithm=Argon2
+      # If you want to provided hashed password and API Key, uncomment the next line. Read the README
+      # for instructions for the hashing. Make sure to escape $ by $$.
+      # - hash_algorithm=Argon2
 
-            # Change this if you are running Chhoto URL on a port which is not 4567.
-            # This is important to ensure Chhoto URL outputs the shortened link with the correct port.
-            # - port=4567
-            
-            - password=TopSecretPass
+      # Change this if you are running Chhoto URL on a port which is not 4567.
+      # This is important to ensure Chhoto URL outputs the shortened link with the correct port.
+      # - port=4567
 
-            # This needs to be set in order to use programs that use the JSON interface of Chhoto URL.
-            # You will get a warning if this is insecure, and a generated value will be output
-            # You may use that value if you can't think of a secure key
-            # - api_key=SECURE_API_KEY
+      - password=TopSecretPass
 
-            # Pass the redirect method, if needed. TEMPORARY and PERMANENT
-            # are accepted values, defaults to PERMANENT.
-            # - redirect_method=TEMPORARY
-            
-            # By default, the auto-generated pairs are adjective-name pairs.
-            # If you want UIDs, please change slug_style to UID.
-            # Supported values for slug_style are Pair and UID.
-            # The length is 8 by default, and a minimum of 4 is allowed.
-            # - slug_style=Pair
-            # - slug_length=8
-            # To retry (once) with a longer UID upon collision, change the following to True.
-            # - try_longer_slug=False
-            # If you want to use capital letters in the shortlink, change the following to
-            # True. This will also allow capital letters in UID slugs, if it is enabled.
-            # - allow_capital_letters=False
-            
-            # In case you want to provide public access to adding links (and not 
-            # delete, or listing), change the following option to Enable.
-            # - public_mode=Disable
-            # Additionally, it's possible to force an expiry delay in public mode.
-            # The user can still choose a shorter expiry delay. The input must be in seconds.
-            # It defaults to 0 i.e. no expiry.
-            # - public_mode_expiry_delay=3600
-            # In case you want to completely disable the frontend, change the following
-            # to True.
-            # - disable_frontend=False
-            # If you want to serve a custom landing page, put all your site related files, along with an
-            # index.html file in a directory, and set the following to the path of the directory. Remember to first 
-            # mount the directory inside the container. The admin page will then be located at /admin/manage.
-            # - custom_landing_directory=/custom/dir/location
-            
-            # By default, the server sends no Cache-Control headers. You can supply a 
-            # comma separated list of valid header as per RFC 7234 §5.2 to send those
-            # headers instead.
-            # - cache_control_header=no-cache, private
-        volumes:
-            - db:/db
+      # This needs to be set in order to use programs that use the JSON interface of Chhoto URL.
+      # You will get a warning if this is insecure, and a generated value will be output
+      # You may use that value if you can't think of a secure key
+      # - api_key=SECURE_API_KEY
+
+      # Pass the redirect method, if needed. TEMPORARY and PERMANENT
+      # are accepted values, defaults to PERMANENT.
+      # - redirect_method=TEMPORARY
+
+      # By default, the auto-generated pairs are adjective-name pairs.
+      # If you want UIDs, please change slug_style to UID.
+      # Supported values for slug_style are Pair and UID.
+      # The length is 8 by default, and a minimum of 4 is allowed.
+      # - slug_style=Pair
+      # - slug_length=8
+      # To retry (once) with a longer UID upon collision, change the following to True.
+      # - try_longer_slug=False
+      # If you want to use capital letters in the shortlink, change the following to
+      # True. This will also allow capital letters in UID slugs, if it is enabled.
+      # - allow_capital_letters=False
+
+      # In case you want to provide public access to adding links (and not
+      # delete, or listing), change the following option to Enable.
+      # - public_mode=Disable
+      # Additionally, it's possible to force an expiry delay in public mode.
+      # The user can still choose a shorter expiry delay. The input must be in seconds.
+      # It defaults to 0 i.e. no expiry.
+      # - public_mode_expiry_delay=3600
+      # In case you want to completely disable the frontend, change the following
+      # to True.
+      # - disable_frontend=False
+      # If you want to serve a custom landing page, put all your site related files, along with an
+      # index.html file in a directory, and set the following to the path of the directory. Remember to first
+      # mount the directory inside the container. The admin page will then be located at /admin/manage.
+      # - custom_landing_directory=/custom/dir/location
+
+      # By default, the server sends no Cache-Control headers. You can supply a
+      # comma separated list of valid header as per RFC 7234 §5.2 to send those
+      # headers instead.
+      # - cache_control_header=no-cache, private
+    volumes:
+      - db:/db
 
 volumes:
-    db:
-
+  db:
