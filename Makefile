@@ -16,9 +16,7 @@ build-dev:
 	cargo build --release --locked --manifest-path=actix/Cargo.toml --target x86_64-unknown-linux-musl
 
 docker-local: build-dev
-	cp -r resources/ resources-final/
 	docker build --tag chhoto-url --build-arg TARGETARCH=amd64 -f Dockerfile.alpine .
-	rm -rf resources-final/
 
 docker-stop:
 	docker ps -q --filter "name=chhoto-url" | xargs -r docker stop
@@ -32,9 +30,7 @@ docker-test: docker-local docker-stop test
 	docker logs chhoto-url -f 
 
 docker-dev: test build-dev
-	cp -r resources/ resources-final/
 	docker build --push --tag ghcr.io/${github_username}/chhoto-url:dev --build-arg TARGETARCH=amd64 -f Dockerfile.alpine .
-	rm -rf resources-final/
 
 # build-release: test
 # 	cross build --release --locked --manifest-path=actix/Cargo.toml --target aarch64-unknown-linux-musl
