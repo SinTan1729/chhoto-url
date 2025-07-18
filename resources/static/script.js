@@ -425,28 +425,34 @@ const logOut = async () => {
     });
 };
 
-(async () => {
-  await refreshData();
+// This is where loading starts
+refreshData()
+  .then(() => {
+    document.getElementById("longUrl").onblur = addProtocol;
+    const form = document.forms.namedItem("new-url-form");
+    form.onsubmit = (e) => {
+      e.preventDefault();
+      submitForm();
+    };
 
-  document.getElementById("longUrl").onblur = addProtocol;
-  const form = document.forms.namedItem("new-url-form");
-  form.onsubmit = (e) => {
-    e.preventDefault();
-    submitForm();
-  };
+    document.getElementById("admin-button").onclick = (e) => {
+      e.preventDefault();
+      if (ADMIN) {
+        logOut();
+      } else {
+        showLogin();
+      }
+    };
 
-  document.getElementById("admin-button").onclick = (e) => {
-    e.preventDefault();
-    if (ADMIN) {
-      logOut();
-    } else {
-      showLogin();
+    const login_form = document.forms.namedItem("login-form");
+    login_form.onsubmit = (e) => {
+      e.preventDefault();
+      submitLogin();
+    };
+  })
+  .catch((err) => {
+    console.log("Something went wrong:", err);
+    if (!alert("Something went wrong! Click Ok to refresh page.")) {
+      window.location.reload();
     }
-  };
-
-  const login_form = document.forms.namedItem("login-form");
-  login_form.onsubmit = (e) => {
-    e.preventDefault();
-    submitLogin();
-  };
-})();
+  });
