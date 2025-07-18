@@ -105,7 +105,7 @@ Password: `chhoto-url-demo-pass`
 
 [See here.](./CLI.md)
 
-# Software related to Chhoto URL
+# Related software
 
 [See here.](./TOOLS.md)
 
