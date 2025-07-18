@@ -38,6 +38,16 @@ thought were essential (e.g. hit counting).
 Chhoto (ছোট, [IPA](https://en.wikipedia.org/wiki/Help:IPA/Bengali): /tʃʰoʈo/) is the Bangla word
 for small. URL means, well... URL. So the name simply means Small URL.
 
+# Demo
+
+Link: [https://chhoto-url-demo.sayantansantra.com](https://chhoto-url-demo.sayantansantra.com)  
+Password: `chhoto-url-demo-pass`
+
+#### Note:
+
+- The database is cleared every 15 minutes, so don't use it for anything other than testing.
+- If you host a public instance of Chhoto URL, please let know, and I'll add it to the README.
+
 # Features
 
 - Shortens URLs of any length to a randomly generated link.
