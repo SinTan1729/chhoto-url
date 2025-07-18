@@ -14,4 +14,4 @@ cookie*
 .DS_Store
 
 # Testing related
-resources/custom_dir
+custom_dir
