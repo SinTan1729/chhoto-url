@@ -56,6 +56,8 @@ jobs:
       # Prep the files
       - name: Checkout repository
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
       - name: Download artifacts
         uses: actions/download-artifact@v4
       - name: Move stuff around and fix permissions
@@ -74,7 +76,7 @@ jobs:
         run: |
           sudo apt update
           sudo apt install minify
-          minify -r -o resources-final/ resources/
+          minify -rs -o resources-final/ resources/
       - name: Display current directory structure
         run: ls -R
       - name: Log in to the Docker Hub
