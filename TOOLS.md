@@ -12,20 +12,20 @@ in the respective repos.
 
 ## Browser extension
 
-There's an unofficial browser extension maintained by @SolninjaA for shortening URLs easily using Chhoto URL.
+There's an unofficial browser extension maintained by [@SolninjaA](https://github.com/SolninjaA) for shortening URLs easily using Chhoto URL.
 [You can take a look at it here.](https://github.com/SolninjaA/Chhoto-URL-Extension)
 
 ## Raycast extension
 
-There's an unofficial Raycast extension maintained by @paranoidPhantom for shortening URLs efficiently using Chhoto URL.
+There's an unofficial Raycast extension maintained by [@paranoidPhantom](https://github.com/paranoidPhantom) for shortening URLs efficiently using Chhoto URL.
 [You can get it from the Raycast extension store.](https://www.raycast.com/andrei_hudalla/chhoto)
 
 ## FreeBSD port
 
-There's an unofficial FreeBSD port maintained by @jcpsantiago for installing Chhoto URL.
+There's an unofficial FreeBSD port maintained by [@jcpsantiago](https://github.com/jcpsantiago) for installing Chhoto URL.
 [You can take a look at it here.](https://tangled.sh/@jcpsantiago.xyz/freebsd-ports/tree/main/www/chhoto-url)
 Feel free to discuss any issues or suggestions in [#56](https://github.com/SinTan1729/chhoto-url/discussions/56).
 
 ## NixOS Package
-There's an unoffical NixOS package maintained by @Defelo for Chhoto URL.
+There's an unoffical NixOS package maintained by [@Defelo](https://github.com/Defelo) for Chhoto URL.
 [You can take a look at it here.](https://search.nixos.org/packages?query=chhoto-url)
