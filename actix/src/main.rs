@@ -45,9 +45,10 @@ async fn main() -> Result<()> {
 
             writeln!(
                 buf,
-                "{subtle}[{subtle:#}{} {level_style}{:<5}{level_style:#}{subtle}]{subtle:#} {}",
+                "{subtle}[{subtle:#}{} {level_style}{:<5}{level_style:#}{}{subtle}]{subtle:#} {}",
                 Local::now().format("%Y-%m-%d %H:%M:%S%Z"),
                 record.level(),
+                record.module_path().unwrap_or_default(),
                 record.args()
             )
         })
