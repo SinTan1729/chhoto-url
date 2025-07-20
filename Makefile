@@ -13,7 +13,7 @@ setup:
 	docker buildx inspect --bootstrap
 
 build-dev:
-	cargo build --release --locked --manifest-path=actix/Cargo.toml --target x86_64-unknown-linux-musl
+	cargo build --locked --manifest-path=actix/Cargo.toml --target x86_64-unknown-linux-musl
 
 docker-local: build-dev
 	docker build --tag chhoto-url --build-arg TARGETARCH=amd64 -f Dockerfile.alpine .
@@ -23,7 +23,7 @@ docker-stop:
 	docker ps -aq --filter "name=chhoto-url" | xargs -r docker rm
 
 test:
-	cargo test --manifest-path=actix/Cargo.toml
+	cargo test --locked --manifest-path=actix/Cargo.toml --target x86_64-unknown-linux-musl
 
 docker-test: docker-local docker-stop test
 	docker run -t -p ${port}:${port} --name chhoto-url --env-file ./.env -v "${db_file}:${db_url}" -d chhoto-url
