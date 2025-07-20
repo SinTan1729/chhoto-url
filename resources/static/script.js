@@ -56,6 +56,12 @@ const showLogin = () => {
   document.getElementById("container").style.filter = "blur(2px)";
   document.getElementById("login-dialog").showModal();
   document.getElementById("password").focus();
+  window.onkeydown = function (e) {
+    if (e.keyCode === 27) {
+      // Key code for ESC key
+      e.preventDefault();
+    }
+  };
 };
 
 const refreshData = async () => {
