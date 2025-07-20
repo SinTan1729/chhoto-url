@@ -35,7 +35,22 @@ struct AppState {
 async fn main() -> Result<()> {
     env_logger::builder()
         .parse_filters("warn,chhoto_url=info,actix_session::middleware=error")
-        .format_timestamp_secs()
+        .format(|buf, record| {
+            use chrono::Local;
+            use env_logger::fmt::style::{AnsiColor, Style};
+            use std::io::Write;
+
+            let subtle = Style::new().fg_color(Some(AnsiColor::BrightBlack.into()));
+            let level_style = buf.default_level_style(record.level());
+
+            writeln!(
+                buf,
+                "{subtle}[{subtle:#}{} {level_style}{:<5}{level_style:#}{subtle}]{subtle:#} {}",
+                Local::now().format("%Y-%m-%d %H:%M:%S%Z"),
+                record.level(),
+                record.args()
+            )
+        })
         .init();
 
     // Generate session key in runtime so that restart invalidates older logins
