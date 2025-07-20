@@ -12,6 +12,7 @@ COPY ./actix/target/armv7-unknown-linux-musleabihf/release/chhoto-url /chhoto-ur
 
 ARG TARGETARCH
 FROM builder-$TARGETARCH
+RUN apk add --no-cache tzdata
 COPY ./resources /resources
 
 ENTRYPOINT ["/chhoto-url"]
