@@ -27,7 +27,7 @@ const prepSubdir = (link) => {
 
 const getConfig = async () => {
   if (!CONFIG) {
-    CONFIG = await fetch(prepSubdir("/api/getconfig"))
+    CONFIG = await fetch(prepSubdir("/api/getconfig"), { cache: "no-cache" })
       .then((res) => res.json())
       .catch((err) => {
         console.log("Error while fetching config.");
@@ -60,7 +60,7 @@ const showLogin = () => {
 
 const refreshData = async () => {
   try {
-    const res = await fetch(prepSubdir("/api/all"));
+    const res = await fetch(prepSubdir("/api/all"), { cache: "no-cache" });
     switch (res.status) {
       case 200:
         const data = await res.json();
@@ -301,6 +301,7 @@ const deleteButton = (shortUrl) => {
       showAlert("&nbsp;", "black");
       fetch(prepSubdir(`/api/del/${shortUrl}`), {
         method: "DELETE",
+        cache: "no-cache",
       })
         .then(async (res) => {
           if (!res.ok) {
@@ -340,6 +341,7 @@ const submitForm = () => {
 
   fetch(url, {
     method: "POST",
+    cache: "no-cache",
     headers: {
       "Content-Type": "application/json",
     },
@@ -373,6 +375,7 @@ const submitLogin = () => {
   const password = document.getElementById("password");
   fetch(prepSubdir("/api/login"), {
     method: "POST",
+    cache: "no-cache",
     body: password.value,
   })
     .then(async (res) => {
@@ -402,7 +405,10 @@ const submitLogin = () => {
 };
 
 const logOut = async () => {
-  await fetch(prepSubdir("/api/logout"), { method: "DELETE" })
+  await fetch(prepSubdir("/api/logout"), {
+    method: "DELETE",
+    cache: "no-cache",
+  })
     .then(async (res) => {
       if (res.ok) {
         document.getElementById("version-number").hidden = true;
