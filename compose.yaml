@@ -86,6 +86,8 @@ services:
       # comma separated list of valid header as per RFC 7234 §5.2 to send those
       # headers instead.
       # - cache_control_header=no-cache, private
+
+      # You may set the TZ variable for timezone in logging, but it will only work in the alpine builds
     volumes:
       - db:/db
 
