@@ -194,7 +194,7 @@ div[name="links-div"] {
   .chhoto-table {
     border-collapse: collapse;
   }
-  .chhoto-table tr {
+  .chhoto-table tr:not(:last-child) {
     border-bottom: 2px dotted light-dark(black, #867d6e);
   }
 
