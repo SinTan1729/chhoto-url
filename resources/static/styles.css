@@ -47,7 +47,7 @@ body {
 }
 
 .container {
-  max-width: 1200px;
+  max-width: 1400px;
   margin: 20px auto auto;
 }
 
@@ -67,7 +67,6 @@ a {
   max-height: 75px;
   line-height: 25px;
   word-wrap: break-word;
-  max-width: 575px;
   overflow: auto;
 }
 .chhoto-table tr:nth-child(even) {
@@ -87,6 +86,7 @@ a {
 .chhoto-table th,
 .chhoto-table td {
   border-left: none;
+  max-width: 725px;
 }
 
 th[name="hitsColumn"],
