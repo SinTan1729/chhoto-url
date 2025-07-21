@@ -147,7 +147,9 @@ const displayData = (data) => {
     }
     table_box.hidden = false;
     table.innerHTML = "";
-    data.forEach((tr) => table.appendChild(TR(tr)));
+    for (const [i, row] of data.entries()) {
+      table.appendChild(TR(i + 1, row));
+    }
     setTimeout(refreshExpiryTimes, 1000);
   }
 };
@@ -210,9 +212,14 @@ const TD = (s, u, t) => {
   return td;
 };
 
-const TR = (row) => {
+const TR = (i, row) => {
   const tr = document.createElement("tr");
+
+  const numTD = TD(i, null, null);
+  numTD.setAttribute("name", "numColumn");
+
   const longTD = TD(A_LONG(row["longlink"]), "Long URL", null);
+
   let shortTD;
   const isSafari =
     /Safari/.test(navigator.userAgent) &&
@@ -225,6 +232,8 @@ const TR = (row) => {
   } else {
     shortTD = TD(A_SHORT_INSECURE(row["shortlink"]), "Short URL", null);
   }
+  shortTD.setAttribute("name", "shortColumn");
+
   const hitsTD = TD(row["hits"], null, null);
   hitsTD.setAttribute("label", "Hits");
   hitsTD.setAttribute("name", "hitsColumn");
@@ -251,14 +260,11 @@ const TR = (row) => {
   expiryTD.setAttribute("label", "Expiry");
   expiryTD.setAttribute("name", "expiryColumn");
 
-  const btn = deleteButton(row["shortlink"]);
+  const dltBtn = deleteButton(row["shortlink"]);
 
-  tr.appendChild(shortTD);
-  tr.appendChild(longTD);
-  tr.appendChild(hitsTD);
-  tr.appendChild(expiryTD);
-  tr.appendChild(btn);
-
+  for (const td of [numTD, shortTD, longTD, hitsTD, expiryTD, dltBtn]) {
+    tr.appendChild(td);
+  }
   return tr;
 };
 

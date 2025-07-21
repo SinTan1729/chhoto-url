@@ -204,11 +204,12 @@ div[name="links-div"] {
     width: 98vw;
     padding: 0.1em;
   }
-  .chhoto-table tr td:last-child {
-    padding-bottom: 0.5em;
-  }
-  .chhoto-table tr td:first-child {
+
+  .chhoto-table tr td[name="shortColumn"] {
     padding-top: 0.5em;
+  }
+  .chhoto-table tr td[name="deleteBtn"] {
+    padding-bottom: 0.5em;
   }
 
   .chhoto-table td::before {
@@ -217,6 +218,11 @@ div[name="links-div"] {
     width: 120px;
     min-width: 120px;
     text-align: left;
+  }
+
+  .chhoto-table th[name="numColumn"],
+  .chhoto-table td[name="numColumn"] {
+    display: none;
   }
 
   .chhoto-table caption {
