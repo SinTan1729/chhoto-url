@@ -99,29 +99,19 @@ td[name="expiryColumn"] {
   text-align: center;
 }
 
-td[name="deleteBtn"] div {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
 th[name="deleteBtn"],
-td[name="deleteBtn"] {
-  text-align: center;
-}
-td[name="deleteBtn"],
 td[name="deleteBtn"] div {
   align-items: center;
   justify-items: center;
+  text-align: center;
 }
 td[name="deleteBtn"] div button {
   border-radius: 100%;
   aspect-ratio: 1;
   border-style: solid;
   cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-weight: bold;
+  display: table-cell;
+  vertical-align: middle;
   background-color: transparent;
 }
 
