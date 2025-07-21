@@ -299,7 +299,7 @@ const deleteButton = (shortUrl) => {
   const div = document.createElement("div");
   const btn = document.createElement("button");
 
-  btn.innerHTML = "&times;";
+  btn.innerHTML = "&#x2715;";
 
   btn.onclick = (e) => {
     e.preventDefault();
