@@ -229,6 +229,10 @@ div[name="links-div"] {
     width: 120px;
     min-width: 120px;
     text-align: left;
+    align-content: center;
+  }
+  .chhoto-table td div {
+    align-content: center;
   }
 
   .chhoto-table th[name="numColumn"],
