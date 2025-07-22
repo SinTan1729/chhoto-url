@@ -223,7 +223,8 @@ const TR = (i, row) => {
   // Take a look at https://github.com/SinTan1729/chhoto-url/issues/36
   if (window.isSecureContext && !isSafari) {
     shortTD = TD(A_SHORT(shortlink), "Short URL");
-    shortTD.firstChild.firstChild.onclick = async () => {
+    shortTD.firstChild.firstChild.onclick = async (e) => {
+      e.preventDefault();
       await copyShortUrl(shortlink);
     };
   } else {
