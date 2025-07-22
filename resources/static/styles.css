@@ -55,6 +55,7 @@ a {
 }
 .linkButton {
   background: none;
+  padding: 0;
   border: none;
   color: light-dark(blue, #3391ff);
   text-decoration: underline;
