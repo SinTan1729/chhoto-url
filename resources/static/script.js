@@ -197,16 +197,10 @@ const formatRelativeTime = (timestamp) => {
   }
 };
 
-const TD = (s, u, t) => {
+const TD = (s, u) => {
   const td = document.createElement("td");
   const div = document.createElement("div");
   div.innerHTML = s;
-  if (t != null) {
-    div.onclick = async (e) => {
-      e.preventDefault();
-      await copyShortUrl(t);
-    };
-  }
   td.appendChild(div);
   if (u !== null) td.setAttribute("label", u);
   return td;
@@ -215,11 +209,12 @@ const TD = (s, u, t) => {
 const TR = (i, row) => {
   const tr = document.createElement("tr");
 
-  const numTD = TD(i, null, null);
+  const numTD = TD(i, null);
   numTD.setAttribute("name", "numColumn");
 
-  const longTD = TD(A_LONG(row["longlink"]), "Long URL", null);
+  const longTD = TD(A_LONG(row["longlink"]), "Long URL");
 
+  const shortlink = row["shortlink"];
   let shortTD;
   const isSafari =
     /Safari/.test(navigator.userAgent) &&
@@ -227,14 +222,16 @@ const TR = (i, row) => {
   // For now, we disable copying on WebKit due to a possible bug. Manual copying is enabled instead.
   // Take a look at https://github.com/SinTan1729/chhoto-url/issues/36
   if (window.isSecureContext && !isSafari) {
-    let shortlink = row["shortlink"];
-    shortTD = TD(A_SHORT(shortlink, "Short URL"), "Short URL", shortlink);
+    shortTD = TD(A_SHORT(shortlink), "Short URL");
+    shortTD.firstChild.firstChild.onclick = async () => {
+      await copyShortUrl(shortlink);
+    };
   } else {
-    shortTD = TD(A_SHORT_INSECURE(row["shortlink"]), "Short URL", null);
+    shortTD = TD(A_SHORT_INSECURE(shortlink), "Short URL");
   }
   shortTD.setAttribute("name", "shortColumn");
 
-  const hitsTD = TD(row["hits"], null, null);
+  const hitsTD = TD(row["hits"], null);
   hitsTD.setAttribute("label", "Hits");
   hitsTD.setAttribute("name", "hitsColumn");
 
@@ -251,7 +248,7 @@ const TR = (i, row) => {
       "</span>";
   }
 
-  let expiryTD = TD(expiryHTML, null, null);
+  let expiryTD = TD(expiryHTML, null);
   if (expiryTime > 0) {
     expiryTD.width = "160px";
     expiryTD.setAttribute("data-time", expiryTime);
@@ -260,7 +257,7 @@ const TR = (i, row) => {
   expiryTD.setAttribute("label", "Expiry");
   expiryTD.setAttribute("name", "expiryColumn");
 
-  const dltBtn = deleteButton(row["shortlink"]);
+  const dltBtn = deleteButton(shortlink);
 
   for (const td of [numTD, shortTD, longTD, hitsTD, expiryTD, dltBtn]) {
     tr.appendChild(td);
@@ -297,7 +294,7 @@ const addProtocol = () => {
 };
 
 const A_LONG = (s) => `<a href='${s}'>${s}</a>`;
-const A_SHORT = (s) => `<a href="#!">${s}</a>`;
+const A_SHORT = (s) => `<button class="linkButton">${s}</button>`;
 const A_SHORT_INSECURE = (s, t) => `<a href="${t}/${s}">${s}</a>`;
 
 const deleteButton = (shortUrl) => {

@@ -18,6 +18,10 @@ body {
   color: light-dark(black, #e8e6e3);
   background-color: light-dark(white, #181a1b);
 }
+.container {
+  max-width: 1200px;
+  margin: 20px auto auto;
+}
 
 .chhoto-button {
   background-color: light-dark(#0078e7, #0060b9);
@@ -46,13 +50,15 @@ body {
   font-size: 32px;
 }
 
-.container {
-  max-width: 1200px;
-  margin: 20px auto auto;
-}
-
 a {
   color: light-dark(blue, #3391ff);
+}
+.linkButton {
+  background: none;
+  border: none;
+  color: light-dark(blue, #3391ff);
+  text-decoration: underline;
+  cursor: pointer;
 }
 
 .chhoto-table {
