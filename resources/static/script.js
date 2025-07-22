@@ -161,6 +161,7 @@ const showAlert = (text, col) => {
   alertBox.id = "alert-box";
   alertBox.style.color = col;
   alertBox.innerHTML = text;
+  alertBox.style.display = "block";
   controls.appendChild(alertBox);
 };
 
