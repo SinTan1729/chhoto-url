@@ -4,7 +4,7 @@
 # .env file has the variables $DOCKER_USERNAME and $PASSWORD defined
 include .env
 
-.PHONY: clean test setup build-dev docker-local docker-stop docker-test build-release docker-release tag
+.PHONY: clean test setup build-dev docker-local docker-stop docker-test build-release docker-release tag audit
 
 setup:
 	# cargo install cross
@@ -22,8 +22,11 @@ docker-stop:
 	docker ps -q --filter "name=chhoto-url" | xargs -r docker stop
 	docker ps -aq --filter "name=chhoto-url" | xargs -r docker rm
 
-test:
+test: audit
 	cargo test --release --locked --manifest-path=actix/Cargo.toml --target x86_64-unknown-linux-musl
+
+audit:
+	cargo audit --file actix/Cargo.lock
 
 docker-test: docker-local docker-stop test
 	docker run -t -p ${port}:${port} --name chhoto-url --env-file ./.env -v "${db_file}:${db_url}" -d chhoto-url
