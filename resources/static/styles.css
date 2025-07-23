@@ -247,4 +247,8 @@ div[name="links-div"] {
   .chhoto-table caption {
     padding-top: 0px;
   }
+
+  .tooltip .tooltiptext {
+    left: 180px;
+  }
 }
