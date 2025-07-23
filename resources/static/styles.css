@@ -168,7 +168,7 @@ div[name="links-div"] {
   border-radius: 6px;
   position: absolute;
   z-index: 1;
-  bottom: 125%;
+  bottom: calc(50% + 1.25em);
   left: 50%;
   margin-left: -60px;
   opacity: 0;
