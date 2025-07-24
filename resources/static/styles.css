@@ -28,7 +28,7 @@ body {
 }
 .pure-form input.chhoto-input {
   border-color: light-dark(#cccccc, #3e4446);
-  box-shadow: light-dark(#dddddd, #2b2f31) 0px 1px 3px inset;
+  box-shadow: light-dark(#dddddd, #2b2f31) 0 0.1em 0.2em inset;
 }
 .pure-form input.chhoto-input:focus {
   border-color: light-dark(#cccccc, #3e4446);
@@ -37,7 +37,7 @@ body {
 #expiryDelay {
   background-color: light-dark(white, #2b2a33);
   border-color: light-dark(#cccccc, #3e4446);
-  box-shadow: light-dark(#dddddd, #2b2f31) 0px 1px 3px inset;
+  box-shadow: light-dark(#dddddd, #2b2f31) 0 0.1em 0.2em inset;
 }
 
 ::placeholder {
@@ -68,9 +68,9 @@ a {
 .chhoto-table {
   width: 98%;
   border-collapse: separate;
-  border-spacing: 0px;
-  border-radius: 5px;
-  box-shadow: 0 0 0 1px light-dark(#e0e0e0, #2a2d2f);
+  border-spacing: 0;
+  border-radius: 0.3em;
+  box-shadow: 0 0 0 0.1em light-dark(#e0e0e0, #2a2d2f);
   border-color: light-dark(black, #867d6e);
 }
 .chhoto-table tr td div {
@@ -144,15 +144,15 @@ div[name="links-div"] {
 
 #password {
   width: 100%;
-  margin-bottom: 10px;
+  margin-bottom: 1em;
 }
 #wrong-pass {
   color: light-dark(red, #ff1a1a);
 }
 
 #login-dialog {
-  border-radius: 10px;
-  border-width: 2px;
+  border-radius: 1em;
+  border-width: 0.15em;
 }
 #login-dialog form {
   text-align: center;
@@ -167,13 +167,13 @@ div[name="links-div"] {
   background-color: light-dark(#eeeeee, #484a4b);
   color: light-dark(black, #e8e6e3);
   text-align: center;
-  padding: 5px 0;
-  border-radius: 6px;
+  padding: 0.3em 0;
+  border-radius: 0.4em;
   position: absolute;
   z-index: 1;
   bottom: calc(50% + 1.25em);
   left: 50%;
-  margin-left: -60px;
+  margin-left: -4em;
   opacity: 0;
   transition: opacity 0.3s;
 }
@@ -182,8 +182,8 @@ div[name="links-div"] {
   position: absolute;
   top: 100%;
   left: 50%;
-  margin-left: -5px;
-  border-width: 5px;
+  margin-left: -0.3em;
+  border-width: 0.3em;
   border-style: solid;
   border-color: light-dark(#eeeeee, #484a4b) transparent transparent transparent;
 }
@@ -205,7 +205,7 @@ div[name="links-div"] {
     border-collapse: collapse;
   }
   .chhoto-table tr:not(:last-child) {
-    border-bottom: 2px dotted light-dark(black, #867d6e);
+    border-bottom: 0.15em dotted light-dark(black, #867d6e);
   }
 
   .chhoto-table thead {
