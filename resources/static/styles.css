@@ -19,8 +19,8 @@ body {
   background-color: light-dark(white, #181a1b);
 }
 .container {
-  max-width: 1200px;
-  margin: 20px auto auto;
+  max-width: 75em;
+  margin: 1em auto auto;
 }
 
 .chhoto-button {
@@ -47,7 +47,10 @@ body {
 #logo {
   color: light-dark(#333333, #c8c3bc);
   border-bottom-color: light-dark(#e5e5e5, #373c3e);
-  font-size: 32px;
+  font-size: 2em;
+}
+#logo img {
+  height: 0.8em;
 }
 
 a {
@@ -71,8 +74,8 @@ a {
   border-color: light-dark(black, #867d6e);
 }
 .chhoto-table tr td div {
-  max-height: 75px;
-  line-height: 25px;
+  max-height: 4.5em;
+  line-height: 1.5em;
   word-wrap: break-word;
   overflow: auto;
 }
@@ -82,7 +85,7 @@ a {
 .chhoto-table caption {
   color: light-dark(black, #e8e6e3);
   text-align: left;
-  font-size: 22px;
+  font-size: 1.5em;
   font-style: normal;
   font-family: Montserrat;
 }
@@ -93,7 +96,7 @@ a {
 .chhoto-table th,
 .chhoto-table td {
   border-left: none;
-  max-width: 700px;
+  max-width: 130em;
 }
 
 #short-url-header {
@@ -244,7 +247,7 @@ div[name="links-div"] {
   }
 
   .chhoto-table caption {
-    padding-top: 0px;
+    padding-top: 0;
   }
 
   .tooltip .tooltiptext {
