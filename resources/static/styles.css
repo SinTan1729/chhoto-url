@@ -160,7 +160,7 @@ div[name="links-div"] {
 }
 .tooltip .tooltiptext {
   visibility: hidden;
-  width: 120px;
+  width: 8em;
   background-color: light-dark(#eeeeee, #484a4b);
   color: light-dark(black, #e8e6e3);
   text-align: center;
@@ -230,8 +230,7 @@ div[name="links-div"] {
   .chhoto-table td::before {
     content: attr(label);
     font-weight: bold;
-    width: 120px;
-    min-width: 120px;
+    min-width: 6em;
     text-align: left;
     align-content: center;
   }
@@ -249,6 +248,6 @@ div[name="links-div"] {
   }
 
   .tooltip .tooltiptext {
-    left: 180px;
+    left: 8em;
   }
 }
