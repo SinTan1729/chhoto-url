@@ -26,7 +26,7 @@ const prepSubdir = (link) => {
 };
 
 const hasProtocol = (url) => {
-  const regex = /[A-Za-z][A-Za-z0-9\+\-\.]*\:(?:\/\/)?/; // RFC 2396 Appendix A
+  const regex = /[A-Za-z][A-Za-z0-9\+\-\.]*\:(?:\/\/)?.*\D.*/; // RFC 2396 Appendix A
   return regex.test(url);
 };
 
