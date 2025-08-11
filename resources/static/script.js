@@ -25,6 +25,10 @@ const prepSubdir = (link) => {
   return (SUBDIR + link).replace("//", "/");
 };
 
+const hasProtocol = (url) => {
+  return url.includes("://") || url.includes("magnet:");
+};
+
 const getConfig = async () => {
   if (!CONFIG) {
     CONFIG = await fetch(prepSubdir("/api/getconfig"), { cache: "no-cache" })
@@ -33,13 +37,18 @@ const getConfig = async () => {
         console.log("Error while fetching config.");
       });
     if (CONFIG.site_url == null) {
-      SITE_URL = window.location.host.replace(/\/$/, "");
+      SITE_URL = window.location.host;
     } else {
       SITE_URL = CONFIG.site_url
         .replace(/\/$/, "")
         .replace(/^"/, "")
         .replace(/"$/, "");
     }
+    
+    if (!hasProtocol(SITE_URL)) {
+      SITE_URL = window.location.protocol + "//" + SITE_URL;
+    }
+    
     VERSION = CONFIG.version;
   }
 };
@@ -268,16 +277,8 @@ const TR = (i, row) => {
 };
 
 const copyShortUrl = async (short_link) => {
-  const fullUrl = new URL(
-    short_link,
-    SITE_URL.includes("://")
-      ? SITE_URL
-      : `${window.location.protocol}//${SITE_URL}`
-  );
-
-  const full_link = fullUrl.href;
-  const link_elt = `<a href="${full_link}" target="_blank">${full_link}</a>`;
-
+  const full_link = `${SITE_URL}/${short_link}`;
+  const link_elt = `<a href=${full_link}>${full_link}</a>`;
   try {
     await navigator.clipboard.writeText(full_link);
     showAlert(
@@ -296,7 +297,7 @@ const copyShortUrl = async (short_link) => {
 const addProtocol = () => {
   const input = document.getElementById("longUrl");
   let url = input.value.trim();
-  if (url !== "" && !~url.indexOf("://") && !~url.indexOf("magnet:")) {
+  if (!!url && !hasProtocol(url)) {
     url = "https://" + url;
   }
   input.value = url;
@@ -305,7 +306,7 @@ const addProtocol = () => {
 
 const A_LONG = (s) => `<a href='${s}'>${s}</a>`;
 const A_SHORT = (s) => `<button class="linkButton">${s}</button>`;
-const A_SHORT_INSECURE = (s, t) => `<a href="${t}/${s}">${s}</a>`;
+const A_SHORT_INSECURE = (s) => `<a href="${SITE_URL}/${s}">${s}</a>`;
 
 const deleteButton = (shortUrl) => {
   const td = document.createElement("td");
