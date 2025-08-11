@@ -268,8 +268,16 @@ const TR = (i, row) => {
 };
 
 const copyShortUrl = async (short_link) => {
-  const full_link = `${SITE_URL}/${short_link}`;
-  const link_elt = `<a href=${full_link}>${full_link}</a>`;
+  const fullUrl = new URL(
+    short_link,
+    SITE_URL.includes("://")
+      ? SITE_URL
+      : `${window.location.protocol}//${SITE_URL}`
+  );
+
+  const full_link = fullUrl.href;
+  const link_elt = `<a href="${full_link}" target="_blank">${full_link}</a>`;
+
   try {
     await navigator.clipboard.writeText(full_link);
     showAlert(
