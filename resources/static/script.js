@@ -26,7 +26,8 @@ const prepSubdir = (link) => {
 };
 
 const hasProtocol = (url) => {
-  return url.includes("://") || url.includes("magnet:");
+  const regex = /[A-Za-z][A-Za-z0-9\+\-\.]*\:(?:\/\/)?/; // RFC 2396 Appendix A
+  return regex.test(url);
 };
 
 const getConfig = async () => {
@@ -44,11 +45,11 @@ const getConfig = async () => {
         .replace(/^"/, "")
         .replace(/"$/, "");
     }
-    
+
     if (!hasProtocol(SITE_URL)) {
       SITE_URL = window.location.protocol + "//" + SITE_URL;
     }
-    
+
     VERSION = CONFIG.version;
   }
 };
@@ -294,7 +295,7 @@ const copyShortUrl = async (short_link) => {
   }
 };
 
-const addProtocol = () => {
+const addHTTPSToLongURL = () => {
   const input = document.getElementById("longUrl");
   let url = input.value.trim();
   if (!!url && !hasProtocol(url)) {
@@ -454,7 +455,7 @@ const logOut = async () => {
 // This is where loading starts
 refreshData()
   .then(() => {
-    document.getElementById("longUrl").onblur = addProtocol;
+    document.getElementById("longUrl").onblur = addHTTPSToLongURL;
     const form = document.forms.namedItem("new-url-form");
     form.onsubmit = (e) => {
       e.preventDefault();
