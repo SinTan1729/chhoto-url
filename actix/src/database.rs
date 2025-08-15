@@ -113,6 +113,7 @@ WHERE short_url = ?2 AND ?4 >= expiry_time AND expiry_time > 0",
         }
     }
     Ok(expiry_time)
+
 }
 
 // Edit an existing link
