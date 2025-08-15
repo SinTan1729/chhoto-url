@@ -10,9 +10,9 @@ use serde::{Deserialize, Serialize};
 
 use crate::{auth, config::Config, database};
 
-// Struct for reading link pairs sent during API call
+// Struct for reading link pairs sent during API call for new link
 #[derive(Deserialize)]
-struct URLPair {
+struct NewURLRequest {
     #[serde(default)]
     shortlink: String,
     longlink: String,
@@ -20,7 +20,15 @@ struct URLPair {
     expiry_delay: i64,
 }
 
-// Define JSON struct for response
+// Struct for reading link pairs sent during API call for editing link
+#[derive(Deserialize)]
+struct EditURLRequest {
+    shortlink: String,
+    longlink: String,
+    reset_hits: bool,
+}
+
+// Define JSON struct for error response
 #[derive(Serialize)]
 pub struct Response {
     pub(crate) success: bool,
@@ -121,7 +129,7 @@ pub fn add_link(
     using_public_mode: bool,
 ) -> (bool, String, i64) {
     // Success status, response string, expiry time
-    let mut chunks: URLPair;
+    let mut chunks: NewURLRequest;
     if let Ok(json) = serde_json::from_str(&req) {
         chunks = json;
     } else {
@@ -186,6 +194,33 @@ pub fn add_link(
     }
 }
 
+// Make checks and then request the DB to edit an URL entry
+pub fn edit_link(req: String, db: &Connection, config: &Config) -> Option<(bool, String)> {
+    // None means success
+    // The boolean is true when it's a server error and false when it's a client error
+    // The string is the error message
+
+    let chunks: EditURLRequest;
+    if let Ok(json) = serde_json::from_str(&req) {
+        chunks = json;
+    } else {
+        return Some((false, String::from("Malformed request!")));
+    }
+    if !validate_link(&chunks.shortlink, config.allow_capital_letters) {
+        return Some((false, String::from("Invalid shortlink!")));
+    }
+    let result = database::edit_link(&chunks.shortlink, &chunks.longlink, chunks.reset_hits, db);
+    if Ok(0) == result {
+        Some((
+            false,
+            "The short link was not found, and could not be edited.".to_string(),
+        ))
+    } else if result.is_ok() {
+        None
+    } else {
+        Some((true, String::from("Something went wrong!"))) // Should not really happen
+    }
+}
 // Check if link, and request DB to delete it if exists
 pub fn delete_link(shortlink: String, db: &Connection, allow_capital_letters: bool) -> bool {
     if validate_link(shortlink.as_str(), allow_capital_letters) {

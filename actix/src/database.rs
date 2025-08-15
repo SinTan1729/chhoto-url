@@ -103,6 +103,22 @@ pub fn add_link(
     .map(|_| expiry_time)
 }
 
+// Edit an existing link
+pub fn edit_link(
+    shortlink: &str,
+    longlink: &str,
+    reset_hits: bool,
+    db: &Connection,
+) -> Result<usize, Error> {
+    cleanup(db); // So that expired links are not edited
+    let statement = if reset_hits {
+        "UPDATE urls SET long_url = ?1, hits = 0 WHERE short_url = ?2"
+    } else {
+        "UPDATE urls SET long_url = ?1 WHERE short_url = ?2"
+    };
+    db.execute(statement, (longlink, shortlink))
+}
+
 // Clean expired links
 pub fn cleanup(db: &Connection) {
     let now = chrono::Utc::now().timestamp();
