@@ -211,6 +211,7 @@ pub fn edit_link(req: String, db: &Connection, config: &Config) -> Option<(bool,
     }
     let result = database::edit_link(&chunks.shortlink, &chunks.longlink, chunks.reset_hits, db);
     if Ok(0) == result {
+        // Zero rows returned means no updates
         Some((
             false,
             "The short link was not found, and could not be edited.".to_string(),
