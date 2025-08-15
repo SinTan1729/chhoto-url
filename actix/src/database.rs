@@ -87,8 +87,6 @@ pub fn add_link(
     expiry_delay: i64,
     db: &Connection,
 ) -> Result<i64, Error> {
-    cleanup(db); // So that expired links don't block new ones from being added
-
     let now = chrono::Utc::now().timestamp();
     let expiry_time = if expiry_delay == 0 {
         0
@@ -96,11 +94,25 @@ pub fn add_link(
         now + expiry_delay
     };
 
-    db.execute(
-        "INSERT INTO urls (long_url, short_url, hits, expiry_time) VALUES (?1, ?2, ?3, ?4)",
-        (longlink, shortlink, 0, expiry_time),
-    )
-    .map(|_| expiry_time)
+    let result = db
+        .execute(
+            "INSERT INTO urls (long_url, short_url, hits, expiry_time) VALUES (?1, ?2, 0, ?3)",
+            (longlink, shortlink, expiry_time),
+        )
+        .map(|_| expiry_time);
+    if result.is_err() {
+        let updated = db.execute(
+            "UPDATE urls 
+SET long_url = ?1, short_url = ?2, hits = 0, expiry_time = ?3 
+WHERE short_url = ?2 AND ?4 >= expiry_time AND expiry_time > 0",
+            (longlink, shortlink, expiry_time, now),
+        );
+        if updated == Ok(0) || updated.is_err() {
+            // Zero rows returned means no updates
+            return result;
+        }
+    }
+    Ok(expiry_time)
 }
 
 // Edit an existing link
