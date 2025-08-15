@@ -426,30 +426,32 @@ const submitLogin = () => {
 };
 
 const logOut = async () => {
-  await fetch(prepSubdir("/api/logout"), {
-    method: "DELETE",
-    cache: "no-cache",
-  })
-    .then(async (res) => {
-      if (res.ok) {
-        document.getElementById("version-number").hidden = true;
-        document.getElementById("admin-button").hidden = true;
-        showAlert("&nbsp;", "black");
-        ADMIN = false;
-        await refreshData();
-      } else {
-        showAlert(
-          `Logout failed. Please try again!`,
-          "light-dark(red, #ff1a1a)",
-        );
-      }
+  if (confirm("Are you sure you want to log out?")) {
+    await fetch(prepSubdir("/api/logout"), {
+      method: "DELETE",
+      cache: "no-cache",
     })
-    .catch((err) => {
-      console.log("Error:", err);
-      if (!alert("Something went wrong! Click Ok to refresh page.")) {
-        window.location.reload();
-      }
-    });
+      .then(async (res) => {
+        if (res.ok) {
+          document.getElementById("version-number").hidden = true;
+          document.getElementById("admin-button").hidden = true;
+          showAlert("&nbsp;", "black");
+          ADMIN = false;
+          await refreshData();
+        } else {
+          showAlert(
+            `Logout failed. Please try again!`,
+            "light-dark(red, #ff1a1a)",
+          );
+        }
+      })
+      .catch((err) => {
+        console.log("Error:", err);
+        if (!alert("Something went wrong! Click Ok to refresh page.")) {
+          window.location.reload();
+        }
+      });
+  }
 };
 
 // This is where loading starts
