@@ -34,6 +34,8 @@ struct CreatedURL {
     shorturl: String,
     #[serde(default)]
     longurl: String,
+    #[serde(default)]
+    hits: i64,
 }
 
 #[derive(Deserialize)]
@@ -81,6 +83,7 @@ async fn create_app(
             .service(services::add_link)
             .service(services::getall)
             .service(services::link_handler)
+            .service(services::edit_link)
             .service(services::delete_link)
             .service(services::expand),
     )
@@ -96,7 +99,7 @@ async fn add_link<T: Service<Request, Response = ServiceResponse, Error = Error>
 ) -> (StatusCode, CreatedURL) {
     let req = test::TestRequest::post().uri("/api/new")
         .insert_header(("X-API-Key", api_key))
-        .set_payload(format!("{{\"shortlink\": \"{shortlink}\", \"longlink\": \"https://example-{shortlink}.com\", \"expiry_delay\": {expiry_delay}}}"))
+        .set_payload(format!("{{\"shortlink\":\"{shortlink}\",\"longlink\":\"https://example-{shortlink}.com\",\"expiry_delay\":{expiry_delay}}}"))
         .to_request();
 
     let resp = test::call_service(&app, req).await;
@@ -105,6 +108,39 @@ async fn add_link<T: Service<Request, Response = ServiceResponse, Error = Error>
     let url: CreatedURL = serde_json::from_str(body.as_str()).unwrap();
 
     (status, url)
+}
+
+async fn expand<T: Service<Request, Response = ServiceResponse, Error = Error>, S: Display>(
+    app: T,
+    api_key: &str,
+    shortlink: S,
+) -> (StatusCode, CreatedURL) {
+    let req = test::TestRequest::post()
+        .uri("/api/expand")
+        .insert_header(("X-API-Key", api_key))
+        .set_payload(shortlink.to_string())
+        .to_request();
+    let resp = test::call_service(&app, req).await;
+    let status = resp.status();
+    let body = to_bytes(resp.into_body()).await.unwrap();
+    let url: CreatedURL = serde_json::from_str(body.as_str()).unwrap();
+
+    (status, url)
+}
+
+async fn edit_link<T: Service<Request, Response = ServiceResponse, Error = Error>>(
+    app: T,
+    api_key: &str,
+    shortlink: &str,
+    reset_hits: bool,
+) -> StatusCode {
+    let req = test::TestRequest::put()
+        .uri("/api/edit")
+        .insert_header(("X-API-Key", api_key))
+        .set_payload(format!("{{\"shortlink\":\"{shortlink}\",\"longlink\":\"https://edited-{shortlink}.com\",\"reset_hits\":{reset_hits}}}"))
+        .to_request();
+    let resp = test::call_service(&app, req).await;
+    resp.status()
 }
 
 //
@@ -383,16 +419,55 @@ async fn link_expiry() {
     let resp = test::call_service(&app, req).await;
     assert!(resp.status().is_client_error());
 
-    let req = test::TestRequest::post()
-        .uri("/api/expand")
-        .insert_header(("X-API-Key", api_key.clone()))
-        .set_payload("test1")
-        .to_request();
-    let resp = test::call_service(&app, req).await;
-    assert!(resp.status().is_client_error());
+    let (status, _) = expand(&app, &api_key, "test1").await;
+    assert!(status.is_client_error());
     // We should be able to add it again right away
     let (status, _) = add_link(&app, &api_key, "test1", 10).await;
     assert!(status.is_success());
+
+    let _ = fs::remove_file(format!("/tmp/chhoto-url-test-{test}.sqlite"));
+}
+
+#[test]
+async fn link_editing() {
+    let test = "link-editing";
+    let conf = default_config(test);
+    let app = create_app(&conf, test).await;
+    let api_key = conf.api_key.clone().unwrap();
+
+    let (status, _) = add_link(&app, &api_key, "test1", 0).await;
+    assert!(status.is_success());
+    let (status, _) = add_link(&app, &api_key, "test2", 1).await;
+    assert!(status.is_success());
+
+    let req = test::TestRequest::get().uri("/test2").to_request();
+    let resp = test::call_service(&app, req).await;
+    assert!(resp.status().is_redirection());
+
+    let status = edit_link(&app, &api_key, "test2", false).await;
+    assert!(status.is_success());
+
+    let (status, reply) = expand(&app, &api_key, "test2").await;
+    assert!(status.is_success());
+    assert_eq!(reply.longurl, "https://edited-test2.com");
+    assert_eq!(reply.hits, 1);
+
+    let req = test::TestRequest::get().uri("/test1").to_request();
+    let resp = test::call_service(&app, req).await;
+
+    assert!(resp.status().is_redirection());
+    let status = edit_link(&app, &api_key, "test1", true).await;
+    assert!(status.is_success());
+
+    let (status, reply) = expand(&app, &api_key, "test1").await;
+    assert!(status.is_success());
+    assert_eq!(reply.longurl, "https://edited-test1.com");
+    assert_eq!(reply.hits, 0);
+
+    let one_second = Duration::from_secs(1);
+    sleep(one_second);
+    let status = edit_link(&app, &api_key, "test2", true).await;
+    assert!(status.is_client_error());
 
     let _ = fs::remove_file(format!("/tmp/chhoto-url-test-{test}.sqlite"));
 }
