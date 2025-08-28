@@ -163,6 +163,9 @@ div[name="links-div"] {
 #edited-url {
   width: 100%;
 }
+#edit-cancel-button {
+  background-color: light-dark(#dd1a1a, #901010);
+}
 
 .tooltip {
   position: relative;

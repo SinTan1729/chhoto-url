@@ -150,10 +150,6 @@ const displayData = (data) => {
     loading_text.hidden = false;
   } else {
     loading_text.hidden = true;
-    if (!window.isSecureContext) {
-      const shortUrlHeader = document.getElementById("short-url-header");
-      shortUrlHeader.innerHTML = "Short URL<br>(right click and copy)";
-    }
     table_box.hidden = false;
     table.innerHTML = "";
     for (const [i, row] of data.entries()) {
@@ -325,10 +321,10 @@ const editButton = (shortUrl, longUrl) => {
     document.getElementById("container").style.filter = "blur(2px)";
     document.getElementById("edit-dialog").showModal();
     const editUrlSpan = document.getElementById("edit-link");
+    const editedUrl = document.getElementById("edited-url");
     if (editUrlSpan.textContent != shortUrl) {
       editUrlSpan.textContent = shortUrl;
       document.getElementById("edit-checkbox").checked = false;
-      const editedUrl = document.getElementById("edited-url");
       editedUrl.value = longUrl;
     }
     editedUrl.focus();
@@ -539,14 +535,17 @@ refreshData()
       }
     };
 
-    document.getElementById("edit-dialog").addEventListener("close", () => {
+    const editDialog = document.getElementById("edit-dialog");
+    editDialog.onclose = () => {
       document.getElementById("container").style.filter = "blur(0px)";
-    });
+    };
     document.forms.namedItem("edit-form").onsubmit = (e) => {
       e.preventDefault();
       submitEdit();
     };
-
+    document.getElementById("edit-cancel-button").onclick = () => {
+      editDialog.close();
+    };
     document.forms.namedItem("login-form").onsubmit = (e) => {
       e.preventDefault();
       submitLogin();
