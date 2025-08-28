@@ -226,6 +226,7 @@ const TR = (i, row) => {
   const longTD = TD(A_LONG(longlink), "Long URL");
 
   const shortlink = row["shortlink"];
+  tr.id = shortlink;
   const shortTD = TD(A_SHORT(shortlink), "Short URL");
   shortTD.setAttribute("name", "shortColumn");
 
