@@ -324,10 +324,13 @@ const editButton = (shortUrl, longUrl) => {
   btn.onclick = () => {
     document.getElementById("container").style.filter = "blur(2px)";
     document.getElementById("edit-dialog").showModal();
-    document.getElementById("edit-link").textContent = shortUrl;
-    document.getElementById("edit-checkbox").checked = false;
-    const editedUrl = document.getElementById("edited-url");
-    editedUrl.value = longUrl;
+    const editUrlSpan = document.getElementById("edit-link");
+    if (editUrlSpan.textContent != shortUrl) {
+      editUrlSpan.textContent = shortUrl;
+      document.getElementById("edit-checkbox").checked = false;
+      const editedUrl = document.getElementById("edited-url");
+      editedUrl.value = longUrl;
+    }
     editedUrl.focus();
   };
   return btn;
@@ -393,14 +396,13 @@ const submitForm = () => {
     .then(async (text) => {
       if (!ok) {
         showAlert(text, "light-dark(red, #ff1a1a)");
-        await refreshData();
       } else {
         await copyShortUrl(text);
         longUrl.value = "";
         shortUrl.value = "";
         expiryDelay.value = 0;
-        await refreshData();
       }
+      await refreshData();
     })
     .catch((err) => {
       console.log("Error:", err);
@@ -417,9 +419,42 @@ const submitEdit = () => {
   const shortUrl = editUrlSpan.textContent;
   const checkBox = document.getElementById("edit-checkbox");
   if (confirm("Are you sure that you want to edit " + shortUrl + "?")) {
-    console.log(checkBox.checked);
-    editUrlSpan.textContent = shortUrl;
-    checkBox.checked = false;
+    data = {
+      shortlink: shortUrl,
+      longlink: longUrl,
+      reset_hits: checkBox.checked,
+    };
+    const url = prepSubdir("/api/edit");
+    let ok = false;
+
+    fetch(url, {
+      method: "PUT",
+      cache: "no-cache",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(data),
+    })
+      .then((res) => {
+        ok = res.ok;
+        return res.text();
+      })
+      .then(async (text) => {
+        if (!ok) {
+          showAlert(text, "light-dark(red, #ff1a1a)");
+        } else {
+          document.getElementById("edit-dialog").close();
+          editUrlSpan.textContent = shortUrl;
+          checkBox.checked = false;
+        }
+        await refreshData();
+      })
+      .catch((err) => {
+        console.log("Error:", err);
+        if (!alert("Something went wrong! Click Ok to refresh page.")) {
+          window.location.reload();
+        }
+      });
   }
 };
 
