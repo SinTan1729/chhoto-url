@@ -47,6 +47,10 @@
       sizes="196x196"
     />
 
+    <script
+      src="https://cdn.jsdelivr.net/npm/qrcodejs/qrcode.js"
+      async
+    ></script>
     <script src="static/script.js" defer></script>
     <link
       rel="stylesheet"
@@ -195,6 +199,11 @@
           </button>
         </fieldset>
       </form>
+    </dialog>
+
+    <dialog id="qr-code-dialog">
+      <button>&#x2715;</button>
+      <div id="qrcode"></div>
     </dialog>
   </body>
 </html>

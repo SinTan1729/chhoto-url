@@ -152,6 +152,7 @@ div[name="links-div"] {
 }
 
 #edit-dialog,
+#qr-code-dialog,
 #login-dialog {
   border-radius: 1em;
   border-width: 0.15em;
@@ -165,6 +166,25 @@ div[name="links-div"] {
 }
 #edit-cancel-button {
   background-color: light-dark(#dd1a1a, #901010);
+}
+
+#qr-code-dialog {
+  background-color: white;
+  border-color: grey;
+  text-align: right;
+  position: relative;
+}
+#qr-code-dialog div {
+  margin: 1em;
+}
+#qr-code-dialog button {
+  background-color: transparent;
+  color: black;
+  border-style: none;
+  cursor: pointer;
+  position: absolute;
+  top: 0.5em;
+  right: 0.5em;
 }
 
 .tooltip {
