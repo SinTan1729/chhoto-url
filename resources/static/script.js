@@ -178,6 +178,9 @@ const refreshExpiryTimes = async () => {
     let relativeTime = formatRelativeTime(expiryTimeParsed);
     if (relativeTime == "expired") {
       td.style.color = "light-dark(red, #ff1a1a)";
+      for (const btn of td.parentElement.lastChild.querySelectorAll("button")) {
+        btn.disabled = true;
+      }
     }
     let div = td.firstChild;
     div.innerHTML = div.innerHTML.replace(div.innerText, relativeTime);
