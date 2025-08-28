@@ -6,7 +6,7 @@ use actix_session::Session;
 use actix_web::{
     delete, get,
     http::StatusCode,
-    post,
+    post, put,
     web::{self, Redirect},
     Either, HttpRequest, HttpResponse, Responder,
 };
@@ -22,7 +22,7 @@ use crate::{auth::validate, utils};
 // Store the version number
 const VERSION: &str = env!("CARGO_PKG_VERSION");
 
-// Define JSON struct for returning JSON data
+// Define JSON struct for returning success/error data
 #[derive(Serialize)]
 struct Response {
     success: bool,
@@ -30,7 +30,7 @@ struct Response {
     reason: String,
 }
 
-// Defin JSON struct for returning backend config
+// Define JSON struct for returning backend config
 #[derive(Serialize)]
 struct BackendConfig {
     version: String,
@@ -52,7 +52,7 @@ struct CreatedURL {
     expiry_time: i64,
 }
 
-// Struct for returning information about a shortlink
+// Struct for returning information about a shortlink in expand
 #[derive(Serialize)]
 struct LinkInfo {
     success: bool,
@@ -177,6 +177,41 @@ pub async fn expand(req: String, data: web::Data<AppState>, http: HttpRequest) -
                 reason: "The shortlink does not exist on the server.".to_string(),
             };
             HttpResponse::BadRequest().json(body)
+        }
+    } else {
+        HttpResponse::Unauthorized().json(result)
+    }
+}
+
+// Get information about a single shortlink
+#[put("/api/edit")]
+pub async fn edit_link(
+    req: String,
+    session: Session,
+    data: web::Data<AppState>,
+    http: HttpRequest,
+) -> HttpResponse {
+    let config = &data.config;
+    let result = utils::is_api_ok(http, config);
+    if result.success || validate(session, config) {
+        if let Some((server_error, error_msg)) = utils::edit_link(req, &data.db, config) {
+            let body = Response {
+                success: false,
+                error: true,
+                reason: error_msg,
+            };
+            if server_error {
+                HttpResponse::InternalServerError().json(body)
+            } else {
+                HttpResponse::BadRequest().json(body)
+            }
+        } else {
+            let body = Response {
+                success: true,
+                error: false,
+                reason: String::from("Edit was successful."),
+            };
+            HttpResponse::Created().json(body)
         }
     } else {
         HttpResponse::Unauthorized().json(result)

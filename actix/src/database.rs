@@ -113,6 +113,23 @@ WHERE short_url = ?2 AND ?4 >= expiry_time AND expiry_time > 0",
         }
     }
     Ok(expiry_time)
+
+}
+
+// Edit an existing link
+pub fn edit_link(
+    shortlink: &str,
+    longlink: &str,
+    reset_hits: bool,
+    db: &Connection,
+) -> Result<usize, Error> {
+    let now = chrono::Utc::now().timestamp();
+    let statement = if reset_hits {
+        "UPDATE urls SET long_url = ?1, hits = 0 WHERE short_url = ?2 AND (expiry_time = 0 OR ?3 < expiry_time)"
+    } else {
+        "UPDATE urls SET long_url = ?1 WHERE short_url = ?2 AND (expiry_time = 0 OR ?3 < expiry_time)"
+    };
+    db.execute(statement, (longlink, shortlink, now))
 }
 
 // Clean expired links

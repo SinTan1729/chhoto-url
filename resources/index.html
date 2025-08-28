@@ -127,11 +127,11 @@
         <thead>
           <tr>
             <th name="numColumn">#</th>
-            <th id="short-url-header">Short URL (click to copy)</th>
+            <th id="short-url-header">Short URL</th>
             <th>Long URL</th>
             <th name="hitsColumn">Hits</th>
             <th name="expiryColumn">Expiry</th>
-            <th name="deleteBtn">&#x2715;</th>
+            <th name="actions">Actions</th>
           </tr>
         </thead>
         <tbody id="url-table">
@@ -154,7 +154,7 @@
       <!-- The version number would be inserted here -->
     </div>
 
-    <dialog id="login-dialog">
+    <dialog id="login-dialog" closedby="none">
       <form class="pure-form" name="login-form">
         <p>Please enter password to access this website</p>
         <input class="chhoto-input" type="password" id="password" />
@@ -165,6 +165,35 @@
           Log in
         </button>
         <p id="wrong-pass" hidden>Wrong password!</p>
+      </form>
+    </dialog>
+
+    <dialog id="edit-dialog">
+      <form class="pure-form pure-form-stacked" name="edit-form">
+        <p>
+          Enter new long url for <span id="edit-link">placeholder</span>. <br />
+          Please check twice before you submit. It cannot be undone.
+        </p>
+        <fieldset>
+          <input class="chhoto-input" type="url" id="edited-url" />
+          <label for="edit-checkbox">
+            <input type="checkbox" id="edit-checkbox" checked="unchecked" />
+            Reset hit count
+          </label>
+          <button
+            class="chhoto-button pure-button pure-button-primary"
+            id="edit-cancel-button"
+            type="button"
+          >
+            Cancel
+          </button>
+          <button
+            class="chhoto-button pure-button pure-button-primary"
+            value="default"
+          >
+            Submit
+          </button>
+        </fieldset>
       </form>
     </dialog>
   </body>

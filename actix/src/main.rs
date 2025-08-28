@@ -106,6 +106,7 @@ async fn main() -> Result<()> {
                 middleware::DefaultHeaders::new()
             })
             .service(services::link_handler)
+            .service(services::edit_link)
             .service(services::getall)
             .service(services::siteurl)
             .service(services::version)

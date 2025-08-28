@@ -27,6 +27,7 @@ body {
   background-color: light-dark(#0078e7, #0060b9);
 }
 .pure-form input.chhoto-input {
+  width: 65%;
   border-color: light-dark(#cccccc, #3e4446);
   box-shadow: light-dark(#dddddd, #2b2f31) 0 0.1em 0.2em inset;
 }
@@ -101,7 +102,7 @@ a {
 }
 
 #short-url-header {
-  min-width: 13em;
+  min-width: 8em;
 }
 
 th[name="hitsColumn"],
@@ -114,25 +115,24 @@ td[name="expiryColumn"] {
   text-align: center;
 }
 
-th[name="deleteBtn"],
-td[name="deleteBtn"] div {
+th[name="actions"],
+td[name="actions"] div {
   align-items: center;
   justify-items: center;
   text-align: center;
 }
-td[name="deleteBtn"] div button {
-  border-radius: 100%;
+td[name="actions"] div button {
   aspect-ratio: 1;
-  border-style: solid;
+  border-style: none;
   cursor: pointer;
   display: table-cell;
   vertical-align: middle;
   background-color: transparent;
 }
-
-input {
-  width: 65%;
+td[name="actions"] div button.svg-button svg {
+  height: 1.3em;
 }
+
 form input[name="shortUrl"]::placeholder {
   text-transform: none;
 }
@@ -151,12 +151,20 @@ div[name="links-div"] {
   color: light-dark(red, #ff1a1a);
 }
 
+#edit-dialog,
 #login-dialog {
   border-radius: 1em;
   border-width: 0.15em;
 }
+#edit-dialog form,
 #login-dialog form {
   text-align: center;
+}
+#edited-url {
+  width: 100%;
+}
+#edit-cancel-button {
+  background-color: light-dark(#dd1a1a, #901010);
 }
 
 .tooltip {
@@ -223,7 +231,7 @@ div[name="links-div"] {
   .chhoto-table tr td[name="shortColumn"] {
     padding-top: 0.5em;
   }
-  .chhoto-table tr td[name="deleteBtn"] {
+  .chhoto-table tr td[name="actions"] {
     padding-bottom: 0.5em;
   }
 
