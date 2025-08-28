@@ -128,8 +128,8 @@ td[name="actions"] div button {
   vertical-align: middle;
   background-color: transparent;
 }
-td[name="actions"] div button.edit-button {
-  transform: rotateZ(90deg);
+td[name="actions"] div button.svg-button svg {
+  height: 1.3em;
 }
 
 input {
