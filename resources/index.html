@@ -154,7 +154,7 @@
       <!-- The version number would be inserted here -->
     </div>
 
-    <dialog id="login-dialog">
+    <dialog id="login-dialog" closedby="none">
       <form class="pure-form" name="login-form">
         <p>Please enter password to access this website</p>
         <input class="chhoto-input" type="password" id="password" />
@@ -163,6 +163,19 @@
           value="default"
         >
           Log in
+        </button>
+        <p id="wrong-pass" hidden>Wrong password!</p>
+      </form>
+    </dialog>
+    <dialog id="edit-dialog">
+      <form class="pure-form" name="edit-form">
+        <p>Enter new long url for <span id="edit-link">placeholder</span></p>
+        <input class="chhoto-input" type="url" id="edited-url" />
+        <button
+          class="chhoto-button pure-button pure-button-primary"
+          value="default"
+        >
+          Submit
         </button>
         <p id="wrong-pass" hidden>Wrong password!</p>
       </form>

@@ -71,12 +71,6 @@ const showLogin = () => {
   document.getElementById("container").style.filter = "blur(2px)";
   document.getElementById("login-dialog").showModal();
   document.getElementById("password").focus();
-  window.onkeydown = function (e) {
-    if (e.keyCode === 27) {
-      // Key code for ESC key
-      e.preventDefault();
-    }
-  };
 };
 
 const refreshData = async () => {
@@ -228,7 +222,8 @@ const TR = (i, row) => {
   const numTD = TD(i, null);
   numTD.setAttribute("name", "numColumn");
 
-  const longTD = TD(A_LONG(row["longlink"]), "Long URL");
+  const longlink = row["longlink"];
+  const longTD = TD(A_LONG(longlink), "Long URL");
 
   const shortlink = row["shortlink"];
   const shortTD = TD(A_SHORT(shortlink), "Short URL");
@@ -267,7 +262,7 @@ const TR = (i, row) => {
   btnGrp.classList.add("pure-button-group");
   btnGrp.role = "group";
   btnGrp.appendChild(copyButton(shortlink));
-  btnGrp.appendChild(editButton(shortlink));
+  btnGrp.appendChild(editButton(shortlink, longlink));
   btnGrp.appendChild(deleteButton(shortlink));
   actionsTD.appendChild(btnGrp);
 
@@ -320,33 +315,18 @@ const copyButton = (shortUrl) => {
   return btn;
 };
 
-const editButton = (shortUrl) => {
+const editButton = (shortUrl, longUrl) => {
   const btn = document.createElement("button");
   btn.classList.add("svg-button");
   btn.innerHTML = `${SVG_EDIT_BUTTON}`;
 
-  btn.onclick = (e) => {
-    e.preventDefault();
-    if (confirm("Do you want to delete the entry " + shortUrl + "?")) {
-      showAlert("&nbsp;", "black");
-      fetch(prepSubdir(`/api/del/${shortUrl}`), {
-        method: "DELETE",
-        cache: "no-cache",
-      })
-        .then(async (res) => {
-          if (!res.ok) {
-            throw new Error("Could not delete.");
-          }
-          await refreshData();
-        })
-        .catch((err) => {
-          console.log("Error:", err);
-          showAlert(
-            "Unable to delete " + shortUrl + ". Please try again!",
-            "light-dark(red, #ff1a1a)",
-          );
-        });
-    }
+  btn.onclick = () => {
+    document.getElementById("container").style.filter = "blur(2px)";
+    document.getElementById("edit-dialog").showModal();
+    document.getElementById("edit-link").textContent = shortUrl;
+    const editedUrl = document.getElementById("edited-url");
+    editedUrl.value = longUrl;
+    editedUrl.focus();
   };
   return btn;
 };
@@ -426,6 +406,11 @@ const submitForm = () => {
         window.location.reload();
       }
     });
+};
+
+const submitEdit = () => {
+  console.log("Submit edit");
+  // confirm("Do you want to delete the entry " + shortUrl + "?");
 };
 
 const submitLogin = () => {
@@ -509,8 +494,17 @@ refreshData()
       }
     };
 
-    const login_form = document.forms.namedItem("login-form");
-    login_form.onsubmit = (e) => {
+    document.getElementById("edit-dialog").addEventListener("close", () => {
+      document.getElementById("container").style.filter = "blur(0px)";
+      document.getElementById("edited-url").value = "";
+      document.getElementById("edit-link").textContent = "";
+    });
+    document.forms.namedItem("edit-form").onsubmit = (e) => {
+      e.preventDefault();
+      submitEdit();
+    };
+
+    document.forms.namedItem("login-form").onsubmit = (e) => {
       e.preventDefault();
       submitLogin();
     };
