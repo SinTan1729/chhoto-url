@@ -101,7 +101,7 @@ a {
 }
 
 #short-url-header {
-  min-width: 13em;
+  min-width: 8em;
 }
 
 th[name="hitsColumn"],
@@ -114,20 +114,22 @@ td[name="expiryColumn"] {
   text-align: center;
 }
 
-th[name="deleteBtn"],
-td[name="deleteBtn"] div {
+th[name="actions"],
+td[name="actions"] div {
   align-items: center;
   justify-items: center;
   text-align: center;
 }
-td[name="deleteBtn"] div button {
-  border-radius: 100%;
+td[name="actions"] div button {
   aspect-ratio: 1;
-  border-style: solid;
+  border-style: none;
   cursor: pointer;
   display: table-cell;
   vertical-align: middle;
   background-color: transparent;
+}
+td[name="actions"] div button.edit-button {
+  transform: rotateZ(90deg);
 }
 
 input {
@@ -223,7 +225,7 @@ div[name="links-div"] {
   .chhoto-table tr td[name="shortColumn"] {
     padding-top: 0.5em;
   }
-  .chhoto-table tr td[name="deleteBtn"] {
+  .chhoto-table tr td[name="actions"] {
     padding-bottom: 0.5em;
   }
 

@@ -226,21 +226,7 @@ const TR = (i, row) => {
   const longTD = TD(A_LONG(row["longlink"]), "Long URL");
 
   const shortlink = row["shortlink"];
-  let shortTD;
-  const isSafari =
-    /Safari/.test(navigator.userAgent) &&
-    /Apple Computer/.test(navigator.vendor);
-  // For now, we disable copying on WebKit due to a possible bug. Manual copying is enabled instead.
-  // Take a look at https://github.com/SinTan1729/chhoto-url/issues/36
-  if (window.isSecureContext && !isSafari) {
-    shortTD = TD(A_SHORT(shortlink), "Short URL");
-    shortTD.firstChild.firstChild.onclick = async (e) => {
-      e.preventDefault();
-      await copyShortUrl(shortlink);
-    };
-  } else {
-    shortTD = TD(A_SHORT_INSECURE(shortlink), "Short URL");
-  }
+  const shortTD = TD(A_SHORT(shortlink), "Short URL");
   shortTD.setAttribute("name", "shortColumn");
 
   const hitsTD = TD(row["hits"], null);
@@ -269,9 +255,18 @@ const TR = (i, row) => {
   expiryTD.setAttribute("label", "Expiry");
   expiryTD.setAttribute("name", "expiryColumn");
 
-  const dltBtn = deleteButton(shortlink);
+  const actionsTD = document.createElement("td");
+  actionsTD.setAttribute("name", "actions");
+  actionsTD.setAttribute("label", "Actions");
+  const btnGrp = document.createElement("div");
+  btnGrp.classList.add("pure-button-group");
+  btnGrp.role = "group";
+  btnGrp.appendChild(copyButton(shortlink));
+  btnGrp.appendChild(editButton(shortlink));
+  btnGrp.appendChild(deleteButton(shortlink));
+  actionsTD.appendChild(btnGrp);
 
-  for (const td of [numTD, shortTD, longTD, hitsTD, expiryTD, dltBtn]) {
+  for (const td of [numTD, shortTD, longTD, hitsTD, expiryTD, actionsTD]) {
     tr.appendChild(td);
   }
   return tr;
@@ -306,14 +301,52 @@ const addHTTPSToLongURL = () => {
 };
 
 const A_LONG = (s) => `<a href='${s}'>${s}</a>`;
-const A_SHORT = (s) => `<button class="linkButton">${s}</button>`;
-const A_SHORT_INSECURE = (s) => `<a href="${SITE_URL}/${s}">${s}</a>`;
+const A_SHORT = (s) => `<a href="${SITE_URL}/${s}">${s}</a>`;
+
+const copyButton = (shortUrl) => {
+  const btn = document.createElement("button");
+  btn.innerHTML = "&#x2398;";
+
+  btn.onclick = (e) => {
+    e.preventDefault();
+    copyShortUrl(shortUrl);
+  };
+  return btn;
+};
+
+const editButton = (shortUrl) => {
+  const btn = document.createElement("button");
+  btn.classList.add("edit-button");
+  btn.innerHTML = "&#9998;";
+
+  btn.onclick = (e) => {
+    e.preventDefault();
+    if (confirm("Do you want to delete the entry " + shortUrl + "?")) {
+      showAlert("&nbsp;", "black");
+      fetch(prepSubdir(`/api/del/${shortUrl}`), {
+        method: "DELETE",
+        cache: "no-cache",
+      })
+        .then(async (res) => {
+          if (!res.ok) {
+            throw new Error("Could not delete.");
+          }
+          await refreshData();
+        })
+        .catch((err) => {
+          console.log("Error:", err);
+          showAlert(
+            "Unable to delete " + shortUrl + ". Please try again!",
+            "light-dark(red, #ff1a1a)",
+          );
+        });
+    }
+  };
+  return btn;
+};
 
 const deleteButton = (shortUrl) => {
-  const td = document.createElement("td");
-  const div = document.createElement("div");
   const btn = document.createElement("button");
-
   btn.innerHTML = "&#x2715;";
 
   btn.onclick = (e) => {
@@ -339,11 +372,7 @@ const deleteButton = (shortUrl) => {
         });
     }
   };
-  td.setAttribute("name", "deleteBtn");
-  td.setAttribute("label", "Delete");
-  div.appendChild(btn);
-  td.appendChild(div);
-  return td;
+  return btn;
 };
 
 const submitForm = () => {
