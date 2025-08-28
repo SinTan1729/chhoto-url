@@ -167,17 +167,26 @@
         <p id="wrong-pass" hidden>Wrong password!</p>
       </form>
     </dialog>
+
     <dialog id="edit-dialog">
-      <form class="pure-form" name="edit-form">
-        <p>Enter new long url for <span id="edit-link">placeholder</span></p>
-        <input class="chhoto-input" type="url" id="edited-url" />
-        <button
-          class="chhoto-button pure-button pure-button-primary"
-          value="default"
-        >
-          Submit
-        </button>
-        <p id="wrong-pass" hidden>Wrong password!</p>
+      <form class="pure-form pure-form-stacked" name="edit-form">
+        <p>
+          Enter new long url for <span id="edit-link">placeholder</span>. (It
+          cannot be undone.)
+        </p>
+        <fieldset>
+          <input class="chhoto-input" type="url" id="edited-url" />
+          <label for="edit-checkbox">
+            <input type="checkbox" id="edit-checkbox" checked="unchecked" />
+            Reset hit count
+          </label>
+          <button
+            class="chhoto-button pure-button pure-button-primary"
+            value="default"
+          >
+            Submit
+          </button>
+        </fieldset>
       </form>
     </dialog>
   </body>

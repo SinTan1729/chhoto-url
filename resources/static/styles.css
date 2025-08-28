@@ -27,6 +27,7 @@ body {
   background-color: light-dark(#0078e7, #0060b9);
 }
 .pure-form input.chhoto-input {
+  width: 65%;
   border-color: light-dark(#cccccc, #3e4446);
   box-shadow: light-dark(#dddddd, #2b2f31) 0 0.1em 0.2em inset;
 }
@@ -132,9 +133,6 @@ td[name="actions"] div button.svg-button svg {
   height: 1.3em;
 }
 
-input {
-  width: 65%;
-}
 form input[name="shortUrl"]::placeholder {
   text-transform: none;
 }
@@ -153,12 +151,17 @@ div[name="links-div"] {
   color: light-dark(red, #ff1a1a);
 }
 
+#edit-dialog,
 #login-dialog {
   border-radius: 1em;
   border-width: 0.15em;
 }
+#edit-dialog form,
 #login-dialog form {
   text-align: center;
+}
+#edited-url {
+  width: 100%;
 }
 
 .tooltip {

@@ -324,6 +324,7 @@ const editButton = (shortUrl, longUrl) => {
     document.getElementById("container").style.filter = "blur(2px)";
     document.getElementById("edit-dialog").showModal();
     document.getElementById("edit-link").textContent = shortUrl;
+    document.getElementById("edit-checkbox").checked = false;
     const editedUrl = document.getElementById("edited-url");
     editedUrl.value = longUrl;
     editedUrl.focus();
@@ -409,8 +410,16 @@ const submitForm = () => {
 };
 
 const submitEdit = () => {
-  console.log("Submit edit");
-  // confirm("Do you want to delete the entry " + shortUrl + "?");
+  const urlInput = document.getElementById("edited-url");
+  const editUrlSpan = document.getElementById("edit-link");
+  const longUrl = urlInput.value;
+  const shortUrl = editUrlSpan.textContent;
+  const checkBox = document.getElementById("edit-checkbox");
+  if (confirm("Are you sure that you want to edit " + shortUrl + "?")) {
+    console.log(checkBox.checked);
+    editUrlSpan.textContent = shortUrl;
+    checkBox.checked = false;
+  }
 };
 
 const submitLogin = () => {
@@ -496,8 +505,6 @@ refreshData()
 
     document.getElementById("edit-dialog").addEventListener("close", () => {
       document.getElementById("container").style.filter = "blur(0px)";
-      document.getElementById("edited-url").value = "";
-      document.getElementById("edit-link").textContent = "";
     });
     document.forms.namedItem("edit-form").onsubmit = (e) => {
       e.preventDefault();
