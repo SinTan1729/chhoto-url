@@ -345,7 +345,10 @@ const qrCodeButton = (shortlink) => {
   btn.onclick = () => {
     document.getElementById("container").style.filter = "blur(2px)";
     document.getElementById("qr-code-dialog").showModal();
-    new QRCode(document.getElementById("qrcode"), `${SITE_URL}/${shortlink}`);
+    new QRCode(document.getElementById("qrcode"), {
+      text: `${SITE_URL}/${shortlink}`,
+      correctLevel: QRCode.CorrectLevel.H,
+    });
   };
   return btn;
 };
@@ -571,7 +574,7 @@ refreshData()
     };
     qrCodeDialog.onclose = () => {
       document.getElementById("container").style.filter = "blur(0px)";
-      qrCodeDialog.lastElementChild.innerHTML = "";
+      document.getElementById("qrcode").innerHTML = "";
     };
 
     document.forms.namedItem("login-form").onsubmit = (e) => {
