@@ -197,7 +197,7 @@ div[name="links-div"] {
   right: 0.5em;
   cursor: pointer;
 }
-#qr-code-dialog img[alt="logo"] {
+#qr-code-dialog img[name="qr-code-logo"] {
   position: absolute;
   height: 5em;
   top: 50%;
