@@ -186,7 +186,7 @@ div[name="links-div"] {
   text-align: right;
 }
 #qr-code-dialog div {
-  margin: 1em;
+  margin: 0.3em;
 }
 #qr-code-dialog button {
   background-color: transparent;
@@ -196,16 +196,6 @@ div[name="links-div"] {
   top: 0.5em;
   right: 0.5em;
   cursor: pointer;
-}
-#qr-code-dialog img[name="qr-code-logo"] {
-  position: absolute;
-  height: 5em;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  background: white;
-  border-radius: 50%;
-  padding: 0.2em;
 }
 
 .tooltip {

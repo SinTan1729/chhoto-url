@@ -353,10 +353,37 @@ const qrCodeButton = (shortlink) => {
   btn.onclick = () => {
     document.getElementById("container").style.filter = "blur(2px)";
     document.getElementById("qr-code-dialog").showModal();
-    new QRCode(document.getElementById("qr-code"), {
+    const tmpDiv = document.createElement("div");
+    new QRCode(tmpDiv, {
       text: `${SITE_URL}/${shortlink}`,
       correctLevel: QRCode.CorrectLevel.H,
     });
+    const oldCanvas = tmpDiv.firstChild;
+
+    const padding = "12";
+    const newCanvas = document.createElement("canvas");
+    newCanvas.height = 280;
+    newCanvas.width = 280;
+
+    const ctx = newCanvas.getContext("2d");
+    ctx.fillStyle = "white";
+    ctx.fillRect(0, 0, 280, 280);
+    ctx.drawImage(oldCanvas, 12, 12);
+
+    const img = new Image();
+    img.src = prepSubdir("/assets/favicon.svg");
+    img.onload = () => {
+      ctx.fillStyle = "white";
+      ctx.beginPath();
+      ctx.arc(140, 140, 30, 0, Math.PI * 2);
+      ctx.fill();
+
+      const imgWidth = 50;
+      const imgHeight = 50;
+      ctx.drawImage(img, 115, 115, 50, 50);
+
+      document.getElementById("qr-code").appendChild(newCanvas);
+    };
   };
   return btn;
 };
