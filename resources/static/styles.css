@@ -120,6 +120,7 @@ td[name="actions"] div {
   align-items: center;
   justify-items: center;
   text-align: center;
+  min-width: 8em;
 }
 td[name="actions"] div button {
   aspect-ratio: 1;
@@ -246,7 +247,7 @@ div[name="links-div"] {
   .container {
     max-width: 100vw;
   }
-  .pure-control-group input {
+  .pure-form input.chhoto-input {
     width: 98%;
   }
 
