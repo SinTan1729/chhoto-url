@@ -172,7 +172,6 @@ div[name="links-div"] {
   background-color: white;
   border-color: grey;
   text-align: right;
-  position: relative;
 }
 #qr-code-dialog div {
   margin: 1em;
