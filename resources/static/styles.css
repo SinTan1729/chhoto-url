@@ -157,6 +157,17 @@ div[name="links-div"] {
   border-radius: 1em;
   border-width: 0.15em;
 }
+#password-eye-button {
+  position: absolute;
+  right: 5%;
+  top: 50%;
+  transform: translateY(-50%);
+  background-color: transparent;
+  border-style: none;
+  cursor: pointer;
+  -webkit-tap-highlight-color: rgba(0, 0, 0, 0);
+}
+
 #edit-dialog form,
 #login-dialog form {
   text-align: center;
@@ -180,10 +191,10 @@ div[name="links-div"] {
   background-color: transparent;
   color: black;
   border-style: none;
-  cursor: pointer;
   position: absolute;
   top: 0.5em;
   right: 0.5em;
+  cursor: pointer;
 }
 #qr-code-dialog img[alt="logo"] {
   position: absolute;
