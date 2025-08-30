@@ -186,16 +186,23 @@ div[name="links-div"] {
   text-align: right;
 }
 #qr-code-dialog div {
-  margin: 0.3em;
+  margin: 0.5em;
 }
-#qr-code-dialog button {
+.qr-button {
   background-color: transparent;
   color: black;
   border-style: none;
   position: absolute;
-  top: 0.5em;
-  right: 0.5em;
+  top: 0.3em;
+  right: 0.3em;
   cursor: pointer;
+}
+.qr-button svg {
+  height: 2em;
+}
+#qr-download {
+  right: 2em;
+  text-decoration: none;
 }
 
 .tooltip {

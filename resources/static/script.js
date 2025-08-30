@@ -351,8 +351,6 @@ const qrCodeButton = (shortlink) => {
   btn.innerHTML = SVG_QR_BUTTON;
 
   btn.onclick = () => {
-    document.getElementById("container").style.filter = "blur(2px)";
-    document.getElementById("qr-code-dialog").showModal();
     const tmpDiv = document.createElement("div");
     new QRCode(tmpDiv, {
       text: `${SITE_URL}/${shortlink}`,
@@ -383,6 +381,11 @@ const qrCodeButton = (shortlink) => {
       ctx.drawImage(img, 115, 115, 50, 50);
 
       document.getElementById("qr-code").appendChild(newCanvas);
+      const qrDown = document.getElementById("qr-download");
+      qrDown.href = newCanvas.toDataURL();
+      qrDown.download = `chhoto-qr-${shortlink}.png`;
+      document.getElementById("container").style.filter = "blur(2px)";
+      document.getElementById("qr-code-dialog").showModal();
     };
   };
   return btn;
@@ -617,7 +620,7 @@ refreshData()
     };
 
     const qrCodeDialog = document.getElementById("qr-code-dialog");
-    qrCodeDialog.firstElementChild.onclick = () => {
+    document.getElementById("qr-close").onclick = () => {
       qrCodeDialog.close();
     };
     qrCodeDialog.onclose = () => {
