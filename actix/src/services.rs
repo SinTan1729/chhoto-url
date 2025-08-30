@@ -144,12 +144,7 @@ pub async fn getall(
     } else if auth::validate(session, config) {
         HttpResponse::Ok().body(utils::getall(&data.db))
     } else {
-        let body = if config.public_mode {
-            format!("Using public mode. {}", config.public_mode_expiry_delay)
-        } else {
-            String::from("Not logged in!")
-        };
-        HttpResponse::Unauthorized().body(body)
+        HttpResponse::Unauthorized().body("Not logged in!")
     }
 }
 
@@ -236,6 +231,25 @@ pub async fn siteurl(data: web::Data<AppState>) -> HttpResponse {
 #[get("/api/version")]
 pub async fn version() -> HttpResponse {
     HttpResponse::Ok().body(format!("Chhoto URL v{VERSION}"))
+}
+
+// Get the user's current role
+#[get("/api/whoami")]
+pub async fn whoami(
+    data: web::Data<AppState>,
+    session: Session,
+    http: HttpRequest,
+) -> HttpResponse {
+    let config = &data.config;
+    let result = utils::is_api_ok(http, config);
+    let acting_user = if result.success || validate(session, config) {
+        "admin"
+    } else if config.public_mode {
+        "public"
+    } else {
+        "nobody"
+    };
+    HttpResponse::Ok().body(acting_user)
 }
 
 // Get some useful backend config

@@ -115,7 +115,8 @@ async fn main() -> Result<()> {
             .service(services::delete_link)
             .service(services::login)
             .service(services::logout)
-            .service(services::expand);
+            .service(services::expand)
+            .service(services::whoami);
 
         if !conf.disable_frontend {
             if let Some(dir) = &conf.custom_landing_directory {

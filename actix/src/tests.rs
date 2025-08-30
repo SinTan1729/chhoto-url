@@ -85,6 +85,7 @@ async fn create_app(
             .service(services::link_handler)
             .service(services::edit_link)
             .service(services::delete_link)
+            .service(services::whoami)
             .service(services::expand),
     )
     .await;
@@ -157,6 +158,18 @@ async fn basic_site_config() {
     let resp = test::call_service(&app, req).await;
     let body = to_bytes(resp.into_body()).await.unwrap();
     assert_eq!(body.as_str(), conf.site_url.unwrap());
+
+    let req = test::TestRequest::get().uri("/api/whoami").to_request();
+    let resp = test::call_service(&app, req).await;
+    let body = to_bytes(resp.into_body()).await.unwrap();
+    assert_eq!(body.as_str(), "nobody");
+    let req = test::TestRequest::get()
+        .uri("/api/whoami")
+        .insert_header(("X-API-Key", conf.api_key.clone().unwrap()))
+        .to_request();
+    let resp = test::call_service(&app, req).await;
+    let body = to_bytes(resp.into_body()).await.unwrap();
+    assert_eq!(body.as_str(), "admin");
 
     let req = test::TestRequest::get().uri("/api/version").to_request();
     let resp = test::call_service(&app, req).await;

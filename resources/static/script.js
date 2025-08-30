@@ -69,11 +69,13 @@ const getConfig = async () => {
 };
 
 const showVersion = () => {
-  const link = document.getElementById("version-number");
-  link.innerText = "v" + VERSION;
-  link.href =
-    "https://github.com/SinTan1729/chhoto-url/releases/tag/" + VERSION;
-  link.hidden = false;
+  if (VERSION) {
+    const link = document.getElementById("version-number");
+    link.innerText = "v" + VERSION;
+    link.href =
+      "https://github.com/SinTan1729/chhoto-url/releases/tag/" + VERSION;
+    link.hidden = false;
+  }
 };
 
 const showLogin = () => {
@@ -84,52 +86,63 @@ const showLogin = () => {
 
 const refreshData = async () => {
   try {
-    const res = await fetch(prepSubdir("/api/all"), { cache: "no-cache" });
-    switch (res.status) {
-      case 200:
+    const loading_text = document.getElementById("loading-text");
+    const admin_button = document.getElementById("admin-button");
+    if (!ADMIN) {
+      const res = await fetch(prepSubdir("/api/whoami"), { cache: "no-cache" });
+      if (res.status == 200) {
+        const role = await res.text();
+        switch (role) {
+          case "nobody":
+            showLogin();
+            break;
+          case "public":
+            await getConfig();
+            loading_text.innerHTML = "Using public mode.";
+            const expiry = parseInt(CONFIG.public_mode_expiry_delay);
+            if (expiry > 0) {
+              loading_text.innerHTML +=
+                " Unless chosen a shorter expiry time, submitted links will automatically expire ";
+              const time = new Date();
+              time.setSeconds(time.getSeconds() + expiry);
+              loading_text.innerHTML += formatRelativeTime(time) + ".";
+            }
+            updateInputBox();
+            break;
+          case "admin":
+            ADMIN = true;
+            await getConfig();
+            break;
+          default:
+            throw Error("Got undefined user role.");
+        }
+      } else {
+        throw Error("There was an issue getting user role.");
+      }
+    }
+    showVersion();
+    if (ADMIN) {
+      const res = await fetch(prepSubdir("/api/all"), { cache: "no-cache" });
+      if (res.status == 200) {
         const data = await res.json();
         await getConfig();
         ADMIN = true;
         displayData(data.reverse());
-        break;
-      case 401:
-        const loading_text = document.getElementById("loading-text");
-        const admin_button = document.getElementById("admin-button");
-        document.getElementById("table-box").hidden = true;
-        loading_text.hidden = false;
-        admin_button.innerText = "login";
-
-        const errorMsg = await res.text();
-        document.getElementById("url-table").innerHTML = "";
-        if (errorMsg.startsWith("Using public mode.")) {
-          admin_button.hidden = false;
-          loading_text.innerHTML = "Using public mode.";
-          const expiry = parseInt(errorMsg.split(" ").pop());
-          if (expiry > 0) {
-            loading_text.innerHTML +=
-              " Unless chosen a shorter expiry time, submitted links will automatically expire ";
-            const time = new Date();
-            time.setSeconds(time.getSeconds() + expiry);
-            loading_text.innerHTML += formatRelativeTime(time) + ".";
-          }
-          await getConfig();
-          showVersion();
-          updateInputBox();
-        } else {
-          showLogin();
-        }
-        break;
-      default:
-        if (!alert("Something went wrong! Click Ok to refresh page.")) {
-          window.location.reload();
-        }
+      } else {
+        throw Error("There was an error getting data.");
+      }
+    } else {
+      document.getElementById("table-box").hidden = true;
+      loading_text.hidden = false;
+      admin_button.innerText = "login";
+      document.getElementById("url-table").innerHTML = "";
+      admin_button.hidden = false;
     }
   } catch (err) {
     console.log(err);
-    showAlert(
-      `Could not copy short URL to clipboard, please do it manually: ${link_elt}`,
-      "light-dark(red, #ff1a1a)",
-    );
+    if (!alert("Something went wrong! Click Ok to refresh page.")) {
+      window.location.reload();
+    }
   }
 };
 
