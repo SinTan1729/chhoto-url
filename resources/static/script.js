@@ -63,18 +63,19 @@ const getConfig = async () => {
     if (!hasProtocol(SITE_URL)) {
       SITE_URL = window.location.protocol + "//" + SITE_URL;
     }
-
-    VERSION = CONFIG.version;
   }
+  VERSION = CONFIG.version;
 };
 
 const showVersion = () => {
+  const link = document.getElementById("version-number");
   if (VERSION) {
-    const link = document.getElementById("version-number");
     link.innerText = "v" + VERSION;
     link.href =
       "https://github.com/SinTan1729/chhoto-url/releases/tag/" + VERSION;
     link.hidden = false;
+  } else {
+    link.hidden = true;
   }
 };
 
@@ -107,6 +108,8 @@ const refreshData = async () => {
               time.setSeconds(time.getSeconds() + expiry);
               loading_text.innerHTML += formatRelativeTime(time) + ".";
             }
+            admin_button.innerText = "login";
+            admin_button.hidden = false;
             updateInputBox();
             break;
           case "admin":
@@ -134,9 +137,7 @@ const refreshData = async () => {
     } else {
       document.getElementById("table-box").hidden = true;
       loading_text.hidden = false;
-      admin_button.innerText = "login";
       document.getElementById("url-table").innerHTML = "";
-      admin_button.hidden = false;
     }
   } catch (err) {
     console.log(err);
@@ -313,14 +314,13 @@ const copyShortUrl = async (short_link) => {
   }
 };
 
-const addHTTPSToLongURL = () => {
-  const input = document.getElementById("longUrl");
+const addHTTPSToLongURL = (id) => {
+  const input = document.getElementById(id);
   let url = input.value.trim();
   if (!!url && !hasProtocol(url)) {
     url = "https://" + url;
   }
   input.value = url;
-  return input;
 };
 
 const A_LONG = (s) => `<a href='${s}'>${s}</a>`;
@@ -541,6 +541,7 @@ const submitLogin = () => {
           password.value = "";
           document.getElementById("wrong-pass").hidden = true;
           ADMIN = true;
+          await getConfig();
           await refreshData();
           break;
         case 401:
@@ -571,6 +572,7 @@ const logOut = async () => {
           document.getElementById("admin-button").hidden = true;
           showAlert("&nbsp;", "black");
           ADMIN = false;
+          VERSION = null;
           await refreshData();
         } else {
           showAlert(
@@ -591,7 +593,12 @@ const logOut = async () => {
 // This is where loading starts
 refreshData()
   .then(() => {
-    document.getElementById("longUrl").onblur = addHTTPSToLongURL;
+    document.getElementById("longUrl").onblur = () => {
+      addHTTPSToLongURL("longUrl");
+    };
+    document.getElementById("edited-url").onblur = () => {
+      addHTTPSToLongURL("edited-url");
+    };
     const form = document.forms.namedItem("new-url-form");
     form.onsubmit = (e) => {
       e.preventDefault();
