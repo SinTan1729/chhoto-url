@@ -104,7 +104,7 @@ and `nobody` if no access is granted.
 To edit an existing short link:
 
 ```bash
-curl -X POST -H "X-API-Key: <YOUR_API_KEY>" -d '{"shortlink":"<shortlink>", "longlink":"<longlink>", "reset_hit_count": <bool>}' http://localhost:4567/api/edit
+curl -X PUT -H "X-API-Key: <YOUR_API_KEY>" -d '{"shortlink":"<shortlink>", "longlink":"<longlink>", "reset_hit_count": <bool>}' http://localhost:4567/api/edit
 ```
 
 The server will reply in the following format.
