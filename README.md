@@ -60,6 +60,8 @@ Password: `chhoto-url-demo-pass`
   stays under 5MB under normal use.)
 - Counts number of hits for each short link in a privacy respecting way
   i.e. only the hit is recorded, and nothing else.
+- Short links can be edited after creation.
+- QR codes can be generated for easy sharing.
 - Supports operation using API key, and lets the user provide hashed password and API key.
 - Has a mobile friendly UI, and automatic dark mode.
 - Can serve a custom landing page, if needed.
@@ -116,5 +118,5 @@ Password: `chhoto-url-demo-pass`
   version of [this list used by docker](https://github.com/moby/moby/blob/master/pkg/namesgenerator/names-generator.go).
 - Although it's unlikely, it's possible that your database is mangled after some update. For mission critical use cases,
   it's recommended to keep regular versioned backups of the database, and sticking to a minor release tag e.g. 5.8.
-- If you intend to have more than a few thousand shortlinks, it's strongly recommended that you use the UID `slug_style`
+- If you intend to have more than a few thousand short links, it's strongly recommended that you use the UID `slug_style`
   with a `slug_length` of 16 or more.

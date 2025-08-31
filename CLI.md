@@ -22,6 +22,10 @@ validation (see section above). If the API key is insecure, a warning will be ou
 
 Example Linux command for generating a secure API key: `tr -dc A-Za-z0-9 </dev/urandom | head -c 128`
 
+For each response, the response code will be `200`, `401`, `400`, `500`, or `404`, depending on the context. The routes are as follows.
+
+#### `/api/new`
+
 To add a link:
 
 ```bash
@@ -51,6 +55,8 @@ or
   "reason": "<reason>"
 }
 ```
+
+#### `/api/getconfig`
 
 To get the config for the backend:
 
@@ -82,7 +88,38 @@ The server will reply in the following format.
 }
 ```
 
-To get information about a single shortlink:
+#### `/api/whoami`
+
+To get the current user role:
+
+```bash
+curl -H "X-API-Key: <YOUR_API_KEY>" http://localhost:4567/api/whoami
+```
+
+The server will reply with `admin` if admin access is granted, `public` if admin access is not granted but public mode is enabled,
+and `nobody` if no access is granted.
+
+#### `/api/edit`
+
+To edit an existing short link:
+
+```bash
+curl -X POST -H "X-API-Key: <YOUR_API_KEY>" -d '{"shortlink":"<shortlink>", "longlink":"<longlink>", "reset_hit_count": <bool>}' http://localhost:4567/api/edit
+```
+
+The server will reply in the following format.
+
+```json
+{
+    "success": true/false,
+    "error": false/true,
+    "reason": "<reason"
+}
+```
+
+#### `/api/expand`
+
+To get information about a single short link:
 
 ```bash
 curl -H "X-API-Key: <YOUR_API_KEY>" -d '<shortlink>' http://localhost:4567/api/expand
@@ -112,11 +149,15 @@ or
 
 (This route is not accessible using cookie validation.)
 
+#### `/api/all`
+
 To get a list of all the currently available links:
 
 ```bash
 curl -H "X-API-Key: <YOUR_API_KEY>" http://localhost:4567/api/all
 ```
+
+#### `/api/del/{shortlink}`
 
 To delete a link:
 
