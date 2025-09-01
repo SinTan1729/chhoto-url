@@ -382,7 +382,7 @@ const qrCodeButton = (shortlink) => {
     ctx.drawImage(oldCanvas, 12, 12);
 
     const img = new Image();
-    img.src = prepSubdir("/assets/favicon.svg");
+    img.src = "assets/favicon.svg";
     img.onload = () => {
       ctx.fillStyle = "white";
       ctx.beginPath();
@@ -637,6 +637,7 @@ refreshData()
         passBox.type = "password";
         passEye.innerHTML = SVG_OPEN_EYE;
       }
+      document.getElementById("password").focus();
     };
 
     const qrCodeDialog = document.getElementById("qr-code-dialog");

@@ -158,10 +158,13 @@ div[name="links-div"] {
   border-radius: 1em;
   border-width: 0.15em;
 }
+#login-dialog div {
+  position: relative;
+}
 #password-eye-button {
   position: absolute;
-  right: 5%;
-  top: 50%;
+  right: 0.1em;
+  top: 1.3em;
   transform: translateY(-50%);
   background-color: transparent;
   border-style: none;
