@@ -46,7 +46,7 @@ Password: `chhoto-url-demo-pass`
 #### Note:
 
 - The database is cleared every 15 minutes, so don't use it for anything other than testing.
-- If you host a public instance of Chhoto URL, please let know, and I'll add it to the README.
+- If you host a public instance of Chhoto URL, please let me know, and I'll add it to the README.
 
 # Features
 
@@ -119,4 +119,4 @@ Password: `chhoto-url-demo-pass`
 - Although it's unlikely, it's possible that your database is mangled after some update. For mission critical use cases,
   it's recommended to keep regular versioned backups of the database, and sticking to a minor release tag e.g. 5.8.
 - If you intend to have more than a few thousand short links, it's strongly recommended that you use the UID `slug_style`
-  with a `slug_length` of 16 or more.
+  with a `slug_length` of 16 or more. Otherwise, generating new links will start to fail after a while.
