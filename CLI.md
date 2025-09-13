@@ -29,7 +29,14 @@ For each response, the response code will be `200`, `401`, `400`, `500`, or `404
 To add a link:
 
 ```bash
-curl -X POST -H "X-API-Key: <YOUR_API_KEY>" -d '{"shortlink":"<shortlink>", "longlink":"<longlink>", "expiry_delay": <expiry_delay>}' http://localhost:4567/api/new
+curl -X POST \
+    -H "X-API-Key: <YOUR_API_KEY>" \
+    -d '{ \
+        "shortlink":"<shortlink>", \
+        "longlink":"<longlink>", \
+        "expiry_delay": <expiry_delay> \
+        }' \
+    http://localhost:4567/api/new
 ```
 
 An empty or missing `<shortlink>` will result in it being auto-generated.
@@ -61,7 +68,8 @@ or
 To get the config for the backend:
 
 ```bash
-curl -H "X-API-Key: <YOUR_API_KEY>" -d '<shortlink>' http://localhost:4567/api/getconfig
+curl -H "X-API-Key: <YOUR_API_KEY>" \
+-d '<shortlink>' http://localhost:4567/api/getconfig
 ```
 
 (This would work without authentication in public mode.)  
@@ -104,7 +112,14 @@ and `nobody` if no access is granted.
 To edit an existing short link:
 
 ```bash
-curl -X PUT -H "X-API-Key: <YOUR_API_KEY>" -d '{"shortlink":"<shortlink>", "longlink":"<longlink>", "reset_hit_count": <bool>}' http://localhost:4567/api/edit
+curl -X PUT \
+-H "X-API-Key: <YOUR_API_KEY>" \
+-d '{ \
+    "shortlink":"<shortlink>", \
+    "longlink":"<longlink>", \
+    "reset_hits": <bool> \
+    }' \
+http://localhost:4567/api/edit
 ```
 
 The server will reply in the following format.
@@ -122,7 +137,8 @@ The server will reply in the following format.
 To get information about a single short link:
 
 ```bash
-curl -H "X-API-Key: <YOUR_API_KEY>" -d '<shortlink>' http://localhost:4567/api/expand
+curl -H "X-API-Key: <YOUR_API_KEY>" \
+-d '<shortlink>' http://localhost:4567/api/expand
 ```
 
 The server will reply in the following format.
