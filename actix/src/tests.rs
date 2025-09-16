@@ -46,6 +46,7 @@ struct BackendConfig {
 
 fn default_config(test: &str) -> config::Config {
     let conf = config::Config {
+    address: String::from("0.0.0.0"),
     port: 4567,
     db_location: format!("/tmp/chhoto-url-test-{test}.sqlite"),
     cache_control_header: None,
