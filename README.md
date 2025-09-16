@@ -35,7 +35,7 @@ thought were essential (e.g. hit counting).
 
 ## What does the name mean?
 
-Chhoto (ছোট, [IPA](https://en.wikipedia.org/wiki/Help:IPA/Bengali): /tʃʰoʈo/) is the Bangla word
+Chhoto (ছোট, [pronunciation](https://en.wiktionary.org/wiki/ছোট)) is the Bangla word
 for small. URL means, well... URL. So the name simply means Small URL.
 
 # Demo
