@@ -37,11 +37,11 @@ pub fn read() -> Config {
     info!("DB Location is set to: {db_location}");
 
     // Get the address environment variable
-    let address = var("listen_address")
+    let listen_address = var("listen_address")
         .ok()
         .filter(|s| !s.trim().is_empty())
         .unwrap_or(String::from("0.0.0.0"));
-    info!("Listening address is set to {address}.");
+    info!("Listening address is set to {listen_address}.");
 
     // Get the port environment variable
     let port = var("port")
@@ -167,7 +167,7 @@ pub fn read() -> Config {
         });
 
     Config {
-        listen_address: address,
+        listen_address,
         port,
         db_location,
         cache_control_header,
