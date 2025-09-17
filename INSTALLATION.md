@@ -98,6 +98,11 @@ the `slug_length` variable. It defaults to 8, and a minimum of 4 is supported. I
 intend to have more than a few thousand shortlinks, it's strongly recommended that you
 use the UID `slug_style` with a `slug_length` of 16 or more.
 
+You can change the listening address and port by setting the `listen_address` and `port` variables.
+Take a look at [this page](https://docs.rs/actix-web/4.11.0/actix_web/struct.HttpServer.html#method.bind)
+for supported values and potential consequences. Changing `listen_address` is not recommended if
+using docker.
+
 If you want to use capital letters in the shortlink, set the `allow_capital_letters` variable
 to `True`. This will also allow capital letters in UID slugs, if it is enabled.
 
