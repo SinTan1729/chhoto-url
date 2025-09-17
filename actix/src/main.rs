@@ -66,7 +66,10 @@ async fn main() -> Result<()> {
     let conf = config::read();
 
     // Tell the user that the server has started, and where it is listening to, rather than simply outputting nothing
-    info!("Server has started at 0.0.0.0 on port {}.", conf.port);
+    info!(
+        "Server has started listening to {} on port {}.",
+        conf.listen_address, conf.port
+    );
 
     // Do periodic cleanup
     let db_location_clone = conf.db_location.clone();
@@ -132,7 +135,7 @@ async fn main() -> Result<()> {
         app.default_service(actix_web::web::get().to(services::error404))
     })
     // Hardcode the port the server listens to. Allows for more intuitive Docker Compose port management
-    .bind(("0.0.0.0", conf.port))?
+    .bind((conf.listen_address, conf.port))?
     .run()
     .await
 }

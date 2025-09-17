@@ -10,6 +10,7 @@ use crate::auth;
 // Struct for storing config read form env vars that might be accessed more than once
 #[derive(Clone)]
 pub struct Config {
+    pub listen_address: String,
     pub port: u16,
     pub db_location: String,
     pub cache_control_header: Option<String>,
@@ -34,6 +35,13 @@ pub fn read() -> Config {
         .filter(|s| !s.trim().is_empty())
         .unwrap_or(String::from("urls.sqlite"));
     info!("DB Location is set to: {db_location}");
+
+    // Get the address environment variable
+    let listen_address = var("listen_address")
+        .ok()
+        .filter(|s| !s.trim().is_empty())
+        .unwrap_or(String::from("0.0.0.0"));
+    info!("Listening address is set to {listen_address}.");
 
     // Get the port environment variable
     let port = var("port")
@@ -159,6 +167,7 @@ pub fn read() -> Config {
         });
 
     Config {
+        listen_address,
         port,
         db_location,
         cache_control_header,
