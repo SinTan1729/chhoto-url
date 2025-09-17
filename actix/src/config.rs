@@ -32,14 +32,16 @@ pub struct Config {
 pub fn read() -> Config {
     let db_location = var("db_url")
         .ok()
-        .filter(|s| !s.trim().is_empty())
+        .map(|s| s.trim().to_string())
+        .filter(|s| !s.is_empty())
         .unwrap_or(String::from("urls.sqlite"));
     info!("DB Location is set to: {db_location}");
 
     // Get the address environment variable
     let listen_address = var("listen_address")
         .ok()
-        .filter(|s| !s.trim().is_empty())
+        .map(|s| s.trim().to_string())
+        .filter(|s| !s.is_empty())
         .unwrap_or(String::from("0.0.0.0"));
     info!("Listening address is set to {listen_address}.");
 
@@ -53,7 +55,8 @@ pub fn read() -> Config {
     let cache_control_header = var("cache_control_header")
         .ok()
         .inspect(|h| info!("Using \"{h}\" as Cache-Control header."))
-        .filter(|s| !s.trim().is_empty());
+        .map(|s| s.trim().to_string())
+        .filter(|s| !s.is_empty());
 
     let disable_frontend = var("disable_frontend").is_ok_and(|s| s.trim() == "True");
     if disable_frontend {
@@ -102,7 +105,10 @@ pub fn read() -> Config {
         .inspect(|h| info!("Will use {h} hashes for password verification."));
 
     // If the site_url env variable exists
-    let site_url = if let Some(provided_url) = var("site_url").ok().filter(|s| !s.trim().is_empty())
+    let site_url = if let Some(provided_url) = var("site_url")
+        .ok()
+        .map(|s| s.trim().to_string())
+        .filter(|s| !s.is_empty())
     {
         // Get first and last characters of the site_url
         let mut chars = provided_url.chars();
@@ -136,7 +142,8 @@ pub fn read() -> Config {
 
     let slug_style = var("slug_style")
         .ok()
-        .filter(|s| !s.trim().is_empty())
+        .map(|s| s.trim().to_string())
+        .filter(|s| !s.is_empty())
         .unwrap_or(String::from("Pair"));
     let slug_length = var("slug_length")
         .ok()
