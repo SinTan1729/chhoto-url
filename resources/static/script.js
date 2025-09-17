@@ -298,7 +298,7 @@ const TR = (i, row) => {
 
 const copyShortUrl = async (short_link) => {
   const full_link = `${SITE_URL}/${short_link}`;
-  const link_elt = `<a href=${full_link}>${full_link}</a>`;
+  const link_elt = `<a href=${full_link} target="_blank">${full_link}</a>`;
   try {
     await navigator.clipboard.writeText(full_link);
     showAlert(
@@ -323,8 +323,8 @@ const addHTTPSToLongURL = (id) => {
   input.value = url;
 };
 
-const A_LONG = (s) => `<a href='${s}'>${s}</a>`;
-const A_SHORT = (s) => `<a href="${SITE_URL}/${s}">${s}</a>`;
+const A_LONG = (s) => `<a href='${s}' target="_blank">${s}</a>`;
+const A_SHORT = (s) => `<a href="${SITE_URL}/${s}" target="_blank">${s}</a>`;
 
 const copyButton = (shortUrl) => {
   const btn = document.createElement("button");
