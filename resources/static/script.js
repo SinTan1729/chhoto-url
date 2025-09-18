@@ -330,6 +330,7 @@ const copyButton = (shortUrl) => {
   const btn = document.createElement("button");
   btn.classList.add("svg-button");
   btn.innerHTML = SVG_COPY_BUTTON;
+  btn.title = "Copy Short URL";
 
   btn.onclick = (e) => {
     e.preventDefault();
@@ -342,6 +343,7 @@ const editButton = (shortUrl, longUrl) => {
   const btn = document.createElement("button");
   btn.classList.add("svg-button");
   btn.innerHTML = SVG_EDIT_BUTTON;
+  btn.title = "Edit Short URL";
 
   btn.onclick = () => {
     document.getElementById("container").style.filter = "blur(2px)";
@@ -362,6 +364,7 @@ const qrCodeButton = (shortlink) => {
   const btn = document.createElement("button");
   btn.classList.add("svg-button");
   btn.innerHTML = SVG_QR_BUTTON;
+  btn.title = "Show QR Code";
 
   btn.onclick = () => {
     const tmpDiv = document.createElement("div");
@@ -408,6 +411,7 @@ const deleteButton = (shortUrl) => {
   const btn = document.createElement("button");
   btn.classList.add("svg-button");
   btn.innerHTML = SVG_DELETE_BUTTON;
+  btn.title = "Delete Short URL";
 
   btn.onclick = (e) => {
     e.preventDefault();
