@@ -73,7 +73,7 @@ Password: `chhoto-url-demo-pass`
   generate short links locally.
 - Links are stored in an SQLite database.
 - Available as a Docker container with a provided compose file.
-- Backend written in Rust using [Actix](https://actix.rs/), and frontend
+- Backend written in Rust using [Actix Web](https://actix.rs/), and frontend
   written in plain HTML and vanilla JS, using [Pure CSS](https://purecss.io/)
   for styling.
 - Uses very basic authentication using a provided password. It's not encrypted in transport.
