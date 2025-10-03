@@ -68,10 +68,10 @@ jobs:
             mv $f/chhoto-url actix/target/$f/release/
             chmod +x actix/target/$f/release/chhoto-url
           done
-          mv resources/ resources-original/
       - name: Minify resources for release
         if: github.ref_type == 'tag'
         run: |
+          mv resources/ resources-original/
           sudo apt update
           sudo apt install minify
           minify -rs resources-original/ -o resources/
