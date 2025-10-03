@@ -4,6 +4,8 @@ resources-final
 
 # Ignore SQLite file
 *.sqlite
+*.sqlite-wal
+*.sqlite-shm
 
 # Ignore irrelevant dotfiles
 .vscode/

@@ -113,7 +113,6 @@ WHERE short_url = ?2 AND ?4 >= expiry_time AND expiry_time > 0",
         }
     }
     Ok(expiry_time)
-
 }
 
 // Edit an existing link
@@ -161,6 +160,10 @@ pub fn cleanup(db: &Connection) {
         _ => info!("{u} links were deleted."),
     })
     .expect("Error cleaning expired links.");
+
+    db.execute("PRAGMA optimize", [])
+        .expect("Unable to optimize database");
+    info!("Optimized database.")
 }
 
 // Delete and existing link
@@ -236,7 +239,20 @@ pub fn open_db(path: String) -> Connection {
 
     // Set the user version
     db.pragma_update(None, "user_version", user_version)
-        .expect("Unable to set user_version.");
+        .expect("Unable to set pragma: user_version.");
+    // Set some optimizations and run vacuum
+    db.pragma_update(None, "journal_mode", "WAL")
+        .expect("Unable to set pragma: journal_mode.");
+    db.pragma_update(None, "synchronous", "normal")
+        .expect("Unable to set pragma: synchronous.");
+    db.pragma_update(None, "temp_store", "memory")
+        .expect("Unable to set pragma: temp_store.");
+    db.pragma_update(None, "journal_size_limit", "8388608")
+        .expect("Unable to set pragma: journal_size_limit.");
+    db.pragma_update(None, "mmap_size", "16777216")
+        .expect("Unable to set pragma: mmap_size.");
+    db.execute("PRAGMA vacuum", [])
+        .expect("Unable to vacuum database");
 
     db
 }
