@@ -41,17 +41,27 @@ pub fn find_url(
 }
 
 // Get all URLs in DB
-pub fn getall(db: &Connection) -> Vec<DBRow> {
+pub fn getall(db: &Connection, page_no: Option<i64>, page_size: Option<i64>) -> Vec<DBRow> {
     let now = chrono::Utc::now().timestamp();
+    let query = if page_no.is_some() {
+        "SELECT * FROM urls WHERE expiry_time > ?1 OR expiry_time = 0 ORDER BY id ASC LIMIT ?2 OFFSET ?3"
+    } else {
+        "SELECT * FROM urls WHERE expiry_time > ?1 OR expiry_time = 0 ORDER BY id ASC"
+    };
     let mut statement = db
-        .prepare_cached(
-            "SELECT * FROM urls WHERE expiry_time > ?1 OR expiry_time = 0 ORDER BY id ASC",
-        )
+        .prepare_cached(query)
         .expect("Error preparing SQL statement for getall.");
 
-    let mut data = statement
-        .query([now])
-        .expect("Error executing query for getall.");
+    let mut data = if let Some(n) = page_no {
+        let size = page_size.unwrap_or(10);
+        statement
+            .query((now, size, (n - 1) * size))
+            .expect("Error executing query for getall.")
+    } else {
+        statement
+            .query([now])
+            .expect("Error executing query for getall.")
+    };
 
     let mut links: Vec<DBRow> = Vec::new();
     while let Some(row) = data.next().expect("Error reading fetched rows.") {

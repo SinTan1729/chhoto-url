@@ -12,7 +12,7 @@ use actix_web::{
 };
 use argon2::{password_hash::PasswordHash, Argon2, PasswordVerifier};
 use log::{info, warn};
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 use std::env;
 
 use crate::AppState;
@@ -60,6 +60,13 @@ struct LinkInfo {
     longurl: String,
     hits: i64,
     expiry_time: i64,
+}
+
+// Struct for query params in /api/all
+#[derive(Deserialize)]
+pub struct GetReqParams {
+    pub page_no: Option<i64>,
+    pub page_size: Option<i64>,
 }
 
 // Define the routes
@@ -130,6 +137,7 @@ pub async fn add_link(
 pub async fn getall(
     data: web::Data<AppState>,
     session: Session,
+    params: web::Query<GetReqParams>,
     http: HttpRequest,
 ) -> HttpResponse {
     let config = &data.config;
@@ -137,12 +145,12 @@ pub async fn getall(
     let result = utils::is_api_ok(http, config);
     // If success, return all links
     if result.success {
-        HttpResponse::Ok().body(utils::getall(&data.db))
+        HttpResponse::Ok().body(utils::getall(&data.db, params.into_inner()))
     } else if result.error {
         HttpResponse::Unauthorized().json(result)
     // If password authentication is used - keeps backwards compatibility
     } else if auth::validate(session, config) {
-        HttpResponse::Ok().body(utils::getall(&data.db))
+        HttpResponse::Ok().body(utils::getall(&data.db, params.into_inner()))
     } else {
         HttpResponse::Unauthorized().body("Not logged in!")
     }
