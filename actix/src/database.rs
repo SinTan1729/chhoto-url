@@ -126,11 +126,13 @@ pub fn edit_link(
     db: &Connection,
 ) -> Result<usize, Error> {
     let now = chrono::Utc::now().timestamp();
-    let mut statement = db.prepare_cached(if reset_hits {
+    let query = if reset_hits {
         "UPDATE urls SET long_url = ?1, hits = 0 WHERE short_url = ?2 AND (expiry_time = 0 OR ?3 < expiry_time)"
     } else {
         "UPDATE urls SET long_url = ?1 WHERE short_url = ?2 AND (expiry_time = 0 OR ?3 < expiry_time)"
-    })
+    };
+    let mut statement = db
+        .prepare_cached(query)
         .expect("Error preparing SQL statement for edit_link.");
     statement.execute((longlink, shortlink, now))
 }
