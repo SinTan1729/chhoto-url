@@ -78,8 +78,11 @@ a {
 .chhoto-table tr td div {
   max-height: 4.5em;
   line-height: 1.5em;
-  word-wrap: break-word;
+  word-break: break-word;
   overflow: auto;
+}
+.chhoto-table tr td[label="Long URL"] div {
+  word-break: break-all;
 }
 .chhoto-table tr:nth-child(even) {
   background-color: light-dark(#f2f2f2, #080a0b);
@@ -98,11 +101,11 @@ a {
 .chhoto-table th,
 .chhoto-table td {
   border-left: none;
-  max-width: 42em;
+  max-width: 36em;
 }
 
 #short-url-header {
-  min-width: 8em;
+  min-width: 6em;
 }
 
 th[name="hitsColumn"],
