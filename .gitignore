@@ -2,11 +2,6 @@
 actix/target
 resources-final
 
-# Ignore SQLite file
-*.sqlite
-*.sqlite-wal
-*.sqlite-shm
-
 # Ignore irrelevant dotfiles
 .vscode/
 **/.directory
@@ -17,3 +12,4 @@ cookie*
 
 # Testing related
 custom_dir
+testing-data

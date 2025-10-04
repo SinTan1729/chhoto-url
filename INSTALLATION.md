@@ -21,9 +21,9 @@ You can use the provided compose file as a base, modifying it as needed. Run it 
 docker compose up -d
 ```
 
-If you're using a custom location for the `db_url`, make sure to make that file
-before running the docker image, as otherwise a directory will be created in its
-place, resulting in possibly unwanted behavior.
+If you're using a custom location for the `db_url`, make sure to mount a whole
+directory instead of a folder. Chhoto URL uses WAL journaling mode, so if this is
+not done, there will be a low, but non-zero chance of data corruption.
 
 ## Building and running with docker
 

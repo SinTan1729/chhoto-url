@@ -23,8 +23,9 @@ services:
       # Change if you want to mount the database somewhere else.
       # In this case, you can get rid of the db volume below
       # and instead do a mount manually by specifying the location.
-      # Make sure that you create an empty file with the correct name
-      # before starting the container if you do make any changes.
+      # Make sure that you mount a directory instead of a bare file
+      # since that might have a (low, but non-zero) possibility of
+      # corrupting your db since we use WAL journaling mode
       # (In fact, I'd suggest that you do that so that you can keep
       # a copy of your database.)
       - db_url=/db/urls.sqlite

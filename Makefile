@@ -29,7 +29,7 @@ audit:
 	cargo audit --file actix/Cargo.lock
 
 docker-test: docker-local docker-stop test
-	docker run -t -p ${port}:${port} --name chhoto-url --env-file ./.env -v "${db_file}:${db_url}" -d chhoto-url
+	docker run -t -p ${port}:${port} --name chhoto-url --env-file ./.env -v "${db_dir}:/data" -d chhoto-url
 	docker logs chhoto-url -f 
 
 docker-dev: test build-dev
