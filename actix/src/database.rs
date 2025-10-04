@@ -73,11 +73,12 @@ pub fn getall(db: &Connection) -> Vec<DBRow> {
 
 // Add a hit when site is visited
 pub fn add_hit(shortlink: &str, db: &Connection) {
-    db.execute(
-        "UPDATE urls SET hits = hits + 1 WHERE short_url = ?1",
-        [shortlink],
-    )
-    .expect("Error updating hit count.");
+    let mut statement = db
+        .prepare_cached("UPDATE urls SET hits = hits + 1 WHERE short_url = ?1")
+        .expect("Error preparing SQL statement for add_hit.");
+    statement
+        .execute([shortlink])
+        .expect("Error updating hit count.");
 }
 
 // Insert a new link
@@ -94,11 +95,13 @@ pub fn add_link(
         now + expiry_delay
     };
 
-    let result = db
-        .execute(
+    let mut statement = db
+        .prepare_cached(
             "INSERT INTO urls (long_url, short_url, hits, expiry_time) VALUES (?1, ?2, 0, ?3)",
-            (longlink, shortlink, expiry_time),
         )
+        .expect("Error preparing SQL statement for add_link.");
+    let result = statement
+        .execute((longlink, shortlink, expiry_time))
         .map(|_| expiry_time);
     if result.is_err() {
         let updated = db.execute(
@@ -123,12 +126,13 @@ pub fn edit_link(
     db: &Connection,
 ) -> Result<usize, Error> {
     let now = chrono::Utc::now().timestamp();
-    let statement = if reset_hits {
+    let mut statement = db.prepare_cached(if reset_hits {
         "UPDATE urls SET long_url = ?1, hits = 0 WHERE short_url = ?2 AND (expiry_time = 0 OR ?3 < expiry_time)"
     } else {
         "UPDATE urls SET long_url = ?1 WHERE short_url = ?2 AND (expiry_time = 0 OR ?3 < expiry_time)"
-    };
-    db.execute(statement, (longlink, shortlink, now))
+    })
+        .expect("Error preparing SQL statement for edit_link.");
+    statement.execute((longlink, shortlink, now))
 }
 
 // Clean expired links
@@ -150,25 +154,32 @@ pub fn cleanup(db: &Connection) {
         info!("Expired link marked for deletion: {shortlink}");
     }
 
-    db.execute(
-        "DELETE FROM urls WHERE ?1 >= expiry_time AND expiry_time > 0",
-        [now],
-    )
-    .inspect(|&u| match u {
-        0 => (),
-        1 => info!("1 link was deleted."),
-        _ => info!("{u} links were deleted."),
-    })
-    .expect("Error cleaning expired links.");
-
-    db.execute("PRAGMA optimize", [])
+    let mut statement = db
+        .prepare_cached("DELETE FROM urls WHERE ?1 >= expiry_time AND expiry_time > 0")
+        .expect("Error preparing SQL statement for cleanup.");
+    statement
+        .execute([now])
+        .inspect(|&u| match u {
+            0 => (),
+            1 => info!("1 link was deleted."),
+            _ => info!("{u} links were deleted."),
+        })
+        .expect("Error cleaning expired links.");
+    let mut pragma_statement = db
+        .prepare_cached("PRAGMA optimize")
+        .expect("Error preparing SQL statement for pragma optimize.");
+    pragma_statement
+        .execute([])
         .expect("Unable to optimize database");
     info!("Optimized database.")
 }
 
-// Delete and existing link
+// Delete an existing link
 pub fn delete_link(shortlink: String, db: &Connection) -> bool {
-    if let Ok(delta) = db.execute("DELETE FROM urls WHERE short_url = ?1", [shortlink]) {
+    let mut statement = db
+        .prepare_cached("DELETE FROM urls WHERE short_url = ?1")
+        .expect("Error preparing SQL statement for delete_link.");
+    if let Ok(delta) = statement.execute([shortlink]) {
         delta > 0
     } else {
         false
