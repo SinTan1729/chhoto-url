@@ -34,7 +34,11 @@ struct AppState {
 #[actix_web::main]
 async fn main() -> Result<()> {
     env_logger::builder()
-        .parse_filters("warn,chhoto_url=info,actix_session::middleware=error")
+        .parse_filters(
+            std::env::var("RUST_LOG")
+                .unwrap_or("warn,chhoto_url=info,actix_session::middleware=error".to_string())
+                .as_str(),
+        )
         .format(|buf, record| {
             use chrono::Local;
             use env_logger::fmt::style::{AnsiColor, Style};
