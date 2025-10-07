@@ -184,7 +184,7 @@ pub fn delete_link(shortlink: String, db: &Connection) -> bool {
     }
 }
 
-pub fn open_db(path: String) -> Connection {
+pub fn open_db(path: String, use_wal_mode: bool) -> Connection {
     // Set current user_version. Should be incremented on change of schema.
     let user_version = 1;
 
@@ -249,11 +249,17 @@ pub fn open_db(path: String) -> Connection {
     // Set the user version
     db.pragma_update(None, "user_version", user_version)
         .expect("Unable to set pragma: user_version.");
-    // Set some optimizations and run vacuum
-    db.pragma_update(None, "journal_mode", "WAL")
+    // Set WAL mode if specified
+    let (journal_mode, synchronous) = if use_wal_mode {
+        ("WAL", "NORMAL")
+    } else {
+        ("DELETE", "FULL")
+    };
+    db.pragma_update(None, "journal_mode", journal_mode)
         .expect("Unable to set pragma: journal_mode.");
-    db.pragma_update(None, "synchronous", "normal")
+    db.pragma_update(None, "synchronous", synchronous)
         .expect("Unable to set pragma: synchronous.");
+    // Set some further optimizations and run vacuum
     db.pragma_update(None, "temp_store", "memory")
         .expect("Unable to set pragma: temp_store.");
     db.pragma_update(None, "journal_size_limit", "8388608")
