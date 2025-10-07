@@ -44,7 +44,7 @@ pub fn find_url(
 pub fn getall(db: &Connection, page_no: Option<i64>, page_size: Option<i64>) -> Vec<DBRow> {
     let now = chrono::Utc::now().timestamp();
     let query = if page_no.is_some() {
-        "SELECT * FROM urls WHERE expiry_time > ?1 OR expiry_time = 0 ORDER BY id ASC LIMIT ?2 OFFSET ?3"
+        "SELECT * FROM (SELECT * FROM urls WHERE expiry_time > ?1 OR expiry_time = 0 ORDER BY id DESC LIMIT ?2 OFFSET ?3) ORDER BY id ASC"
     } else {
         "SELECT * FROM urls WHERE expiry_time > ?1 OR expiry_time = 0 ORDER BY id ASC"
     };
