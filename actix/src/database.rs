@@ -23,9 +23,9 @@ pub fn find_url(
     // Long link, hits, expiry time
     let now = chrono::Utc::now().timestamp();
     let query = if needhits {
-        "SELECT long_url, hits, expiry_time FROM urls WHERE short_url = ?1 AND (expiry_time > ?2 OR expiry_time = 0)"
+        "SELECT long_url, hits, expiry_time FROM urls WHERE short_url = ?1 AND (expiry_time = 0 OR expiry_time > ?2)"
     } else {
-        "SELECT long_url FROM urls WHERE short_url = ?1 AND (expiry_time > ?2 OR expiry_time = 0)"
+        "SELECT long_url FROM urls WHERE short_url = ?1 AND (expiry_time = 0 OR expiry_time > ?2)"
     };
     let mut statement = db
         .prepare_cached(query)
@@ -44,9 +44,9 @@ pub fn find_url(
 pub fn getall(db: &Connection, page_no: Option<i64>, page_size: Option<i64>) -> Vec<DBRow> {
     let now = chrono::Utc::now().timestamp();
     let query = if page_no.is_some() {
-        "SELECT * FROM (SELECT * FROM urls WHERE expiry_time > ?1 OR expiry_time = 0 ORDER BY id DESC LIMIT ?2 OFFSET ?3) ORDER BY id ASC"
+        "SELECT * FROM (SELECT * FROM urls WHERE expiry_time= 0 OR expiry_time > ?1 ORDER BY id DESC LIMIT ?2 OFFSET ?3) ORDER BY id ASC"
     } else {
-        "SELECT * FROM urls WHERE expiry_time > ?1 OR expiry_time = 0 ORDER BY id ASC"
+        "SELECT * FROM urls WHERE expiry_time = 0 OR expiry_time > ?1 ORDER BY id ASC"
     };
     let mut statement = db
         .prepare_cached(query)
@@ -117,7 +117,7 @@ pub fn add_link(
         let updated = db.execute(
             "UPDATE urls 
 SET long_url = ?1, short_url = ?2, hits = 0, expiry_time = ?3 
-WHERE short_url = ?2 AND ?4 >= expiry_time AND expiry_time > 0",
+WHERE short_url = ?2 AND expiry_time <= ?4 AND expiry_time > 0",
             (longlink, shortlink, expiry_time, now),
         );
         if updated == Ok(0) || updated.is_err() {
@@ -137,9 +137,9 @@ pub fn edit_link(
 ) -> Result<usize, Error> {
     let now = chrono::Utc::now().timestamp();
     let query = if reset_hits {
-        "UPDATE urls SET long_url = ?1, hits = 0 WHERE short_url = ?2 AND (expiry_time = 0 OR ?3 < expiry_time)"
+        "UPDATE urls SET long_url = ?1, hits = 0 WHERE short_url = ?2 AND (expiry_time = 0 OR expiry_time > ?3)"
     } else {
-        "UPDATE urls SET long_url = ?1 WHERE short_url = ?2 AND (expiry_time = 0 OR ?3 < expiry_time)"
+        "UPDATE urls SET long_url = ?1 WHERE short_url = ?2 AND (expiry_time = 0 OR expiry_time > ?3)"
     };
     let mut statement = db
         .prepare_cached(query)
@@ -152,7 +152,7 @@ pub fn cleanup(db: &Connection) {
     let now = chrono::Utc::now().timestamp();
 
     let mut statement = db
-        .prepare_cached("SELECT short_url FROM urls WHERE ?1 >= expiry_time AND expiry_time > 0")
+        .prepare_cached("SELECT short_url FROM urls WHERE expiry_time <= ?1 AND expiry_time > 0")
         .expect("Error preparing SQL statement for cleanup.");
 
     let mut data = statement
@@ -167,7 +167,7 @@ pub fn cleanup(db: &Connection) {
     }
 
     let mut statement = db
-        .prepare_cached("DELETE FROM urls WHERE ?1 >= expiry_time AND expiry_time > 0")
+        .prepare_cached("DELETE FROM urls WHERE expiry_time <= ?1 AND expiry_time > 0")
         .expect("Error preparing SQL statement for cleanup.");
     statement
         .execute([now])
