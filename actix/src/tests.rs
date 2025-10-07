@@ -63,6 +63,7 @@ fn default_config(test: &str) -> config::Config {
     try_longer_slug: false,
     allow_capital_letters: false,
     custom_landing_directory: None,
+    use_wal_mode: true,
     };
     conf
 }
@@ -75,7 +76,10 @@ async fn create_app(
     let app = test::init_service(
         App::new()
             .app_data(web::Data::new(AppState {
-                db: database::open_db(format!("/tmp/chhoto-url-test-{test}.sqlite")),
+                db: database::open_db(
+                    format!("/tmp/chhoto-url-test-{test}.sqlite"),
+                    conf.use_wal_mode,
+                ),
                 config: conf.clone(),
             }))
             .service(services::siteurl)

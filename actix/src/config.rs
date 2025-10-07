@@ -27,6 +27,7 @@ pub struct Config {
     pub try_longer_slug: bool,
     pub allow_capital_letters: bool,
     pub custom_landing_directory: Option<String>,
+    pub use_wal_mode: bool,
 }
 
 pub fn read() -> Config {
@@ -156,13 +157,25 @@ pub fn read() -> Config {
     if slug_style == "UID" {
         info!("Using UID slugs with length {slug_length}.");
         if try_longer_slug {
-            info!("Will retry with a longer slug upon collision.")
-        };
+            info!("Will retry with a longer slug upon collision.");
+        }
     } else {
         info!("Using adjective-noun pair slugs.");
     }
 
     let allow_capital_letters = var("allow_capital_letters").is_ok_and(|s| s.trim() == "True");
+    if allow_capital_letters {
+        info!("Capital letters will be allowed in links.");
+    } else {
+        info!("Capital letters won't be allowed in links.");
+    }
+
+    let use_wal_mode = var("use_wal_mode").is_ok_and(|s| s.trim() == "True");
+    if use_wal_mode {
+        info!("Using WAL journaling mode for database.");
+    } else {
+        warn!("Using DELETE journaling mode for database. WAL mode is recommended. (Please read the docs.)");
+    }
 
     let custom_landing_directory = var("custom_landing_directory")
         .ok()
@@ -170,7 +183,7 @@ pub fn read() -> Config {
         .filter(|s| !s.is_empty())
         .inspect(|s| {
             info!("Custom landing directory is set to {s}.");
-            info!("The dashboard will be available at /admin/manage/")
+            info!("The dashboard will be available at /admin/manage/");
         });
 
     Config {
@@ -191,5 +204,6 @@ pub fn read() -> Config {
         try_longer_slug,
         allow_capital_letters,
         custom_landing_directory,
+        use_wal_mode,
     }
 }
