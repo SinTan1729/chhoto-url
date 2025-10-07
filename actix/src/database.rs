@@ -152,22 +152,7 @@ pub fn cleanup(db: &Connection) {
     let now = chrono::Utc::now().timestamp();
 
     let mut statement = db
-        .prepare_cached("SELECT short_url FROM urls WHERE expiry_time <= ?1 AND expiry_time > 0")
-        .expect("Error preparing SQL statement for cleanup.");
-
-    let mut data = statement
-        .query([now])
-        .expect("Error executing query for cleanup.");
-
-    while let Some(row) = data.next().expect("Error reading fetched rows.") {
-        let shortlink: String = row
-            .get("short_url")
-            .expect("Error reading shortlink off a row.");
-        info!("Expired link marked for deletion: {shortlink}");
-    }
-
-    let mut statement = db
-        .prepare_cached("DELETE FROM urls WHERE expiry_time <= ?1 AND expiry_time > 0")
+        .prepare_cached("DELETE FROM urls WHERE ?1 >= expiry_time AND expiry_time > 0")
         .expect("Error preparing SQL statement for cleanup.");
     statement
         .execute([now])
@@ -177,6 +162,7 @@ pub fn cleanup(db: &Connection) {
             _ => info!("{u} links were deleted."),
         })
         .expect("Error cleaning expired links.");
+
     let mut pragma_statement = db
         .prepare_cached("PRAGMA optimize")
         .expect("Error preparing SQL statement for pragma optimize.");
