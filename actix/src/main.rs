@@ -36,6 +36,8 @@ async fn main() -> Result<()> {
     env_logger::builder()
         .parse_filters(
             std::env::var("RUST_LOG")
+                .ok()
+                .filter(|s| !s.is_empty())
                 .unwrap_or("warn,chhoto_url=info,actix_session::middleware=error".to_string())
                 .as_str(),
         )

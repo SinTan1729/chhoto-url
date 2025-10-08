@@ -289,7 +289,7 @@ async fn data_fetching_all() {
 
     let req = test::TestRequest::get()
         .uri("/api/all")
-        .insert_header(("X-API-Key", api_key))
+        .insert_header(("X-API-Key", api_key.clone()))
         .to_request();
 
     let resp = test::call_service(&app, req).await;
@@ -305,6 +305,30 @@ async fn data_fetching_all() {
     assert_eq!(reply_chunks[1].hits, 0);
     assert_ne!(reply_chunks[0].expiry_time, 0);
     assert_ne!(reply_chunks[1].expiry_time, 0);
+
+    let req = test::TestRequest::get()
+        .uri("/api/all?page_no=2&page_size=1")
+        .insert_header(("X-API-Key", api_key.clone()))
+        .to_request();
+
+    let resp = test::call_service(&app, req).await;
+    assert!(resp.status().is_success());
+    let body = to_bytes(resp.into_body()).await.unwrap();
+    let reply_chunks: Vec<URLData> = serde_json::from_str(body.as_str()).unwrap();
+    assert_eq!(reply_chunks.len(), 1);
+    assert_eq!(reply_chunks[0].shortlink, "test1");
+
+    let req = test::TestRequest::get()
+        .uri("/api/all?page_after=test3&page_size=1")
+        .insert_header(("X-API-Key", api_key))
+        .to_request();
+
+    let resp = test::call_service(&app, req).await;
+    assert!(resp.status().is_success());
+    let body = to_bytes(resp.into_body()).await.unwrap();
+    let reply_chunks: Vec<URLData> = serde_json::from_str(body.as_str()).unwrap();
+    assert_eq!(reply_chunks.len(), 1);
+    assert_eq!(reply_chunks[0].shortlink, "test1");
 
     let _ = fs::remove_file(format!("/tmp/chhoto-url-test-{test}.sqlite"));
 }

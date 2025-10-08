@@ -8,7 +8,7 @@ use regex::Regex;
 use rusqlite::{ffi::SQLITE_CONSTRAINT_UNIQUE, Connection};
 use serde::{Deserialize, Serialize};
 
-use crate::{auth, config::Config, database};
+use crate::{auth, config::Config, database, services::GetReqParams};
 
 // Struct for reading link pairs sent during API call for new link
 #[derive(Deserialize)]
@@ -116,8 +116,11 @@ fn validate_link(link: &str, allow_capital_letters: bool) -> bool {
 }
 
 // Request the DB for all URLs
-pub fn getall(db: &Connection) -> String {
-    let links = database::getall(db);
+pub fn getall(db: &Connection, params: GetReqParams) -> String {
+    let page_after = params.page_after.filter(|s| !s.is_empty());
+    let page_no = params.page_no.filter(|&n| n > 0);
+    let page_size = params.page_size.filter(|&n| n > 0);
+    let links = database::getall(db, page_after, page_no, page_size);
     serde_json::to_string(&links).expect("Failure during creation of json from db.")
 }
 
