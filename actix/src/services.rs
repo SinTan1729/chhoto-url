@@ -65,6 +65,7 @@ struct LinkInfo {
 // Struct for query params in /api/all
 #[derive(Deserialize)]
 pub struct GetReqParams {
+    pub page_after: Option<String>,
     pub page_no: Option<i64>,
     pub page_size: Option<i64>,
 }

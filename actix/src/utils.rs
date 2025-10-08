@@ -117,9 +117,10 @@ fn validate_link(link: &str, allow_capital_letters: bool) -> bool {
 
 // Request the DB for all URLs
 pub fn getall(db: &Connection, params: GetReqParams) -> String {
+    let page_after = params.page_after.filter(|s| !s.is_empty());
     let page_no = params.page_no.filter(|&n| n > 0);
     let page_size = params.page_size.filter(|&n| n > 0);
-    let links = database::getall(db, page_no, page_size);
+    let links = database::getall(db, page_after, page_no, page_size);
     serde_json::to_string(&links).expect("Failure during creation of json from db.")
 }
 

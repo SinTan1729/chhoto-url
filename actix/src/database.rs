@@ -41,26 +41,59 @@ pub fn find_url(
 }
 
 // Get all URLs in DB
-pub fn getall(db: &Connection, page_no: Option<i64>, page_size: Option<i64>) -> Vec<DBRow> {
+pub fn getall(
+    db: &Connection,
+    page_after: Option<String>,
+    page_no: Option<i64>,
+    page_size: Option<i64>,
+) -> Vec<DBRow> {
     let now = chrono::Utc::now().timestamp();
-    let query = if page_no.is_some() {
-        "SELECT * FROM (SELECT * FROM urls WHERE expiry_time= 0 OR expiry_time > ?1 ORDER BY id DESC LIMIT ?2 OFFSET ?3) ORDER BY id ASC"
+    let query = if page_after.is_some() {
+        "SELECT short_url, long_url, hits, expiry_time FROM
+            (SELECT t.id, t.short_url, t.long_url, t.hits, t.expiry_time FROM urls AS t 
+            JOIN urls AS u ON u.short_url = ?1 
+            WHERE t.id < u.id AND (t.expiry_time = 0 OR t.expiry_time > ?2) 
+            ORDER BY t.id DESC LIMIT ?3)
+            ORDER BY id ASC"
+    } else if page_no.is_some() {
+        "SELECT short_url, long_url, hits, expiry_time FROM 
+            (SELECT id, short_url, long_url, hits, expiry_time FROM urls 
+            WHERE expiry_time= 0 OR expiry_time > ?1 
+            ORDER BY id DESC LIMIT ?2 OFFSET ?3)
+            ORDER BY id ASC"
+    } else if page_size.is_some() {
+        "SELECT short_url, long_url, hits, expiry_time FROM 
+            (SELECT id, short_url, long_url, hits, expiry_time FROM urls
+            WHERE expiry_time = 0 OR expiry_time > ?1 
+            ORDER BY id DESC LIMIT ?2)
+            ORDER BY id ASC"
     } else {
-        "SELECT * FROM urls WHERE expiry_time = 0 OR expiry_time > ?1 ORDER BY id ASC"
+        "SELECT short_url, long_url, hits, expiry_time
+            FROM urls WHERE expiry_time = 0 OR expiry_time > ?1 
+            ORDER BY id ASC"
     };
     let mut statement = db
         .prepare_cached(query)
         .expect("Error preparing SQL statement for getall.");
 
-    let mut data = if let Some(n) = page_no {
+    let mut data = if let Some(pos) = page_after {
         let size = page_size.unwrap_or(10);
         statement
-            .query((now, size, (n - 1) * size))
-            .expect("Error executing query for getall.")
+            .query((pos, now, size))
+            .expect("Error executing query for getall: curson pagination.")
+    } else if let Some(num) = page_no {
+        let size = page_size.unwrap_or(10);
+        statement
+            .query((now, size, (num - 1) * size))
+            .expect("Error executing query for getall: offset pagination.")
+    } else if let Some(size) = page_size {
+        statement
+            .query((now, size))
+            .expect("Error executing query for getall: offset pagination (default).")
     } else {
         statement
             .query([now])
-            .expect("Error executing query for getall.")
+            .expect("Error executing query for getall: no pagination.")
     };
 
     let mut links: Vec<DBRow> = Vec::new();
@@ -116,8 +149,8 @@ pub fn add_link(
     if result.is_err() {
         let updated = db.execute(
             "UPDATE urls 
-SET long_url = ?1, short_url = ?2, hits = 0, expiry_time = ?3 
-WHERE short_url = ?2 AND expiry_time <= ?4 AND expiry_time > 0",
+                SET long_url = ?1, short_url = ?2, hits = 0, expiry_time = ?3 
+                WHERE short_url = ?2 AND expiry_time <= ?4 AND expiry_time > 0",
             (longlink, shortlink, expiry_time, now),
         );
         if updated == Ok(0) || updated.is_err() {
@@ -193,7 +226,7 @@ pub fn open_db(path: String, use_wal_mode: bool) -> Connection {
     // It would be 0 if table does not exist, and 1 if it does
     let table_exists: usize = db
         .query_row_and_then(
-            "SELECT count(*) FROM sqlite_master WHERE type = 'table' AND name = 'urls'",
+            "SELECT COUNT(*) FROM sqlite_master WHERE type = 'table' AND name = 'urls'",
             [],
             |row| row.get(0),
         )
