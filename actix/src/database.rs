@@ -301,8 +301,9 @@ pub fn open_db(path: String, use_wal_mode: bool) -> Connection {
         .expect("Unable to set pragma: journal_size_limit.");
     db.pragma_update(None, "mmap_size", "16777216")
         .expect("Unable to set pragma: mmap_size.");
-    db.execute("PRAGMA vacuum", [])
-        .expect("Unable to vacuum database");
+    db.execute("VACUUM", []).expect("Unable to vacuum database");
+    db.execute("PRAGMA optimize=0x10002", [])
+        .expect("Error running pragma optimize.");
 
     db
 }
