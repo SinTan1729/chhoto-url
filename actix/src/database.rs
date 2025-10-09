@@ -23,9 +23,13 @@ pub fn find_url(
     // Long link, hits, expiry time
     let now = chrono::Utc::now().timestamp();
     let query = if needhits {
-        "SELECT long_url, hits, expiry_time FROM urls WHERE short_url = ?1 AND (expiry_time = 0 OR expiry_time > ?2)"
+        "SELECT long_url, hits, expiry_time FROM urls
+         WHERE short_url = ?1 
+         AND (expiry_time = 0 OR expiry_time > ?2)"
     } else {
-        "SELECT long_url FROM urls WHERE short_url = ?1 AND (expiry_time = 0 OR expiry_time > ?2)"
+        "SELECT long_url FROM urls
+         WHERE short_url = ?1 
+         AND (expiry_time = 0 OR expiry_time > ?2)"
     };
     let mut statement = db
         .prepare_cached(query)
@@ -49,28 +53,28 @@ pub fn getall(
 ) -> Vec<DBRow> {
     let now = chrono::Utc::now().timestamp();
     let query = if page_after.is_some() {
-        "SELECT short_url, long_url, hits, expiry_time FROM
-            (SELECT t.id, t.short_url, t.long_url, t.hits, t.expiry_time FROM urls AS t 
+        "SELECT short_url, long_url, hits, expiry_time FROM (
+            SELECT t.id, t.short_url, t.long_url, t.hits, t.expiry_time FROM urls AS t 
             JOIN urls AS u ON u.short_url = ?1 
             WHERE t.id < u.id AND (t.expiry_time = 0 OR t.expiry_time > ?2) 
-            ORDER BY t.id DESC LIMIT ?3)
-            ORDER BY id ASC"
+            ORDER BY t.id DESC LIMIT ?3
+         ) ORDER BY id ASC"
     } else if page_no.is_some() {
-        "SELECT short_url, long_url, hits, expiry_time FROM 
-            (SELECT id, short_url, long_url, hits, expiry_time FROM urls 
+        "SELECT short_url, long_url, hits, expiry_time FROM (
+            SELECT id, short_url, long_url, hits, expiry_time FROM urls 
             WHERE expiry_time= 0 OR expiry_time > ?1 
-            ORDER BY id DESC LIMIT ?2 OFFSET ?3)
-            ORDER BY id ASC"
+            ORDER BY id DESC LIMIT ?2 OFFSET ?3
+         ) ORDER BY id ASC"
     } else if page_size.is_some() {
-        "SELECT short_url, long_url, hits, expiry_time FROM 
-            (SELECT id, short_url, long_url, hits, expiry_time FROM urls
+        "SELECT short_url, long_url, hits, expiry_time FROM (
+            SELECT id, short_url, long_url, hits, expiry_time FROM urls
             WHERE expiry_time = 0 OR expiry_time > ?1 
-            ORDER BY id DESC LIMIT ?2)
-            ORDER BY id ASC"
+            ORDER BY id DESC LIMIT ?2
+         ) ORDER BY id ASC"
     } else {
         "SELECT short_url, long_url, hits, expiry_time
-            FROM urls WHERE expiry_time = 0 OR expiry_time > ?1 
-            ORDER BY id ASC"
+         FROM urls WHERE expiry_time = 0 OR expiry_time > ?1 
+         ORDER BY id ASC"
     };
     let mut statement = db
         .prepare_cached(query)
@@ -140,7 +144,9 @@ pub fn add_link(
 
     let mut statement = db
         .prepare_cached(
-            "INSERT INTO urls (long_url, short_url, hits, expiry_time) VALUES (?1, ?2, 0, ?3)",
+            "INSERT INTO urls
+             (long_url, short_url, hits, expiry_time)
+             VALUES (?1, ?2, 0, ?3)",
         )
         .expect("Error preparing SQL statement for add_link.");
     let result = statement
@@ -149,8 +155,8 @@ pub fn add_link(
     if result.is_err() {
         let updated = db.execute(
             "UPDATE urls 
-                SET long_url = ?1, short_url = ?2, hits = 0, expiry_time = ?3 
-                WHERE short_url = ?2 AND expiry_time <= ?4 AND expiry_time > 0",
+             SET long_url = ?1, short_url = ?2, hits = 0, expiry_time = ?3 
+             WHERE short_url = ?2 AND expiry_time <= ?4 AND expiry_time > 0",
             (longlink, shortlink, expiry_time, now),
         );
         if updated == Ok(0) || updated.is_err() {
@@ -170,9 +176,11 @@ pub fn edit_link(
 ) -> Result<usize, Error> {
     let now = chrono::Utc::now().timestamp();
     let query = if reset_hits {
-        "UPDATE urls SET long_url = ?1, hits = 0 WHERE short_url = ?2 AND (expiry_time = 0 OR expiry_time > ?3)"
+        "UPDATE urls SET long_url = ?1, hits = 0 
+         WHERE short_url = ?2 AND (expiry_time = 0 OR expiry_time > ?3)"
     } else {
-        "UPDATE urls SET long_url = ?1 WHERE short_url = ?2 AND (expiry_time = 0 OR expiry_time > ?3)"
+        "UPDATE urls SET long_url = ?1 
+         WHERE short_url = ?2 AND (expiry_time = 0 OR expiry_time > ?3)"
     };
     let mut statement = db
         .prepare_cached(query)
@@ -240,7 +248,7 @@ pub fn open_db(path: String, use_wal_mode: bool) -> Connection {
             short_url TEXT NOT NULL,
             hits INTEGER NOT NULL,
             expiry_time INTEGER NOT NULL DEFAULT 0
-            )",
+         )",
         // expiry_time is added later during migration 1
         [],
     )
