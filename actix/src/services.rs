@@ -162,8 +162,7 @@ pub async fn getall(
 pub async fn expand(req: String, data: web::Data<AppState>, http: HttpRequest) -> HttpResponse {
     let result = utils::is_api_ok(http, &data.config);
     if result.success {
-        let (longurl, hits, expiry_time) =
-            utils::get_longurl(req, &data.db, true, data.config.allow_capital_letters);
+        let (longurl, hits, expiry_time) = database::find_url(req, &data.db);
         if let Some(longlink) = longurl {
             let body = LinkInfo {
                 success: true,
@@ -302,15 +301,7 @@ pub async fn link_handler(
     data: web::Data<AppState>,
 ) -> impl Responder {
     let shortlink_str = shortlink.to_string();
-    if let Some(longlink) = utils::get_longurl(
-        shortlink_str,
-        &data.db,
-        false,
-        data.config.allow_capital_letters,
-    )
-    .0
-    {
-        database::add_hit(shortlink.as_str(), &data.db);
+    if let Some(longlink) = database::find_and_add_hit(shortlink_str, &data.db) {
         if data.config.use_temp_redirect {
             Either::Left(Redirect::to(longlink))
         } else {

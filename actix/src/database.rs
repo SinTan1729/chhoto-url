@@ -14,23 +14,13 @@ pub struct DBRow {
     expiry_time: i64,
 }
 
-// Find a single URL
-pub fn find_url(
-    shortlink: &str,
-    db: &Connection,
-    needhits: bool,
-) -> (Option<String>, Option<i64>, Option<i64>) {
+// Find a single URL for /api/expand
+pub fn find_url(shortlink: String, db: &Connection) -> (Option<String>, Option<i64>, Option<i64>) {
     // Long link, hits, expiry time
     let now = chrono::Utc::now().timestamp();
-    let query = if needhits {
-        "SELECT long_url, hits, expiry_time FROM urls
-         WHERE short_url = ?1 
-         AND (expiry_time = 0 OR expiry_time > ?2)"
-    } else {
-        "SELECT long_url FROM urls
-         WHERE short_url = ?1 
-         AND (expiry_time = 0 OR expiry_time > ?2)"
-    };
+    let query = "SELECT long_url, hits, expiry_time FROM urls
+                 WHERE short_url = ?1 
+                 AND (expiry_time = 0 OR expiry_time > ?2)";
     let mut statement = db
         .prepare_cached(query)
         .expect("Error preparing SQL statement for find_url.");
@@ -118,14 +108,20 @@ pub fn getall(
     links
 }
 
-// Add a hit when site is visited
-pub fn add_hit(shortlink: &str, db: &Connection) {
+// Add a hit when site is visited during link resolution
+pub fn find_and_add_hit(shortlink: String, db: &Connection) -> Option<String> {
+    let now = chrono::Utc::now().timestamp();
     let mut statement = db
-        .prepare_cached("UPDATE urls SET hits = hits + 1 WHERE short_url = ?1")
+        .prepare_cached(
+            "UPDATE urls 
+             SET hits = hits + 1 
+             WHERE short_url = ?1 AND (expiry_time = 0 OR expiry_time > ?2)
+             RETURNING long_url",
+        )
         .expect("Error preparing SQL statement for add_hit.");
     statement
-        .execute([shortlink])
-        .expect("Error updating hit count.");
+        .query_one((shortlink, now), |row| row.get("long_url"))
+        .ok()
 }
 
 // Insert a new link
@@ -134,7 +130,7 @@ pub fn add_link(
     longlink: &str,
     expiry_delay: i64,
     db: &Connection,
-) -> Result<i64, Error> {
+) -> Option<i64> {
     let now = chrono::Utc::now().timestamp();
     let expiry_time = if expiry_delay == 0 {
         0
@@ -146,25 +142,20 @@ pub fn add_link(
         .prepare_cached(
             "INSERT INTO urls
              (long_url, short_url, hits, expiry_time)
-             VALUES (?1, ?2, 0, ?3)",
+             VALUES (?1, ?2, 0, ?3)
+             ON CONFLICT(short_url) DO UPDATE 
+             SET long_url = ?1, hits = 0, expiry_time = ?3 
+             WHERE short_url = ?2 AND expiry_time <= ?4 AND expiry_time > 0",
         )
         .expect("Error preparing SQL statement for add_link.");
-    let result = statement
-        .execute((longlink, shortlink, expiry_time))
-        .map(|_| expiry_time);
-    if result.is_err() {
-        let updated = db.execute(
-            "UPDATE urls 
-             SET long_url = ?1, short_url = ?2, hits = 0, expiry_time = ?3 
-             WHERE short_url = ?2 AND expiry_time <= ?4 AND expiry_time > 0",
-            (longlink, shortlink, expiry_time, now),
-        );
-        if updated == Ok(0) || updated.is_err() {
-            // Zero rows returned means no updates
-            return result;
-        }
+    let delta = statement
+        .execute((longlink, shortlink, expiry_time, now))
+        .expect("There was an unexpected error while inserting link.");
+    if delta == 1 {
+        Some(expiry_time)
+    } else {
+        None
     }
-    Ok(expiry_time)
 }
 
 // Edit an existing link
@@ -176,10 +167,12 @@ pub fn edit_link(
 ) -> Result<usize, Error> {
     let now = chrono::Utc::now().timestamp();
     let query = if reset_hits {
-        "UPDATE urls SET long_url = ?1, hits = 0 
+        "UPDATE urls 
+         SET long_url = ?1, hits = 0 
          WHERE short_url = ?2 AND (expiry_time = 0 OR expiry_time > ?3)"
     } else {
-        "UPDATE urls SET long_url = ?1 
+        "UPDATE urls 
+         SET long_url = ?1 
          WHERE short_url = ?2 AND (expiry_time = 0 OR expiry_time > ?3)"
     };
     let mut statement = db
@@ -191,6 +184,7 @@ pub fn edit_link(
 // Clean expired links
 pub fn cleanup(db: &Connection) {
     let now = chrono::Utc::now().timestamp();
+    info!("Starting database cleanup.");
 
     let mut statement = db
         .prepare_cached("DELETE FROM urls WHERE ?1 >= expiry_time AND expiry_time > 0")
