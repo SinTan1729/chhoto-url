@@ -3,6 +3,8 @@ on:
   push:
     tags:
       - "*"
+    branches: ["main"]
+    paths: ["actix/**", "resources/**"]
   workflow_dispatch:
 env:
   CARGO_TERM_COLOR: always
