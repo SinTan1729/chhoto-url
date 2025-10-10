@@ -125,7 +125,19 @@
       <p id="loading-text">Loading links table...</p>
       <table class="chhoto-table pure-table" id="table-box" hidden>
         <caption>
-          Active links
+          <span>Active links</span>
+          <span id="pageControls" hidden="true">
+            <button
+              id="prevPageBtn"
+              class="svg-button"
+              title="Previous Page"
+            ></button>
+            <button
+              id="nextPageBtn"
+              class="svg-button"
+              title="Next Page"
+            ></button>
+          </span>
         </caption>
         <br />
         <thead>
@@ -163,7 +175,13 @@
         <p>Please enter password to access this website</p>
         <div>
           <input class="chhoto-input" type="password" id="password" />
-          <button type="button" id="password-eye-button">&#x1F441;</button>
+          <button
+            type="button"
+            id="password-eye-button"
+            title="Toggle Password Visibility"
+          >
+            &#x1F441;
+          </button>
         </div>
         <button
           class="chhoto-button pure-button pure-button-primary"

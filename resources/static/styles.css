@@ -19,7 +19,7 @@ body {
   background-color: light-dark(white, #181a1b);
 }
 .container {
-  max-width: 75em;
+  max-width: 80em;
   margin: 1em auto auto;
 }
 
@@ -84,6 +84,12 @@ a {
 .chhoto-table tr td[label="Long URL"] div {
   word-break: break-all;
 }
+.chhoto-table tr td[name="numColumn"] div {
+  word-break: normal;
+}
+.chhoto-table tr td[name="hitsColumn"] div {
+  word-break: normal;
+}
 .chhoto-table tr:nth-child(even) {
   background-color: light-dark(#f2f2f2, #080a0b);
 }
@@ -125,7 +131,8 @@ td[name="actions"] div {
   text-align: center;
   min-width: 8em;
 }
-td[name="actions"] div button {
+td[name="actions"] div button,
+.pure-table caption button.svg-button {
   aspect-ratio: 1;
   border-style: none;
   cursor: pointer;
@@ -133,8 +140,13 @@ td[name="actions"] div button {
   vertical-align: middle;
   background-color: transparent;
 }
-td[name="actions"] div button.svg-button svg {
+td[name="actions"] div button.svg-button svg,
+.pure-table caption button.svg-button svg {
   height: 1.3em;
+}
+
+.pure-table caption span {
+  margin-right: 1em;
 }
 
 form input[name="shortUrl"]::placeholder {
