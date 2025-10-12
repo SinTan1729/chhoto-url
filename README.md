@@ -56,7 +56,7 @@ Password: `chhoto-url-demo-pass`
   one. (It's missing in a surprising number of alternatives.)
 - Opening the shortened URL in your browser will instantly redirect you
   to the correct long URL. (So no stupid redirection pages.)
-- Super lightweight and snappy. (The docker image is only ~6MB and RAM uasge
+- Super lightweight and snappy. (The docker image is only ~6MB and RAM usage
   stays under 5MB under normal use.)
 - Counts number of hits for each short link in a privacy respecting way
   i.e. only the hit is recorded, and nothing else.
