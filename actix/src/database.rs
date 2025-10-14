@@ -2,8 +2,10 @@
 // SPDX-License-Identifier: MIT
 
 use log::info;
+use rusqlite::fallible_iterator::FallibleIterator;
 use rusqlite::{Connection, Error};
 use serde::Serialize;
+use std::rc::Rc;
 
 // Struct for encoding a DB row
 #[derive(Serialize)]
@@ -15,7 +17,7 @@ pub struct DBRow {
 }
 
 // Find a single URL for /api/expand
-pub fn find_url(shortlink: String, db: &Connection) -> (Option<String>, Option<i64>, Option<i64>) {
+pub fn find_url(shortlink: &str, db: &Connection) -> (Option<String>, Option<i64>, Option<i64>) {
     // Long link, hits, expiry time
     let now = chrono::Utc::now().timestamp();
     let query = "SELECT long_url, hits, expiry_time FROM urls
@@ -37,10 +39,10 @@ pub fn find_url(shortlink: String, db: &Connection) -> (Option<String>, Option<i
 // Get all URLs in DB
 pub fn getall(
     db: &Connection,
-    page_after: Option<String>,
+    page_after: Option<&str>,
     page_no: Option<i64>,
     page_size: Option<i64>,
-) -> Vec<DBRow> {
+) -> Rc<[DBRow]> {
     let now = chrono::Utc::now().timestamp();
     let query = if page_after.is_some() {
         "SELECT short_url, long_url, hits, expiry_time FROM (
@@ -70,7 +72,7 @@ pub fn getall(
         .prepare_cached(query)
         .expect("Error preparing SQL statement for getall.");
 
-    let mut data = if let Some(pos) = page_after {
+    let data = if let Some(pos) = page_after {
         let size = page_size.unwrap_or(10);
         statement
             .query((pos, now, size))
@@ -90,26 +92,24 @@ pub fn getall(
             .expect("Error executing query for getall: no pagination.")
     };
 
-    let mut links: Vec<DBRow> = Vec::new();
-    while let Some(row) = data.next().expect("Error reading fetched rows.") {
-        let row_struct = DBRow {
-            shortlink: row
-                .get("short_url")
-                .expect("Error reading shortlink from row."),
-            longlink: row
-                .get("long_url")
-                .expect("Error reading shortlink from row."),
-            hits: row.get("hits").expect("Error reading shortlink from row."),
-            expiry_time: row.get("expiry_time").unwrap_or_default(),
-        };
-        links.push(row_struct);
-    }
+    let links: Rc<[DBRow]> = data
+        .map(|row| {
+            let row_struct = DBRow {
+                shortlink: row.get("short_url")?,
+                longlink: row.get("long_url")?,
+                hits: row.get("hits")?,
+                expiry_time: row.get("expiry_time").unwrap_or_default(),
+            };
+            Ok(row_struct)
+        })
+        .collect()
+        .expect("Error procecssing fetched row.");
 
     links
 }
 
 // Add a hit when site is visited during link resolution
-pub fn find_and_add_hit(shortlink: String, db: &Connection) -> Option<String> {
+pub fn find_and_add_hit(shortlink: &str, db: &Connection) -> Option<String> {
     let now = chrono::Utc::now().timestamp();
     let mut statement = db
         .prepare_cached(
@@ -208,7 +208,7 @@ pub fn cleanup(db: &Connection) {
 }
 
 // Delete an existing link
-pub fn delete_link(shortlink: String, db: &Connection) -> bool {
+pub fn delete_link(shortlink: &str, db: &Connection) -> bool {
     let mut statement = db
         .prepare_cached("DELETE FROM urls WHERE short_url = ?1")
         .expect("Error preparing SQL statement for delete_link.");
@@ -219,7 +219,7 @@ pub fn delete_link(shortlink: String, db: &Connection) -> bool {
     }
 }
 
-pub fn open_db(path: String, use_wal_mode: bool) -> Connection {
+pub fn open_db(path: &str, use_wal_mode: bool) -> Connection {
     // Set current user_version. Should be incremented on change of schema.
     let user_version = 1;
 

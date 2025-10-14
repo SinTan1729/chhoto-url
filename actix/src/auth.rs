@@ -6,12 +6,13 @@ use actix_web::HttpRequest;
 use argon2::{password_hash::PasswordHash, Argon2, PasswordVerifier};
 use log::{debug, warn};
 use passwords::PasswordGenerator;
+use std::rc::Rc;
 use std::time::SystemTime;
 
 use crate::config::Config;
 
 // Validate API key
-pub fn validate_key(key: String, config: &Config) -> bool {
+pub fn validate_key(key: &str, config: &Config) -> bool {
     if let Some(api_key) = &config.api_key {
         // Check if API Key is hashed using Argon2. More algorithms maybe added later.
         let authorized = if config.hash_algorithm.is_some() {
@@ -22,7 +23,7 @@ pub fn validate_key(key: String, config: &Config) -> bool {
                 .is_ok()
         } else {
             // If hashing is not enabled, use the plaintext API key for matching
-            api_key == &key
+            api_key == key
         };
         if !authorized {
             warn!("Incorrect API key was provided when connecting to Chhoto URL.");
@@ -66,16 +67,16 @@ pub fn validate(session: Session, config: &Config) -> bool {
     }
 
     if let Ok(token) = session.get::<String>("chhoto-url-auth") {
-        check(token)
+        check(token.as_deref())
     } else {
         false
     }
 }
 
 // Check a token cryptographically
-fn check(token: Option<String>) -> bool {
+fn check(token: Option<&str>) -> bool {
     if let Some(token_body) = token {
-        let token_parts: Vec<&str> = token_body.split(';').collect();
+        let token_parts: Rc<[&str]> = token_body.split(';').collect();
         if token_parts.len() < 2 {
             false
         } else {

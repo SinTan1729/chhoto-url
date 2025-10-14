@@ -85,7 +85,7 @@ pub async fn add_link(
     let result = utils::is_api_ok(http, config);
     // If success, add new link
     if result.success {
-        let (success, reply, expiry_time) = utils::add_link(req, &data.db, config, false);
+        let (success, reply, expiry_time) = utils::add_link(&req, &data.db, config, false);
         if success {
             let site_url = config.site_url.clone();
             let shorturl = if let Some(url) = site_url {
@@ -119,9 +119,9 @@ pub async fn add_link(
     // If password authentication or public mode is used - keeps backwards compatibility
     } else {
         let (success, reply, _) = if auth::validate(session, config) {
-            utils::add_link(req, &data.db, config, false)
+            utils::add_link(&req, &data.db, config, false)
         } else if config.public_mode {
-            utils::add_link(req, &data.db, config, true)
+            utils::add_link(&req, &data.db, config, true)
         } else {
             return HttpResponse::Unauthorized().body("Not logged in!");
         };
@@ -162,7 +162,7 @@ pub async fn getall(
 pub async fn expand(req: String, data: web::Data<AppState>, http: HttpRequest) -> HttpResponse {
     let result = utils::is_api_ok(http, &data.config);
     if result.success {
-        let (longurl, hits, expiry_time) = database::find_url(req, &data.db);
+        let (longurl, hits, expiry_time) = database::find_url(&req, &data.db);
         if let Some(longlink) = longurl {
             let body = LinkInfo {
                 success: true,
@@ -197,7 +197,7 @@ pub async fn edit_link(
     let config = &data.config;
     let result = utils::is_api_ok(http, config);
     if result.success || validate(session, config) {
-        if let Some((server_error, error_msg)) = utils::edit_link(req, &data.db, config) {
+        if let Some((server_error, error_msg)) = utils::edit_link(&req, &data.db, config) {
             let body = Response {
                 success: false,
                 error: true,
@@ -300,7 +300,7 @@ pub async fn link_handler(
     shortlink: web::Path<String>,
     data: web::Data<AppState>,
 ) -> impl Responder {
-    let shortlink_str = shortlink.to_string();
+    let shortlink_str = shortlink.as_str();
     if let Some(longlink) = database::find_and_add_hit(shortlink_str, &data.db) {
         if data.config.use_temp_redirect {
             Either::Left(Redirect::to(longlink))
@@ -406,11 +406,7 @@ pub async fn delete_link(
     let result = utils::is_api_ok(http, config);
     // If success, delete shortlink
     if result.success {
-        if utils::delete_link(
-            shortlink.to_string(),
-            &data.db,
-            data.config.allow_capital_letters,
-        ) {
+        if utils::delete_link(&shortlink, &data.db, data.config.allow_capital_letters) {
             let response = Response {
                 success: true,
                 error: false,
@@ -429,11 +425,7 @@ pub async fn delete_link(
         HttpResponse::Unauthorized().json(result)
     // If "pass" is true - keeps backwards compatibility
     } else if auth::validate(session, config) {
-        if utils::delete_link(
-            shortlink.to_string(),
-            &data.db,
-            data.config.allow_capital_letters,
-        ) {
+        if utils::delete_link(&shortlink, &data.db, data.config.allow_capital_letters) {
             HttpResponse::Ok().body(format!("Deleted {shortlink}"))
         } else {
             HttpResponse::NotFound().body("Not found!")

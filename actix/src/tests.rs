@@ -4,6 +4,7 @@ use actix_web::test;
 use actix_web::{body::to_bytes, dev::ServiceResponse, web::Bytes, App, Error};
 use regex::Regex;
 use serde::Deserialize;
+use std::rc::Rc;
 use std::{fmt::Display, fs, thread::sleep, time::Duration};
 
 use super::*;
@@ -77,7 +78,7 @@ async fn create_app(
         App::new()
             .app_data(web::Data::new(AppState {
                 db: database::open_db(
-                    format!("/tmp/chhoto-url-test-{test}.sqlite"),
+                    format!("/tmp/chhoto-url-test-{test}.sqlite").as_str(),
                     conf.use_wal_mode,
                 ),
                 config: conf.clone(),
@@ -295,7 +296,7 @@ async fn data_fetching_all() {
     let resp = test::call_service(&app, req).await;
     assert!(resp.status().is_success());
     let body = to_bytes(resp.into_body()).await.unwrap();
-    let reply_chunks: Vec<URLData> = serde_json::from_str(body.as_str()).unwrap();
+    let reply_chunks: Rc<[URLData]> = serde_json::from_str(body.as_str()).unwrap();
     assert_eq!(reply_chunks.len(), 2);
     assert_eq!(reply_chunks[0].shortlink, "test1");
     assert_eq!(reply_chunks[1].shortlink, "test3");
@@ -314,7 +315,7 @@ async fn data_fetching_all() {
     let resp = test::call_service(&app, req).await;
     assert!(resp.status().is_success());
     let body = to_bytes(resp.into_body()).await.unwrap();
-    let reply_chunks: Vec<URLData> = serde_json::from_str(body.as_str()).unwrap();
+    let reply_chunks: Rc<[URLData]> = serde_json::from_str(body.as_str()).unwrap();
     assert_eq!(reply_chunks.len(), 1);
     assert_eq!(reply_chunks[0].shortlink, "test1");
 
@@ -326,7 +327,7 @@ async fn data_fetching_all() {
     let resp = test::call_service(&app, req).await;
     assert!(resp.status().is_success());
     let body = to_bytes(resp.into_body()).await.unwrap();
-    let reply_chunks: Vec<URLData> = serde_json::from_str(body.as_str()).unwrap();
+    let reply_chunks: Rc<[URLData]> = serde_json::from_str(body.as_str()).unwrap();
     assert_eq!(reply_chunks.len(), 1);
     assert_eq!(reply_chunks[0].shortlink, "test1");
 

@@ -79,26 +79,22 @@ async fn main() -> Result<()> {
     );
 
     // Do periodic cleanup
-    let db_location_clone = conf.db_location.clone();
+    let db_location = conf.db_location.clone();
     // Create backups if WAL mode is being used
     if conf.use_wal_mode {
         info!("Creating database backups.");
-        if fs::exists(format!("{db_location_clone}.bak1")).ok() == Some(true) {
-            fs::rename(
-                format!("{db_location_clone}.bak1"),
-                format!("{db_location_clone}.bak2"),
-            )
-            .expect("Error creating backups.");
-        }
-        if fs::exists(&db_location_clone).ok() == Some(true) {
-            fs::copy(&db_location_clone, format!("{db_location_clone}.bak1"))
+        if fs::exists(format!("{db_location}.bak1")).ok() == Some(true) {
+            fs::rename(format!("{db_location}.bak1"), format!("{db_location}.bak2"))
                 .expect("Error creating backups.");
+        }
+        if fs::exists(&db_location).ok() == Some(true) {
+            fs::copy(&db_location, format!("{db_location}.bak1")).expect("Error creating backups.");
         }
     }
 
     info!("Starting cleanup service, will run once every hour.");
     spawn(async move {
-        let db = database::open_db(db_location_clone, conf.use_wal_mode);
+        let db = database::open_db(&db_location, conf.use_wal_mode);
         let mut interval = time::interval(time::Duration::from_secs(3600));
         loop {
             interval.tick().await;
@@ -123,7 +119,7 @@ async fn main() -> Result<()> {
             )
             // Maintain a single instance of database throughout
             .app_data(web::Data::new(AppState {
-                db: database::open_db(conf_clone.db_location.clone(), conf.use_wal_mode),
+                db: database::open_db(&conf.db_location, conf.use_wal_mode),
                 config: conf_clone.clone(),
             }))
             .wrap(if let Some(header) = &conf.cache_control_header {

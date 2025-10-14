@@ -44,7 +44,7 @@ pub fn is_api_ok(http: HttpRequest, config: &Config) -> Response {
         // If the header exists
         if let Some(header) = auth::api_header(&http) {
             // If the header is correct
-            if auth::validate_key(header.to_string(), config) {
+            if auth::validate_key(header, config) {
                 Response {
                     success: true,
                     error: false,
@@ -105,20 +105,20 @@ pub fn getall(db: &Connection, params: GetReqParams) -> String {
     let page_after = params.page_after.filter(|s| !s.is_empty());
     let page_no = params.page_no.filter(|&n| n > 0);
     let page_size = params.page_size.filter(|&n| n > 0);
-    let links = database::getall(db, page_after, page_no, page_size);
+    let links = database::getall(db, page_after.as_deref(), page_no, page_size);
     serde_json::to_string(&links).expect("Failure during creation of json from db.")
 }
 
 // Make checks and then request the DB to add a new URL entry
 pub fn add_link(
-    req: String,
+    req: &str,
     db: &Connection,
     config: &Config,
     using_public_mode: bool,
 ) -> (bool, String, i64) {
     // Success status, response string, expiry time
     let mut chunks: NewURLRequest;
-    if let Ok(json) = serde_json::from_str(&req) {
+    if let Ok(json) = serde_json::from_str(req) {
         chunks = json;
     } else {
         return (false, String::from("Invalid request!"), 0);
@@ -173,13 +173,13 @@ pub fn add_link(
 }
 
 // Make checks and then request the DB to edit an URL entry
-pub fn edit_link(req: String, db: &Connection, config: &Config) -> Option<(bool, String)> {
+pub fn edit_link(req: &str, db: &Connection, config: &Config) -> Option<(bool, String)> {
     // None means success
     // The boolean is true when it's a server error and false when it's a client error
     // The string is the error message
 
     let chunks: EditURLRequest;
-    if let Ok(json) = serde_json::from_str(&req) {
+    if let Ok(json) = serde_json::from_str(req) {
         chunks = json;
     } else {
         return Some((false, String::from("Malformed request!")));
@@ -201,8 +201,8 @@ pub fn edit_link(req: String, db: &Connection, config: &Config) -> Option<(bool,
     }
 }
 // Check if link, and request DB to delete it if exists
-pub fn delete_link(shortlink: String, db: &Connection, allow_capital_letters: bool) -> bool {
-    if validate_link(shortlink.as_str(), allow_capital_letters) {
+pub fn delete_link(shortlink: &str, db: &Connection, allow_capital_letters: bool) -> bool {
+    if validate_link(shortlink, allow_capital_letters) {
         database::delete_link(shortlink, db)
     } else {
         false
@@ -210,7 +210,7 @@ pub fn delete_link(shortlink: String, db: &Connection, allow_capital_letters: bo
 }
 
 // Generate a random link using either adjective-name pair (default) of a slug or a-z, 0-9
-fn gen_link(style: &String, len: usize, allow_capital_letters: bool) -> String {
+fn gen_link(style: &str, len: usize, allow_capital_letters: bool) -> String {
     #[rustfmt::skip]
     static ADJECTIVES: [&str; 108] = ["admiring", "adoring", "affectionate", "agitated", "amazing", "angry", "awesome", "beautiful", 
 		"blissful", "bold", "boring", "brave", "busy", "charming", "clever", "compassionate", "competent", "condescending", "confident", "cool", 
