@@ -1,7 +1,7 @@
 <!-- SPDX-FileCopyrightText: 2023 Sayantan Santra <sayantan.santra689@gmail.com> -->
 <!-- SPDX-License-Identifier: MIT -->
 
-[![github-tests-badge](https://github.com/SinTan1729/chhoto-url/actions/workflows/rust_tests.yml/badge.svg)](https://github.com/SinTan1729/chhoto-url/actions/workflows/rust_tests.yml)
+[![github-tests-badge](https://github.com/SinTan1729/chhoto-url/actions/workflows/rust-tests.yml/badge.svg)](https://github.com/SinTan1729/chhoto-url/actions/workflows/rust-tests.yml)
 [![docker-pulls-badge](https://img.shields.io/docker/pulls/sintan1729/chhoto-url)](https://hub.docker.com/r/sintan1729/chhoto-url)
 [![maintainer-badge](https://img.shields.io/badge/maintainer-SinTan1729-blue)](https://github.com/SinTan1729)
 [![latest-release-badge](https://img.shields.io/github/v/release/SinTan1729/chhoto-url?label=latest%20release)](https://github.com/SinTan1729/chhoto-url/releases/latest)
