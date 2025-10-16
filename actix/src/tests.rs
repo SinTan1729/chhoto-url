@@ -1,11 +1,9 @@
 use actix_http::{Request, StatusCode};
 use actix_service::Service;
-use actix_web::test;
-use actix_web::{body::to_bytes, dev::ServiceResponse, web::Bytes, App, Error};
+use actix_web::{body::to_bytes, dev::ServiceResponse, test, web::Bytes, App, Error};
 use regex::Regex;
 use serde::Deserialize;
-use std::rc::Rc;
-use std::{fmt::Display, fs, thread::sleep, time::Duration};
+use std::{fmt::Display, fs, rc::Rc, thread::sleep, time::Duration};
 
 use super::*;
 

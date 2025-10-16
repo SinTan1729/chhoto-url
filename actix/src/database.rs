@@ -2,8 +2,7 @@
 // SPDX-License-Identifier: MIT
 
 use log::info;
-use rusqlite::fallible_iterator::FallibleIterator;
-use rusqlite::{Connection, Error};
+use rusqlite::{fallible_iterator::FallibleIterator, Connection, Error};
 use serde::Serialize;
 use std::rc::Rc;
 

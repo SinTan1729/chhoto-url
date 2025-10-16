@@ -6,8 +6,7 @@ use actix_web::HttpRequest;
 use argon2::{password_hash::PasswordHash, Argon2, PasswordVerifier};
 use log::{debug, warn};
 use passwords::PasswordGenerator;
-use std::rc::Rc;
-use std::time::SystemTime;
+use std::{rc::Rc, time::SystemTime};
 
 use crate::config::Config;
 
