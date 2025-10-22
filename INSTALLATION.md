@@ -15,15 +15,19 @@ and GHCR, except the `dev` builds which are only available on GHCR. All of these
 `linux/arm64`, and `linux/arm/v7` architectures on Linux. These should also work just fine with `podman`, or any other
 container engine supporting OCI images.
 
-You can use the provided compose file as a base, modifying it as needed. Run it with
+You can use the [provided compose file](./compose.yaml) as a base, modifying it as needed. Run it with
 
 ```
 docker compose up -d
 ```
 
-If you're using a custom location for the `db_url`, make sure to mount a whole
-directory instead of a folder. Chhoto URL uses WAL journaling mode, so if this is
-not done, there will be a low, but non-zero chance of data corruption.
+If you're using a custom location for the `db_url`, and using WAL mode, make sure to mount a whole
+directory instead of a folder. If this is not done, there will be a low, but non-zero chance of data corruption.
+
+It should be possible to run Chhoto URL with pretty much anything that supports OCI images e.g. `docker`, `podman quadlets`
+(the repo contains a sample `chhoto-url.container` file for using with `quadlets`.) etc. Official
+support is only provided for `docker` and `podman`, but it should be trivial to convert the `compose.yaml` file to other formats. If you need help,
+feel free to open a discussion.
 
 ## Building and running with docker
 
@@ -59,64 +63,117 @@ docker run -p 4567:4567
 touch ./urls.sqlite
 docker run -p 4567:4567 \
     -e password="password" \
-    -v ./urls.sqlite:/urls.sqlite \
-    -e db_url=/urls.sqlite \
+    -v ./data:/data \
+    -e db_url=/data/urls.sqlite \
     -d chhoto-url:latest
 ```
 
-1.b Further, set the URL of your website (optional)
+_Note: All of this pretty much works exactly the same if you replace `docker` with `podman`. In fact,
+that's what I use for testing._
 
-```
-touch ./urls.sqlite
-docker run -p 4567:4567 \
-    -e password="password" \
-    -v ./urls.sqlite:/urls.sqlite \
-    -e db_url=/urls.sqlite \
-    -e site_url="https://www.example.com" \
-    -d chhoto-url:latest
-```
+## Configuration options
 
-1.c Further, set an API key to activate JSON result mode (optional)
+All the configuration is done using environmental variables. Here's a link of all supported ones. Please take
+a look at the ones marked with a `#` as those are important, especially [`use_wal_mode`](#use_wal_mode-).
 
-```
-docker run -p 4567:4567 \
-    -e password="password" \
-    -e api_key="SECURE_API_KEY" \
-    -v ./urls.sqlite:/urls.sqlite \
-    -e db_url=/urls.sqlite \
-    -e site_url="https://www.example.com" \
-    -d chhoto-url:latest
-```
+### `db_url` \#
+
+Location for the database file. Take a look at [`use_wal_mode`](#use_wal_mode-) before you change it. Defaults to
+`urls.sqlite`. It is highly recommended that you mount a named volume or directory at a location like `/data` and
+use something like `/data/urls.sqlite` as `db_url`.
+(Of course, the actual names being used don't really matter.)
+
+### `password` \#
+
+Provide a secure password. If kept empty, anyone can access the website. Note that password is not encrypted in
+transport, so it's recommended to use a reverse proxy like `caddy` or `nginx`.
+
+### `api_key`
+
+Provide a secure API key. It'll be checked at start for security. If the API key is considered weak, a strong API
+key will be generated and printed in the logs, but the weak one will be used for the time being.
 
 Example Linux command for generating a secure API key: `tr -dc A-Za-z0-9 </dev/urandom | head -c 128`.
 
-You can set the redirect method to Permanent 308 (default) or Temporary 307 by setting
-the `redirect_method` variable to `TEMPORARY` or `PERMANENT` (it's matched exactly). By
-default, the auto-generated links are adjective-name pairs. You can use UIDs by setting
-the `slug_style` variable to `UID`. You can also set the length of those slug by setting
-the `slug_length` variable. It defaults to 8, and a minimum of 4 is supported. If you
-intend to have more than a few thousand shortlinks, it's strongly recommended that you
-use the UID `slug_style` with a `slug_length` of 16 or more.
+If no API key is provided, the website will still work, but it'll be a significantly worse experience if you try
+to use Chhoto URL from the CLI.
 
-You can change the listening address and port by setting the `listen_address` and `port` variables.
+### `use_wal_mode` \#
+
+If set to `True`, enables [`WAL` journaling mode](https://sqlite.org/wal.html). Any other value is ignored.
+It's highly recommended that you enable it, but make sure that you mount either a whole directory, or a named
+volume, and have the database inside it. DO NOT mount a single file, as there will be a small chance of partial
+data loss in that case.
+
+If enabled, there'll be a significant boost in performance under high load. Also, automated backups of the database
+will be enabled. If not, `DELETE` journaling mode is used by default, along with
+[`FULL` synchronous](https://sqlite.org/pragma.html#pragma_synchronous) flag. In `WAL` mode, `NORMAL` synchronous flag is
+used instead. In both cases, we do technically lose Durability, but in my view, it is an acceptable compromise for this
+use case. If you disagree, read on to the next configuration option.
+
+### `ensure_acid`
+
+By default, the database set set up as Atomic, Consistent, and Isolated; but not Durable. If you want ACID compliance, set this
+to `True`. Any other value will be ignored.
+
+Note however that this will impact performance, and will only make any difference if a power loss or system crash happens. Durability
+is maintained even without this option in case of an application crash.
+
+### `redirect_method` \#
+
+Sets which redirection is used when a shortlink is resolved.
+
+Can be set to `TEMPORARY` or `PERMANENT`, which will enable Temporary 307 or Permanent 308 redirects. Any other value
+will be ignored, and a default of `PERMANENT` will be used.
+
+### `slug_style`
+
+Sets the style of slug used when auto-generating shortlinks.
+
+Can be set to either `Pair` or `UID`. Any other value will be ignored, and a default value of `Pair` will be used.
+In pair mode, adjective-name pairs are used for auto-generated links e.g. `gifted-ramanujan`. In UID mode, a randomly
+generated slug is used.
+
+### `slug_length`
+
+If UID slugs are enabled, the length of the slug can be set using this. A minimum of 4 is supported, and it defaults to 16.
+If you intend to have more than a few thousand shortlinks, it's strongly recommended that you use the UID `slug_style` with
+a `slug_length` of 16 or more.
+
+### `try_longer_slug`
+
+If you do choose to use a short UID despite anticipating collisions, it's recommended that you set this to `True`.
+In the event of a collision, this variable will result in a single retry attempt using a UID four digits longer than
+`slug_length`. It has no effect for adjective-name slugs.
+
+### `listen_address`
+
+The address Chhoto URL will bind to. Defaults to `0.0.0.0`.
+
 Take a look at [this page](https://docs.rs/actix-web/4.11.0/actix_web/struct.HttpServer.html#method.bind)
 for supported values and potential consequences. Changing `listen_address` is not recommended if
 using docker.
 
-If you want to use capital letters in the shortlink, set the `allow_capital_letters` variable
-to `True`. This will also allow capital letters in UID slugs, if it is enabled.
+### `port`
 
-If you do choose to use a short UID despite anticipating collisions, set `try_longer_slug` to `True`.
-In the event of a collision, this variable will result in a single retry attempt using
-a UID four digits longer than `slug_length`. It has no effect for adjective-name slugs.
+The port Chhoto URL will listen to. Defaults to `4567`.
 
-Although it's unlikely, it's possible that your database is mangled after some update.
-For mission critical use cases, it's recommended to keep regular versioned backups of
-the database, and sticking to a minor release tag e.g. 5.8. You can either bind mount a file
-for the database as described in 1.a above, or take a backup of the docker volume.
+### `allow_capital_letters`
 
-You can provide hashed password and API key for extra security. Note that it will add some latency
-to some of your requests and use more resources in general. The only supported algorithm for now is Argon2.
+If you want to use capital letters in the shortlink, set the `allow_capital_letters` variable to `True`. Any other
+value is ignored.
+
+This will also allow capital letters in UID slugs, if those are enabled. It has no effect for adjective-name slugs.
+
+### `hash_algorithm` \#
+
+If you want to provided hashed password and API Key, name a supported algorithm here. For now, the supported
+values are: `Argon2`. More algorithms may be added later. Unsupported values are ignored.
+
+_Note: If using a compose file, make sure to escape $ by $$._
+
+_Note: It will add some latency to some of your requests and use more resources in general._
+
 Recommended command for hashing:
 
 ```bash
@@ -125,16 +182,32 @@ echo -n <password> | argon2 <salt> -id -t 3 -m 16 -l 32 -e
 
 You may also use online tools for this step.
 
+### `public_mode`
+
 To enable public mode, set `public_mode` to `Enable`. With this, anyone will be able to add
-links. Listing existing links or deleting links will need admin access using the password. If
-`public_mode` is enabled, and `public_mode_expiry_delay` is set to a positive value, submitted links
-will expire in that given time. The user can still choose a shorter expiry delay.
-To completely disable the frontend, set `disable_frontend` to `True`. If you want to serve a custom
-landing page, put all your site related files, along with an `index.html` file in a directory, and
-set `custom_landing_directory` to the path of the directory. If using docker, you need to first
+links. Listing existing links or deleting links will need admin access using the password. Any other values are
+ignored.
+
+### `public_mode_expiry_delay`
+
+If `public_mode` is enabled, and `public_mode_expiry_delay` is set to a positive value, submitted links
+will expire in that given time (in seconds). The user can still choose a shorter expiry delay.
+
+It will have no effect for a logged in user i.e. the admin.
+
+### `disable_frontend`
+
+Set this to `True` to completely disable the frontend.
+
+### `custom_landing_directory`
+
+If you want to serve a custom landing page, put all your site related files, along with a valid `index.html` file in a
+directory, and set this to the path of the directory. If using docker, you need to first
 mount the directory inside the container. The admin page will then be located at `/admin/manage`.
 
-By default, the server sends no Cache-Control headers. You can set custom `cache_control_header`
+### `cache_control_header`
+
+By default, the server sends no Cache-Control headers. You can set custom headers here
 to send your desired headers. It must be a comma separated list of valid
 [RFC 7234 §5.2](https://datatracker.ietf.org/doc/html/rfc7234#section-5.2) headers. For example,
 you can set it to `no-cache, private` to disable caching. It might help during testing if

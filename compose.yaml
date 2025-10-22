@@ -23,12 +23,17 @@ services:
       # Change if you want to mount the database somewhere else.
       # In this case, you can get rid of the db volume below
       # and instead do a mount manually by specifying the location.
+      - db_url=/db/urls.sqlite
+      # Uncomment the next line to enable WAL mode. It's highly recommended.
       # Make sure that you mount a directory instead of a bare file
       # since that might have a (low, but non-zero) possibility of
       # corrupting your db since we use WAL journaling mode
       # (In fact, I'd suggest that you do that so that you can keep
       # a copy of your database.)
-      - db_url=/db/urls.sqlite
+      # - use_wal_mode = True
+      # If you'd like to enable ACID compliance, uncomment the next line.
+      # Note that it'll impact performance. Look at the README for more.
+      # - ensure_acid = True
 
       # Change this if your server URL is not "http://localhost"
       # This must not be surrounded by quotes. For example:

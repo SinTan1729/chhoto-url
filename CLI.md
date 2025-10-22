@@ -165,13 +165,23 @@ or
 
 (This route is not accessible using cookie validation.)
 
-#### `/api/all`
+#### `/api/all?`
 
 To get a list of all the currently available links:
 
 ```bash
 curl -H "X-API-Key: <YOUR_API_KEY>" http://localhost:4567/api/all
 ```
+
+Supported query parameters are as follows.
+
+1. `page_after`: An offset where to start pagination after. It should be a valid shortlink, or an empty response will be received.
+   This is faster, and the preferred way of doing pagination.
+1. `page_size`: The size of a returned page in number of shortlinks. Default value is 10.
+1. `page_no`: Alternative way of doing pagination. This is slower, and should be used only when using `page_after` isn't viable.
+
+None of the parameters are required. In absence of all of those, all shortlinks are returned. The entries should be positive integers.
+If only `page_size` is provided, the first page is returned.
 
 #### `/api/del/{shortlink}`
 
