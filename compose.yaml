@@ -4,6 +4,8 @@
 services:
   chhoto-url:
     image: sintan1729/chhoto-url:latest
+    # You may want to check out the alpine images for extra features. The images can also be
+    # pulled from ghcr.io
     restart: unless-stopped
     container_name: chhoto-url
     tty: true
@@ -96,6 +98,13 @@ services:
       # You may set the TZ variable for timezone in logging, but it will only work in the alpine builds
     volumes:
       - db:/db
+    # Only enable this if using the alpine images.
+    # healthcheck:
+    #   test: wget --no-verbose --tries=1 --spider http://chhoto-url:4567/api/whoami || exit 1
+    #   interval: 60s
+    #   start_period: 10s
+    #   retries: 3
+    #   timeout: 10s
 
 volumes:
   db:

@@ -69,7 +69,8 @@ docker run -p 4567:4567 \
 ```
 
 _Note: All of this pretty much works exactly the same if you replace `docker` with `podman`. In fact,
-that's what I use for testing._
+that's what I use for testing. A sample file for podman quadlets is provided at
+[`chhoto-url.container`](./chhoto-url.container)_
 
 ## Configuration options
 

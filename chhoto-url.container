@@ -1,0 +1,49 @@
+# chhoto-url.container
+# To be used with rootless quadlets. Put inside your $XDG_CONFIG_HOME/containers/systemd/
+# Take a look at README for the explanation of the configs.
+# The commented out configs are optional.
+[Unit]
+Description=Caddy
+#AssertPathIsDirectory=%h/podman/chhoto-url/data
+
+[Container]
+ContainerName=chhoto-url
+Image=sintan1729/chhoto-url:latest
+PodmanArgs=--tty
+PublishPort=4567:4567
+DropCapability=ALL
+
+# Environment variables
+Environment=db_url=/db/urls.sqlite 
+Environment=use_wal_mode = True 
+Environment=ensure_acid = False
+#Environment=site_url=https://www.example.com 
+#Environment=hash_algorithm=Argon2 
+Environment=password=TopSecretPass 
+Environment=port=4567
+#Environment=api_key=SECURE_API_KEY 
+Environment=redirect_method=TEMPORARY 
+Environment=slug_style=Pair 
+#Environment=slug_length=8 
+#Environment=try_longer_slug=False 
+#Environment=allow_capital_letters=False 
+#Environment=public_mode=Disable 
+#Environment=public_mode_expiry_delay=3600 
+#Environment=disable_frontend=False 
+#Environment=custom_landing_directory=/custom/dir/location 
+#Environment=cache_control_header=no-cache, private
+
+# Volume
+Volume=db:/db
+
+# Health check
+# Only enable this if using the alpine images.
+# HealthCmd=CMD-SHELL wget --no-verbose --tries=1 --spider http://chhoto-url:4567/api/whoami || exit 1
+# HealthInterval=60s
+# HealthRetries=3
+# HealthStartPeriod=10s
+# HealthTimeout=10s
+# HealthOnFailure=kill
+
+[Service]
+Restart=on-failure
