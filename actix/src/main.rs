@@ -93,7 +93,7 @@ async fn main() -> Result<()> {
 
     info!("Starting cleanup service, will run once every hour.");
     spawn(async move {
-        let db = database::open_db(&db_location, conf.use_wal_mode);
+        let db = database::open_db(&db_location, conf.use_wal_mode, conf.ensure_acid);
         let mut interval = time::interval(time::Duration::from_secs(3600));
         loop {
             interval.tick().await;
@@ -118,7 +118,7 @@ async fn main() -> Result<()> {
             )
             // Maintain a single instance of database throughout
             .app_data(web::Data::new(AppState {
-                db: database::open_db(&conf.db_location, conf.use_wal_mode),
+                db: database::open_db(&conf.db_location, conf.use_wal_mode, conf.ensure_acid),
                 config: conf_clone.clone(),
             }))
             .wrap(if let Some(header) = &conf.cache_control_header {

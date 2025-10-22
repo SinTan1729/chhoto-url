@@ -63,6 +63,7 @@ fn default_config(test: &str) -> config::Config {
     allow_capital_letters: false,
     custom_landing_directory: None,
     use_wal_mode: true,
+    ensure_acid: false,
     };
     conf
 }
@@ -78,6 +79,7 @@ async fn create_app(
                 db: database::open_db(
                     format!("/tmp/chhoto-url-test-{test}.sqlite").as_str(),
                     conf.use_wal_mode,
+                    conf.ensure_acid,
                 ),
                 config: conf.clone(),
             }))

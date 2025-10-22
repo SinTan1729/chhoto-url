@@ -28,6 +28,7 @@ pub struct Config {
     pub allow_capital_letters: bool,
     pub custom_landing_directory: Option<String>,
     pub use_wal_mode: bool,
+    pub ensure_acid: bool,
 }
 
 pub fn read() -> Config {
@@ -176,6 +177,14 @@ pub fn read() -> Config {
     } else {
         warn!("Using DELETE journaling mode for database. WAL mode is recommended. (Please read the docs.)");
     }
+    let ensure_acid = var("ensure_acid").is_ok_and(|s| s.trim() == "True");
+    if ensure_acid {
+        let synchronous = if use_wal_mode { "FULL" } else { "EXTRA" };
+        info!("Ensuring ACID compliance, using synchronous pragma: {synchronous}.");
+    } else {
+        let synchronous = if use_wal_mode { "NORMAL" } else { "FULL" };
+        info!("Not ensuring ACID compliance, using synchronous pragma: {synchronous}.")
+    }
 
     let custom_landing_directory = var("custom_landing_directory")
         .ok()
@@ -205,5 +214,6 @@ pub fn read() -> Config {
         allow_capital_letters,
         custom_landing_directory,
         use_wal_mode,
+        ensure_acid,
     }
 }

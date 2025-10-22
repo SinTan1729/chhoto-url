@@ -218,7 +218,7 @@ pub fn delete_link(shortlink: &str, db: &Connection) -> bool {
     }
 }
 
-pub fn open_db(path: &str, use_wal_mode: bool) -> Connection {
+pub fn open_db(path: &str, use_wal_mode: bool, ensure_acid: bool) -> Connection {
     // Set current user_version. Should be incremented on change of schema.
     let user_version = 1;
 
@@ -284,10 +284,11 @@ pub fn open_db(path: &str, use_wal_mode: bool) -> Connection {
     db.pragma_update(None, "user_version", user_version)
         .expect("Unable to set pragma: user_version.");
     // Set WAL mode if specified
-    let (journal_mode, synchronous) = if use_wal_mode {
-        ("WAL", "NORMAL")
-    } else {
-        ("DELETE", "FULL")
+    let (journal_mode, synchronous) = match (use_wal_mode, ensure_acid) {
+        (true, false) => ("WAL", "NORMAL"),
+        (true, true) => ("WAL", "FULL"),
+        (false, false) => ("DELETE", "FULL"),
+        (false, true) => ("DELETE", "EXTRA"),
     };
     db.pragma_update(None, "journal_mode", journal_mode)
         .expect("Unable to set pragma: journal_mode.");
