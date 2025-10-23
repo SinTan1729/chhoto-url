@@ -71,7 +71,8 @@ Password: `chhoto-url-demo-pass`
   time for public instances, which might be useful.
 - Allows setting the URL of your website, in case you want to conveniently
   generate short links locally.
-- Links are stored in an SQLite database.
+- Links are stored in an SQLite database, which is configured to be ACID by default.
+  Options are available for tuning the database to the user's liking.
 - Available as a Docker container with a provided compose file.
 - Backend written in Rust using [Actix Web](https://actix.rs/), and frontend
   written in plain HTML and vanilla JS, using [Pure CSS](https://purecss.io/)

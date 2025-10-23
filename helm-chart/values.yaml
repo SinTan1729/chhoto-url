@@ -28,7 +28,7 @@ allow_capital_letters: False
 # custom_landing_directory: "/custom/dir/location"
 # cache_control_header: "no-cache, private"
 use_wal_mode: True
-# ensure_acid: True
+# ensure_acid: False
 
 protocol: https
 fqdn: your.short.link.url.com

@@ -177,7 +177,7 @@ pub fn read() -> Config {
     } else {
         warn!("Using DELETE journaling mode for database. WAL mode is recommended. (Please read the docs.)");
     }
-    let ensure_acid = var("ensure_acid").is_ok_and(|s| s.trim() == "True");
+    let ensure_acid = !var("ensure_acid").is_ok_and(|s| s.trim() == "False");
     if ensure_acid {
         let synchronous = if use_wal_mode { "FULL" } else { "EXTRA" };
         info!("Ensuring ACID compliance, using synchronous pragma: {synchronous}.");

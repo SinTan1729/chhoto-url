@@ -108,25 +108,24 @@ data loss in that case.
 
 If this is enabled, there'll be a significant boost in performance under high load, since write will no longer block reads.
 Also, automated backups of the database will be enabled. Otherwise, `DELETE` journal mode is used by default, along with
-[`FULL` synchronous](https://sqlite.org/pragma.html#pragma_synchronous) pragma. In `WAL` mode, `NORMAL` synchronous pragma is
-used instead. In both cases, we do technically lose Durability, but in my view, it is an acceptable compromise for this
-use case. If you disagree, read on to the next configuration option.
+[`EXTRA` synchronous](https://sqlite.org/pragma.html#pragma_synchronous) pragma. In `WAL` mode, `FULL` synchronous pragma is
+used instead.
 
-_Note: There might be a data loss only in case of system failure or power loss. And you should only lose the data stored
-after the last sync with the database file. So, under normal loads, you shouldn't lose any data anyway. But this is a real
-thing that can technically happen._
+In both cases, we have full ACID compliance, but it does cost a bit of performance. If you expect to see high throughput (in the
+order of hundreds of read/writes per second), take a look at the `ensure_acid` configuration option.
 
 ### `ensure_acid`
 
-By default, the database set set up as Atomic, Consistent, and Isolated; but not Durable. If you want full
-[ACID](https://www.slingacademy.com/article/acid-properties-in-sqlite-why-they-matter) compliance, set this to
-`True`. Any other value will be ignored.
+By default, the database is
+[ACID (i.e. Atomic, Consistent, Isolated, and Durable)](https://www.slingacademy.com/article/acid-properties-in-sqlite-why-they-matter).
+If you'd like to let go of durability for an increase in throughput, set this to `False`. Any other value will be ignored.
 
 This is done by setting the [synchronous pragma](https://sqlite.org/pragma.html#pragma_synchronous) to `FULL` in `WAL`
 [journal mode](https://sqlite.org/pragma.html#pragma_journal_mode), and to `EXTRA` in `DELETE` journal mode.
 
-_Note: This will impact performance, and will only make any difference if a power loss or system crash happens. Durability
-is maintained even without this option in case of an application crash._
+_Note: There might be partial data loss only in case of system failure or power loss. Durability is maintained across application
+crashes. If you do have data loss, you should only lose the data stored after the last sync with the database file. So, under normal
+loads, you shouldn't lose any data anyway. But this is a real thing that can technically happen._
 
 ### `redirect_method` \#
 

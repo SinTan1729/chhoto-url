@@ -16,7 +16,7 @@ DropCapability=ALL
 # Environment variables
 Environment=db_url=/db/urls.sqlite 
 Environment=use_wal_mode = True 
-Environment=ensure_acid = False
+#Environment=ensure_acid = True
 #Environment=site_url=https://www.example.com 
 #Environment=hash_algorithm=Argon2 
 Environment=password=TopSecretPass 
