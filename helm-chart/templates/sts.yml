@@ -62,6 +62,12 @@ spec:
             - name: cache_control_header
               value: {{ .Values.cache_control_header }}
             {{- end }}
+            - name: use_wal_mode
+              value: {{ .Values.use_wal_mode }}
+            {{- if .Values.ensure_acid }}
+            - name: ensure_acid
+              value: {{ .Values.ensure_acid }}
+            {{- end }}
           volumeMounts:
             - name: data
               mountPath: /db
