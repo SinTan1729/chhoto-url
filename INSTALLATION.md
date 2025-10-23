@@ -101,24 +101,32 @@ to use Chhoto URL from the CLI.
 
 ### `use_wal_mode` \#
 
-If set to `True`, enables [`WAL` journaling mode](https://sqlite.org/wal.html). Any other value is ignored.
+If set to `True`, enables [`WAL` journal mode](https://sqlite.org/wal.html). Any other value is ignored.
 It's highly recommended that you enable it, but make sure that you mount either a whole directory, or a named
 volume, and have the database inside it. DO NOT mount a single file, as there will be a small chance of partial
 data loss in that case.
 
-If enabled, there'll be a significant boost in performance under high load. Also, automated backups of the database
-will be enabled. If not, `DELETE` journaling mode is used by default, along with
-[`FULL` synchronous](https://sqlite.org/pragma.html#pragma_synchronous) flag. In `WAL` mode, `NORMAL` synchronous flag is
+If this is enabled, there'll be a significant boost in performance under high load, since write will no longer block reads.
+Also, automated backups of the database will be enabled. Otherwise, `DELETE` journal mode is used by default, along with
+[`FULL` synchronous](https://sqlite.org/pragma.html#pragma_synchronous) pragma. In `WAL` mode, `NORMAL` synchronous pragma is
 used instead. In both cases, we do technically lose Durability, but in my view, it is an acceptable compromise for this
 use case. If you disagree, read on to the next configuration option.
 
+_Note: There might be a data loss only in case of system failure or power loss. And you should only lose the data stored
+after the last sync with the database file. So, under normal loads, you shouldn't lose any data anyway. But this is a real
+thing that can technically happen._
+
 ### `ensure_acid`
 
-By default, the database set set up as Atomic, Consistent, and Isolated; but not Durable. If you want ACID compliance, set this
-to `True`. Any other value will be ignored.
+By default, the database set set up as Atomic, Consistent, and Isolated; but not Durable. If you want full
+[ACID](https://www.slingacademy.com/article/acid-properties-in-sqlite-why-they-matter) compliance, set this to
+`True`. Any other value will be ignored.
 
-Note however that this will impact performance, and will only make any difference if a power loss or system crash happens. Durability
-is maintained even without this option in case of an application crash.
+This is done by setting the [synchronous pragma](https://sqlite.org/pragma.html#pragma_synchronous) to `FULL` in `WAL`
+[journal mode](https://sqlite.org/pragma.html#pragma_journal_mode), and to `EXTRA` in `DELETE` journal mode.
+
+_Note: This will impact performance, and will only make any difference if a power loss or system crash happens. Durability
+is maintained even without this option in case of an application crash._
 
 ### `redirect_method` \#
 
