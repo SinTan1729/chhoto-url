@@ -181,7 +181,7 @@ pub fn edit_link(
 }
 
 // Clean expired links
-pub fn cleanup(db: &Connection) {
+pub fn cleanup(db: &Connection, use_wal_mode: bool) {
     let now = chrono::Utc::now().timestamp();
     info!("Starting database cleanup.");
 
@@ -197,12 +197,22 @@ pub fn cleanup(db: &Connection) {
         })
         .expect("Error cleaning expired links.");
 
+    if use_wal_mode {
+        let mut pragma_statement = db
+            .prepare_cached("PRAGMA wal_checkpoint(TRUNCATE)")
+            .expect("Error preparing SQL statement for pragma: wal_checkpoint.");
+        pragma_statement
+            .query_one([], |row| row.get::<usize, isize>(1))
+            .ok()
+            .filter(|&v| v != -1)
+            .expect("Unable to create WAL checkpoint.");
+    }
     let mut pragma_statement = db
         .prepare_cached("PRAGMA optimize")
-        .expect("Error preparing SQL statement for pragma optimize.");
+        .expect("Error preparing SQL statement for pragma: optimize.");
     pragma_statement
         .execute([])
-        .expect("Unable to optimize database");
+        .expect("Unable to optimize database.");
     info!("Optimized database.")
 }
 
