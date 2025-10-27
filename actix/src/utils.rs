@@ -42,9 +42,9 @@ pub fn is_api_ok(http: HttpRequest, config: &Config) -> Response {
     // If the api_key environment variable exists
     if config.api_key.is_some() {
         // If the header exists
-        if let Some(header) = auth::api_header(&http) {
+        if let Some(header) = auth::get_api_header(&http) {
             // If the header is correct
-            if auth::validate_key(header, config) {
+            if auth::is_key_valid(header, config) {
                 Response {
                     success: true,
                     error: false,
@@ -72,7 +72,7 @@ pub fn is_api_ok(http: HttpRequest, config: &Config) -> Response {
         }
     } else {
         // If the API key isn't set, but an API Key header is provided
-        if auth::api_header(&http).is_some() {
+        if auth::get_api_header(&http).is_some() {
             Response {
                 success: false,
                 error: true,

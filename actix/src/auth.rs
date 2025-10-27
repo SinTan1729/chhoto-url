@@ -11,7 +11,7 @@ use std::{rc::Rc, time::SystemTime};
 use crate::config::Config;
 
 // Validate API key
-pub fn validate_key(key: &str, config: &Config) -> bool {
+pub fn is_key_valid(key: &str, config: &Config) -> bool {
     if let Some(api_key) = &config.api_key {
         // Check if API Key is hashed using Argon2. More algorithms maybe added later.
         let authorized = if config.hash_algorithm.is_some() {
@@ -54,26 +54,26 @@ pub fn gen_key() -> String {
 }
 
 // Check if the API key header exists
-pub fn api_header(req: &HttpRequest) -> Option<&str> {
+pub fn get_api_header(req: &HttpRequest) -> Option<&str> {
     req.headers().get("X-API-Key")?.to_str().ok()
 }
 
 // Validate a session
-pub fn validate(session: Session, config: &Config) -> bool {
+pub fn is_session_valid(session: Session, config: &Config) -> bool {
     // If there's no password provided, just return true
     if config.password.is_none() {
         return true;
     }
 
     if let Ok(token) = session.get::<String>("chhoto-url-auth") {
-        check(token.as_deref())
+        is_token_valid(token.as_deref())
     } else {
         false
     }
 }
 
 // Check a token cryptographically
-fn check(token: Option<&str>) -> bool {
+fn is_token_valid(token: Option<&str>) -> bool {
     if let Some(token_body) = token {
         let token_parts: Rc<[&str]> = token_body.split(';').collect();
         if token_parts.len() < 2 {

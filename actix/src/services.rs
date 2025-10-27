@@ -17,7 +17,7 @@ use std::env;
 
 use crate::AppState;
 use crate::{auth, database};
-use crate::{auth::validate, utils};
+use crate::{auth::is_session_valid, utils};
 
 // Store the version number
 const VERSION: &str = env!("CARGO_PKG_VERSION");
@@ -118,7 +118,7 @@ pub async fn add_link(
         HttpResponse::Unauthorized().json(result)
     // If password authentication or public mode is used - keeps backwards compatibility
     } else {
-        let (success, reply, _) = if auth::validate(session, config) {
+        let (success, reply, _) = if auth::is_session_valid(session, config) {
             utils::add_link(&req, &data.db, config, false)
         } else if config.public_mode {
             utils::add_link(&req, &data.db, config, true)
@@ -150,7 +150,7 @@ pub async fn getall(
     } else if result.error {
         HttpResponse::Unauthorized().json(result)
     // If password authentication is used - keeps backwards compatibility
-    } else if auth::validate(session, config) {
+    } else if auth::is_session_valid(session, config) {
         HttpResponse::Ok().body(utils::getall(&data.db, params.into_inner()))
     } else {
         HttpResponse::Unauthorized().body("Not logged in!")
@@ -196,7 +196,7 @@ pub async fn edit_link(
 ) -> HttpResponse {
     let config = &data.config;
     let result = utils::is_api_ok(http, config);
-    if result.success || validate(session, config) {
+    if result.success || is_session_valid(session, config) {
         if let Some((server_error, error_msg)) = utils::edit_link(&req, &data.db, config) {
             let body = Response {
                 success: false,
@@ -250,7 +250,7 @@ pub async fn whoami(
 ) -> HttpResponse {
     let config = &data.config;
     let result = utils::is_api_ok(http, config);
-    let acting_user = if result.success || validate(session, config) {
+    let acting_user = if result.success || is_session_valid(session, config) {
         "admin"
     } else if config.public_mode {
         "public"
@@ -269,7 +269,7 @@ pub async fn getconfig(
 ) -> HttpResponse {
     let config = &data.config;
     let result = utils::is_api_ok(http, config);
-    if result.success || validate(session, config) || data.config.public_mode {
+    if result.success || is_session_valid(session, config) || data.config.public_mode {
         let backend_config = BackendConfig {
             version: VERSION.to_string(),
             allow_capital_letters: config.allow_capital_letters,
@@ -424,7 +424,7 @@ pub async fn delete_link(
     } else if result.error {
         HttpResponse::Unauthorized().json(result)
     // If "pass" is true - keeps backwards compatibility
-    } else if auth::validate(session, config) {
+    } else if auth::is_session_valid(session, config) {
         if utils::delete_link(&shortlink, &data.db, data.config.allow_capital_letters) {
             HttpResponse::Ok().body(format!("Deleted {shortlink}"))
         } else {
