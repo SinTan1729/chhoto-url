@@ -31,7 +31,7 @@ pub enum ChhotoError {
 
 // Define JSON struct for returning success/error data
 #[derive(Serialize)]
-struct Response {
+struct JSONResponse {
     success: bool,
     error: bool,
     reason: String,
@@ -115,7 +115,7 @@ pub async fn add_link(
                 HttpResponse::Created().json(response)
             }
             Err(ServerError) => {
-                let response = Response {
+                let response = JSONResponse {
                     success: false,
                     error: true,
                     reason: "Something went wrong when adding the link.".to_string(),
@@ -123,7 +123,7 @@ pub async fn add_link(
                 HttpResponse::InternalServerError().json(response)
             }
             Err(ClientError { reason }) => {
-                let response = Response {
+                let response = JSONResponse {
                     success: false,
                     error: true,
                     reason,
@@ -192,7 +192,7 @@ pub async fn expand(req: String, data: web::Data<AppState>, http: HttpRequest) -
                 HttpResponse::Ok().json(body)
             }
             Err(ServerError) => {
-                let body = Response {
+                let body = JSONResponse {
                     success: false,
                     error: true,
                     reason: "Something went wrong when finding the link.".to_string(),
@@ -200,7 +200,7 @@ pub async fn expand(req: String, data: web::Data<AppState>, http: HttpRequest) -
                 HttpResponse::BadRequest().json(body)
             }
             Err(ClientError { reason }) => {
-                let body = Response {
+                let body = JSONResponse {
                     success: false,
                     error: true,
                     reason,
@@ -226,7 +226,7 @@ pub async fn edit_link(
     if result.success || is_session_valid(session, config) {
         match utils::edit_link(&req, &data.db, config) {
             Ok(()) => {
-                let body = Response {
+                let body = JSONResponse {
                     success: true,
                     error: false,
                     reason: String::from("Edit was successful."),
@@ -234,7 +234,7 @@ pub async fn edit_link(
                 HttpResponse::Created().json(body)
             }
             Err(ServerError) => {
-                let body = Response {
+                let body = JSONResponse {
                     success: false,
                     error: true,
                     reason: "Something went wrong when editing the link.".to_string(),
@@ -242,7 +242,7 @@ pub async fn edit_link(
                 HttpResponse::InternalServerError().json(body)
             }
             Err(ClientError { reason }) => {
-                let body = Response {
+                let body = JSONResponse {
                     success: false,
                     error: true,
                     reason,
@@ -377,7 +377,7 @@ pub async fn login(req: String, session: Session, data: web::Data<AppState>) -> 
         if let Some(valid_pass) = authorized {
             if !valid_pass {
                 warn!("Failed login attempt!");
-                let response = Response {
+                let response = JSONResponse {
                     success: false,
                     error: true,
                     reason: "Wrong password!".to_string(),
@@ -390,7 +390,7 @@ pub async fn login(req: String, session: Session, data: web::Data<AppState>) -> 
             .insert("chhoto-url-auth", auth::gen_token())
             .expect("Error inserting auth token.");
 
-        let response = Response {
+        let response = JSONResponse {
             success: true,
             error: false,
             reason: "Correct password!".to_string(),
@@ -442,7 +442,7 @@ pub async fn delete_link(
     if result.success {
         match utils::delete_link(&shortlink, &data.db, data.config.allow_capital_letters) {
             Ok(()) => {
-                let response = Response {
+                let response = JSONResponse {
                     success: true,
                     error: false,
                     reason: format!("Deleted {shortlink}"),
@@ -450,7 +450,7 @@ pub async fn delete_link(
                 HttpResponse::Ok().json(response)
             }
             Err(ServerError) => {
-                let response = Response {
+                let response = JSONResponse {
                     success: false,
                     error: true,
                     reason: "Something went wrong when deleting the link.".to_string(),
@@ -458,7 +458,7 @@ pub async fn delete_link(
                 HttpResponse::InternalServerError().json(response)
             }
             Err(ClientError { reason }) => {
-                let response = Response {
+                let response = JSONResponse {
                     success: false,
                     error: true,
                     reason,
