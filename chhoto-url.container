@@ -1,4 +1,8 @@
+# SPDX-FileCopyrightText: 2025 Sayantan Santra <sayantan.santra689@gmail.com>
+# SPDX-License-Identifier: MIT
+#
 # chhoto-url.container
+#
 # To be used with rootless quadlets. Put inside your $XDG_CONFIG_HOME/containers/systemd/
 # Take a look at README for the explanation of the configs.
 # The commented out configs are optional.

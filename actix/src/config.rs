@@ -175,7 +175,7 @@ pub fn read() -> Config {
     if use_wal_mode {
         info!("Using WAL journaling mode for database.");
     } else {
-        warn!("Using DELETE journaling mode for database. WAL mode is recommended. (Please read the docs.)");
+        warn!("Using DELETE journaling mode for database. WAL mode is recommended.");
     }
     let ensure_acid = !var("ensure_acid").is_ok_and(|s| s.trim() == "False");
     if ensure_acid {

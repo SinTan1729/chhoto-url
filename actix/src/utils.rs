@@ -1,14 +1,21 @@
 // SPDX-FileCopyrightText: 2023 Sayantan Santra <sayantan.santra689@gmail.com>
 // SPDX-License-Identifier: MIT
 
-use actix_web::HttpRequest;
+use log::error;
 use nanoid::nanoid;
 use rand::seq::IndexedRandom;
 use regex::Regex;
 use rusqlite::Connection;
-use serde::{Deserialize, Serialize};
+use serde::Deserialize;
 
-use crate::{auth, config::Config, database, services::GetReqParams};
+use crate::{
+    config::Config,
+    database,
+    services::{
+        ChhotoError::{self, ClientError, ServerError},
+        GetReqParams,
+    },
+};
 
 // Struct for reading link pairs sent during API call for new link
 #[derive(Deserialize)]
@@ -28,70 +35,8 @@ struct EditURLRequest {
     reset_hits: bool,
 }
 
-// Define JSON struct for error response
-#[derive(Serialize)]
-pub struct Response {
-    pub(crate) success: bool,
-    pub(crate) error: bool,
-    reason: String,
-    pass: bool,
-}
-
-// If the api_key environment variable exists
-pub fn is_api_ok(http: HttpRequest, config: &Config) -> Response {
-    // If the api_key environment variable exists
-    if config.api_key.is_some() {
-        // If the header exists
-        if let Some(header) = auth::api_header(&http) {
-            // If the header is correct
-            if auth::validate_key(header, config) {
-                Response {
-                    success: true,
-                    error: false,
-                    reason: "Correct API key".to_string(),
-                    pass: false,
-                }
-            } else {
-                Response {
-                    success: false,
-                    error: true,
-                    reason: "Incorrect API key".to_string(),
-                    pass: false,
-                }
-            }
-        // The header may not exist when the user logs in through the web interface, so allow a request with no header.
-        // Further authentication checks will be conducted in services.rs
-        } else {
-            // Due to the implementation of this result in services.rs, this JSON object will not be outputted.
-            Response {
-                success: false,
-                error: false,
-                reason: "No valid authentication was found".to_string(),
-                pass: true,
-            }
-        }
-    } else {
-        // If the API key isn't set, but an API Key header is provided
-        if auth::api_header(&http).is_some() {
-            Response {
-                success: false,
-                error: true,
-                reason: "An API key was provided, but the 'api_key' environment variable is not configured in the Chhoto URL instance".to_string(), 
-                pass: false
-            }
-        } else {
-            Response {
-                success: false,
-                error: false,
-                reason: "".to_string(),
-                pass: true,
-            }
-        }
-    }
-}
-
 // Only have a-z, 0-9, - and _ as valid characters in a shortlink
-fn validate_link(link: &str, allow_capital_letters: bool) -> bool {
+fn is_link_valid(link: &str, allow_capital_letters: bool) -> bool {
     let re = if allow_capital_letters {
         Regex::new("^[A-Za-z0-9-_]+$").expect("Regex generation failed.")
     } else {
@@ -115,13 +60,15 @@ pub fn add_link(
     db: &Connection,
     config: &Config,
     using_public_mode: bool,
-) -> (bool, String, i64) {
-    // Success status, response string, expiry time
+) -> Result<(String, i64), ChhotoError> {
+    // Ok : shortlink, expiry_time
     let mut chunks: NewURLRequest;
     if let Ok(json) = serde_json::from_str(req) {
         chunks = json;
     } else {
-        return (false, String::from("Invalid request!"), 0);
+        return Err(ClientError {
+            reason: "Invalid request!".to_string(),
+        });
     }
 
     let style = &config.slug_style;
@@ -147,65 +94,75 @@ pub fn add_link(
     chunks.expiry_delay = chunks.expiry_delay.min(157784760);
     chunks.expiry_delay = chunks.expiry_delay.max(0);
 
-    if validate_link(chunks.shortlink.as_str(), allow_capital_letters) {
-        if let Some(expiry_time) =
-            database::add_link(&chunks.shortlink, &chunks.longlink, chunks.expiry_delay, db)
-        {
-            (true, chunks.shortlink, expiry_time)
-        } else if shortlink_provided {
-            (false, String::from("Short URL is already in use!"), 0)
-        } else if config.slug_style == "UID" && config.try_longer_slug {
-            // Optionally, retry with a longer slug length
-            chunks.shortlink = gen_link(style, len + 4, allow_capital_letters);
-            if let Some(expiry_time) =
-                database::add_link(&chunks.shortlink, &chunks.longlink, chunks.expiry_delay, db)
-            {
-                (true, chunks.shortlink, expiry_time)
-            } else {
-                (false, String::from("Something went very wrong!"), 0)
+    if is_link_valid(chunks.shortlink.as_str(), allow_capital_letters) {
+        match database::add_link(&chunks.shortlink, &chunks.longlink, chunks.expiry_delay, db) {
+            Ok(expiry_time) => Ok((chunks.shortlink, expiry_time)),
+            Err(ClientError { reason }) => {
+                if shortlink_provided {
+                    Err(ClientError { reason })
+                } else if config.slug_style == "UID" && config.try_longer_slug {
+                    // Optionally, retry with a longer slug length
+                    chunks.shortlink = gen_link(style, len + 4, allow_capital_letters);
+                    match database::add_link(
+                        &chunks.shortlink,
+                        &chunks.longlink,
+                        chunks.expiry_delay,
+                        db,
+                    ) {
+                        Ok(expiry_time) => Ok((chunks.shortlink, expiry_time)),
+                        Err(_) => Err(ServerError),
+                    }
+                } else {
+                    error!("Something went wrong while adding a link: {reason}");
+                    Err(ServerError)
+                }
             }
-        } else {
-            (false, String::from("Something went wrong!"), 0)
+            Err(ServerError) => Err(ServerError),
         }
     } else {
-        (false, String::from("Short URL is not valid!"), 0)
+        Err(ClientError {
+            reason: "Short URL is not valid!".to_string(),
+        })
     }
 }
 
 // Make checks and then request the DB to edit an URL entry
-pub fn edit_link(req: &str, db: &Connection, config: &Config) -> Option<(bool, String)> {
-    // None means success
-    // The boolean is true when it's a server error and false when it's a client error
-    // The string is the error message
-
+pub fn edit_link(req: &str, db: &Connection, config: &Config) -> Result<(), ChhotoError> {
     let chunks: EditURLRequest;
     if let Ok(json) = serde_json::from_str(req) {
         chunks = json;
     } else {
-        return Some((false, String::from("Malformed request!")));
+        return Err(ClientError {
+            reason: "Malformed request!".to_string(),
+        });
     }
-    if !validate_link(&chunks.shortlink, config.allow_capital_letters) {
-        return Some((false, String::from("Invalid shortlink!")));
+    if !is_link_valid(&chunks.shortlink, config.allow_capital_letters) {
+        return Err(ClientError {
+            reason: "Invalid shortlink!".to_string(),
+        });
     }
     let result = database::edit_link(&chunks.shortlink, &chunks.longlink, chunks.reset_hits, db);
-    if Ok(0) == result {
+    match result {
         // Zero rows returned means no updates
-        Some((
-            false,
-            "The short link was not found, and could not be edited.".to_string(),
-        ))
-    } else if result.is_ok() {
-        None
-    } else {
-        Some((true, String::from("Something went wrong!"))) // Should not really happen
+        Ok(0) => Err(ClientError {
+            reason: "The shortlink was not found, and could not be edited.".to_string(),
+        }),
+        Ok(_) => Ok(()),
+        Err(()) => Err(ServerError),
     }
 }
 // Check if link, and request DB to delete it if exists
-pub fn delete_link(shortlink: &str, db: &Connection, allow_capital_letters: bool) -> bool {
-    if validate_link(shortlink, allow_capital_letters) {
+pub fn delete_link(
+    shortlink: &str,
+    db: &Connection,
+    allow_capital_letters: bool,
+) -> Result<(), ChhotoError> {
+    if is_link_valid(shortlink, allow_capital_letters) {
         database::delete_link(shortlink, db)
     } else {
-        false
+        Err(ClientError {
+            reason: "The shortlink is invalid.".to_string(),
+        })
     }
 }
 

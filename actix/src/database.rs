@@ -1,10 +1,12 @@
 // SPDX-FileCopyrightText: 2023 Sayantan Santra <sayantan.santra689@gmail.com>
 // SPDX-License-Identifier: MIT
 
-use log::info;
-use rusqlite::{fallible_iterator::FallibleIterator, Connection, Error};
+use log::{error, info};
+use rusqlite::{fallible_iterator::FallibleIterator, Connection};
 use serde::Serialize;
 use std::rc::Rc;
+
+use crate::services::ChhotoError::{self, ClientError, ServerError};
 
 // Struct for encoding a DB row
 #[derive(Serialize)]
@@ -16,23 +18,27 @@ pub struct DBRow {
 }
 
 // Find a single URL for /api/expand
-pub fn find_url(shortlink: &str, db: &Connection) -> (Option<String>, Option<i64>, Option<i64>) {
+pub fn find_url(shortlink: &str, db: &Connection) -> Result<(String, i64, i64), ChhotoError> {
     // Long link, hits, expiry time
     let now = chrono::Utc::now().timestamp();
     let query = "SELECT long_url, hits, expiry_time FROM urls
                  WHERE short_url = ?1 
                  AND (expiry_time = 0 OR expiry_time > ?2)";
-    let mut statement = db
-        .prepare_cached(query)
-        .expect("Error preparing SQL statement for find_url.");
+    let Ok(mut statement) = db.prepare_cached(query) else {
+        error!("Error preparing SQL statement for find_url.");
+        return Err(ServerError);
+    };
     statement
         .query_row((shortlink, now), |row| {
-            let longlink = row.get("long_url").ok();
-            let hits = row.get("hits").ok();
-            let expiry_time = row.get("expiry_time").ok();
-            Ok((longlink, hits, expiry_time))
+            Ok((
+                row.get("long_url")?,
+                row.get("hits")?,
+                row.get("expiry_time")?,
+            ))
         })
-        .unwrap_or_default()
+        .map_err(|_| ChhotoError::ClientError {
+            reason: "The shortlink does not exist on the server!".to_string(),
+        })
 }
 
 // Get all URLs in DB
@@ -67,28 +73,26 @@ pub fn getall(
          FROM urls WHERE expiry_time = 0 OR expiry_time > ?1 
          ORDER BY id ASC"
     };
-    let mut statement = db
-        .prepare_cached(query)
-        .expect("Error preparing SQL statement for getall.");
+    let Ok(mut statement) = db.prepare_cached(query) else {
+        error!("Error preparing SQL statement for getall.");
+        return [].into();
+    };
 
-    let data = if let Some(pos) = page_after {
+    let raw_data = if let Some(pos) = page_after {
         let size = page_size.unwrap_or(10);
-        statement
-            .query((pos, now, size))
-            .expect("Error executing query for getall: curson pagination.")
+        statement.query((pos, now, size))
     } else if let Some(num) = page_no {
         let size = page_size.unwrap_or(10);
-        statement
-            .query((now, size, (num - 1) * size))
-            .expect("Error executing query for getall: offset pagination.")
+        statement.query((now, size, (num - 1) * size))
     } else if let Some(size) = page_size {
-        statement
-            .query((now, size))
-            .expect("Error executing query for getall: offset pagination (default).")
+        statement.query((now, size))
     } else {
-        statement
-            .query([now])
-            .expect("Error executing query for getall: no pagination.")
+        statement.query([now])
+    };
+
+    let Ok(data) = raw_data else {
+        error!("Error running SQL statement for getall: {query}");
+        return [].into();
     };
 
     let links: Rc<[DBRow]> = data
@@ -102,25 +106,29 @@ pub fn getall(
             Ok(row_struct)
         })
         .collect()
-        .expect("Error procecssing fetched row.");
+        .unwrap_or({
+            error!("Error processing fetched rows.");
+            [].into()
+        });
 
     links
 }
 
 // Add a hit when site is visited during link resolution
-pub fn find_and_add_hit(shortlink: &str, db: &Connection) -> Option<String> {
+pub fn find_and_add_hit(shortlink: &str, db: &Connection) -> Result<String, ()> {
     let now = chrono::Utc::now().timestamp();
-    let mut statement = db
-        .prepare_cached(
-            "UPDATE urls 
+    let Ok(mut statement) = db.prepare_cached(
+        "UPDATE urls 
              SET hits = hits + 1 
              WHERE short_url = ?1 AND (expiry_time = 0 OR expiry_time > ?2)
              RETURNING long_url",
-        )
-        .expect("Error preparing SQL statement for add_hit.");
+    ) else {
+        error!("Error preparing SQL statement for add_hit.");
+        return Err(());
+    };
     statement
         .query_one((shortlink, now), |row| row.get("long_url"))
-        .ok()
+        .map_err(|_| ())
 }
 
 // Insert a new link
@@ -129,7 +137,7 @@ pub fn add_link(
     longlink: &str,
     expiry_delay: i64,
     db: &Connection,
-) -> Option<i64> {
+) -> Result<i64, ChhotoError> {
     let now = chrono::Utc::now().timestamp();
     let expiry_time = if expiry_delay == 0 {
         0
@@ -137,23 +145,26 @@ pub fn add_link(
         now + expiry_delay
     };
 
-    let mut statement = db
-        .prepare_cached(
-            "INSERT INTO urls
+    let Ok(mut statement) = db.prepare_cached(
+        "INSERT INTO urls
              (long_url, short_url, hits, expiry_time)
              VALUES (?1, ?2, 0, ?3)
              ON CONFLICT(short_url) DO UPDATE 
              SET long_url = ?1, hits = 0, expiry_time = ?3 
              WHERE short_url = ?2 AND expiry_time <= ?4 AND expiry_time > 0",
-        )
-        .expect("Error preparing SQL statement for add_link.");
-    let delta = statement
-        .execute((longlink, shortlink, expiry_time, now))
-        .expect("There was an unexpected error while inserting link.");
-    if delta == 1 {
-        Some(expiry_time)
-    } else {
-        None
+    ) else {
+        error!("Error preparing SQL statement for add_link.");
+        return Err(ServerError);
+    };
+    match statement.execute((longlink, shortlink, expiry_time, now)) {
+        Ok(1) => Ok(expiry_time),
+        Ok(_) => Err(ClientError {
+            reason: "Short URL is already in use!".to_string(),
+        }),
+        Err(e) => {
+            error!("There was some error while adding the link ({shortlink}, {longlink}, {expiry_delay}): {e}");
+            Err(ServerError)
+        }
     }
 }
 
@@ -163,7 +174,7 @@ pub fn edit_link(
     longlink: &str,
     reset_hits: bool,
     db: &Connection,
-) -> Result<usize, Error> {
+) -> Result<usize, ()> {
     let now = chrono::Utc::now().timestamp();
     let query = if reset_hits {
         "UPDATE urls 
@@ -174,14 +185,23 @@ pub fn edit_link(
          SET long_url = ?1 
          WHERE short_url = ?2 AND (expiry_time = 0 OR expiry_time > ?3)"
     };
-    let mut statement = db
-        .prepare_cached(query)
-        .expect("Error preparing SQL statement for edit_link.");
-    statement.execute((longlink, shortlink, now))
+    let Ok(mut statement) = db.prepare_cached(query) else {
+        error!("Error preparing SQL statement for edit_link.");
+        return Err(());
+    };
+
+    statement
+        .execute((longlink, shortlink, now))
+        .inspect_err(|err| {
+            error!(
+                "Got an error while editing link ({shortlink}, {longlink}, {reset_hits}): {err}"
+            );
+        })
+        .map_err(|_| ())
 }
 
 // Clean expired links
-pub fn cleanup(db: &Connection) {
+pub fn cleanup(db: &Connection, use_wal_mode: bool) {
     let now = chrono::Utc::now().timestamp();
     info!("Starting database cleanup.");
 
@@ -197,24 +217,36 @@ pub fn cleanup(db: &Connection) {
         })
         .expect("Error cleaning expired links.");
 
+    if use_wal_mode {
+        let mut pragma_statement = db
+            .prepare_cached("PRAGMA wal_checkpoint(TRUNCATE)")
+            .expect("Error preparing SQL statement for pragma: wal_checkpoint.");
+        pragma_statement
+            .query_one([], |row| row.get::<usize, isize>(1))
+            .ok()
+            .filter(|&v| v != -1)
+            .expect("Unable to create WAL checkpoint.");
+    }
     let mut pragma_statement = db
         .prepare_cached("PRAGMA optimize")
-        .expect("Error preparing SQL statement for pragma optimize.");
+        .expect("Error preparing SQL statement for pragma: optimize.");
     pragma_statement
         .execute([])
-        .expect("Unable to optimize database");
+        .expect("Unable to optimize database.");
     info!("Optimized database.")
 }
 
 // Delete an existing link
-pub fn delete_link(shortlink: &str, db: &Connection) -> bool {
-    let mut statement = db
-        .prepare_cached("DELETE FROM urls WHERE short_url = ?1")
-        .expect("Error preparing SQL statement for delete_link.");
-    if let Ok(delta) = statement.execute([shortlink]) {
-        delta > 0
-    } else {
-        false
+pub fn delete_link(shortlink: &str, db: &Connection) -> Result<(), ChhotoError> {
+    let Ok(mut statement) = db.prepare_cached("DELETE FROM urls WHERE short_url = ?1") else {
+        error!("Error preparing SQL statement for delete_link.");
+        return Err(ServerError);
+    };
+    match statement.execute([shortlink]) {
+        Ok(delta) if delta > 0 => Ok(()),
+        _ => Err(ClientError {
+            reason: "The shortlink was not found, and could not be deleted.".to_string(),
+        }),
     }
 }
 
