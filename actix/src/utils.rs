@@ -148,7 +148,7 @@ pub fn edit_link(req: &str, db: &Connection, config: &Config) -> Result<(), Chho
             reason: "The shortlink was not found, and could not be edited.".to_string(),
         }),
         Ok(_) => Ok(()),
-        Err(_) => Err(ServerError),
+        Err(()) => Err(ServerError),
     }
 }
 // Check if link, and request DB to delete it if exists

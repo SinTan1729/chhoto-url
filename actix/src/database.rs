@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: MIT
 
 use log::{error, info};
-use rusqlite::{fallible_iterator::FallibleIterator, Connection, Error};
+use rusqlite::{fallible_iterator::FallibleIterator, Connection};
 use serde::Serialize;
 use std::rc::Rc;
 
@@ -73,28 +73,26 @@ pub fn getall(
          FROM urls WHERE expiry_time = 0 OR expiry_time > ?1 
          ORDER BY id ASC"
     };
-    let mut statement = db
-        .prepare_cached(query)
-        .expect("Error preparing SQL statement for getall.");
+    let Ok(mut statement) = db.prepare_cached(query) else {
+        error!("Error preparing SQL statement for getall.");
+        return [].into();
+    };
 
-    let data = if let Some(pos) = page_after {
+    let raw_data = if let Some(pos) = page_after {
         let size = page_size.unwrap_or(10);
-        statement
-            .query((pos, now, size))
-            .expect("Error executing query for getall: curson pagination.")
+        statement.query((pos, now, size))
     } else if let Some(num) = page_no {
         let size = page_size.unwrap_or(10);
-        statement
-            .query((now, size, (num - 1) * size))
-            .expect("Error executing query for getall: offset pagination.")
+        statement.query((now, size, (num - 1) * size))
     } else if let Some(size) = page_size {
-        statement
-            .query((now, size))
-            .expect("Error executing query for getall: offset pagination (default).")
+        statement.query((now, size))
     } else {
-        statement
-            .query([now])
-            .expect("Error executing query for getall: no pagination.")
+        statement.query([now])
+    };
+
+    let Ok(data) = raw_data else {
+        error!("Error running SQL statement for getall: {query}");
+        return [].into();
     };
 
     let links: Rc<[DBRow]> = data
@@ -108,7 +106,10 @@ pub fn getall(
             Ok(row_struct)
         })
         .collect()
-        .expect("Error procecssing fetched row.");
+        .unwrap_or({
+            error!("Error processing fetched rows.");
+            [].into()
+        });
 
     links
 }
@@ -116,14 +117,15 @@ pub fn getall(
 // Add a hit when site is visited during link resolution
 pub fn find_and_add_hit(shortlink: &str, db: &Connection) -> Result<String, ()> {
     let now = chrono::Utc::now().timestamp();
-    let mut statement = db
-        .prepare_cached(
-            "UPDATE urls 
+    let Ok(mut statement) = db.prepare_cached(
+        "UPDATE urls 
              SET hits = hits + 1 
              WHERE short_url = ?1 AND (expiry_time = 0 OR expiry_time > ?2)
              RETURNING long_url",
-        )
-        .expect("Error preparing SQL statement for add_hit.");
+    ) else {
+        error!("Error preparing SQL statement for add_hit.");
+        return Err(());
+    };
     statement
         .query_one((shortlink, now), |row| row.get("long_url"))
         .map_err(|_| ())
@@ -143,16 +145,17 @@ pub fn add_link(
         now + expiry_delay
     };
 
-    let mut statement = db
-        .prepare_cached(
-            "INSERT INTO urls
+    let Ok(mut statement) = db.prepare_cached(
+        "INSERT INTO urls
              (long_url, short_url, hits, expiry_time)
              VALUES (?1, ?2, 0, ?3)
              ON CONFLICT(short_url) DO UPDATE 
              SET long_url = ?1, hits = 0, expiry_time = ?3 
              WHERE short_url = ?2 AND expiry_time <= ?4 AND expiry_time > 0",
-        )
-        .expect("Error preparing SQL statement for add_link.");
+    ) else {
+        error!("Error preparing SQL statement for add_link.");
+        return Err(ServerError);
+    };
     match statement.execute((longlink, shortlink, expiry_time, now)) {
         Ok(1) => Ok(expiry_time),
         Ok(_) => Err(ClientError {
@@ -171,7 +174,7 @@ pub fn edit_link(
     longlink: &str,
     reset_hits: bool,
     db: &Connection,
-) -> Result<usize, Error> {
+) -> Result<usize, ()> {
     let now = chrono::Utc::now().timestamp();
     let query = if reset_hits {
         "UPDATE urls 
@@ -182,14 +185,19 @@ pub fn edit_link(
          SET long_url = ?1 
          WHERE short_url = ?2 AND (expiry_time = 0 OR expiry_time > ?3)"
     };
-    let mut statement = db
-        .prepare_cached(query)
-        .expect("Error preparing SQL statement for edit_link.");
+    let Ok(mut statement) = db.prepare_cached(query) else {
+        error!("Error preparing SQL statement for edit_link.");
+        return Err(());
+    };
+
     statement
         .execute((longlink, shortlink, now))
         .inspect_err(|err| {
-            error!("Got an error while editing link ({shortlink}, {longlink}, {reset_hits}): {err}")
+            error!(
+                "Got an error while editing link ({shortlink}, {longlink}, {reset_hits}): {err}"
+            );
         })
+        .map_err(|_| ())
 }
 
 // Clean expired links
