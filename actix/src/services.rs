@@ -114,7 +114,7 @@ pub async fn add_link(
                 };
                 HttpResponse::Created().json(response)
             }
-            Err(ChhotoError::ServerError) => {
+            Err(ServerError) => {
                 let response = Response {
                     success: false,
                     error: true,
@@ -122,7 +122,7 @@ pub async fn add_link(
                 };
                 HttpResponse::InternalServerError().json(response)
             }
-            Err(ChhotoError::ClientError { reason }) => {
+            Err(ClientError { reason }) => {
                 let response = Response {
                     success: false,
                     error: true,
@@ -144,8 +144,8 @@ pub async fn add_link(
         };
         match result {
             Ok((shorturl, _)) => HttpResponse::Created().body(shorturl),
-            Err(ChhotoError::ClientError { reason }) => HttpResponse::Conflict().body(reason),
-            Err(ChhotoError::ServerError) => HttpResponse::InternalServerError()
+            Err(ClientError { reason }) => HttpResponse::Conflict().body(reason),
+            Err(ServerError) => HttpResponse::InternalServerError()
                 .body("Something went wrong when adding the link.".to_string()),
         }
     }
@@ -180,24 +180,33 @@ pub async fn getall(
 pub async fn expand(req: String, data: web::Data<AppState>, http: HttpRequest) -> HttpResponse {
     let result = auth::is_api_ok(http, &data.config);
     if result.success {
-        let (longurl, hits, expiry_time) = database::find_url(&req, &data.db);
-        if let Some(longlink) = longurl {
-            let body = LinkInfo {
-                success: true,
-                error: false,
-                longurl: longlink,
-                hits: hits.expect("Error getting hit count for existing shortlink."),
-                expiry_time: expiry_time
-                    .expect("Error getting expiry time for existing shortlink."),
-            };
-            HttpResponse::Ok().json(body)
-        } else {
-            let body = Response {
-                success: false,
-                error: true,
-                reason: "The shortlink does not exist on the server.".to_string(),
-            };
-            HttpResponse::BadRequest().json(body)
+        match database::find_url(&req, &data.db) {
+            Ok((longurl, hits, expiry_time)) => {
+                let body = LinkInfo {
+                    success: true,
+                    error: false,
+                    longurl,
+                    hits,
+                    expiry_time,
+                };
+                HttpResponse::Ok().json(body)
+            }
+            Err(ClientError { reason }) => {
+                let body = Response {
+                    success: false,
+                    error: true,
+                    reason,
+                };
+                HttpResponse::BadRequest().json(body)
+            }
+            Err(ServerError) => {
+                let body = Response {
+                    success: false,
+                    error: true,
+                    reason: "Something went wrong when finding the link.".to_string(),
+                };
+                HttpResponse::BadRequest().json(body)
+            }
         }
     } else {
         HttpResponse::Unauthorized().json(result)
@@ -326,7 +335,7 @@ pub async fn link_handler(
     data: web::Data<AppState>,
 ) -> impl Responder {
     let shortlink_str = shortlink.as_str();
-    if let Some(longlink) = database::find_and_add_hit(shortlink_str, &data.db) {
+    if let Ok(longlink) = database::find_and_add_hit(shortlink_str, &data.db) {
         if data.config.use_temp_redirect {
             Either::Left(Redirect::to(longlink))
         } else {

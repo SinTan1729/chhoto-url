@@ -18,23 +18,27 @@ pub struct DBRow {
 }
 
 // Find a single URL for /api/expand
-pub fn find_url(shortlink: &str, db: &Connection) -> (Option<String>, Option<i64>, Option<i64>) {
+pub fn find_url(shortlink: &str, db: &Connection) -> Result<(String, i64, i64), ChhotoError> {
     // Long link, hits, expiry time
     let now = chrono::Utc::now().timestamp();
     let query = "SELECT long_url, hits, expiry_time FROM urls
                  WHERE short_url = ?1 
                  AND (expiry_time = 0 OR expiry_time > ?2)";
-    let mut statement = db
-        .prepare_cached(query)
-        .expect("Error preparing SQL statement for find_url.");
+    let Ok(mut statement) = db.prepare_cached(query) else {
+        error!("Error preparing SQL statement for find_url.");
+        return Err(ServerError);
+    };
     statement
         .query_row((shortlink, now), |row| {
-            let longlink = row.get("long_url").ok();
-            let hits = row.get("hits").ok();
-            let expiry_time = row.get("expiry_time").ok();
-            Ok((longlink, hits, expiry_time))
+            Ok((
+                row.get("long_url")?,
+                row.get("hits")?,
+                row.get("expiry_time")?,
+            ))
         })
-        .unwrap_or_default()
+        .map_err(|_| ChhotoError::ClientError {
+            reason: "The shortlink does not exist on the server!".to_string(),
+        })
 }
 
 // Get all URLs in DB
@@ -110,7 +114,7 @@ pub fn getall(
 }
 
 // Add a hit when site is visited during link resolution
-pub fn find_and_add_hit(shortlink: &str, db: &Connection) -> Option<String> {
+pub fn find_and_add_hit(shortlink: &str, db: &Connection) -> Result<String, ()> {
     let now = chrono::Utc::now().timestamp();
     let mut statement = db
         .prepare_cached(
@@ -122,7 +126,7 @@ pub fn find_and_add_hit(shortlink: &str, db: &Connection) -> Option<String> {
         .expect("Error preparing SQL statement for add_hit.");
     statement
         .query_one((shortlink, now), |row| row.get("long_url"))
-        .ok()
+        .map_err(|_| ())
 }
 
 // Insert a new link
@@ -155,7 +159,7 @@ pub fn add_link(
             reason: "Short URL is already in use!".to_string(),
         }),
         Err(e) => {
-            error!("There was some error while adding a link: {e}");
+            error!("There was some error while adding the link ({shortlink}, {longlink}, {expiry_delay}): {e}");
             Err(ServerError)
         }
     }
@@ -183,7 +187,9 @@ pub fn edit_link(
         .expect("Error preparing SQL statement for edit_link.");
     statement
         .execute((longlink, shortlink, now))
-        .inspect_err(|err| error!("Got an error while editing link: {err}"))
+        .inspect_err(|err| {
+            error!("Got an error while editing link ({shortlink}, {longlink}, {reset_hits}): {err}")
+        })
 }
 
 // Clean expired links
