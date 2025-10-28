@@ -97,17 +97,16 @@ pub fn getall(
 
     let links: Rc<[DBRow]> = data
         .map(|row| {
-            let row_struct = DBRow {
+            Ok(DBRow {
                 shortlink: row.get("short_url")?,
                 longlink: row.get("long_url")?,
                 hits: row.get("hits")?,
-                expiry_time: row.get("expiry_time").unwrap_or_default(),
-            };
-            Ok(row_struct)
+                expiry_time: row.get("expiry_time")?,
+            })
         })
         .collect()
-        .unwrap_or({
-            error!("Error processing fetched rows.");
+        .unwrap_or_else(|err| {
+            error!("Error processing fetched rows: {err}");
             [].into()
         });
 

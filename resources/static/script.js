@@ -209,7 +209,7 @@ const gotoNextPage = () => {
 const updateInputBox = () => {
   if (CONFIG.allow_capital_letters) {
     const input_box = document.getElementById("shortUrl");
-    input_box.pattern = "[A-Za-z0-9\-_]+";
+    input_box.pattern = "[A-Za-z0-9\\\-_]+";
     input_box.title = "Only A-Z, a-z, 0-9, - and _ are allowed";
     input_box.placeholder = "Only A-Z, a-z, 0-9, - and _ are allowed";
   }
@@ -556,18 +556,18 @@ const submitForm = () => {
         longUrl.value = "";
         shortUrl.value = "";
         expiryDelay.value = 0;
+        const params = new URLSearchParams();
+        params.append("page_size", 1);
+        const newEntry = await pullData(params);
+        LOCAL_DATA.unshift(newEntry[0]);
+        if (LOCAL_DATA.length == (CUR_PAGE + 1) * 10 + 1) {
+          LOCAL_DATA.pop();
+        }
+        CUR_PAGE = 0;
+        PROCESSING_PAGE_TRANSITION = true;
+        displayData();
+        managePageControls();
       }
-      const params = new URLSearchParams();
-      params.append("page_size", 1);
-      const newEntry = await pullData(params);
-      LOCAL_DATA.unshift(newEntry[0]);
-      if (LOCAL_DATA.length == (CUR_PAGE + 1) * 10 + 1) {
-        LOCAL_DATA.pop();
-      }
-      CUR_PAGE = 0;
-      PROCESSING_PAGE_TRANSITION = true;
-      displayData();
-      managePageControls();
     })
     .catch((err) => {
       console.log("Error:", err);
