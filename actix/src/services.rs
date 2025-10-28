@@ -144,9 +144,9 @@ pub async fn add_link(
         };
         match result {
             Ok((shorturl, _)) => HttpResponse::Created().body(shorturl),
-            Err(ClientError { reason }) => HttpResponse::Conflict().body(reason),
             Err(ServerError) => HttpResponse::InternalServerError()
                 .body("Something went wrong when adding the link.".to_string()),
+            Err(ClientError { reason }) => HttpResponse::Conflict().body(reason),
         }
     }
 }
@@ -191,19 +191,19 @@ pub async fn expand(req: String, data: web::Data<AppState>, http: HttpRequest) -
                 };
                 HttpResponse::Ok().json(body)
             }
-            Err(ClientError { reason }) => {
-                let body = Response {
-                    success: false,
-                    error: true,
-                    reason,
-                };
-                HttpResponse::BadRequest().json(body)
-            }
             Err(ServerError) => {
                 let body = Response {
                     success: false,
                     error: true,
                     reason: "Something went wrong when finding the link.".to_string(),
+                };
+                HttpResponse::BadRequest().json(body)
+            }
+            Err(ClientError { reason }) => {
+                let body = Response {
+                    success: false,
+                    error: true,
+                    reason,
                 };
                 HttpResponse::BadRequest().json(body)
             }
@@ -233,14 +233,6 @@ pub async fn edit_link(
                 };
                 HttpResponse::Created().json(body)
             }
-            Err(ClientError { reason }) => {
-                let body = Response {
-                    success: false,
-                    error: true,
-                    reason,
-                };
-                HttpResponse::BadRequest().json(body)
-            }
             Err(ServerError) => {
                 let body = Response {
                     success: false,
@@ -248,6 +240,14 @@ pub async fn edit_link(
                     reason: "Something went wrong when editing the link.".to_string(),
                 };
                 HttpResponse::InternalServerError().json(body)
+            }
+            Err(ClientError { reason }) => {
+                let body = Response {
+                    success: false,
+                    error: true,
+                    reason,
+                };
+                HttpResponse::BadRequest().json(body)
             }
         }
     } else {
@@ -440,24 +440,35 @@ pub async fn delete_link(
     let result = auth::is_api_ok(http, config);
     // If success, delete shortlink
     if result.success {
-        if utils::delete_link(&shortlink, &data.db, data.config.allow_capital_letters).is_ok() {
-            let response = Response {
-                success: true,
-                error: false,
-                reason: format!("Deleted {shortlink}"),
-            };
-            HttpResponse::Ok().json(response)
-        } else {
-            let response = Response {
-                success: false,
-                error: true,
-                reason: "The short link was not found, and could not be deleted.".to_string(),
-            };
-            HttpResponse::NotFound().json(response)
+        match utils::delete_link(&shortlink, &data.db, data.config.allow_capital_letters) {
+            Ok(()) => {
+                let response = Response {
+                    success: true,
+                    error: false,
+                    reason: format!("Deleted {shortlink}"),
+                };
+                HttpResponse::Ok().json(response)
+            }
+            Err(ServerError) => {
+                let response = Response {
+                    success: false,
+                    error: true,
+                    reason: "Something went wrong when deleting the link.".to_string(),
+                };
+                HttpResponse::InternalServerError().json(response)
+            }
+            Err(ClientError { reason }) => {
+                let response = Response {
+                    success: false,
+                    error: true,
+                    reason,
+                };
+                HttpResponse::NotFound().json(response)
+            }
         }
     } else if result.error {
         HttpResponse::Unauthorized().json(result)
-    // If "pass" is true - keeps backwards compatibility
+    // If using password - keeps backwards compatibility
     } else if auth::is_session_valid(session, config) {
         if utils::delete_link(&shortlink, &data.db, data.config.allow_capital_letters).is_ok() {
             HttpResponse::Ok().body(format!("Deleted {shortlink}"))

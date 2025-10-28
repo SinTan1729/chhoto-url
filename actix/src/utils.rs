@@ -117,7 +117,7 @@ pub fn add_link(
                     Err(ServerError)
                 }
             }
-            Err(server_error) => Err(server_error),
+            Err(ServerError) => Err(ServerError),
         }
     } else {
         Err(ClientError {

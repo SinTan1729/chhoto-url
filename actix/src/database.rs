@@ -230,9 +230,10 @@ pub fn cleanup(db: &Connection, use_wal_mode: bool) {
 
 // Delete an existing link
 pub fn delete_link(shortlink: &str, db: &Connection) -> Result<(), ChhotoError> {
-    let mut statement = db
-        .prepare_cached("DELETE FROM urls WHERE short_url = ?1")
-        .expect("Error preparing SQL statement for delete_link.");
+    let Ok(mut statement) = db.prepare_cached("DELETE FROM urls WHERE short_url = ?1") else {
+        error!("Error preparing SQL statement for delete_link.");
+        return Err(ServerError);
+    };
     match statement.execute([shortlink]) {
         Ok(delta) if delta > 0 => Ok(()),
         _ => Err(ClientError {
