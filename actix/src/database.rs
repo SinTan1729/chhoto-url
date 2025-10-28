@@ -1,10 +1,12 @@
 // SPDX-FileCopyrightText: 2023 Sayantan Santra <sayantan.santra689@gmail.com>
 // SPDX-License-Identifier: MIT
 
-use log::info;
+use log::{error, info};
 use rusqlite::{fallible_iterator::FallibleIterator, Connection, Error};
 use serde::Serialize;
 use std::rc::Rc;
+
+use crate::services::ChhotoError::{self, ClientError, ServerError};
 
 // Struct for encoding a DB row
 #[derive(Serialize)]
@@ -129,7 +131,7 @@ pub fn add_link(
     longlink: &str,
     expiry_delay: i64,
     db: &Connection,
-) -> Option<i64> {
+) -> Result<i64, ChhotoError> {
     let now = chrono::Utc::now().timestamp();
     let expiry_time = if expiry_delay == 0 {
         0
@@ -147,13 +149,15 @@ pub fn add_link(
              WHERE short_url = ?2 AND expiry_time <= ?4 AND expiry_time > 0",
         )
         .expect("Error preparing SQL statement for add_link.");
-    let delta = statement
-        .execute((longlink, shortlink, expiry_time, now))
-        .expect("There was an unexpected error while inserting link.");
-    if delta == 1 {
-        Some(expiry_time)
-    } else {
-        None
+    match statement.execute((longlink, shortlink, expiry_time, now)) {
+        Ok(1) => Ok(expiry_time),
+        Ok(_) => Err(ClientError {
+            reason: "Short URL is already in use!".to_string(),
+        }),
+        Err(e) => {
+            error!("There was some error while adding a link: {e}");
+            Err(ServerError)
+        }
     }
 }
 
@@ -217,14 +221,15 @@ pub fn cleanup(db: &Connection, use_wal_mode: bool) {
 }
 
 // Delete an existing link
-pub fn delete_link(shortlink: &str, db: &Connection) -> bool {
+pub fn delete_link(shortlink: &str, db: &Connection) -> Result<(), ChhotoError> {
     let mut statement = db
         .prepare_cached("DELETE FROM urls WHERE short_url = ?1")
         .expect("Error preparing SQL statement for delete_link.");
-    if let Ok(delta) = statement.execute([shortlink]) {
-        delta > 0
-    } else {
-        false
+    match statement.execute([shortlink]) {
+        Ok(delta) if delta > 0 => Ok(()),
+        _ => Err(ClientError {
+            reason: "The shortlink was not found, and could not be deleted.".to_string(),
+        }),
     }
 }
 

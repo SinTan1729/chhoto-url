@@ -22,6 +22,12 @@ use crate::{auth::is_session_valid, utils};
 // Store the version number
 const VERSION: &str = env!("CARGO_PKG_VERSION");
 
+// Error types
+pub enum ChhotoError {
+    ServerError,
+    ClientError { reason: String },
+}
+
 // Define JSON struct for returning success/error data
 #[derive(Serialize)]
 struct Response {
@@ -85,50 +91,61 @@ pub async fn add_link(
     let result = utils::is_api_ok(http, config);
     // If success, add new link
     if result.success {
-        let (success, reply, expiry_time) = utils::add_link(&req, &data.db, config, false);
-        if success {
-            let site_url = config.site_url.clone();
-            let shorturl = if let Some(url) = site_url {
-                format!("{url}/{reply}")
-            } else {
-                let protocol = if config.port == 443 { "https" } else { "http" };
-                let port_text = if [80, 443].contains(&config.port) {
-                    String::new()
+        match utils::add_link(&req, &data.db, config, false) {
+            Ok((shorturl, expiry_time)) => {
+                let site_url = config.site_url.clone();
+                let shorturl = if let Some(url) = site_url {
+                    format!("{url}/{shorturl}")
                 } else {
-                    format!(":{}", config.port)
+                    let protocol = if config.port == 443 { "https" } else { "http" };
+                    let port_text = if [80, 443].contains(&config.port) {
+                        String::new()
+                    } else {
+                        format!(":{}", config.port)
+                    };
+                    format!("{protocol}://localhost{port_text}/{shorturl}")
                 };
-                format!("{protocol}://localhost{port_text}/{reply}")
-            };
-            let response = CreatedURL {
-                success: true,
-                error: false,
-                shorturl,
-                expiry_time,
-            };
-            HttpResponse::Created().json(response)
-        } else {
-            let response = Response {
-                success: false,
-                error: true,
-                reason: reply,
-            };
-            HttpResponse::Conflict().json(response)
+                let response = CreatedURL {
+                    success: true,
+                    error: false,
+                    shorturl,
+                    expiry_time,
+                };
+                HttpResponse::Created().json(response)
+            }
+            Err(ChhotoError::ServerError) => {
+                let response = Response {
+                    success: false,
+                    error: true,
+                    reason: "Something went wrong when adding the link.".to_string(),
+                };
+                HttpResponse::InternalServerError().json(response)
+            }
+            Err(ChhotoError::ClientError { reason }) => {
+                let response = Response {
+                    success: false,
+                    error: true,
+                    reason,
+                };
+                HttpResponse::Conflict().json(response)
+            }
         }
     } else if result.error {
         HttpResponse::Unauthorized().json(result)
     // If password authentication or public mode is used - keeps backwards compatibility
     } else {
-        let (success, reply, _) = if auth::is_session_valid(session, config) {
+        let result = if auth::is_session_valid(session, config) {
             utils::add_link(&req, &data.db, config, false)
         } else if config.public_mode {
             utils::add_link(&req, &data.db, config, true)
         } else {
             return HttpResponse::Unauthorized().body("Not logged in!");
         };
-        if success {
-            HttpResponse::Created().body(reply)
-        } else {
-            HttpResponse::Conflict().body(reply)
+        match result {
+            Ok((shorturl, _)) => HttpResponse::Created().body(shorturl),
+            Err(ChhotoError::ClientError { reason }) => HttpResponse::Conflict().body(reason),
+            Err(ChhotoError::ServerError) => HttpResponse::InternalServerError()
+                .body("Something went wrong when adding the link.".to_string()),
         }
     }
 }
@@ -406,7 +423,7 @@ pub async fn delete_link(
     let result = utils::is_api_ok(http, config);
     // If success, delete shortlink
     if result.success {
-        if utils::delete_link(&shortlink, &data.db, data.config.allow_capital_letters) {
+        if utils::delete_link(&shortlink, &data.db, data.config.allow_capital_letters).is_ok() {
             let response = Response {
                 success: true,
                 error: false,
@@ -425,7 +442,7 @@ pub async fn delete_link(
         HttpResponse::Unauthorized().json(result)
     // If "pass" is true - keeps backwards compatibility
     } else if auth::is_session_valid(session, config) {
-        if utils::delete_link(&shortlink, &data.db, data.config.allow_capital_letters) {
+        if utils::delete_link(&shortlink, &data.db, data.config.allow_capital_letters).is_ok() {
             HttpResponse::Ok().body(format!("Deleted {shortlink}"))
         } else {
             HttpResponse::NotFound().body("Not found!")
