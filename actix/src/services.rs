@@ -31,10 +31,10 @@ pub enum ChhotoError {
 
 // Define JSON struct for returning success/error data
 #[derive(Serialize)]
-struct JSONResponse {
-    success: bool,
-    error: bool,
-    reason: String,
+pub struct JSONResponse {
+    pub success: bool,
+    pub error: bool,
+    pub reason: String,
 }
 
 // Define JSON struct for returning backend config

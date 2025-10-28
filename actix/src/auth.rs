@@ -6,68 +6,54 @@ use actix_web::HttpRequest;
 use argon2::{password_hash::PasswordHash, Argon2, PasswordVerifier};
 use log::{debug, warn};
 use passwords::PasswordGenerator;
-use serde::Serialize;
 use std::{rc::Rc, time::SystemTime};
 
 use crate::config::Config;
-
-// Define JSON struct for error response
-#[derive(Serialize)]
-pub struct APIVerification {
-    pub success: bool,
-    pub error: bool,
-    reason: String,
-    pass: bool,
-}
+use crate::services::JSONResponse;
 
 // If the api_key environment variable exists
-pub fn is_api_ok(http: HttpRequest, config: &Config) -> APIVerification {
+pub fn is_api_ok(http: HttpRequest, config: &Config) -> JSONResponse {
     // If the api_key environment variable exists
     if config.api_key.is_some() {
         // If the header exists
         if let Some(header) = get_api_header(&http) {
             // If the header is correct
             if is_key_valid(header, config) {
-                APIVerification {
+                JSONResponse {
                     success: true,
                     error: false,
                     reason: "Correct API key".to_string(),
-                    pass: false,
                 }
             } else {
-                APIVerification {
+                JSONResponse {
                     success: false,
                     error: true,
                     reason: "Incorrect API key".to_string(),
-                    pass: false,
                 }
             }
         // The header may not exist when the user logs in through the web interface, so allow a request with no header.
         // Further authentication checks will be conducted in services.rs
         } else {
             // Due to the implementation of this result in services.rs, this JSON object will not be outputted.
-            APIVerification {
+            JSONResponse {
                 success: false,
                 error: false,
                 reason: "No valid authentication was found".to_string(),
-                pass: true,
             }
         }
     } else {
         // If the API key isn't set, but an API Key header is provided
         if get_api_header(&http).is_some() {
-            APIVerification {
+            JSONResponse {
                 success: false,
                 error: true,
                 reason: "An API key was provided, but the 'api_key' environment variable is not configured in the Chhoto URL instance".to_string(), 
-                pass: false
             }
         } else {
-            APIVerification {
+            JSONResponse {
                 success: false,
                 error: false,
                 reason: "".to_string(),
-                pass: true,
             }
         }
     }
