@@ -18,6 +18,7 @@ use std::env;
 use crate::AppState;
 use crate::{auth, database};
 use crate::{auth::is_session_valid, utils};
+use ChhotoError::{ClientError, ServerError};
 
 // Store the version number
 const VERSION: &str = env!("CARGO_PKG_VERSION");
@@ -88,7 +89,7 @@ pub async fn add_link(
 ) -> HttpResponse {
     let config = &data.config;
     // Call is_api_ok() function, pass HttpRequest
-    let result = utils::is_api_ok(http, config);
+    let result = auth::is_api_ok(http, config);
     // If success, add new link
     if result.success {
         match utils::add_link(&req, &data.db, config, false) {
@@ -160,7 +161,7 @@ pub async fn getall(
 ) -> HttpResponse {
     let config = &data.config;
     // Call is_api_ok() function, pass HttpRequest
-    let result = utils::is_api_ok(http, config);
+    let result = auth::is_api_ok(http, config);
     // If success, return all links
     if result.success {
         HttpResponse::Ok().body(utils::getall(&data.db, params.into_inner()))
@@ -177,7 +178,7 @@ pub async fn getall(
 // Get information about a single shortlink
 #[post("/api/expand")]
 pub async fn expand(req: String, data: web::Data<AppState>, http: HttpRequest) -> HttpResponse {
-    let result = utils::is_api_ok(http, &data.config);
+    let result = auth::is_api_ok(http, &data.config);
     if result.success {
         let (longurl, hits, expiry_time) = database::find_url(&req, &data.db);
         if let Some(longlink) = longurl {
@@ -212,26 +213,33 @@ pub async fn edit_link(
     http: HttpRequest,
 ) -> HttpResponse {
     let config = &data.config;
-    let result = utils::is_api_ok(http, config);
+    let result = auth::is_api_ok(http, config);
     if result.success || is_session_valid(session, config) {
-        if let Some((server_error, error_msg)) = utils::edit_link(&req, &data.db, config) {
-            let body = Response {
-                success: false,
-                error: true,
-                reason: error_msg,
-            };
-            if server_error {
-                HttpResponse::InternalServerError().json(body)
-            } else {
+        match utils::edit_link(&req, &data.db, config) {
+            Ok(()) => {
+                let body = Response {
+                    success: true,
+                    error: false,
+                    reason: String::from("Edit was successful."),
+                };
+                HttpResponse::Created().json(body)
+            }
+            Err(ClientError { reason }) => {
+                let body = Response {
+                    success: false,
+                    error: true,
+                    reason,
+                };
                 HttpResponse::BadRequest().json(body)
             }
-        } else {
-            let body = Response {
-                success: true,
-                error: false,
-                reason: String::from("Edit was successful."),
-            };
-            HttpResponse::Created().json(body)
+            Err(ServerError) => {
+                let body = Response {
+                    success: false,
+                    error: true,
+                    reason: "Something went wrong when editing the link.".to_string(),
+                };
+                HttpResponse::InternalServerError().json(body)
+            }
         }
     } else {
         HttpResponse::Unauthorized().json(result)
@@ -266,7 +274,7 @@ pub async fn whoami(
     http: HttpRequest,
 ) -> HttpResponse {
     let config = &data.config;
-    let result = utils::is_api_ok(http, config);
+    let result = auth::is_api_ok(http, config);
     let acting_user = if result.success || is_session_valid(session, config) {
         "admin"
     } else if config.public_mode {
@@ -285,7 +293,7 @@ pub async fn getconfig(
     http: HttpRequest,
 ) -> HttpResponse {
     let config = &data.config;
-    let result = utils::is_api_ok(http, config);
+    let result = auth::is_api_ok(http, config);
     if result.success || is_session_valid(session, config) || data.config.public_mode {
         let backend_config = BackendConfig {
             version: VERSION.to_string(),
@@ -420,7 +428,7 @@ pub async fn delete_link(
 ) -> HttpResponse {
     let config = &data.config;
     // Call is_api_ok() function, pass HttpRequest
-    let result = utils::is_api_ok(http, config);
+    let result = auth::is_api_ok(http, config);
     // If success, delete shortlink
     if result.success {
         if utils::delete_link(&shortlink, &data.db, data.config.allow_capital_letters).is_ok() {

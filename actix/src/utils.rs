@@ -1,16 +1,14 @@
 // SPDX-FileCopyrightText: 2023 Sayantan Santra <sayantan.santra689@gmail.com>
 // SPDX-License-Identifier: MIT
 
-use actix_web::HttpRequest;
 use log::error;
 use nanoid::nanoid;
 use rand::seq::IndexedRandom;
 use regex::Regex;
 use rusqlite::Connection;
-use serde::{Deserialize, Serialize};
+use serde::Deserialize;
 
 use crate::{
-    auth,
     config::Config,
     database,
     services::{
@@ -35,68 +33,6 @@ struct EditURLRequest {
     shortlink: String,
     longlink: String,
     reset_hits: bool,
-}
-
-// Define JSON struct for error response
-#[derive(Serialize)]
-pub struct Response {
-    pub(crate) success: bool,
-    pub(crate) error: bool,
-    reason: String,
-    pass: bool,
-}
-
-// If the api_key environment variable exists
-pub fn is_api_ok(http: HttpRequest, config: &Config) -> Response {
-    // If the api_key environment variable exists
-    if config.api_key.is_some() {
-        // If the header exists
-        if let Some(header) = auth::get_api_header(&http) {
-            // If the header is correct
-            if auth::is_key_valid(header, config) {
-                Response {
-                    success: true,
-                    error: false,
-                    reason: "Correct API key".to_string(),
-                    pass: false,
-                }
-            } else {
-                Response {
-                    success: false,
-                    error: true,
-                    reason: "Incorrect API key".to_string(),
-                    pass: false,
-                }
-            }
-        // The header may not exist when the user logs in through the web interface, so allow a request with no header.
-        // Further authentication checks will be conducted in services.rs
-        } else {
-            // Due to the implementation of this result in services.rs, this JSON object will not be outputted.
-            Response {
-                success: false,
-                error: false,
-                reason: "No valid authentication was found".to_string(),
-                pass: true,
-            }
-        }
-    } else {
-        // If the API key isn't set, but an API Key header is provided
-        if auth::get_api_header(&http).is_some() {
-            Response {
-                success: false,
-                error: true,
-                reason: "An API key was provided, but the 'api_key' environment variable is not configured in the Chhoto URL instance".to_string(), 
-                pass: false
-            }
-        } else {
-            Response {
-                success: false,
-                error: false,
-                reason: "".to_string(),
-                pass: true,
-            }
-        }
-    }
 }
 
 // Only have a-z, 0-9, - and _ as valid characters in a shortlink
@@ -191,7 +127,7 @@ pub fn add_link(
 }
 
 // Make checks and then request the DB to edit an URL entry
-pub fn edit_link(req: &str, db: &Connection, config: &Config) -> Option<(bool, String)> {
+pub fn edit_link(req: &str, db: &Connection, config: &Config) -> Result<(), ChhotoError> {
     // None means success
     // The boolean is true when it's a server error and false when it's a client error
     // The string is the error message
@@ -200,22 +136,23 @@ pub fn edit_link(req: &str, db: &Connection, config: &Config) -> Option<(bool, S
     if let Ok(json) = serde_json::from_str(req) {
         chunks = json;
     } else {
-        return Some((false, String::from("Malformed request!")));
+        return Err(ClientError {
+            reason: "Malformed request!".to_string(),
+        });
     }
     if !validate_link(&chunks.shortlink, config.allow_capital_letters) {
-        return Some((false, String::from("Invalid shortlink!")));
+        return Err(ClientError {
+            reason: "Invalid shortlink!".to_string(),
+        });
     }
     let result = database::edit_link(&chunks.shortlink, &chunks.longlink, chunks.reset_hits, db);
-    if Ok(0) == result {
+    match result {
         // Zero rows returned means no updates
-        Some((
-            false,
-            "The shortlink was not found, and could not be edited.".to_string(),
-        ))
-    } else if result.is_ok() {
-        None
-    } else {
-        Some((true, String::from("Something went wrong!"))) // Should not really happen
+        Ok(0) => Err(ClientError {
+            reason: "The shortlink was not found, and could not be edited.".to_string(),
+        }),
+        Ok(_) => Ok(()),
+        Err(_) => Err(ServerError),
     }
 }
 // Check if link, and request DB to delete it if exists

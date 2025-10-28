@@ -181,7 +181,9 @@ pub fn edit_link(
     let mut statement = db
         .prepare_cached(query)
         .expect("Error preparing SQL statement for edit_link.");
-    statement.execute((longlink, shortlink, now))
+    statement
+        .execute((longlink, shortlink, now))
+        .inspect_err(|err| error!("Got an error while editing link: {err}"))
 }
 
 // Clean expired links
