@@ -36,7 +36,7 @@ struct EditURLRequest {
 }
 
 // Only have a-z, 0-9, - and _ as valid characters in a shortlink
-fn validate_link(link: &str, allow_capital_letters: bool) -> bool {
+fn is_link_valid(link: &str, allow_capital_letters: bool) -> bool {
     let re = if allow_capital_letters {
         Regex::new("^[A-Za-z0-9-_]+$").expect("Regex generation failed.")
     } else {
@@ -61,7 +61,7 @@ pub fn add_link(
     config: &Config,
     using_public_mode: bool,
 ) -> Result<(String, i64), ChhotoError> {
-    // Success status, response string, expiry time
+    // Ok : shortlink, expiry_time
     let mut chunks: NewURLRequest;
     if let Ok(json) = serde_json::from_str(req) {
         chunks = json;
@@ -94,7 +94,7 @@ pub fn add_link(
     chunks.expiry_delay = chunks.expiry_delay.min(157784760);
     chunks.expiry_delay = chunks.expiry_delay.max(0);
 
-    if validate_link(chunks.shortlink.as_str(), allow_capital_letters) {
+    if is_link_valid(chunks.shortlink.as_str(), allow_capital_letters) {
         match database::add_link(&chunks.shortlink, &chunks.longlink, chunks.expiry_delay, db) {
             Ok(expiry_time) => Ok((chunks.shortlink, expiry_time)),
             Err(ClientError { reason }) => {
@@ -128,10 +128,6 @@ pub fn add_link(
 
 // Make checks and then request the DB to edit an URL entry
 pub fn edit_link(req: &str, db: &Connection, config: &Config) -> Result<(), ChhotoError> {
-    // None means success
-    // The boolean is true when it's a server error and false when it's a client error
-    // The string is the error message
-
     let chunks: EditURLRequest;
     if let Ok(json) = serde_json::from_str(req) {
         chunks = json;
@@ -140,7 +136,7 @@ pub fn edit_link(req: &str, db: &Connection, config: &Config) -> Result<(), Chho
             reason: "Malformed request!".to_string(),
         });
     }
-    if !validate_link(&chunks.shortlink, config.allow_capital_letters) {
+    if !is_link_valid(&chunks.shortlink, config.allow_capital_letters) {
         return Err(ClientError {
             reason: "Invalid shortlink!".to_string(),
         });
@@ -161,7 +157,7 @@ pub fn delete_link(
     db: &Connection,
     allow_capital_letters: bool,
 ) -> Result<(), ChhotoError> {
-    if validate_link(shortlink, allow_capital_letters) {
+    if is_link_valid(shortlink, allow_capital_letters) {
         database::delete_link(shortlink, db)
     } else {
         Err(ClientError {
