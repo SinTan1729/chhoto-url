@@ -198,6 +198,13 @@ div[name="links-div"] {
   background-color: light-dark(#dd1a1a, #901010);
 }
 
+#alert-box {
+  padding: 0.5em;
+  border-radius: 0.3em;
+  margin-top: 0.2em;
+  width: fit-content;
+}
+
 #qr-code-dialog {
   background-color: white;
   border-color: grey;
