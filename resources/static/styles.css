@@ -267,7 +267,7 @@ div[name="links-div"] {
 /* Settings for mobile devices */
 @media (pointer: none), (pointer: coarse) {
   .container {
-    max-width: 100vw;
+    max-width: 98vw;
   }
   .pure-form input.chhoto-input {
     width: 98%;
@@ -287,7 +287,7 @@ div[name="links-div"] {
   .chhoto-table td {
     display: flex;
     justify-content: left;
-    width: 98vw;
+    width: 97vw;
     padding: 0.1em;
   }
 
