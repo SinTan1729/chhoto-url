@@ -94,15 +94,20 @@ pub fn add_link(
     chunks.expiry_delay = chunks.expiry_delay.min(157784760);
     chunks.expiry_delay = chunks.expiry_delay.max(0);
 
-    if is_link_valid(chunks.shortlink.as_str(), allow_capital_letters) {
+    if !shortlink_provided || is_link_valid(chunks.shortlink.as_str(), allow_capital_letters) {
         match database::add_link(&chunks.shortlink, &chunks.longlink, chunks.expiry_delay, db) {
             Ok(expiry_time) => Ok((chunks.shortlink, expiry_time)),
             Err(ClientError { reason }) => {
                 if shortlink_provided {
                     Err(ClientError { reason })
-                } else if config.slug_style == "UID" && config.try_longer_slug {
+                } else {
                     // Optionally, retry with a longer slug length
-                    chunks.shortlink = gen_link(style, len + 4, allow_capital_letters);
+                    let retry_len = if config.slug_style == "UID" && config.try_longer_slug {
+                        len + 4
+                    } else {
+                        len
+                    };
+                    chunks.shortlink = gen_link(style, retry_len, allow_capital_letters);
                     match database::add_link(
                         &chunks.shortlink,
                         &chunks.longlink,
@@ -110,11 +115,11 @@ pub fn add_link(
                         db,
                     ) {
                         Ok(expiry_time) => Ok((chunks.shortlink, expiry_time)),
-                        Err(_) => Err(ServerError),
+                        Err(_) => {
+                            error!("Something went wrong while adding a generated link.");
+                            Err(ServerError)
+                        }
                     }
-                } else {
-                    error!("Something went wrong while adding a link: {reason}");
-                    Err(ServerError)
                 }
             }
             Err(ServerError) => Err(ServerError),

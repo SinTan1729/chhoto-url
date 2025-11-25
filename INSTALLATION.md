@@ -154,6 +154,8 @@ If you do choose to use a short UID despite anticipating collisions, it's recomm
 In the event of a collision, this variable will result in a single retry attempt using a UID four digits longer than
 `slug_length`. It has no effect for adjective-name slugs.
 
+_Note: If not set, one retry will be attempted, just like adjective-name slugs. But it would use the same slug length._
+
 ### `listen_address`
 
 The address Chhoto URL will bind to. Defaults to `0.0.0.0`.
