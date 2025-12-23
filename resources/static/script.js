@@ -556,17 +556,19 @@ const submitForm = () => {
         longUrl.value = "";
         shortUrl.value = "";
         expiryDelay.value = 0;
-        const params = new URLSearchParams();
-        params.append("page_size", 1);
-        const newEntry = await pullData(params);
-        LOCAL_DATA.unshift(newEntry[0]);
-        if (LOCAL_DATA.length == (CUR_PAGE + 1) * 10 + 1) {
-          LOCAL_DATA.pop();
+        if (ADMIN) {
+          const params = new URLSearchParams();
+          params.append("page_size", 1);
+          const newEntry = await pullData(params);
+          LOCAL_DATA.unshift(newEntry[0]);
+          if (LOCAL_DATA.length == (CUR_PAGE + 1) * 10 + 1) {
+            LOCAL_DATA.pop();
+          }
+          CUR_PAGE = 0;
+          PROCESSING_PAGE_TRANSITION = true;
+          displayData();
+          managePageControls();
         }
-        CUR_PAGE = 0;
-        PROCESSING_PAGE_TRANSITION = true;
-        displayData();
-        managePageControls();
       }
     })
     .catch((err) => {
