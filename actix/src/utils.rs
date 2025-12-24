@@ -71,6 +71,12 @@ pub fn add_link(
         });
     }
 
+    if let Some((shortlink, expiry_time)) =
+        database::find_shortlink_by_long_url(&chunks.longlink, db)?
+    {
+        return Ok((shortlink, expiry_time));
+    }
+
     let style = &config.slug_style;
     let len = config.slug_length;
     let allow_capital_letters = config.allow_capital_letters;

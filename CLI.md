@@ -41,6 +41,7 @@ curl -X POST \
 
 An empty or missing `<shortlink>` will result in it being auto-generated.
 Expiry delay is in seconds. It is capped to a maximum of 5 years. A missing `<expiry_delay>` or a value of 0 will disable expiry.
+If a shortlink already exists for the provided `<longlink>`, the existing shortlink and expiry time are returned (the provided `<shortlink>` and `<expiry_delay>` are ignored).
 
 The server will reply in the following format.
 

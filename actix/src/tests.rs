@@ -98,15 +98,33 @@ async fn create_app(
     app
 }
 
-async fn add_link<T: Service<Request, Response = ServiceResponse, Error = Error>, S: Display>(
+async fn add_link<T: Service<Request, Response = ServiceResponse, Error = Error>>(
     app: T,
     api_key: &str,
-    shortlink: S,
+    shortlink: &str,
+    expiry_delay: i64,
+) -> (StatusCode, CreatedURL) {
+    let longlink = format!("https://example-{shortlink}.com");
+    add_link_with_longlink(
+        app,
+        api_key,
+        shortlink,
+        &longlink,
+        expiry_delay,
+    )
+    .await
+}
+
+async fn add_link_with_longlink<T: Service<Request, Response = ServiceResponse, Error = Error>>(
+    app: T,
+    api_key: &str,
+    shortlink: &str,
+    longlink: &str,
     expiry_delay: i64,
 ) -> (StatusCode, CreatedURL) {
     let req = test::TestRequest::post().uri("/api/new")
         .insert_header(("X-API-Key", api_key))
-        .set_payload(format!("{{\"shortlink\":\"{shortlink}\",\"longlink\":\"https://example-{shortlink}.com\",\"expiry_delay\":{expiry_delay}}}"))
+        .set_payload(format!("{{\"shortlink\":\"{shortlink}\",\"longlink\":\"{longlink}\",\"expiry_delay\":{expiry_delay}}}"))
         .to_request();
 
     let resp = test::call_service(&app, req).await;
@@ -212,6 +230,17 @@ async fn adding_link_with_shortlink() {
     }
 
     let (status, reply) = add_link(&app, &api_key, "test1", 10).await;
+    assert!(status.is_success());
+    assert_eq!(reply.shorturl, "https://mydomain.com/test1");
+
+    let (status, reply) = add_link_with_longlink(
+        &app,
+        &api_key,
+        "test1",
+        "https://different-longlink.com",
+        10,
+    )
+    .await;
     assert!(status.is_client_error());
     assert_eq!(reply.reason, "Short URL is already in use!");
 
@@ -232,8 +261,51 @@ async fn adding_link_with_shortlink_capital_letters() {
     }
 
     let (status, reply) = add_link(&app, &api_key, "Test1", 10).await;
+    assert!(status.is_success());
+    assert_eq!(reply.shorturl, "https://mydomain.com/Test1");
+
+    let (status, reply) = add_link_with_longlink(
+        &app,
+        &api_key,
+        "Test1",
+        "https://different-longlink.com",
+        10,
+    )
+    .await;
     assert!(status.is_client_error());
     assert_eq!(reply.reason, "Short URL is already in use!");
+
+    let _ = fs::remove_file(format!("/tmp/chhoto-url-test-{test}.sqlite"));
+}
+
+#[test]
+async fn reusing_existing_longlink_returns_existing_shortlink() {
+    let test = "reuse-longlink";
+    let conf = default_config(test);
+    let app = create_app(&conf, test).await;
+    let api_key = conf.api_key.unwrap();
+
+    let (status, reply) = add_link_with_longlink(
+        &app,
+        &api_key,
+        "alpha",
+        "https://example.com/reuse",
+        10,
+    )
+    .await;
+    assert!(status.is_success());
+    assert_eq!(reply.shorturl, "https://mydomain.com/alpha");
+
+    let (status, reply) = add_link_with_longlink(
+        &app,
+        &api_key,
+        "beta",
+        "https://example.com/reuse",
+        10,
+    )
+    .await;
+    assert!(status.is_success());
+    assert_eq!(reply.shorturl, "https://mydomain.com/alpha");
 
     let _ = fs::remove_file(format!("/tmp/chhoto-url-test-{test}.sqlite"));
 }
@@ -399,7 +471,8 @@ async fn adding_link_with_retry_on_collision() {
             'y', 'z', '0', '1', '2', '3', '4', '5', '6', '7', '8', '9'];
 
         for c in CHARS.iter() {
-            let (status, _) = add_link(&app, api_key, c, 10).await;
+            let shortlink = c.to_string();
+            let (status, _) = add_link(&app, api_key, &shortlink, 10).await;
             assert!(status.is_success());
         }
     }
@@ -416,7 +489,14 @@ async fn adding_link_with_retry_on_collision() {
 
     // But a colliding provided shorturl should fail
     {
-        let (status, _) = add_link(&app, api_key, "a", 10).await;
+        let (status, _) = add_link_with_longlink(
+            &app,
+            api_key,
+            "a",
+            "https://different-longlink.com",
+            10,
+        )
+        .await;
         assert!(status.is_client_error());
     }
 

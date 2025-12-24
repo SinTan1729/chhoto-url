@@ -130,6 +130,32 @@ pub fn find_and_add_hit(shortlink: &str, db: &Connection) -> Result<String, ()> 
         .map_err(|_| ())
 }
 
+// Find a short URL for a given long URL
+pub fn find_shortlink_by_long_url(
+    longlink: &str,
+    db: &Connection,
+) -> Result<Option<(String, i64)>, ChhotoError> {
+    let now = chrono::Utc::now().timestamp();
+    let query = "SELECT short_url, expiry_time FROM urls
+                 WHERE long_url = ?1 
+                 AND (expiry_time = 0 OR expiry_time > ?2)
+                 ORDER BY id DESC LIMIT 1";
+    let Ok(mut statement) = db.prepare_cached(query) else {
+        error!("Error preparing SQL statement for find_shortlink_by_long_url.");
+        return Err(ServerError);
+    };
+    match statement.query_row((longlink, now), |row| {
+        Ok((row.get("short_url")?, row.get("expiry_time")?))
+    }) {
+        Ok(result) => Ok(Some(result)),
+        Err(rusqlite::Error::QueryReturnedNoRows) => Ok(None),
+        Err(_) => {
+            error!("Error querying existing shortlink for long URL.");
+            Err(ServerError)
+        }
+    }
+}
+
 // Insert a new link
 pub fn add_link(
     shortlink: &str,
@@ -251,7 +277,7 @@ pub fn delete_link(shortlink: &str, db: &Connection) -> Result<(), ChhotoError> 
 
 pub fn open_db(path: &str, use_wal_mode: bool, ensure_acid: bool) -> Connection {
     // Set current user_version. Should be incremented on change of schema.
-    let user_version = 1;
+    let user_version = 2;
 
     let db = Connection::open(path).expect("Unable to open database!");
 
@@ -284,6 +310,12 @@ pub fn open_db(path: &str, use_wal_mode: bool, ensure_acid: bool) -> Connection 
         [],
     )
     .expect("Unable to create index on short_url.");
+    // Create index on long_url for fast reverse lookups
+    db.execute(
+        "CREATE INDEX IF NOT EXISTS idx_long_url ON urls (long_url)",
+        [],
+    )
+    .expect("Unable to create index on long_url.");
 
     let current_user_version: u32 = if table_exists == 0 {
         // It would mean that the table is newly created i.e. has the desired schema
@@ -302,6 +334,14 @@ pub fn open_db(path: &str, use_wal_mode: bool, ensure_acid: bool) -> Connection 
             [],
         )
         .expect("Unable to apply migration 1.");
+    }
+    // Migration 2: Add index for long_url lookups
+    if current_user_version < 2 {
+        db.execute(
+            "CREATE INDEX IF NOT EXISTS idx_long_url ON urls (long_url)",
+            [],
+        )
+        .expect("Unable to apply migration 2.");
     }
 
     // Create index on expiry_time for faster lookups

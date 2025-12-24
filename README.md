@@ -62,6 +62,7 @@ Password: `chhoto-url-demo-pass`
   i.e. only the hit is recorded, and nothing else.
 - Short links can be edited after creation.
 - QR codes can be generated for easy sharing.
+- Reuses an existing short link when the same long URL is submitted again.
 - Supports operation using API key, and lets the user provide hashed password and API key.
 - Has a mobile friendly UI, and automatic dark mode.
 - Can serve a custom landing page, if needed.
