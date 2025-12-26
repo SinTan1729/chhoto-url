@@ -371,19 +371,22 @@ const TR = (i, row) => {
   return tr;
 };
 
-const copyShortUrl = async (short_link) => {
-  const full_link = `${SITE_URL}/${short_link}`;
-  const link_elt = `<a href=${full_link} target="_blank">${full_link}</a>`;
+const copyShortUrl = (shortLink) => {
+  const fullLink = `${SITE_URL}/${shortLink}`;
+  const linkElt = `<a href=${fullLink} target="_blank">${fullLink}</a>`;
   try {
-    await navigator.clipboard.writeText(full_link);
-    showAlert(
-      `Short URL ${link_elt} was copied to clipboard!`,
-      "light-dark(green, #1e501e)",
-    );
+    navigator.clipboard
+      .writeText(fullLink)
+      .then(() =>
+        showAlert(
+          `Short URL ${linkElt} was copied to clipboard!`,
+          "light-dark(green, #1e501e)",
+        ),
+      );
   } catch (err) {
     console.log(err);
     showAlert(
-      `Could not copy short URL to clipboard, please do it manually: ${link_elt}`,
+      `Could not copy short URL to clipboard, please do it manually: ${linkElt}`,
       "light-dark(red, #a01e1e)",
     );
   }
@@ -536,47 +539,87 @@ const submitForm = () => {
   const url = prepSubdir("/api/new");
   let ok = false;
 
-  fetch(url, {
+  const payload = {
     method: "POST",
     cache: "no-cache",
     headers: {
       "Content-Type": "application/json",
     },
     body: JSON.stringify(data),
-  })
-    .then((res) => {
-      ok = res.ok;
-      return res.text();
-    })
-    .then(async (text) => {
-      if (!ok) {
-        showAlert(text, "light-dark(red, #a01e1e)");
-      } else {
-        await copyShortUrl(text);
-        longUrl.value = "";
-        shortUrl.value = "";
-        expiryDelay.value = 0;
-        if (ADMIN) {
-          const params = new URLSearchParams();
-          params.append("page_size", 1);
-          const newEntry = await pullData(params);
-          LOCAL_DATA.unshift(newEntry[0]);
-          if (LOCAL_DATA.length == (CUR_PAGE + 1) * 10 + 1) {
-            LOCAL_DATA.pop();
-          }
-          CUR_PAGE = 0;
-          PROCESSING_PAGE_TRANSITION = true;
-          displayData();
-          managePageControls();
+  };
+
+  const reloadPage = async (ok) => {
+    if (ok) {
+      longUrl.value = "";
+      shortUrl.value = "";
+      expiryDelay.value = 0;
+      if (ADMIN) {
+        const params = new URLSearchParams();
+        params.append("page_size", 1);
+        const newEntry = await pullData(params);
+        LOCAL_DATA.unshift(newEntry[0]);
+        if (LOCAL_DATA.length == (CUR_PAGE + 1) * 10 + 1) {
+          LOCAL_DATA.pop();
         }
+        CUR_PAGE = 0;
+        PROCESSING_PAGE_TRANSITION = true;
+        displayData();
+        managePageControls();
       }
-    })
-    .catch((err) => {
-      console.log("Error:", err);
-      if (!alert("Something went wrong! Click Ok to refresh page.")) {
-        window.location.reload();
-      }
+    }
+  };
+
+  if (typeof ClipboardItem && navigator.clipboard.write) {
+    const text = new ClipboardItem({
+      "text/plain": fetch(url, payload)
+        .then((res) => {
+          ok = res.ok;
+          return res.text();
+        })
+        .then((text) => {
+          const fullLink = `${SITE_URL}/${text}`;
+          if (!ok) {
+            showAlert(text, "light-dark(red, #a01e1e)");
+          } else {
+            const linkElt = `<a href=${fullLink} target="_blank">${fullLink}</a>`;
+            showAlert(
+              `Short URL ${linkElt} was copied to clipboard!`,
+              "light-dark(green, #1e501e)",
+            );
+          }
+          reloadPage(ok);
+          return new Blob([fullLink], { type: "text/plain" });
+        })
+        .catch((err) => {
+          console.log("Error:", err);
+          if (!alert("Something went wrong! Click Ok to refresh page.")) {
+            window.location.reload();
+          }
+        }),
     });
+    navigator.clipboard.write([text]);
+  } else {
+    // To maintain backwards compatibility, might be removed later
+    fetch(url, payload)
+      .then((res) => {
+        ok = res.ok;
+        return res.text();
+      })
+      .then((text) => {
+        if (ok) {
+          copyShortUrl(text);
+        } else {
+          showAlert(text, "light-dark(red, #a01e1e)");
+        }
+      })
+      .then(() => reloadPage(ok))
+      .catch((err) => {
+        console.log("Error:", err);
+        if (!alert("Something went wrong! Click Ok to refresh page.")) {
+          window.location.reload();
+        }
+      });
+  }
 };
 
 const submitEdit = () => {
