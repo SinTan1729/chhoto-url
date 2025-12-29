@@ -371,25 +371,27 @@ const TR = (i, row) => {
   return tr;
 };
 
-const copyShortUrl = (shortLink) => {
+const copyShortUrl = (shortLink, doCopy) => {
   const fullLink = `${SITE_URL}/${shortLink}`;
   const linkElt = `<a href=${fullLink} target="_blank">${fullLink}</a>`;
-  try {
-    navigator.clipboard
-      .writeText(fullLink)
-      .then(() =>
-        showAlert(
-          `Short URL ${linkElt} was copied to clipboard!`,
-          "light-dark(green, #1e501e)",
-        ),
+  const copyPromise = doCopy // We want to use it only for the UI in some cases
+    ? navigator.clipboard.writeText(fullLink)
+    : Promise.resolve();
+
+  copyPromise
+    .then(() =>
+      showAlert(
+        `Short URL ${linkElt} was copied to clipboard!`,
+        "light-dark(green, #1e501e)",
+      ),
+    )
+    .catch((err) => {
+      console.log(err);
+      showAlert(
+        `Could not copy short URL to clipboard, please do it manually: ${linkElt}`,
+        "light-dark(red, #a01e1e)",
       );
-  } catch (err) {
-    console.log(err);
-    showAlert(
-      `Could not copy short URL to clipboard, please do it manually: ${linkElt}`,
-      "light-dark(red, #a01e1e)",
-    );
-  }
+    });
 };
 
 const addHTTPSToLongURL = (id) => {
@@ -412,7 +414,7 @@ const copyButton = (shortUrl) => {
 
   btn.onclick = (e) => {
     e.preventDefault();
-    copyShortUrl(shortUrl);
+    copyShortUrl(shortUrl, true);
   };
   return btn;
 };
@@ -548,7 +550,7 @@ const submitForm = () => {
     body: JSON.stringify(data),
   };
 
-  const reloadPage = async (ok) => {
+  const cleanPageAfterSubmit = async (ok) => {
     if (ok) {
       longUrl.value = "";
       shortUrl.value = "";
@@ -576,19 +578,10 @@ const submitForm = () => {
           ok = res.ok;
           return res.text();
         })
-        .then((text) => {
-          const fullLink = `${SITE_URL}/${text}`;
-          if (!ok) {
-            showAlert(text, "light-dark(red, #a01e1e)");
-          } else {
-            const linkElt = `<a href=${fullLink} target="_blank">${fullLink}</a>`;
-            showAlert(
-              `Short URL ${linkElt} was copied to clipboard!`,
-              "light-dark(green, #1e501e)",
-            );
-          }
-          reloadPage(ok);
-          return new Blob([fullLink], { type: "text/plain" });
+        .then((shortUrl) => {
+          copyShortUrl(shortUrl, false);
+          cleanPageAfterSubmit(ok);
+          return new Blob([`${SITE_URL}/${shortUrl}`], { type: "text/plain" });
         })
         .catch((err) => {
           console.log("Error:", err);
@@ -605,14 +598,14 @@ const submitForm = () => {
         ok = res.ok;
         return res.text();
       })
-      .then((text) => {
+      .then((shortUrl) => {
         if (ok) {
-          copyShortUrl(text);
+          copyShortUrl(shortUrl, true);
         } else {
-          showAlert(text, "light-dark(red, #a01e1e)");
+          showAlert(shortUrl, "light-dark(red, #a01e1e)");
         }
       })
-      .then(() => reloadPage(ok))
+      .then(() => cleanPageAfterSubmit(ok))
       .catch((err) => {
         console.log("Error:", err);
         if (!alert("Something went wrong! Click Ok to refresh page.")) {
