@@ -255,14 +255,15 @@ pub fn open_db(path: &str, use_wal_mode: bool, ensure_acid: bool) -> Connection 
 
     let db = Connection::open(path).expect("Unable to open database!");
 
-    // It would be 0 if table does not exist, and 1 if it does
-    let table_exists: usize = db
+    let table_exists = db
         .query_row_and_then(
             "SELECT COUNT(*) FROM sqlite_master WHERE type = 'table' AND name = 'urls'",
             [],
-            |row| row.get(0),
+            |row| row.get::<usize, isize>(0),
         )
-        .expect("Error querying existence of table.");
+        // It would be 0 if table does not exist, and 1 if it does
+        .expect("Error querying existence of table.")
+        == 1;
 
     // Create table if it doesn't exist
     db.execute(
@@ -285,7 +286,7 @@ pub fn open_db(path: &str, use_wal_mode: bool, ensure_acid: bool) -> Connection 
     )
     .expect("Unable to create index on short_url.");
 
-    let current_user_version: u32 = if table_exists == 0 {
+    let current_user_version: u32 = if !table_exists {
         // It would mean that the table is newly created i.e. has the desired schema
         user_version
     } else {

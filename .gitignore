@@ -1,6 +1,7 @@
 # Ignore build outputs
 actix/target
 resources-final
+target
 
 # Ignore irrelevant dotfiles
 .vscode/
