@@ -539,7 +539,6 @@ const submitForm = () => {
   };
 
   const url = prepSubdir("/api/new");
-  let ok = false;
 
   const payload = {
     method: "POST",
@@ -571,17 +570,24 @@ const submitForm = () => {
     }
   };
 
+  let ok = false;
   if (typeof ClipboardItem && navigator.clipboard.write) {
-    const text = new ClipboardItem({
+    const copyPromise = new ClipboardItem({
       "text/plain": fetch(url, payload)
         .then((res) => {
           ok = res.ok;
           return res.text();
         })
         .then((shortUrl) => {
-          copyShortUrl(shortUrl, false);
-          cleanPageAfterSubmit(ok);
-          return new Blob([`${SITE_URL}/${shortUrl}`], { type: "text/plain" });
+          if (ok) {
+            copyShortUrl(shortUrl, false);
+            cleanPageAfterSubmit(ok);
+            return new Blob([`${SITE_URL}/${shortUrl}`], {
+              type: "text/plain",
+            });
+          } else {
+            showAlert(shortUrl, "light-dark(red, #a01e1e)");
+          }
         })
         .catch((err) => {
           console.log("Error:", err);
@@ -590,7 +596,7 @@ const submitForm = () => {
           }
         }),
     });
-    navigator.clipboard.write([text]);
+    navigator.clipboard.write([copyPromise]);
   } else {
     // To maintain backwards compatibility, might be removed later
     fetch(url, payload)
