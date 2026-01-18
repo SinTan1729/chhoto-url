@@ -64,10 +64,11 @@ const getConfig = async () => {
     if (CONFIG.site_url == null) {
       SITE_URL = window.location.host;
     } else {
-      SITE_URL = CONFIG.site_url
-        .replace(/\/$/, "")
-        .replace(/^"/, "")
-        .replace(/"$/, "");
+      SITE_URL = CONFIG.site_url.replace(/^"/, "").replace(/"$/, "");
+      const url = new URL(SITE_URL);
+      SITE_URL =
+        url.protocol + "//" + punycode.toUnicode(url.hostname) + url.pathname;
+      SITE_URL = SITE_URL.replace(/\/$/, "");
     }
 
     if (!hasProtocol(SITE_URL)) {
