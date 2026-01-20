@@ -89,6 +89,14 @@ use something like `/data/urls.sqlite` as `db_url`.
 Provide a secure password. If kept empty, anyone can access the website. Note that password is not encrypted in
 transport, so it's recommended to use a reverse proxy like `caddy` or `nginx`.
 
+### `site_url` \#
+
+Change this to your public-facing URL. This is optional, as the link will work at any URL as long as Chhoto URL
+is accessible there. This mostly enhances the frontend experience, as copying to clipboard, QR code generation will
+use it if available.
+Do not surround it using quotes. If you have any unicode characters, please use the punycode. It'll be automatically
+converted to the correct unicode in the frontend.
+
 ### `api_key`
 
 Provide a secure API key. It'll be checked at start for security. If the API key is considered weak, a strong API
