@@ -6,7 +6,6 @@ on:
     paths: ["actix/**"]
   pull_request:
     branches: ["*"]
-    paths: ["actix/**"]
   workflow_dispatch:
 
 env:
