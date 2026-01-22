@@ -37,11 +37,11 @@ services:
       # Note that there are risks. Look at the README for more.
       # - ensure_acid = False
 
-      # Change this if your server URL is not "http://localhost"
-      # This must not be surrounded by quotes. For example:
-      # site_url="https://www.example.com"   incorrect
-      # site_url=https://www.example.com     correct
-      # This is important to ensure Chhoto URL outputs the shortened link with the correct URL.
+      # Change this to your public-facing URL. This is optional, as the link will work at any URL as
+      # long as Chhoto URL is accessible there. This mostly enhances the frontend experience, as copying to clipboard,
+      # QR code generation will use it if available.
+      # Do not surround it using quotes. If you have any unicode characters, please use the punycode. It'll be
+      # automatically converted to the correct unicode in the frontend.
       # - site_url=https://www.example.com
 
       # If you want to provided hashed password and API Key, uncomment the next line. Read the README
