@@ -375,9 +375,20 @@ const TR = (i, row) => {
 const copyShortUrl = (shortLink, doCopy) => {
   const fullLink = `${SITE_URL}/${shortLink}`;
   const linkElt = `<a href=${fullLink} target="_blank">${fullLink}</a>`;
-  const copyPromise = doCopy // We want to use it only for the UI in some cases
-    ? navigator.clipboard.writeText(fullLink)
-    : Promise.resolve();
+
+  let copyPromise;
+  if (
+    typeof ClipboardItem === "function" &&
+    typeof navigator.clipboard === "object"
+  ) {
+    copyPromise = doCopy // We want to use it only for the UI in some cases
+      ? navigator.clipboard.writeText(fullLink)
+      : Promise.resolve();
+  } else {
+    copyPromise = Promise.reject(
+      new Error("Unable to get access to clipboard."),
+    );
+  }
 
   copyPromise
     .then(() =>
@@ -572,7 +583,10 @@ const submitForm = () => {
   };
 
   let ok = false;
-  if (typeof ClipboardItem && navigator.clipboard.write) {
+  if (
+    typeof ClipboardItem === typeof Function &&
+    typeof navigator.clipboard === typeof Function
+  ) {
     const copyPromise = new ClipboardItem({
       "text/plain": fetch(url, payload)
         .then((res) => {
