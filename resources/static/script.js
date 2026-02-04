@@ -66,8 +66,14 @@ const getConfig = async () => {
     } else {
       SITE_URL = CONFIG.site_url.replace(/^"/, "").replace(/"$/, "");
       const url = new URL(SITE_URL);
-      SITE_URL =
-        url.protocol + "//" + punycode.toUnicode(url.hostname) + url.pathname;
+      SITE_URL = SITE_URL.replace(
+        url.hostname,
+        punycode.toUnicode(url.hostname),
+      );
+      SITE_URL = SITE_URL.replace(
+        url.pathname,
+        punycode.toUnicode(url.pathname),
+      );
       SITE_URL = SITE_URL.replace(/\/$/, "");
     }
 
