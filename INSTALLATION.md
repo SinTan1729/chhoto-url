@@ -12,8 +12,8 @@ The tags with `-alpine` suffix are built on top of alpine, so are a little bit l
 the basic UNIX tools for debugging, so might be worth using in case you want to play around with the image.
 The `dev` tags are always built on top of alpine. All of these images are available both on the Docker Hub (recommended)
 and GHCR, except the `dev` builds which are only available on GHCR. All of these images are available for `linux/amd64`,
-`linux/arm64`, and `linux/arm/v7` architectures on Linux. These should also work just fine with `podman`, or any other
-container engine supporting OCI images.
+`linux/arm64`, `linux/arm/v7`, and `linux/riscv64` architectures on Linux. These should also work just fine with `podman`,
+or any other container engine supporting OCI images.
 
 You can use the [provided compose file](./compose.yaml) as a base, modifying it as needed. Run it with
 
@@ -39,7 +39,7 @@ feel free to open a discussion.
 docker build . -t chhoto-url
 ```
 
-For building on `arm64` or `arm/v7`, use the following:
+For building on `arm64`, `arm/v7`, or `riscv64`, use the following:
 
 ```
 docker build . -t chhoto-url --build-arg target=<desired-target>
