@@ -33,7 +33,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         # Build the binaries and upload
       - name: Build binary and test
         uses: houseabsolute/actions-rust-cross@v1
@@ -44,7 +44,7 @@ jobs:
           cross-version: ${{ matrix.platform.cross-version }}
           rust-cache-parameters: '{"workspaces":"actix -> target"}'
       - name: Upload artifacts
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: ${{ matrix.platform.target }}
           path: ./actix/target/${{ matrix.platform.target }}/release/${{ env.IMAGE_NAME }}
@@ -63,11 +63,11 @@ jobs:
     steps:
       # Prep the files
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           fetch-depth: 0
       - name: Download artifacts
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
       - name: Move stuff around and fix permissions
         run: |
           for f in *-unknown-linux-musl*
@@ -86,13 +86,13 @@ jobs:
       - name: Display current directory structure
         run: ls -R
       - name: Log in to the Docker Hub
-        uses: docker/login-action@v3
+        uses: docker/login-action@v4
         if: github.ref_type == 'tag'
         with:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
       - name: Log in to the Container registry
-        uses: docker/login-action@v3
+        uses: docker/login-action@v4
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
