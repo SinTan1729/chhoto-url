@@ -25,6 +25,11 @@ jobs:
           - os-name: Linux-armv7
             target: armv7-unknown-linux-musleabihf
 
+          - os-name: Linux-riscv64
+            target: riscv64gc-unknown-linux-musl
+            # Need to use an unreleased version for now
+            cross-version: a5c1c64f0810eb90c790e94b7904b27dccc02287
+
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -36,6 +41,7 @@ jobs:
           command: both
           target: ${{ matrix.platform.target }}
           args: "--locked --release --manifest-path=actix/Cargo.toml"
+          cross-version: ${{ matrix.platform.cross-version }}
           rust-cache-parameters: '{"workspaces":"actix -> target"}'
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
@@ -137,7 +143,7 @@ jobs:
 
       # Build and push docker images
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
+        uses: docker/setup-buildx-action@v4
       - name: Build and push Docker image - alpine
         id: push-alpine
         uses: docker/build-push-action@v6
@@ -148,7 +154,7 @@ jobs:
           file: Dockerfile.alpine
           tags: ${{ steps.meta-alpine.outputs.tags }}
           labels: ${{ steps.meta-alpine.outputs.labels }}
-          platforms: linux/amd64,linux/arm64,linux/arm/v7
+          platforms: linux/amd64,linux/arm64,linux/arm/v7,linux/riscv64
           annotations: ${{ steps.meta-alpine.outputs.annotations }}
       - name: Build and push Docker image - scratch
         id: push-scratch
@@ -160,7 +166,7 @@ jobs:
           file: Dockerfile.scratch
           tags: ${{ steps.meta-scratch.outputs.tags }}
           labels: ${{ steps.meta-scratch.outputs.labels }}
-          platforms: linux/amd64,linux/arm64,linux/arm/v7
+          platforms: linux/amd64,linux/arm64,linux/arm/v7,linux/riscv64
           annotations: ${{ steps.meta-scratch.outputs.annotations }}
       - name: Build and push Docker image - dev
         id: push-dev
@@ -172,23 +178,23 @@ jobs:
           file: Dockerfile.alpine
           tags: ${{ steps.meta-dev.outputs.tags }}
           labels: ${{ steps.meta-dev.outputs.labels }}
-          platforms: linux/amd64,linux/arm64,linux/arm/v7
+          platforms: linux/amd64,linux/arm64,linux/arm/v7,linux/riscv64
 
       # Attestation
       - name: Generate artifact attestation - alpine
-        uses: actions/attest-build-provenance@v2
+        uses: actions/attest@v4
         if: github.ref_type == 'tag'
         with:
           subject-name: sintan1729/${{ env.IMAGE_NAME }}
           subject-digest: ${{ steps.push-alpine.outputs.digest }}
       - name: Generate artifact attestation - scratch
-        uses: actions/attest-build-provenance@v2
+        uses: actions/attest@v4
         if: github.ref_type == 'tag'
         with:
           subject-name: sintan1729/${{ env.IMAGE_NAME }}
           subject-digest: ${{ steps.push-scratch.outputs.digest }}
       - name: Generate artifact attestation - dev
-        uses: actions/attest-build-provenance@v2
+        uses: actions/attest@v4
         if: github.ref_type != 'tag'
         with:
           subject-name: sintan1729/${{ env.IMAGE_NAME }}
