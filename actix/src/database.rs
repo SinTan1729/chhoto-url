@@ -250,8 +250,8 @@ pub fn delete_link(shortlink: &str, db: &Connection) -> Result<(), ChhotoError> 
 }
 
 pub fn open_db(path: &str, use_wal_mode: bool, ensure_acid: bool) -> Connection {
-    // Set current user_version. Should be incremented on change of schema.
-    let user_version = 1;
+    const APPLICATION_ID: u32 = 0x63686874; // Hex for chht, MUST NEVER BE CHANGED
+    const USER_VERSION: u32 = 2; // Should be incremented on change of schema
 
     let db = Connection::open(path).expect("Unable to open database!");
 
@@ -264,6 +264,30 @@ pub fn open_db(path: &str, use_wal_mode: bool, ensure_acid: bool) -> Connection 
         // It would be 0 if table does not exist, and 1 if it does
         .expect("Error querying existence of table.")
         == 1;
+
+    let current_user_version: u32 = if !table_exists {
+        // It would mean that the table is newly created i.e. has the desired schema
+        USER_VERSION
+    } else {
+        db.query_row_and_then("SELECT user_version FROM pragma_user_version", [], |row| {
+            row.get(0)
+        })
+        .unwrap_or_default()
+    };
+
+    let current_application_id: u32 = db
+        .query_row_and_then(
+            "SELECT application_id FROM pragma_application_id",
+            [],
+            |row| row.get(0),
+        )
+        .unwrap_or_default();
+    if current_application_id > 0 || (table_exists && current_user_version > 1) {
+        assert_eq!(
+            current_application_id, APPLICATION_ID,
+            "Incorrect application_id: The database file seems to belong to some other application."
+        )
+    }
 
     // Create table if it doesn't exist
     db.execute(
@@ -286,16 +310,6 @@ pub fn open_db(path: &str, use_wal_mode: bool, ensure_acid: bool) -> Connection 
     )
     .expect("Unable to create index on short_url.");
 
-    let current_user_version: u32 = if !table_exists {
-        // It would mean that the table is newly created i.e. has the desired schema
-        user_version
-    } else {
-        db.query_row_and_then("SELECT user_version FROM pragma_user_version", [], |row| {
-            row.get(0)
-        })
-        .unwrap_or_default()
-    };
-
     // Migration 1: Add expiry_time, introduced in 6.0.0
     if current_user_version < 1 {
         db.execute(
@@ -305,6 +319,14 @@ pub fn open_db(path: &str, use_wal_mode: bool, ensure_acid: bool) -> Connection 
         .expect("Unable to apply migration 1.");
     }
 
+    // The migrations have finished successfully by this point
+    if !table_exists || current_user_version < USER_VERSION {
+        db.pragma_update(None, "user_version", USER_VERSION)
+            .expect("Unable to set pragma: user_version.");
+        db.pragma_update(None, "application_id", APPLICATION_ID)
+            .expect("Unable to set pragma: application_id.");
+    }
+
     // Create index on expiry_time for faster lookups
     db.execute(
         "CREATE INDEX IF NOT EXISTS idx_expiry_time ON urls (expiry_time)",
@@ -312,9 +334,6 @@ pub fn open_db(path: &str, use_wal_mode: bool, ensure_acid: bool) -> Connection 
     )
     .expect("Unable to create index on expiry_time.");
 
-    // Set the user version
-    db.pragma_update(None, "user_version", user_version)
-        .expect("Unable to set pragma: user_version.");
     // Set WAL mode if specified
     let (journal_mode, synchronous) = match (use_wal_mode, ensure_acid) {
         (true, false) => ("WAL", "NORMAL"),
