@@ -64,6 +64,8 @@ fn default_config(test: &str) -> config::Config {
     custom_landing_directory: None,
     use_wal_mode: true,
     ensure_acid: false,
+    umami_url: None,
+    umami_website_id: None,
     };
     conf
 }
