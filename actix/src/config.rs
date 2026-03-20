@@ -29,6 +29,8 @@ pub struct Config {
     pub custom_landing_directory: Option<String>,
     pub use_wal_mode: bool,
     pub ensure_acid: bool,
+    pub umami_url: Option<String>,
+    pub umami_website_id: Option<String>,
 }
 
 pub fn read() -> Config {
@@ -195,6 +197,20 @@ pub fn read() -> Config {
             info!("The dashboard will be available at /admin/manage/");
         });
 
+    let umami_url = var("umami_url")
+        .ok()
+        .map(|s| s.trim().to_string())
+        .filter(|s| !s.is_empty());
+    let umami_website_id = var("umami_website_id")
+        .ok()
+        .map(|s| s.trim().to_string())
+        .filter(|s| !s.is_empty());
+    if umami_url.is_some() && umami_website_id.is_some() {
+        info!("Umami analytics enabled.");
+    } else if umami_url.is_some() || umami_website_id.is_some() {
+        warn!("Both umami_url and umami_website_id must be set for Umami analytics. Disabling.");
+    }
+
     Config {
         listen_address,
         port,
@@ -215,5 +231,7 @@ pub fn read() -> Config {
         custom_landing_directory,
         use_wal_mode,
         ensure_acid,
+        umami_url,
+        umami_website_id,
     }
 }

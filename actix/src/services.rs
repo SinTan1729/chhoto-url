@@ -328,14 +328,101 @@ pub async fn error404() -> impl Responder {
         .with_status(StatusCode::NOT_FOUND)
 }
 
+// Send analytics to Umami (fire-and-forget)
+fn send_umami_event(req: &HttpRequest, shortlink: &str, config: &crate::config::Config) {
+    let (Some(umami_url), Some(website_id)) = (&config.umami_url, &config.umami_website_id) else {
+        return;
+    };
+
+    let url = format!("{}/api/send", umami_url);
+    let website_id = website_id.clone();
+
+    let hostname = config
+        .site_url
+        .as_deref()
+        .and_then(|u| u.strip_prefix("https://"))
+        .or_else(|| {
+            config
+                .site_url
+                .as_deref()
+                .and_then(|u| u.strip_prefix("http://"))
+        })
+        .unwrap_or("localhost")
+        .to_string();
+
+    let referrer = req
+        .headers()
+        .get("referer")
+        .and_then(|v| v.to_str().ok())
+        .unwrap_or("")
+        .to_string();
+
+    let language = req
+        .headers()
+        .get("accept-language")
+        .and_then(|v| v.to_str().ok())
+        .unwrap_or("")
+        .to_string();
+
+    let user_agent = req
+        .headers()
+        .get("user-agent")
+        .and_then(|v| v.to_str().ok())
+        .unwrap_or("")
+        .to_string();
+
+    let ip = req
+        .headers()
+        .get("x-forwarded-for")
+        .and_then(|v| v.to_str().ok())
+        .and_then(|v| v.split(',').next())
+        .map(|s| s.trim().to_string())
+        .or_else(|| req.peer_addr().map(|a| a.ip().to_string()))
+        .unwrap_or_default();
+
+    let page_url = format!("/{shortlink}");
+
+    tokio::spawn(async move {
+        let client = reqwest::Client::new();
+        let payload = serde_json::json!({
+            "type": "event",
+            "payload": {
+                "website": website_id,
+                "hostname": hostname,
+                "url": page_url,
+                "referrer": referrer,
+                "language": language,
+            }
+        });
+
+        let mut request = client
+            .post(&url)
+            .header("Content-Type", "application/json")
+            .header("User-Agent", &user_agent)
+            .json(&payload);
+
+        if !ip.is_empty() {
+            request = request.header("X-Forwarded-For", &ip);
+        }
+
+        if let Err(e) = request.send().await {
+            warn!("Failed to send Umami event: {e}");
+        } else {
+            debug!("Umami event sent for {}", page_url);
+        }
+    });
+}
+
 // Handle a given shortlink
 #[get("/{shortlink}")]
 pub async fn link_handler(
     shortlink: web::Path<String>,
     data: web::Data<AppState>,
+    req: HttpRequest,
 ) -> impl Responder {
     let shortlink_str = shortlink.as_str();
     if let Ok(longlink) = database::find_and_add_hit(shortlink_str, &data.db) {
+        send_umami_event(&req, shortlink_str, &data.config);
         if data.config.use_temp_redirect {
             Either::Left(Redirect::to(longlink))
         } else {
