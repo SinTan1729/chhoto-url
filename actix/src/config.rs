@@ -29,7 +29,7 @@ pub struct Config {
     pub custom_landing_directory: Option<String>,
     pub use_wal_mode: bool,
     pub ensure_acid: bool,
-    pub page_size: u16,
+    pub frontend_page_size: u16,
 }
 
 pub fn read() -> Config {
@@ -222,6 +222,6 @@ pub fn read() -> Config {
         custom_landing_directory,
         use_wal_mode,
         ensure_acid,
-        page_size,
+        frontend_page_size: page_size,
     }
 }

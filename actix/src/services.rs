@@ -314,7 +314,7 @@ pub async fn getconfig(
             slug_style: config.slug_style.clone(),
             slug_length: config.slug_length,
             try_longer_slug: config.try_longer_slug,
-            page_size: config.page_size,
+            page_size: config.frontend_page_size,
         };
         HttpResponse::Ok().json(backend_config)
     } else {
