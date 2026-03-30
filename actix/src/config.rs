@@ -196,10 +196,11 @@ pub fn read() -> Config {
             info!("The dashboard will be available at /admin/manage/");
         });
 
-    let page_size = var("page_size")
+    let frontend_page_size = var("frontend_page_size")
         .ok()
         .and_then(|s| s.parse::<u16>().ok())
         .filter(|&s| s >= 1)
+        .inspect(|s| info!("Frontend page size is set to {s}."))
         .unwrap_or(10);
 
     Config {
@@ -222,6 +223,6 @@ pub fn read() -> Config {
         custom_landing_directory,
         use_wal_mode,
         ensure_acid,
-        frontend_page_size: page_size,
+        frontend_page_size,
     }
 }
