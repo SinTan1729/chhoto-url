@@ -48,6 +48,7 @@ struct BackendConfig {
     slug_style: String,
     slug_length: usize,
     try_longer_slug: bool,
+    frontend_page_size: u16,
 }
 
 // Needed to return the short URL to make it easier for programs leveraging the API
@@ -313,6 +314,7 @@ pub async fn getconfig(
             slug_style: config.slug_style.clone(),
             slug_length: config.slug_length,
             try_longer_slug: config.try_longer_slug,
+            frontend_page_size: config.frontend_page_size,
         };
         HttpResponse::Ok().json(backend_config)
     } else {

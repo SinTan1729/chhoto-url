@@ -77,6 +77,10 @@ const getConfig = async () => {
       SITE_URL = SITE_URL.replace(/\/$/, "");
     }
 
+    if (CONFIG.frontend_page_size == null) {
+      CONFIG.frontend_page_size = 10;
+    }
+
     if (!hasProtocol(SITE_URL)) {
       SITE_URL = window.location.protocol + "//" + SITE_URL;
     }
@@ -144,14 +148,14 @@ const refreshData = async () => {
     if (ADMIN) {
       const params = new URLSearchParams();
       if (LOCAL_DATA.length == 0) {
-        params.append("page_size", "20");
+        params.append("page_size", 2 * CONFIG.frontend_page_size);
       } else {
-        if (LOCAL_DATA.length <= CUR_PAGE * 10) {
+        if (LOCAL_DATA.length <= CUR_PAGE * CONFIG.frontend_page_size) {
           console.log("Reached the end of URLs.");
           return;
         }
         displayData();
-        params.append("page_size", "10");
+        params.append("page_size", CONFIG.frontend_page_size);
         params.append("page_after", LOCAL_DATA.at(-1)["shortlink"]);
       }
       const data = await pullData(params);
@@ -205,7 +209,7 @@ const gotoNextPage = () => {
   }
   PROCESSING_PAGE_TRANSITION = true;
   CUR_PAGE += 1;
-  if (LOCAL_DATA.length <= (CUR_PAGE + 1) * 10) {
+  if (LOCAL_DATA.length <= (CUR_PAGE + 1) * CONFIG.frontend_page_size) {
     refreshData();
   } else {
     displayData();
@@ -227,7 +231,10 @@ const displayData = () => {
     console.log("Trying to access negative numbered page.");
     return;
   }
-  const data = LOCAL_DATA.slice(CUR_PAGE * 10, CUR_PAGE * 10 + 10);
+  const data = LOCAL_DATA.slice(
+    CUR_PAGE * CONFIG.frontend_page_size,
+    (CUR_PAGE + 1) * CONFIG.frontend_page_size,
+  );
   showVersion();
   const admin_button = document.getElementById("admin-button");
   admin_button.innerText = "logout";
@@ -247,7 +254,7 @@ const displayData = () => {
     table_box.hidden = false;
     table.innerHTML = "";
     for (const [i, row] of data.entries()) {
-      table.appendChild(TR(CUR_PAGE * 10 + i + 1, row));
+      table.appendChild(TR(CUR_PAGE * CONFIG.frontend_page_size + i + 1, row));
     }
     setTimeout(refreshExpiryTimes, 1000);
   }
@@ -255,7 +262,8 @@ const displayData = () => {
 
 const managePageControls = () => {
   const on_first_page = CUR_PAGE == 0;
-  const on_last_page = LOCAL_DATA.length <= (CUR_PAGE + 1) * 10;
+  const on_last_page =
+    LOCAL_DATA.length <= (CUR_PAGE + 1) * CONFIG.frontend_page_size;
 
   document.getElementById("prevPageBtn").disabled = on_first_page;
   document.getElementById("nextPageBtn").disabled = on_last_page;
@@ -526,7 +534,10 @@ const deleteButton = (shortUrl) => {
           LOCAL_DATA = LOCAL_DATA.filter(
             (item) => item["shortlink"] != shortUrl,
           );
-          if (LOCAL_DATA.length <= CUR_PAGE * 10 && CUR_PAGE > 0) {
+          if (
+            LOCAL_DATA.length <= CUR_PAGE * CONFIG.frontend_page_size &&
+            CUR_PAGE > 0
+          ) {
             CUR_PAGE -= 1;
           }
           PROCESSING_PAGE_TRANSITION = true;
@@ -577,7 +588,10 @@ const submitForm = () => {
         params.append("page_size", 1);
         const newEntry = await pullData(params);
         LOCAL_DATA.unshift(newEntry[0]);
-        if (LOCAL_DATA.length == (CUR_PAGE + 1) * 10 + 1) {
+        if (
+          LOCAL_DATA.length ==
+          (CUR_PAGE + 1) * CONFIG.frontend_page_size + 1
+        ) {
           LOCAL_DATA.pop();
         }
         CUR_PAGE = 0;

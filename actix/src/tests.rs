@@ -64,6 +64,7 @@ fn default_config(test: &str) -> config::Config {
     custom_landing_directory: None,
     use_wal_mode: true,
     ensure_acid: false,
+    frontend_page_size: 10,
     };
     conf
 }

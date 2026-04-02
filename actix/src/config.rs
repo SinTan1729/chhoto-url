@@ -29,6 +29,7 @@ pub struct Config {
     pub custom_landing_directory: Option<String>,
     pub use_wal_mode: bool,
     pub ensure_acid: bool,
+    pub frontend_page_size: u16,
 }
 
 pub fn read() -> Config {
@@ -195,6 +196,13 @@ pub fn read() -> Config {
             info!("The dashboard will be available at /admin/manage/");
         });
 
+    let frontend_page_size = var("frontend_page_size")
+        .ok()
+        .and_then(|s| s.parse::<u16>().ok())
+        .filter(|&s| s >= 1)
+        .inspect(|s| info!("Frontend page size is set to {s}."))
+        .unwrap_or(10);
+
     Config {
         listen_address,
         port,
@@ -215,5 +223,6 @@ pub fn read() -> Config {
         custom_landing_directory,
         use_wal_mode,
         ensure_acid,
+        frontend_page_size,
     }
 }
