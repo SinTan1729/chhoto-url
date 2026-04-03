@@ -75,11 +75,11 @@ that's what I use for testing. A sample file for podman quadlets is provided at
 ## Configuration options
 
 All the configuration is done using environmental variables. Here's a link of all supported ones. Please take
-a look at the ones marked with a `#` as those are important, especially [`CHHOTO_USE_WAL_MODE`](#CHHOTO_USE_WAL_MODE-).
+a look at the ones marked with a `#` as those are important, especially [`CHHOTO_SQLITE_USE_WAL_MODE`](#CHHOTO_SQLITE_USE_WAL_MODE-).
 
 ### `CHHOTO_DB_URL` \#
 
-Location for the database file. Take a look at [`CHHOTO_USE_WAL_MODE`](#CHHOTO_USE_WAL_MODE-) before you change it. Defaults to
+Location for the database file. Take a look at [`CHHOTO_SQLITE_USE_WAL_MODE`](#CHHOTO_SQLITE_USE_WAL_MODE-) before you change it. Defaults to
 `urls.sqlite`. It is highly recommended that you mount a named volume or directory at a location like `/data` and
 use something like `/data/urls.sqlite` as `CHHOTO_DB_URL`.
 (Of course, the actual names being used don't really matter.)
@@ -107,7 +107,7 @@ Example Linux command for generating a secure API key: `tr -dc A-Za-z0-9 </dev/u
 If no API key is provided, the website will still work, but it'll be a significantly worse experience if you try
 to use Chhoto URL from the CLI.
 
-### `CHHOTO_USE_WAL_MODE` \#
+### `CHHOTO_SQLITE_USE_WAL_MODE` \#
 
 If set to `True`, enables [`WAL` journal mode](https://sqlite.org/wal.html). Any other value is ignored.
 It's highly recommended that you enable it, but make sure that you mount either a whole directory, or a named

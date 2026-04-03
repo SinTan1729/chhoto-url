@@ -198,7 +198,7 @@ pub fn read() -> Config {
         info!("Capital letters won't be allowed in links.");
     }
 
-    let use_wal_mode = read_config_wrapper("CHHOTO_USE_WAL_MODE", "use_wal_mode")
+    let use_wal_mode = read_config_wrapper("CHHOTO_SQLITE_USE_WAL_MODE", "use_wal_mode")
         .is_ok_and(|s| s.trim() == "True");
     if use_wal_mode {
         info!("Using WAL journaling mode for database.");
