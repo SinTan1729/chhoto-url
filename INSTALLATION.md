@@ -21,7 +21,7 @@ You can use the [provided compose file](./compose.yaml) as a base, modifying it 
 docker compose up -d
 ```
 
-If you're using a custom location for the `db_url`, and using WAL mode, make sure to mount a whole
+If you're using a custom location for the `CHHOTO_DB_URL`, and using WAL mode, make sure to mount a whole
 directory instead of a folder. If this is not done, there will be a low, but non-zero chance of data corruption.
 
 It should be possible to run Chhoto URL with pretty much anything that supports OCI images e.g. `docker`, `podman quadlets`
@@ -53,7 +53,7 @@ mentioned above., For any other architectures, open a discussion, and I'll try t
 
 ```
 docker run -p 4567:4567
-    -e password="password"
+    -e CHHOTO_PASSWORD="password"
     -d chhoto-url:latest
 ```
 
@@ -62,9 +62,9 @@ docker run -p 4567:4567
 ```
 touch ./urls.sqlite
 docker run -p 4567:4567 \
-    -e password="password" \
+    -e CHHOTO_PASSWORD="password" \
     -v ./data:/data \
-    -e db_url=/data/urls.sqlite \
+    -e CHHOTO_DB_URL=/data/urls.sqlite \
     -d chhoto-url:latest
 ```
 
@@ -75,21 +75,21 @@ that's what I use for testing. A sample file for podman quadlets is provided at
 ## Configuration options
 
 All the configuration is done using environmental variables. Here's a link of all supported ones. Please take
-a look at the ones marked with a `#` as those are important, especially [`use_wal_mode`](#use_wal_mode-).
+a look at the ones marked with a `#` as those are important, especially [`CHHOTO_USE_WAL_MODE`](#CHHOTO_USE_WAL_MODE-).
 
-### `db_url` \#
+### `CHHOTO_DB_URL` \#
 
-Location for the database file. Take a look at [`use_wal_mode`](#use_wal_mode-) before you change it. Defaults to
+Location for the database file. Take a look at [`CHHOTO_USE_WAL_MODE`](#CHHOTO_USE_WAL_MODE-) before you change it. Defaults to
 `urls.sqlite`. It is highly recommended that you mount a named volume or directory at a location like `/data` and
-use something like `/data/urls.sqlite` as `db_url`.
+use something like `/data/urls.sqlite` as `CHHOTO_DB_URL`.
 (Of course, the actual names being used don't really matter.)
 
-### `password` \#
+### `CHHOTO_PASSWORD` \#
 
 Provide a secure password. If kept empty, anyone can access the website. Note that password is not encrypted in
 transport, so it's recommended to use a reverse proxy like `caddy` or `nginx`.
 
-### `site_url` \#
+### `CHHOTO_SITE_URL` \#
 
 Change this to your public-facing URL. This is optional, as the link will work at any URL as long as Chhoto URL
 is accessible there. This mostly enhances the frontend experience, as copying to clipboard, QR code generation will
@@ -97,7 +97,7 @@ use it if available.
 Do not surround it using quotes. If you have any unicode characters, please use the punycode. It'll be automatically
 converted to the correct unicode in the frontend.
 
-### `api_key`
+### `CHHOTO_API_KEY`
 
 Provide a secure API key. It'll be checked at start for security. If the API key is considered weak, a strong API
 key will be generated and printed in the logs, but the weak one will be used for the time being.
@@ -107,7 +107,7 @@ Example Linux command for generating a secure API key: `tr -dc A-Za-z0-9 </dev/u
 If no API key is provided, the website will still work, but it'll be a significantly worse experience if you try
 to use Chhoto URL from the CLI.
 
-### `use_wal_mode` \#
+### `CHHOTO_USE_WAL_MODE` \#
 
 If set to `True`, enables [`WAL` journal mode](https://sqlite.org/wal.html). Any other value is ignored.
 It's highly recommended that you enable it, but make sure that you mount either a whole directory, or a named
@@ -120,9 +120,9 @@ Also, automated backups of the database will be enabled. Otherwise, `DELETE` jou
 used instead.
 
 In both cases, we have full ACID compliance, but it does cost a bit of performance. If you expect to see high throughput (in the
-order of hundreds of read/writes per second), take a look at the `ensure_acid` configuration option.
+order of hundreds of read/writes per second), take a look at the `CHHOTO_SQLITE_ENSURE_ACID` configuration option.
 
-### `ensure_acid`
+### `CHHOTO_SQLITE_ENSURE_ACID`
 
 By default, the database is
 [ACID (i.e. Atomic, Consistent, Isolated, and Durable)](https://www.slingacademy.com/article/acid-properties-in-sqlite-why-they-matter).
@@ -135,14 +135,14 @@ _Note: There might be partial data loss only in case of system failure or power 
 crashes. If you do have data loss, you should only lose the data stored after the last sync with the database file. So, under normal
 loads, you shouldn't lose any data anyway. But this is a real thing that can technically happen._
 
-### `redirect_method` \#
+### `CHHOTO_REDIRECT_METHOD` \#
 
 Sets which redirection is used when a shortlink is resolved.
 
 Can be set to `TEMPORARY` or `PERMANENT`, which will enable Temporary 307 or Permanent 308 redirects. Any other value
 will be ignored, and a default of `PERMANENT` will be used.
 
-### `slug_style`
+### `CHHOTO_SLUG_STYLE`
 
 Sets the style of slug used when auto-generating shortlinks.
 
@@ -150,40 +150,40 @@ Can be set to either `Pair` or `UID`. Any other value will be ignored, and a def
 In pair mode, adjective-name pairs are used for auto-generated links e.g. `gifted-ramanujan`. In UID mode, a randomly
 generated slug is used.
 
-### `slug_length`
+### `CHHOTO_SLUG_LENGTH`
 
 If UID slugs are enabled, the length of the slug can be set using this. A minimum of 4 is supported, and it defaults to 16.
-If you intend to have more than a few thousand shortlinks, it's strongly recommended that you use the UID `slug_style` with
-a `slug_length` of 16 or more.
+If you intend to have more than a few thousand shortlinks, it's strongly recommended that you use the UID `CHHOTO_SLUG_STYLE` with
+a `CHHOTO_SLUG_LENGTH` of 16 or more.
 
-### `try_longer_slug`
+### `CHHOTO_TRY_LONGER_SLUG`
 
 If you do choose to use a short UID despite anticipating collisions, it's recommended that you set this to `True`.
 In the event of a collision, this variable will result in a single retry attempt using a UID four digits longer than
-`slug_length`. It has no effect for adjective-name slugs.
+`CHHOTO_SLUG_LENGTH`. It has no effect for adjective-name slugs.
 
 _Note: If not set, one retry will be attempted, just like adjective-name slugs. But it would use the same slug length._
 
-### `listen_address`
+### `CHHOTO_LISTEN_ADDRESS`
 
 The address Chhoto URL will bind to. Defaults to `0.0.0.0`.
 
 Take a look at [this page](https://docs.rs/actix-web/4.11.0/actix_web/struct.HttpServer.html#method.bind)
-for supported values and potential consequences. Changing `listen_address` is not recommended if
+for supported values and potential consequences. Changing `CHHOTO_LISTEN_ADDRESS` is not recommended if
 using docker.
 
-### `port`
+### `CHHOTO_LISTEN_PORT`
 
 The port Chhoto URL will listen to. Defaults to `4567`.
 
-### `allow_capital_letters`
+### `CHHOTO_ALLOW_CAPITAL_LETTERS`
 
-If you want to use capital letters in the shortlink, set the `allow_capital_letters` variable to `True`. Any other
+If you want to use capital letters in the shortlink, set the `CHHOTO_ALLOW_CAPITAL_LETTERS` variable to `True`. Any other
 value is ignored.
 
 This will also allow capital letters in UID slugs, if those are enabled. It has no effect for adjective-name slugs.
 
-### `hash_algorithm` \#
+### `CHHOTO_HASH_ALGORITHM` \#
 
 If you want to provided hashed password and API Key, name a supported algorithm here. For now, the supported
 values are: `Argon2`. More algorithms may be added later. Unsupported values are ignored.
@@ -200,36 +200,47 @@ echo -n <password> | argon2 <salt> -id -t 3 -m 16 -l 32 -e
 
 You may also use online tools for this step.
 
-### `public_mode`
+### `CHHOTO_PUBLIC_MODE`
 
-To enable public mode, set `public_mode` to `Enable`. With this, anyone will be able to add
+To enable public mode, set `CHHOTO_PUBLIC_MODE` to `Enable`. With this, anyone will be able to add
 links. Listing existing links or deleting links will need admin access using the password. Any other values are
 ignored.
 
-### `public_mode_expiry_delay`
+### `CHHOTO_PUBLIC_MODE_EXPIRY_DELAY`
 
-If `public_mode` is enabled, and `public_mode_expiry_delay` is set to a positive value, submitted links
+If `CHHOTO_PUBLIC_MODE` is enabled, and `CHHOTO_PUBLIC_MODE_EXPIRY_DELAY` is set to a positive value, submitted links
 will expire in that given time (in seconds). The user can still choose a shorter expiry delay.
 
 It will have no effect for a logged in user i.e. the admin.
 
-### `disable_frontend`
+### `CHHOTO_DISABLE_FRONTEND`
 
 Set this to `True` to completely disable the frontend.
 
-### `custom_landing_directory`
+### `CHHOTO_CUSTOM_LANDING_DIRECTORY`
 
 If you want to serve a custom landing page, put all your site related files, along with a valid `index.html` file in a
 directory, and set this to the path of the directory. If using docker, you need to first
 mount the directory inside the container. The admin page will then be located at `/admin/manage`.
 
-### `cache_control_header`
+### `CHHOTO_CACHE_CONTROL_HEADER`
 
 By default, the server sends no Cache-Control headers. You can set custom headers here
 to send your desired headers. It must be a comma separated list of valid
 [RFC 7234 §5.2](https://datatracker.ietf.org/doc/html/rfc7234#section-5.2) headers. For example,
 you can set it to `no-cache, private` to disable caching. It might help during testing if
 served through a proxy.
+
+### `CHHOTO_FRONTEND_PAGE_SIZE`
+
+This can be used to set the number of items shown per page in the frontend. This does not have any effect on the backend code.
+Defaults to 10.
+
+## Note of eventual deprecation of old config options
+
+The config variables used to have different names up to commit 228eb7a, after which they were changed to adhere to norms for config variable
+naming. The old names will keep working for now, but _it is highly recommended to migrate to the new variable names_ as support for these
+will eventually be dropped in some future major release.
 
 ## Deploying in your Kubernetes cluster with Helm
 

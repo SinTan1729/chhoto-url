@@ -26,7 +26,7 @@ audit:
 	cargo audit --file actix/Cargo.lock
 
 podman-test: test podman-build podman-stop
-	podman run -t -p ${port}:${port} --name chhoto-url --env-file ./.env -v "${db_dir}:/data" -d chhoto-url
+	podman run -t -p ${CHHOTO_LISTEN_PORT}:${CHHOTO_LISTEN_PORT} --name chhoto-url --env-file ./.env -v "${DB_DIR}:/data" -d chhoto-url
 	podman logs chhoto-url -f 
 
 conf_tag := $(shell cat actix/Cargo.toml | sed -rn 's/^version = "(.+)"$$/\1/p')
