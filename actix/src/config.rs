@@ -3,9 +3,23 @@
 
 use log::{info, warn};
 use passwords::{analyzer::analyze, scorer::score};
-use std::env::var;
+use std::env::{var, VarError};
 
 use crate::auth;
+
+fn read_config_wrapper(new_name: &str, old_name: &str) -> Result<String, VarError> {
+    // This is needed to support old variable names.
+    // Might be deprecated at a later point.
+    var(new_name).or_else(|e| match e {
+        VarError::NotPresent => var(old_name).inspect(|_| {
+            warn!(
+                "Variable {new_name} was not found, falling back to reading variable {old_name}."
+            );
+            warn!("Please consider updating your configs.");
+        }),
+        _ => Err(e),
+    })
+}
 
 // Struct for storing config read form env vars that might be accessed more than once
 #[derive(Clone)]
@@ -33,7 +47,7 @@ pub struct Config {
 }
 
 pub fn read() -> Config {
-    let db_location = var("db_url")
+    let db_location = read_config_wrapper("CHHOTO_DB_URL", "db_url")
         .ok()
         .map(|s| s.trim().to_string())
         .filter(|s| !s.is_empty())
@@ -41,7 +55,7 @@ pub fn read() -> Config {
     info!("DB Location is set to: {db_location}");
 
     // Get the address environment variable
-    let listen_address = var("listen_address")
+    let listen_address = read_config_wrapper("CHHOTO_LISTEN_ADDRESS", "listen_address")
         .ok()
         .map(|s| s.trim().to_string())
         .filter(|s| !s.is_empty())
@@ -49,25 +63,27 @@ pub fn read() -> Config {
     info!("Listening address is set to {listen_address}.");
 
     // Get the port environment variable
-    let port = var("port")
+    let port = read_config_wrapper("CHHOTO_LISTEN_PORT", "port")
         .unwrap_or(String::from("4567"))
         .parse::<u16>()
         .expect("Supplied port is not an integer");
     info!("Listening port is set to {port}.");
 
-    let cache_control_header = var("cache_control_header")
-        .ok()
-        .inspect(|h| info!("Using \"{h}\" as Cache-Control header."))
-        .map(|s| s.trim().to_string())
-        .filter(|s| !s.is_empty());
+    let cache_control_header =
+        read_config_wrapper("CHHOTO_CACHE_CONTROL_HEADER", "cache_control_header")
+            .ok()
+            .inspect(|h| info!("Using \"{h}\" as Cache-Control header."))
+            .map(|s| s.trim().to_string())
+            .filter(|s| !s.is_empty());
 
-    let disable_frontend = var("disable_frontend").is_ok_and(|s| s.trim() == "True");
+    let disable_frontend = read_config_wrapper("CHHOTO_DISABLE_FRONTEND", "disable_frontend")
+        .is_ok_and(|s| s.trim() == "True");
     if disable_frontend {
         info!("Frontend is disabled.")
     };
 
     // If an API key is set, check the security
-    let api_key = var("api_key").ok();
+    let api_key = read_config_wrapper("CHHOTO_API_KEY", "api_key").ok();
     if let Some(key) = &api_key {
         // Determine whether the inputted API key is sufficiently secure
         if score(&analyze(key)) < 90.0 {
@@ -77,11 +93,15 @@ pub fn read() -> Config {
         }
     }
 
-    let public_mode = var("public_mode") == Ok(String::from("Enable"));
-    let public_mode_expiry_delay = var("public_mode_expiry_delay")
-        .ok()
-        .and_then(|s| s.parse::<i64>().ok())
-        .unwrap_or_default();
+    let public_mode =
+        read_config_wrapper("CHHOTO_PUBLIC_MODE", "public_mode") == Ok(String::from("Enable"));
+    let public_mode_expiry_delay = read_config_wrapper(
+        "CHHOTO_PUBLIC_MODE_EXPIRY_DELAY",
+        "public_mode_expiry_delay",
+    )
+    .ok()
+    .and_then(|s| s.parse::<i64>().ok())
+    .unwrap_or_default();
     if public_mode {
         if public_mode_expiry_delay > 0 {
             info!("Enabling public mode with an enforced expiry delay of {public_mode_expiry_delay} seconds.");
@@ -90,25 +110,28 @@ pub fn read() -> Config {
         }
     }
 
-    let use_temp_redirect = var("redirect_method") == Ok(String::from("TEMPORARY"));
+    let use_temp_redirect = read_config_wrapper("CHHOTO_REDIRECT_METHOD", "redirect_method")
+        == Ok(String::from("TEMPORARY"));
     if use_temp_redirect {
         info!("Using Temporary redirection.");
     } else {
         info!("Using Permanent redirection (default).")
     }
 
-    let password = var("password").ok().filter(|s| !s.trim().is_empty());
+    let password = read_config_wrapper("CHHOTO_PASSWORD", "password")
+        .ok()
+        .filter(|s| !s.trim().is_empty());
     if password.is_none() {
         warn!("No password was provided. The API will be accessible to the public.")
     };
 
-    let hash_algorithm = var("hash_algorithm")
+    let hash_algorithm = read_config_wrapper("CHHOTO_HASH_ALGORITHM", "hash_algorithm")
         .ok()
         .filter(|h| h == "Argon2")
         .inspect(|h| info!("Will use {h} hashes for password verification."));
 
     // If the site_url env variable exists
-    let site_url = if let Some(provided_url) = var("site_url")
+    let site_url = if let Some(provided_url) = read_config_wrapper("CHHOTO_SITE_URL", "site_url")
         .ok()
         .map(|s| s.trim().to_string())
         .filter(|s| !s.is_empty())
@@ -121,7 +144,7 @@ pub fn read() -> Config {
         // If the site_url is encapsulated by quotes (i.e. invalid)
         if first == Option::from('"') || first == Option::from('\'') && first == last {
             // Set the site_url without the quotes
-            warn!("The site_url environment variable is encapsulated by quotes. Automatically adjusting to: {url}");
+            warn!("The CHHOTO_SITE_URL environment variable is encapsulated by quotes. Automatically adjusting to: {url}");
             Some(url.to_string())
         } else {
             info!("Configured Site URL is: {provided_url}");
@@ -130,7 +153,7 @@ pub fn read() -> Config {
     } else {
         // Site URL is not configured
         warn!(
-            "The site_url environment variable is not configured. Using http://localhost by default."
+            "The CHHOTO_SITE_URL environment variable is not configured. Using http://localhost by default."
         );
         let protocol = if port == 443 { "https" } else { "http" };
         let port_text = if [80, 443].contains(&port) {
@@ -143,18 +166,19 @@ pub fn read() -> Config {
         None
     };
 
-    let slug_style = var("slug_style")
+    let slug_style = read_config_wrapper("CHHOTO_SLUG_STYLE", "slug_style")
         .ok()
         .map(|s| s.trim().to_string())
         .filter(|s| !s.is_empty())
         .unwrap_or(String::from("Pair"));
-    let slug_length = var("slug_length")
+    let slug_length = read_config_wrapper("CHHOTO_SLUG_LENGTH", "slug_length")
         .ok()
         .and_then(|s| s.parse::<usize>().ok())
         .filter(|&s| s >= 4)
         .unwrap_or(8);
 
-    let try_longer_slug = var("try_longer_slug").is_ok_and(|s| s.trim() == "True");
+    let try_longer_slug = read_config_wrapper("CHHOTO_TRY_LONGER_SLUG", "try_longer_slug")
+        .is_ok_and(|s| s.trim() == "True");
 
     if slug_style == "UID" {
         info!("Using UID slugs with length {slug_length}.");
@@ -165,20 +189,24 @@ pub fn read() -> Config {
         info!("Using adjective-noun pair slugs.");
     }
 
-    let allow_capital_letters = var("allow_capital_letters").is_ok_and(|s| s.trim() == "True");
+    let allow_capital_letters =
+        read_config_wrapper("CHHOTO_ALLOW_CAPITAL_LETTERS", "allow_capital_letters")
+            .is_ok_and(|s| s.trim() == "True");
     if allow_capital_letters {
         info!("Capital letters will be allowed in links.");
     } else {
         info!("Capital letters won't be allowed in links.");
     }
 
-    let use_wal_mode = var("use_wal_mode").is_ok_and(|s| s.trim() == "True");
+    let use_wal_mode = read_config_wrapper("CHHOTO_SQLITE_USE_WAL_MODE", "use_wal_mode")
+        .is_ok_and(|s| s.trim() == "True");
     if use_wal_mode {
         info!("Using WAL journaling mode for database.");
     } else {
         warn!("Using DELETE journaling mode for database. WAL mode is recommended.");
     }
-    let ensure_acid = !var("ensure_acid").is_ok_and(|s| s.trim() == "False");
+    let ensure_acid = !read_config_wrapper("CHHOTO_SQLITE_ENSURE_ACID", "ensure_acid")
+        .is_ok_and(|s| s.trim() == "False");
     if ensure_acid {
         let synchronous = if use_wal_mode { "FULL" } else { "EXTRA" };
         info!("Ensuring ACID compliance, using synchronous pragma: {synchronous}.");
@@ -187,16 +215,19 @@ pub fn read() -> Config {
         info!("Not ensuring ACID compliance, using synchronous pragma: {synchronous}.")
     }
 
-    let custom_landing_directory = var("custom_landing_directory")
-        .ok()
-        .map(|s| s.trim().to_string())
-        .filter(|s| !s.is_empty())
-        .inspect(|s| {
-            info!("Custom landing directory is set to {s}.");
-            info!("The dashboard will be available at /admin/manage/");
-        });
+    let custom_landing_directory = read_config_wrapper(
+        "CHHOTO_CUSTOM_LANDING_DIRECTORY",
+        "custom_landing_directory",
+    )
+    .ok()
+    .map(|s| s.trim().to_string())
+    .filter(|s| !s.is_empty())
+    .inspect(|s| {
+        info!("Custom landing directory is set to {s}.");
+        info!("The dashboard will be available at /admin/manage/");
+    });
 
-    let frontend_page_size = var("frontend_page_size")
+    let frontend_page_size = var("CHHOTO_FRONTEND_PAGE_SIZE")
         .ok()
         .and_then(|s| s.parse::<u16>().ok())
         .filter(|&s| s >= 1)
