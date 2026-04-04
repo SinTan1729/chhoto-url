@@ -120,5 +120,5 @@ Password: `chhoto-url-demo-pass`
 - It is highly recommended that you [enable WAL mode](./INSTALLATION.md/#CHHOTO_SQLITE_USE_WAL_MODE-).
 - Although it's unlikely, it's possible that your database is mangled after some update. For mission critical use cases,
   it's recommended to keep regular versioned backups of the database, and sticking to a minor release tag e.g. 5.8.
-- If you intend to have more than a few thousand short links, it's strongly recommended that you use the UID `slug_style`
-  with a `slug_length` of 16 or more. Otherwise, generating new links will start to fail after a while.
+- If you intend to have more than a few thousand short links, it's strongly recommended that you use the UID `CHHOTO_SLUG_STYLE`
+  with a `CHHOTO_SLUG_LENGTH` of 16 or more. Otherwise, generating new links will start to fail after a while.
