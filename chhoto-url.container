@@ -18,24 +18,26 @@ PublishPort=4567:4567
 DropCapability=ALL
 
 # Environment variables
-Environment=db_url=/db/urls.sqlite 
-Environment=use_wal_mode = True 
-#Environment=ensure_acid = True
-#Environment=site_url=https://www.example.com 
-#Environment=hash_algorithm=Argon2 
-Environment=password=TopSecretPass 
-Environment=port=4567
-#Environment=api_key=SECURE_API_KEY 
-Environment=redirect_method=TEMPORARY 
-Environment=slug_style=Pair 
-#Environment=slug_length=8 
-#Environment=try_longer_slug=False 
-#Environment=allow_capital_letters=False 
-#Environment=public_mode=Disable 
-#Environment=public_mode_expiry_delay=3600 
-#Environment=disable_frontend=False 
-#Environment=custom_landing_directory=/custom/dir/location 
-#Environment=cache_control_header=no-cache, private
+Environment=CHHOTO_DB_URL=/db/urls.sqlite 
+Environment=CHHOTO_SQLITE_USE_WAL_MODE = True 
+#Environment=CHHOTO_SQLITE_ENSURE_ACID = True
+#Environment=CHHOTO_SITE_URL=https://www.example.com 
+#Environment=CHHOTO_HASH_ALGORITHM=Argon2 
+Environment=CHHOTO_PASSWORD=TopSecretPass 
+Environment=CHHOTO_LISTEN_PORT=4567
+#Environment=CHHOTO_LISTEN_ADDRESS=4567
+#Environment=CHHOTO_API_KEY=SECURE_API_KEY 
+Environment=CHHOTO_REDIRECT_METHOD=TEMPORARY 
+Environment=CHHOTO_SLUG_STYLE=Pair 
+#Environment=CHHOTO_SLUG_LENGTH=8 
+#Environment=CHHOTO_TRY_LONGER_SLUG=False 
+#Environment=CHHOTO_ALLOW_CAPITAL_LETTERS=False 
+#Environment=CHHOTO_PUBLIC_MODE=Disable 
+#Environment=CHHOTO_PUBLIC_MODE_EXPIRY_DELAY=3600 
+#Environment=CHHOTO_DISABLE_FRONTEND=False 
+#Environment=CHHOTO_CUSTOM_LANDING_DIRECTORY=/custom/dir/location 
+#Environment=CHHOTO_CACHE_CONTROL_HEADER=no-cache, private
+#Environment=CHHOTO_FRONTEND_PAGE_SIZE=10
 
 # Volume
 Volume=db:/db
