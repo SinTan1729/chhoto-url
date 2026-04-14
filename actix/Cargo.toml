@@ -31,7 +31,7 @@ actix-web = "4.13.0"
 actix-files = "0.6.10"
 rusqlite = { version = "0.38.0", features = [ "bundled" ] }
 regex = "1.12.3"
-rand = "0.10.0"
+rand = "0.10.1"
 passwords = "3.1.16"
 actix-session = { version = "0.11.0", features = [ "cookie-session" ] }
 nanoid = "0.4.0"
