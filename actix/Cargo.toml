@@ -44,6 +44,6 @@ log = "0.4.29"
 env_logger = "0.11.10"
 
 [dev-dependencies]
-actix-http = "3.12.0"
+actix-http = "3.12.1"
 actix-service = "2.0.3"
 regex = "1.12.3"
