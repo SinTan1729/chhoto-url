@@ -8,6 +8,10 @@ use std::rc::Rc;
 
 use crate::services::ChhotoError::{self, ClientError, ServerError};
 
+// Some constants
+const APPLICATION_ID: u32 = 0x63686874; // Hex for chht, MUST NEVER BE CHANGED
+const USER_VERSION: u32 = 3; // Should be incremented on change of schema
+
 // Struct for encoding a DB row
 #[derive(Serialize)]
 pub struct DBRow {
@@ -250,22 +254,28 @@ pub fn delete_link(shortlink: &str, db: &Connection) -> Result<(), ChhotoError> 
 }
 
 pub fn open_db(path: &str, use_wal_mode: bool, ensure_acid: bool) -> Connection {
-    const APPLICATION_ID: u32 = 0x63686874; // Hex for chht, MUST NEVER BE CHANGED
-    const USER_VERSION: u32 = 2; // Should be incremented on change of schema
-
     let db = Connection::open(path).expect("Unable to open database!");
 
-    let table_exists = db
-        .query_row_and_then(
-            "SELECT COUNT(*) FROM sqlite_master WHERE type = 'table' AND name = 'urls'",
-            [],
-            |row| row.get::<usize, isize>(0),
-        )
-        // It would be 0 if table does not exist, and 1 if it does
-        .expect("Error querying existence of table.")
-        == 1;
+    let tables_list: Rc<[String]> = {
+        let mut statement = db
+            .prepare(
+                "SELECT name
+                 FROM sqlite_master
+                 WHERE type = 'table' AND name NOT LIKE 'sqlite_%'
+                 ORDER BY name",
+            )
+            .expect("Error preparing statement for listing tables.");
+        statement
+            .query_map([], |row| row.get("name"))
+            .unwrap()
+            .filter_map(Result::ok)
+            .collect()
+    };
 
-    let current_user_version: u32 = if !table_exists {
+    let urls_table_exists = tables_list.iter().any(|s| s.as_str() == "urls");
+    // let urls_fts_table_exists = tables.iter().any(|s| s.as_str() == "fts_urls");
+
+    let current_user_version: u32 = if !urls_table_exists {
         // It would mean that the table is newly created i.e. has the desired schema
         USER_VERSION
     } else {
@@ -282,7 +292,7 @@ pub fn open_db(path: &str, use_wal_mode: bool, ensure_acid: bool) -> Connection 
             |row| row.get(0),
         )
         .unwrap_or_default();
-    if current_application_id > 0 || (table_exists && current_user_version > 1) {
+    if current_application_id > 0 || (urls_table_exists && current_user_version > 1) {
         assert_eq!(
             current_application_id, APPLICATION_ID,
             "Incorrect application_id: The database file seems to belong to some other application."
@@ -296,7 +306,8 @@ pub fn open_db(path: &str, use_wal_mode: bool, ensure_acid: bool) -> Connection 
             long_url TEXT NOT NULL,
             short_url TEXT NOT NULL,
             hits INTEGER NOT NULL,
-            expiry_time INTEGER NOT NULL DEFAULT 0
+            expiry_time INTEGER NOT NULL DEFAULT 0,
+            notes TEXT
          )",
         // expiry_time is added later during migration 1
         [],
@@ -319,8 +330,14 @@ pub fn open_db(path: &str, use_wal_mode: bool, ensure_acid: bool) -> Connection 
         .expect("Unable to apply migration 1.");
     }
 
+    // Migration 2: Add notes, introduced in 6.7.0
+    if current_user_version < 3 {
+        db.execute("ALTER TABLE urls ADD COLUMN notes TEXT", [])
+            .expect("Unable to apply migration 2.");
+    }
+
     // The migrations have finished successfully by this point
-    if !table_exists || current_user_version < USER_VERSION {
+    if !urls_table_exists || current_user_version < USER_VERSION {
         db.pragma_update(None, "user_version", USER_VERSION)
             .expect("Unable to set pragma: user_version.");
         db.pragma_update(None, "application_id", APPLICATION_ID)
