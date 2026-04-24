@@ -273,7 +273,7 @@ pub fn open_db(path: &str, use_wal_mode: bool, ensure_acid: bool) -> Connection 
     };
 
     let urls_table_exists = tables_list.iter().any(|s| s.as_str() == "urls");
-    // let urls_fts_table_exists = tables.iter().any(|s| s.as_str() == "fts_urls");
+    let urls_fts_table_exists = tables_list.iter().any(|s| s.as_str() == "urls_fts");
 
     let current_user_version: u32 = if !urls_table_exists {
         // It would mean that the table is newly created i.e. has the desired schema
@@ -334,6 +334,45 @@ pub fn open_db(path: &str, use_wal_mode: bool, ensure_acid: bool) -> Connection 
     if current_user_version < 3 {
         db.execute("ALTER TABLE urls ADD COLUMN notes TEXT", [])
             .expect("Unable to apply migration 2.");
+    }
+
+    // Create FTS5 table if it doesn't exist, and also create triggers
+    db.execute(
+        "CREATE VIRTUAL TABLE IF NOT EXISTS urls_fts USING fts5(
+             long_url, short_url, notes,
+             content='urls',
+             content_rowid='id',
+             tokenize='trigram'
+         )",
+        [],
+    )
+    .expect("Unable to create FTS table.");
+    if !urls_fts_table_exists {
+        db.execute("INSERT INTO urls_fts(urls_fts) VALUES ('rebuild')", [])
+            .expect("Unable to populate FTS table.");
+        let fts_triggers = [
+            "CREATE TRIGGER IF NOT EXISTS urls_insert
+                 AFTER INSERT ON urls BEGIN
+                 INSERT INTO urls_fts(rowid, long_url, short_url, notes)
+                 VALUES (new.id, new.long_url, new.short_url, new.notes);
+             END",
+            "CREATE TRIGGER IF NOT EXISTS urls_delete
+                 AFTER DELETE ON urls BEGIN
+                 INSERT INTO urls_fts(urls_fts, rowid, long_url, short_url, notes)
+                 VALUES('delete', old.id, old.long_url, old.short_url, old.notes);
+             END",
+            "CREATE TRIGGER IF NOT EXISTS urls_update
+             AFTER UPDATE ON urls BEGIN
+                 INSERT INTO urls_fts(urls_fts, rowid, long_url, short_url, notes)
+                 VALUES('delete', old.id, old.long_url, old.short_url, old.notes);
+                 INSERT INTO urls_fts(rowid, long_url, short_url, notes)
+                 VALUES (new.id, new.long_url, new.short_url, new.notes);
+             END",
+        ];
+        for trigger in fts_triggers {
+            db.execute(trigger, [])
+                .expect("Unable to create FTS trigger(s).");
+        }
     }
 
     // The migrations have finished successfully by this point
