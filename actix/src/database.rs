@@ -330,7 +330,7 @@ pub fn open_db(path: &str, use_wal_mode: bool, ensure_acid: bool) -> Connection 
         .expect("Unable to apply migration 1.");
     }
 
-    // Migration 2: Add notes, introduced in 6.7.0
+    // Migration 2: Add notes, introduced in 7.0.0
     if current_user_version < 3 {
         db.execute("ALTER TABLE urls ADD COLUMN notes TEXT", [])
             .expect("Unable to apply migration 2.");
