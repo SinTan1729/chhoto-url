@@ -10,7 +10,7 @@ setup:
 	podman buildx inspect --bootstrap
 
 build:
-	cargo build --release --locked --manifest-path=actix/Cargo.toml --target x86_64-unknown-linux-musl
+	GIT_COMMIT=$(shell git rev-parse --short HEAD) cargo build --release --locked --manifest-path=actix/Cargo.toml --target x86_64-unknown-linux-musl
 
 podman-build: build
 	podman build --tag chhoto-url --build-arg TARGETARCH=amd64 -f Dockerfile.alpine .

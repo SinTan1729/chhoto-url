@@ -7,6 +7,7 @@ use rand::seq::IndexedRandom;
 use regex::Regex;
 use rusqlite::Connection;
 use serde::Deserialize;
+use std::env;
 
 use crate::{
     config::Config,
@@ -43,6 +44,18 @@ fn is_link_valid(link: &str, allow_capital_letters: bool) -> bool {
         Regex::new("^[a-z0-9-_]+$").expect("Regex generation failed.")
     };
     re.is_match(link)
+}
+
+// Get version number
+pub fn get_version() -> String {
+    const VERSION: &str = env!("CARGO_PKG_VERSION");
+    const GIT_COMMIT: Option<&str> = option_env!("GIT_COMMIT");
+
+    if let Some(commit) = GIT_COMMIT {
+        format!("{VERSION}-dev+{commit}")
+    } else {
+        VERSION.to_string()
+    }
 }
 
 // Request the DB for all URLs

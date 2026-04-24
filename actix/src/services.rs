@@ -13,15 +13,11 @@ use actix_web::{
 use argon2::{password_hash::PasswordHash, Argon2, PasswordVerifier};
 use log::{debug, info, warn};
 use serde::{Deserialize, Serialize};
-use std::env;
 
 use crate::AppState;
 use crate::{auth, database};
 use crate::{auth::is_session_valid, utils};
 use ChhotoError::{ClientError, ServerError};
-
-// Store the version number
-const VERSION: &str = env!("CARGO_PKG_VERSION");
 
 // Error types
 pub enum ChhotoError {
@@ -273,7 +269,7 @@ pub async fn siteurl(data: web::Data<AppState>) -> HttpResponse {
 // Use /api/getconfig instead
 #[get("/api/version")]
 pub async fn version() -> HttpResponse {
-    HttpResponse::Ok().body(format!("Chhoto URL v{VERSION}"))
+    HttpResponse::Ok().body(format!("Chhoto URL v{}", utils::get_version()))
 }
 
 // Get the user's current role
@@ -306,7 +302,7 @@ pub async fn getconfig(
     let result = auth::is_api_ok(http, config);
     if result.success || is_session_valid(session, config) || data.config.public_mode {
         let backend_config = BackendConfig {
-            version: VERSION.to_string(),
+            version: utils::get_version(),
             allow_capital_letters: config.allow_capital_letters,
             public_mode: config.public_mode,
             public_mode_expiry_delay: config.public_mode_expiry_delay,

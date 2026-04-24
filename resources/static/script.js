@@ -92,8 +92,14 @@ const showVersion = () => {
   const link = document.getElementById("version-number");
   if (VERSION) {
     link.innerText = "v" + VERSION;
-    link.href =
-      "https://github.com/SinTan1729/chhoto-url/releases/tag/" + VERSION;
+    if (VERSION.includes("-dev+")) {
+      link.href =
+        "https://github.com/SinTan1729/chhoto-url/commits/" +
+        VERSION.split("+")[1];
+    } else {
+      link.href =
+        "https://github.com/SinTan1729/chhoto-url/releases/tag/" + VERSION;
+    }
     link.hidden = false;
   } else {
     link.hidden = true;
