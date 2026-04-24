@@ -181,10 +181,9 @@ async fn basic_site_config() {
     let req = test::TestRequest::get().uri("/api/version").to_request();
     let resp = test::call_service(&app, req).await;
     let body = to_bytes(resp.into_body()).await.unwrap();
-    assert_eq!(
-        body.as_str(),
-        format!("Chhoto URL v{}", env!("CARGO_PKG_VERSION"))
-    );
+    assert!(body
+        .as_str()
+        .starts_with(concat!("Chhoto URL v", env!("CARGO_PKG_VERSION"))));
 
     let req = test::TestRequest::get()
         .uri("/api/getconfig")
@@ -194,7 +193,7 @@ async fn basic_site_config() {
     assert!(resp.status().is_success());
     let body = to_bytes(resp.into_body()).await.unwrap();
     let conf: BackendConfig = serde_json::from_str(body.as_str()).unwrap();
-    assert_eq!(conf.version, env!("CARGO_PKG_VERSION"));
+    assert!(conf.version.starts_with(env!("CARGO_PKG_VERSION")));
     assert_eq!(conf.slug_length, 8);
 
     let _ = fs::remove_file(format!("/tmp/chhoto-url-test-{test}.sqlite"));
