@@ -42,7 +42,7 @@ jobs:
       - name: Build binary and test
         uses: houseabsolute/actions-rust-cross@v1
         env:
-          GIT_COMMIT: ${{ steps.vars.outputs.short_sha }}
+          CARGO_GIT_COMMIT: ${{ steps.vars.outputs.short_sha }}
         with:
           command: both
           target: ${{ matrix.platform.target }}

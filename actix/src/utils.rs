@@ -49,7 +49,7 @@ fn is_link_valid(link: &str, allow_capital_letters: bool) -> bool {
 // Get version number
 pub fn get_version() -> String {
     const VERSION: &str = env!("CARGO_PKG_VERSION");
-    const GIT_COMMIT: Option<&str> = option_env!("GIT_COMMIT");
+    const GIT_COMMIT: Option<&str> = option_env!("CARGO_GIT_COMMIT");
 
     if let Some(commit) = GIT_COMMIT {
         format!("{VERSION}-dev+{commit}")
