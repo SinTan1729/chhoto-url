@@ -1,7 +1,7 @@
 // SPDX-FileCopyrightText: 2023 Sayantan Santra <sayantan.santra689@gmail.com>
 // SPDX-License-Identifier: MIT
 
-use log::{error, info};
+use log::{debug, error, info};
 use rusqlite::{fallible_iterator::FallibleIterator, params_from_iter, types::Value, Connection};
 use serde::Serialize;
 use std::rc::Rc;
@@ -255,7 +255,7 @@ pub fn edit_link(
 // Clean expired links
 pub fn cleanup(db: &Connection, use_wal_mode: bool) {
     let now = chrono::Utc::now().timestamp();
-    info!("Starting database cleanup.");
+    debug!("Starting database cleanup.");
 
     let mut statement = db
         .prepare_cached("DELETE FROM urls WHERE ?1 >= expiry_time AND expiry_time > 0")
@@ -264,8 +264,8 @@ pub fn cleanup(db: &Connection, use_wal_mode: bool) {
         .execute([now])
         .inspect(|&u| match u {
             0 => (),
-            1 => info!("1 link was deleted."),
-            _ => info!("{u} links were deleted."),
+            1 => info!("1 expired link was deleted."),
+            _ => info!("{u} expired links were deleted."),
         })
         .expect("Error cleaning expired links.");
 
@@ -285,7 +285,7 @@ pub fn cleanup(db: &Connection, use_wal_mode: bool) {
     pragma_statement
         .execute([])
         .expect("Unable to optimize database.");
-    info!("Optimized database.")
+    debug!("Optimized database.")
 }
 
 // Delete an existing link
