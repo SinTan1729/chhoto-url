@@ -64,54 +64,54 @@ pub fn getall(
             " WHERE t.id < u.id AND ( t.expiry_time = 0 OR t.expiry_time > ?2".to_string();
         if filter.is_some() {
             joins.push_str(" JOIN urls_fts AS f ON t.id = f.rowid");
-            conditions.push_str(" AND urls_fts MATCH '?4'");
+            conditions.push_str(" AND urls_fts MATCH ?4");
         }
         inner.push_str(&joins);
         inner.push_str(&conditions);
-        inner.push_str(") ORDER BY t.id DESC LIMIT ?3 )");
+        inner.push_str(") ORDER BY t.id DESC LIMIT ?3 ) as i");
         inner
     } else if page_no.is_some() {
         let mut inner =
             "( SELECT t.id, t.short_url, t.long_url, t.hits, t.expiry_time, t.notes FROM urls AS t"
                 .to_string();
         let mut joins = String::new();
-        let mut conditions = " WHERE ( expiry_time = 0 OR expiry_time > ?1 )".to_string();
+        let mut conditions = " WHERE ( t.expiry_time = 0 OR t.expiry_time > ?1 )".to_string();
         if filter.is_some() {
             joins.push_str(" JOIN urls_fts AS f ON t.id = f.rowid");
-            conditions.push_str(" AND urls_fts MATCH '?4'");
+            conditions.push_str(" AND urls_fts MATCH ?4");
         }
         inner.push_str(&joins);
         inner.push_str(&conditions);
-        inner.push_str(" ORDER BY id DESC LIMIT ?2 OFFSET ?3 )");
+        inner.push_str(" ORDER BY t.id DESC LIMIT ?2 OFFSET ?3 ) as i");
         inner
     } else if page_size.is_some() {
         let mut inner =
             "( SELECT t.id, t.short_url, t.long_url, t.hits, t.expiry_time, t.notes FROM urls AS t"
                 .to_string();
         let mut joins = String::new();
-        let mut conditions = " WHERE ( expiry_time = 0 OR expiry_time > ?1 )".to_string();
+        let mut conditions = " WHERE ( t.expiry_time = 0 OR t.expiry_time > ?1 )".to_string();
         if filter.is_some() {
             joins.push_str(" JOIN urls_fts AS f ON t.id = f.rowid");
-            conditions.push_str(" AND urls_fts MATCH '?4'");
+            conditions.push_str(" AND urls_fts MATCH ?3");
         }
         inner.push_str(&joins);
         inner.push_str(&conditions);
-        inner.push_str(" ORDER BY id DESC LIMIT ?3 )");
+        inner.push_str(" ORDER BY t.id DESC LIMIT ?2 ) as i");
         inner
     } else {
-        let mut inner = "urls AS t".to_string();
+        let mut inner = "urls AS i".to_string();
         let mut joins = String::new();
-        let mut conditions = " WHERE ( expiry_time = 0 OR expiry_time > ?1 )".to_string();
+        let mut conditions = " WHERE ( i.expiry_time = 0 OR i.expiry_time > ?1 )".to_string();
         if filter.is_some() {
-            joins.push_str(" JOIN urls_fts AS f ON t.id = f.rowid");
-            conditions.push_str(" AND urls_fts MATCH '?2'");
+            joins.push_str(" JOIN urls_fts AS f ON i.id = f.rowid");
+            conditions.push_str(" AND urls_fts MATCH ?2");
         }
         inner.push_str(&joins);
         inner.push_str(&conditions);
         inner
     };
     let query = format!(
-        "SELECT short_url, long_url, hits, expiry_time, notes FROM {inner} ORDER BY id ASC"
+        "SELECT i.short_url, i.long_url, i.hits, i.expiry_time, i.notes FROM {inner} ORDER BY i.id ASC"
     );
     let Ok(mut statement) = db.prepare_cached(&query) else {
         error!("Error preparing SQL statement for getall.");
