@@ -47,9 +47,13 @@ fn is_link_valid(link: &str, allow_capital_letters: bool) -> bool {
 }
 
 // Only have a-z, 0-9, - and _ as valid characters in a shortlink
-fn is_note_valid(link: &str) -> bool {
-    let re = Regex::new(r#"^[A-Za-z0-9._,;'^&%$#\[\](){}-]+$"#).expect("Regex generation failed.");
+fn normalize_filter(link: &str) -> Option<String> {
+    let re =
+        Regex::new(r#"^[A-Za-z0-9._,;'^&%$#\[\](){}-]{3,}$"#).expect("Regex generation failed.");
+    let normalize = Regex::new(r"[^\p{L}\p{N}]+").expect("Regex generation failed.");
     re.is_match(link)
+        .then(|| normalize.replace_all(link, " ").into())
+        .filter(|s: &String| s.len() > 2)
 }
 
 // Get version number
@@ -69,7 +73,7 @@ pub fn getall(db: &Connection, params: GetReqParams) -> String {
     let page_after = params.page_after.filter(|s| !s.is_empty());
     let page_no = params.page_no.filter(|&n| n > 0);
     let page_size = params.page_size.filter(|&n| n > 0);
-    let filter = params.filter.filter(|s| is_note_valid(s));
+    let filter = params.filter.and_then(|s| normalize_filter(&s));
     let links = database::getall(db, page_after.as_deref(), page_no, page_size, filter);
     serde_json::to_string(&links).expect("Failure during creation of json from db.")
 }

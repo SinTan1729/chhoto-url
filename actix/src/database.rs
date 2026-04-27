@@ -391,7 +391,7 @@ pub fn open_db(path: &str, use_wal_mode: bool, ensure_acid: bool) -> Connection 
              long_url, short_url, notes,
              content='urls',
              content_rowid='id',
-             tokenize='trigram'
+             tokenize='trigram remove_diacritics 2'
          )",
         [],
     )
