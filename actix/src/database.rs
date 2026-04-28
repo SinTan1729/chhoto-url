@@ -110,7 +110,7 @@ pub fn getall(
         }
     };
 
-    let filter_string;
+    let filter_string; // Needed to circumvent lifetime issues
     if let Some(fil) = filter {
         filter_string = fil;
         query_helper
@@ -221,26 +221,33 @@ pub fn edit_link(
     longlink: &str,
     reset_hits: bool,
     expiry_time: Option<i64>,
-    notes: &str,
+    notes: Option<&str>,
     db: &Connection,
 ) -> Result<usize, ()> {
     let now = chrono::Utc::now().timestamp();
+    let mut params: Vec<(&str, &dyn rusqlite::ToSql)> =
+        vec![(":long", &longlink), (":short", &shortlink), (":now", &now)];
+
     let hits_query = if reset_hits { ", hits = 0" } else { "" };
-    let (expiry_query, params) = if expiry_time.is_some() {
-        (
-            ", expiry_time = :expiry",
-            named_params! {":long" : longlink, ":short" : shortlink, ":now" : now, ":notes" : notes, ":expiry" : expiry_time},
-        )
+    let (note, expiry); // Needed to circumvent lifetime issues
+    let notes_query = if let Some(n) = notes {
+        note = n;
+        params.push((":notes", &note));
+        ", notes = :notes"
     } else {
-        (
-            "",
-            named_params! {":long" : longlink, ":short" : shortlink, ":now" : now, ":notes" : notes},
-        )
+        ""
+    };
+    let expiry_query = if let Some(exp) = expiry_time {
+        expiry = exp;
+        params.push((":expiry", &expiry));
+        ", expiry_time = :expiry"
+    } else {
+        ""
     };
 
     let query = format!(
         "UPDATE urls
-         SET long_url = :long, notes = :notes {hits_query} {expiry_query}
+         SET long_url = :long{hits_query}{expiry_query}{notes_query}
          WHERE short_url = :short AND (expiry_time = 0 OR expiry_time > :now)"
     );
     let Ok(mut statement) = db.prepare_cached(&query) else {
@@ -249,7 +256,7 @@ pub fn edit_link(
     };
 
     statement
-        .execute(params)
+        .execute(params.as_slice())
         .inspect_err(|err| {
             error!(
                 "Got an error while editing link ({shortlink}, {longlink}, {reset_hits}): {err}"

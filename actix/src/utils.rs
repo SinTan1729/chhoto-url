@@ -37,8 +37,7 @@ struct EditURLRequest {
     longlink: String,
     reset_hits: bool,
     expiry_delay: Option<i64>,
-    #[serde(default)]
-    notes: String,
+    notes: Option<String>,
 }
 
 // Only have a-z, 0-9, - and _ as valid characters in a shortlink
@@ -187,7 +186,7 @@ pub fn edit_link(req: &str, db: &Connection, config: &Config) -> Result<(), Chho
         &chunks.longlink,
         chunks.reset_hits,
         chunks.expiry_delay,
-        &chunks.notes,
+        chunks.notes.as_deref(),
         db,
     );
     match result {
