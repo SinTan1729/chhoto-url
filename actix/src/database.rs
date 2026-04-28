@@ -19,6 +19,7 @@ pub struct DBRow {
     longlink: String,
     hits: i64,
     expiry_time: i64,
+    notes: String,
 }
 
 // Struct for creating a get query
@@ -30,10 +31,13 @@ struct QueryHelper {
 }
 
 // Find a single URL for /api/expand
-pub fn find_url(shortlink: &str, db: &Connection) -> Result<(String, i64, i64), ChhotoError> {
+pub fn find_url(
+    shortlink: &str,
+    db: &Connection,
+) -> Result<(String, i64, i64, String), ChhotoError> {
     // Long link, hits, expiry time
     let now = chrono::Utc::now().timestamp();
-    let query = "SELECT long_url, hits, expiry_time FROM urls
+    let query = "SELECT long_url, hits, expiry_time, notes FROM urls
                  WHERE short_url = :short
                  AND (expiry_time = 0 OR expiry_time > :now)";
     let Ok(mut statement) = db.prepare_cached(query) else {
@@ -46,6 +50,7 @@ pub fn find_url(shortlink: &str, db: &Connection) -> Result<(String, i64, i64), 
                 row.get("long_url")?,
                 row.get("hits")?,
                 row.get("expiry_time")?,
+                row.get("notes")?,
             ))
         })
         .map_err(|_| ChhotoError::ClientError {
@@ -137,6 +142,7 @@ pub fn getall(
                 longlink: row.get("long_url")?,
                 hits: row.get("hits")?,
                 expiry_time: row.get("expiry_time")?,
+                notes: row.get("notes")?,
             })
         })
         .collect()

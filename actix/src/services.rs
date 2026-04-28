@@ -64,6 +64,7 @@ struct LinkInfo {
     longurl: String,
     hits: i64,
     expiry_time: i64,
+    notes: String,
 }
 
 // Struct for query params in /api/all
@@ -179,13 +180,14 @@ pub async fn expand(req: String, data: web::Data<AppState>, http: HttpRequest) -
     let result = auth::is_api_ok(http, &data.config);
     if result.success {
         match database::find_url(&req, &data.db) {
-            Ok((longurl, hits, expiry_time)) => {
+            Ok((longurl, hits, expiry_time, notes)) => {
                 let body = LinkInfo {
                     success: true,
                     error: false,
                     longurl,
                     hits,
                     expiry_time,
+                    notes,
                 };
                 HttpResponse::Ok().json(body)
             }

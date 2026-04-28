@@ -35,6 +35,8 @@ struct CreatedURL {
     longurl: String,
     #[serde(default)]
     hits: i64,
+    #[serde(default)]
+    notes: String,
 }
 
 #[derive(Deserialize)]
@@ -442,6 +444,7 @@ async fn expand_link() {
     let body = to_bytes(resp.into_body()).await.unwrap();
     let reply: CreatedURL = serde_json::from_str(body.as_str()).unwrap();
     assert_eq!(reply.longurl, "https://example-test4.com");
+    assert_eq!(reply.notes, "");
 
     let _ = fs::remove_file(format!("/tmp/chhoto-url-test-{test}.sqlite"));
 }
