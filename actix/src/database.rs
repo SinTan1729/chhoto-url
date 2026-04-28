@@ -34,14 +34,14 @@ pub fn find_url(shortlink: &str, db: &Connection) -> Result<(String, i64, i64), 
     // Long link, hits, expiry time
     let now = chrono::Utc::now().timestamp();
     let query = "SELECT long_url, hits, expiry_time FROM urls
-                 WHERE short_url = ?1 
-                 AND (expiry_time = 0 OR expiry_time > ?2)";
+                 WHERE short_url = :short
+                 AND (expiry_time = 0 OR expiry_time > :now)";
     let Ok(mut statement) = db.prepare_cached(query) else {
         error!("Error preparing SQL statement for find_url.");
         return Err(ServerError);
     };
     statement
-        .query_row((shortlink, now), |row| {
+        .query_row(named_params! {":short": shortlink, ":now": now}, |row| {
             Ok((
                 row.get("long_url")?,
                 row.get("hits")?,
@@ -154,14 +154,16 @@ pub fn find_and_add_hit(shortlink: &str, db: &Connection) -> Result<String, ()> 
     let Ok(mut statement) = db.prepare_cached(
         "UPDATE urls 
              SET hits = hits + 1 
-             WHERE short_url = ?1 AND (expiry_time = 0 OR expiry_time > ?2)
+             WHERE short_url = :short AND (expiry_time = 0 OR expiry_time > :now)
              RETURNING long_url",
     ) else {
         error!("Error preparing SQL statement for add_hit.");
         return Err(());
     };
     statement
-        .query_one((shortlink, now), |row| row.get("long_url"))
+        .query_one(named_params! {":short": shortlink, ":now": now}, |row| {
+            row.get("long_url")
+        })
         .map_err(|_| ())
 }
 
@@ -182,15 +184,17 @@ pub fn add_link(
     let Ok(mut statement) = db.prepare_cached(
         "INSERT INTO urls
              (long_url, short_url, hits, expiry_time)
-             VALUES (?1, ?2, 0, ?3)
+             VALUES (:long, :short, 0, :expiry)
              ON CONFLICT(short_url) DO UPDATE 
-             SET long_url = ?1, hits = 0, expiry_time = ?3 
-             WHERE short_url = ?2 AND expiry_time <= ?4 AND expiry_time > 0",
+             SET long_url = :long, hits = 0, expiry_time = :expiry 
+             WHERE short_url = :short AND expiry_time <= :now AND expiry_time > 0",
     ) else {
         error!("Error preparing SQL statement for add_link.");
         return Err(ServerError);
     };
-    match statement.execute((longlink, shortlink, expiry_time, now)) {
+    match statement.execute(
+        named_params! {":long": longlink, ":short": shortlink, ":expiry": expiry_time, ":now": now},
+    ) {
         Ok(1) => Ok(expiry_time),
         Ok(_) => Err(ClientError {
             reason: "Short URL is already in use!".to_string(),
@@ -210,22 +214,19 @@ pub fn edit_link(
     db: &Connection,
 ) -> Result<usize, ()> {
     let now = chrono::Utc::now().timestamp();
-    let query = if reset_hits {
-        "UPDATE urls 
-         SET long_url = ?1, hits = 0 
-         WHERE short_url = ?2 AND (expiry_time = 0 OR expiry_time > ?3)"
-    } else {
-        "UPDATE urls 
-         SET long_url = ?1 
-         WHERE short_url = ?2 AND (expiry_time = 0 OR expiry_time > ?3)"
-    };
-    let Ok(mut statement) = db.prepare_cached(query) else {
+    let hits_query = if reset_hits { ", hits = 0" } else { "" };
+    let query = format!(
+        "UPDATE urls
+         SET long_url = :long {hits_query}
+         WHERE short_url = :short AND (expiry_time = 0 OR expiry_time > :now)"
+    );
+    let Ok(mut statement) = db.prepare_cached(&query) else {
         error!("Error preparing SQL statement for edit_link.");
         return Err(());
     };
 
     statement
-        .execute((longlink, shortlink, now))
+        .execute(named_params! {":long" : longlink, ":short" : shortlink, ":now" : now})
         .inspect_err(|err| {
             error!(
                 "Got an error while editing link ({shortlink}, {longlink}, {reset_hits}): {err}"
@@ -240,10 +241,10 @@ pub fn cleanup(db: &Connection, use_wal_mode: bool) {
     debug!("Starting database cleanup.");
 
     let mut statement = db
-        .prepare_cached("DELETE FROM urls WHERE ?1 >= expiry_time AND expiry_time > 0")
+        .prepare_cached("DELETE FROM urls WHERE :now >= expiry_time AND expiry_time > 0")
         .expect("Error preparing SQL statement for cleanup.");
     statement
-        .execute([now])
+        .execute(named_params! {":now" : now})
         .inspect(|&u| match u {
             0 => (),
             1 => info!("1 expired link was deleted."),
@@ -272,11 +273,11 @@ pub fn cleanup(db: &Connection, use_wal_mode: bool) {
 
 // Delete an existing link
 pub fn delete_link(shortlink: &str, db: &Connection) -> Result<(), ChhotoError> {
-    let Ok(mut statement) = db.prepare_cached("DELETE FROM urls WHERE short_url = ?1") else {
+    let Ok(mut statement) = db.prepare_cached("DELETE FROM urls WHERE short_url = :short") else {
         error!("Error preparing SQL statement for delete_link.");
         return Err(ServerError);
     };
-    match statement.execute([shortlink]) {
+    match statement.execute(named_params! {":short" : shortlink}) {
         Ok(delta) if delta > 0 => Ok(()),
         _ => Err(ClientError {
             reason: "The shortlink was not found, and could not be deleted.".to_string(),
