@@ -69,7 +69,6 @@ pub fn getall(
     let now = chrono::Utc::now().timestamp();
     let size = page_size.unwrap_or(10);
 
-    let mut filter_table = "t"; // Which table will be filtered
     let mut params: Vec<(&str, &dyn rusqlite::ToSql)> = Vec::new();
     params.push((":now", &now));
 
@@ -82,7 +81,7 @@ pub fn getall(
             prefix: "( SELECT t.id, t.short_url, t.long_url, t.hits, t.expiry_time, t.notes FROM urls AS t".to_string(),
             joins: "JOIN urls AS u ON u.short_url = :pos".to_string(),
             conditions: "WHERE t.id < u.id AND ( t.expiry_time = 0 OR t.expiry_time > :now".to_string(),
-            suffix: ") ORDER BY t.id DESC LIMIT :size ) as i".to_string(),
+            suffix: ") ORDER BY t.id DESC LIMIT :size ) as t".to_string(),
         }
     } else if let Some(num) = page_no {
         page = (num - 1) * size;
@@ -92,7 +91,7 @@ pub fn getall(
             prefix: "( SELECT t.id, t.short_url, t.long_url, t.hits, t.expiry_time, t.notes FROM urls AS t".to_string(),
             joins: String::new(),
             conditions: "WHERE ( t.expiry_time = 0 OR t.expiry_time > :now )".to_string(),
-            suffix: "ORDER BY t.id DESC LIMIT :size OFFSET :page ) as i".to_string(),
+            suffix: "ORDER BY t.id DESC LIMIT :size OFFSET :page ) as t".to_string(),
         }
     } else if page_size.is_some() {
         params.push((":size", &size));
@@ -100,14 +99,13 @@ pub fn getall(
             prefix: "( SELECT t.id, t.short_url, t.long_url, t.hits, t.expiry_time, t.notes FROM urls AS t".to_string(),
             joins: String::new(),
             conditions: "WHERE ( t.expiry_time = 0 OR t.expiry_time > :now )".to_string(),
-            suffix: "ORDER BY t.id DESC LIMIT :size ) as i".to_string(),
+            suffix: "ORDER BY t.id DESC LIMIT :size ) as t".to_string(),
         }
     } else {
-        filter_table = "i";
         QueryHelper {
-            prefix: "urls AS i".to_string(),
+            prefix: "urls AS t".to_string(),
             joins: String::new(),
-            conditions: "WHERE ( i.expiry_time = 0 OR i.expiry_time > :now )".to_string(),
+            conditions: "WHERE ( t.expiry_time = 0 OR t.expiry_time > :now )".to_string(),
             suffix: String::new(),
         }
     };
@@ -115,9 +113,9 @@ pub fn getall(
     let filter_string;
     if let Some(fil) = filter {
         filter_string = fil;
-        query_helper.joins.push_str(&format!(
-            " JOIN urls_fts AS f ON {filter_table}.id = f.rowid"
-        ));
+        query_helper
+            .joins
+            .push_str(" JOIN urls_fts AS f ON t.id = f.rowid");
         query_helper
             .conditions
             .push_str(" AND urls_fts MATCH :filter");
@@ -125,7 +123,7 @@ pub fn getall(
     }
 
     let query = format!(
-        "SELECT i.short_url, i.long_url, i.hits, i.expiry_time, i.notes FROM {} {} {} {} ORDER BY i.id ASC",
+        "SELECT t.short_url, t.long_url, t.hits, t.expiry_time, t.notes FROM {} {} {} {} ORDER BY t.id ASC",
         query_helper.prefix, query_helper.joins, query_helper.conditions, query_helper.suffix,
     );
     let Ok(mut statement) = db.prepare_cached(&query) else {
