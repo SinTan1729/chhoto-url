@@ -172,6 +172,7 @@ pub fn add_link(
     shortlink: &str,
     longlink: &str,
     expiry_delay: i64,
+    notes: &str,
     db: &Connection,
 ) -> Result<i64, ChhotoError> {
     let now = chrono::Utc::now().timestamp();
@@ -183,17 +184,17 @@ pub fn add_link(
 
     let Ok(mut statement) = db.prepare_cached(
         "INSERT INTO urls
-             (long_url, short_url, hits, expiry_time)
-             VALUES (:long, :short, 0, :expiry)
+             (long_url, short_url, hits, expiry_time, notes)
+             VALUES (:long, :short, 0, :expiry, :notes)
              ON CONFLICT(short_url) DO UPDATE 
-             SET long_url = :long, hits = 0, expiry_time = :expiry 
+             SET long_url = :long, hits = 0, expiry_time = :expiry, notes = :notes
              WHERE short_url = :short AND expiry_time <= :now AND expiry_time > 0",
     ) else {
         error!("Error preparing SQL statement for add_link.");
         return Err(ServerError);
     };
     match statement.execute(
-        named_params! {":long": longlink, ":short": shortlink, ":expiry": expiry_time, ":now": now},
+        named_params! {":long": longlink, ":short": shortlink, ":expiry": expiry_time, ":now": now, ":notes" : notes},
     ) {
         Ok(1) => Ok(expiry_time),
         Ok(_) => Err(ClientError {
@@ -211,13 +212,27 @@ pub fn edit_link(
     shortlink: &str,
     longlink: &str,
     reset_hits: bool,
+    expiry_time: Option<i64>,
+    notes: &str,
     db: &Connection,
 ) -> Result<usize, ()> {
     let now = chrono::Utc::now().timestamp();
     let hits_query = if reset_hits { ", hits = 0" } else { "" };
+    let (expiry_query, params) = if expiry_time.is_some() {
+        (
+            ", expiry_time = :expiry",
+            named_params! {":long" : longlink, ":short" : shortlink, ":now" : now, ":notes" : notes, ":expiry" : expiry_time},
+        )
+    } else {
+        (
+            "",
+            named_params! {":long" : longlink, ":short" : shortlink, ":now" : now, ":notes" : notes},
+        )
+    };
+
     let query = format!(
         "UPDATE urls
-         SET long_url = :long {hits_query}
+         SET long_url = :long, notes = :notes {hits_query} {expiry_query}
          WHERE short_url = :short AND (expiry_time = 0 OR expiry_time > :now)"
     );
     let Ok(mut statement) = db.prepare_cached(&query) else {
@@ -226,7 +241,7 @@ pub fn edit_link(
     };
 
     statement
-        .execute(named_params! {":long" : longlink, ":short" : shortlink, ":now" : now})
+        .execute(params)
         .inspect_err(|err| {
             error!(
                 "Got an error while editing link ({shortlink}, {longlink}, {reset_hits}): {err}"

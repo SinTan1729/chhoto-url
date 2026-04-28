@@ -26,6 +26,8 @@ struct NewURLRequest {
     longlink: String,
     #[serde(default)]
     expiry_delay: i64,
+    #[serde(default)]
+    notes: String,
 }
 
 // Struct for reading link pairs sent during API call for editing link
@@ -34,6 +36,9 @@ struct EditURLRequest {
     shortlink: String,
     longlink: String,
     reset_hits: bool,
+    expiry_delay: Option<i64>,
+    #[serde(default)]
+    notes: String,
 }
 
 // Only have a-z, 0-9, - and _ as valid characters in a shortlink
@@ -119,7 +124,13 @@ pub fn add_link(
     chunks.expiry_delay = chunks.expiry_delay.max(0);
 
     if !shortlink_provided || is_link_valid(chunks.shortlink.as_str(), allow_capital_letters) {
-        match database::add_link(&chunks.shortlink, &chunks.longlink, chunks.expiry_delay, db) {
+        match database::add_link(
+            &chunks.shortlink,
+            &chunks.longlink,
+            chunks.expiry_delay,
+            &chunks.notes,
+            db,
+        ) {
             Ok(expiry_time) => Ok((chunks.shortlink, expiry_time)),
             Err(ClientError { reason }) => {
                 if shortlink_provided {
@@ -136,6 +147,7 @@ pub fn add_link(
                         &chunks.shortlink,
                         &chunks.longlink,
                         chunks.expiry_delay,
+                        &chunks.notes,
                         db,
                     ) {
                         Ok(expiry_time) => Ok((chunks.shortlink, expiry_time)),
@@ -170,7 +182,14 @@ pub fn edit_link(req: &str, db: &Connection, config: &Config) -> Result<(), Chho
             reason: "Invalid shortlink!".to_string(),
         });
     }
-    let result = database::edit_link(&chunks.shortlink, &chunks.longlink, chunks.reset_hits, db);
+    let result = database::edit_link(
+        &chunks.shortlink,
+        &chunks.longlink,
+        chunks.reset_hits,
+        chunks.expiry_delay,
+        &chunks.notes,
+        db,
+    );
     match result {
         // Zero rows returned means no updates
         Ok(0) => Err(ClientError {
@@ -180,6 +199,7 @@ pub fn edit_link(req: &str, db: &Connection, config: &Config) -> Result<(), Chho
         Err(()) => Err(ServerError),
     }
 }
+
 // Check if link, and request DB to delete it if exists
 pub fn delete_link(
     shortlink: &str,
