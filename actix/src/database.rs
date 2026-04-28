@@ -69,55 +69,59 @@ pub fn getall(
     let now = chrono::Utc::now().timestamp();
     let size = page_size.unwrap_or(10);
 
-    let (mut query_helper, params) = {
-        if let Some(pos) = page_after {
-            (
-                QueryHelper {
-                    prefix: "( SELECT t.id, t.short_url, t.long_url, t.hits, t.expiry_time, t.notes FROM urls AS t".to_string(),
-                    joins: "JOIN urls AS u ON u.short_url = :pos".to_string(),
-                    conditions: "WHERE t.id < u.id AND ( t.expiry_time = 0 OR t.expiry_time > :now".to_string(),
-                    suffix: ") ORDER BY t.id DESC LIMIT :size ) as i".to_string(),
-                },
-                named_params! {":pos": pos.to_owned(), ":now": now, ":size": size},
-            )
-        } else if let Some(num) = page_no {
-            (
-                QueryHelper {
-                    prefix: "( SELECT t.id, t.short_url, t.long_url, t.hits, t.expiry_time, t.notes FROM urls AS t".to_string(),
-                    joins: String::new(),
-                    conditions: "WHERE ( t.expiry_time = 0 OR t.expiry_time > :now )".to_string(),
-                    suffix: "ORDER BY t.id DESC LIMIT :size OFFSET :page ) as i".to_string(),
-                },
-                named_params! {":page": ((num - 1) * size).to_owned(), ":now": now, ":size": size},
-            )
-        } else if page_size.is_some() {
-            (
-                QueryHelper {
-                    prefix: "( SELECT t.id, t.short_url, t.long_url, t.hits, t.expiry_time, t.notes FROM urls AS t".to_string(),
-                    joins: String::new(),
-                    conditions: "WHERE ( t.expiry_time = 0 OR t.expiry_time > :now )".to_string(),
-                    suffix: "ORDER BY t.id DESC LIMIT :size ) as i".to_string(),
-                },
-                named_params! {":now": now, ":size": size}
-            )
-        } else {
-            (
-                QueryHelper {
-                    prefix: "urls AS i".to_string(),
-                    joins: String::new(),
-                    conditions: "WHERE ( i.expiry_time = 0 OR i.expiry_time > :now )".to_string(),
-                    suffix: String::new(),
-                },
-                named_params! {":now": now},
-            )
+    let mut filter_table = "t"; // Which table will be filtered
+    let mut params: Vec<(&str, &dyn rusqlite::ToSql)> = Vec::new();
+    params.push((":now", &now));
+
+    let (position, page); // Needed to circumvent lifetime issues
+    let mut query_helper = if let Some(pos) = page_after {
+        position = pos;
+        params.push((":pos", &position));
+        params.push((":size", &size));
+        QueryHelper {
+            prefix: "( SELECT t.id, t.short_url, t.long_url, t.hits, t.expiry_time, t.notes FROM urls AS t".to_string(),
+            joins: "JOIN urls AS u ON u.short_url = :pos".to_string(),
+            conditions: "WHERE t.id < u.id AND ( t.expiry_time = 0 OR t.expiry_time > :now".to_string(),
+            suffix: ") ORDER BY t.id DESC LIMIT :size ) as i".to_string(),
+        }
+    } else if let Some(num) = page_no {
+        page = (num - 1) * size;
+        params.push((":page", &page));
+        params.push((":size", &size));
+        QueryHelper {
+            prefix: "( SELECT t.id, t.short_url, t.long_url, t.hits, t.expiry_time, t.notes FROM urls AS t".to_string(),
+            joins: String::new(),
+            conditions: "WHERE ( t.expiry_time = 0 OR t.expiry_time > :now )".to_string(),
+            suffix: "ORDER BY t.id DESC LIMIT :size OFFSET :page ) as i".to_string(),
+        }
+    } else if page_size.is_some() {
+        params.push((":size", &size));
+        QueryHelper {
+            prefix: "( SELECT t.id, t.short_url, t.long_url, t.hits, t.expiry_time, t.notes FROM urls AS t".to_string(),
+            joins: String::new(),
+            conditions: "WHERE ( t.expiry_time = 0 OR t.expiry_time > :now )".to_string(),
+            suffix: "ORDER BY t.id DESC LIMIT :size ) as i".to_string(),
+        }
+    } else {
+        filter_table = "i";
+        QueryHelper {
+            prefix: "urls AS i".to_string(),
+            joins: String::new(),
+            conditions: "WHERE ( i.expiry_time = 0 OR i.expiry_time > :now )".to_string(),
+            suffix: String::new(),
         }
     };
 
-    if filter.is_some() {
+    let filter_string;
+    if let Some(fil) = filter {
+        filter_string = fil;
+        query_helper.joins.push_str(&format!(
+            " JOIN urls_fts AS f ON {filter_table}.id = f.rowid"
+        ));
         query_helper
-            .joins
-            .push_str(" JOIN urls_fts AS f ON t.id = f.rowid");
-        query_helper.conditions.push_str(" AND urls_fts MATCH ?4");
+            .conditions
+            .push_str(" AND urls_fts MATCH :filter");
+        params.push((":filter", &filter_string));
     }
 
     let query = format!(
@@ -128,7 +132,7 @@ pub fn getall(
         error!("Error preparing SQL statement for getall.");
         return [].into();
     };
-    let raw_data = statement.query(params);
+    let raw_data = statement.query(params.as_slice());
 
     let Ok(data) = raw_data else {
         error!("Error running SQL statement for getall: {query}");
@@ -142,7 +146,7 @@ pub fn getall(
                 longlink: row.get("long_url")?,
                 hits: row.get("hits")?,
                 expiry_time: row.get("expiry_time")?,
-                notes: row.get("notes")?,
+                notes: row.get("notes").unwrap_or_default(),
             })
         })
         .collect()
