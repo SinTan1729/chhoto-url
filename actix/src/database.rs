@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: MIT
 
 use log::{debug, error, info};
-use rusqlite::{fallible_iterator::FallibleIterator, named_params, Connection};
+use rusqlite::{fallible_iterator::FallibleIterator, named_params, types::Value, Connection};
 use serde::Serialize;
 use std::rc::Rc;
 
@@ -69,23 +69,21 @@ pub fn getall(
     let now = chrono::Utc::now().timestamp();
     let size = page_size.unwrap_or(10);
 
-    let mut params: Vec<(&str, &dyn rusqlite::ToSql)> = vec![(":now", &now)];
+    let mut params: Vec<(&str, Value)> = vec![(":now", now.into())];
 
-    let (position, page); // Needed to circumvent lifetime issues
-    let mut query_helper = if let Some(pos) = page_after {
-        position = pos;
-        params.push((":pos", &position));
-        params.push((":size", &size));
+    let mut query_helper = if let Some(pos) = page_after.as_ref() {
+        params.push((":pos", (*pos).to_owned().into()));
+        params.push((":size", size.into()));
         QueryHelper {
             prefix: "( SELECT t.id, t.short_url, t.long_url, t.hits, t.expiry_time, t.notes FROM urls AS t".to_string(),
             joins: "JOIN urls AS u ON u.short_url = :pos".to_string(),
             conditions: "WHERE t.id < u.id AND ( t.expiry_time = 0 OR t.expiry_time > :now".to_string(),
             suffix: ") ORDER BY t.id DESC LIMIT :size ) as t".to_string(),
         }
-    } else if let Some(num) = page_no {
-        page = (num - 1) * size;
-        params.push((":page", &page));
-        params.push((":size", &size));
+    } else if let Some(num) = page_no.as_ref() {
+        let page = (num - 1) * size;
+        params.push((":page", page.into()));
+        params.push((":size", size.into()));
         QueryHelper {
             prefix: "( SELECT t.id, t.short_url, t.long_url, t.hits, t.expiry_time, t.notes FROM urls AS t".to_string(),
             joins: String::new(),
@@ -93,7 +91,7 @@ pub fn getall(
             suffix: "ORDER BY t.id DESC LIMIT :size OFFSET :page ) as t".to_string(),
         }
     } else if page_size.is_some() {
-        params.push((":size", &size));
+        params.push((":size", size.into()));
         QueryHelper {
             prefix: "( SELECT t.id, t.short_url, t.long_url, t.hits, t.expiry_time, t.notes FROM urls AS t".to_string(),
             joins: String::new(),
@@ -109,16 +107,14 @@ pub fn getall(
         }
     };
 
-    let filter_string; // Needed to circumvent lifetime issues
     if let Some(fil) = filter {
-        filter_string = fil;
         query_helper
             .joins
             .push_str(" JOIN urls_fts AS f ON t.id = f.rowid");
         query_helper
             .conditions
             .push_str(" AND urls_fts MATCH :filter");
-        params.push((":filter", &filter_string));
+        params.push((":filter", fil.into()));
     }
 
     let query = format!(
@@ -224,22 +220,22 @@ pub fn edit_link(
     db: &Connection,
 ) -> Result<usize, ()> {
     let now = chrono::Utc::now().timestamp();
-    let mut params: Vec<(&str, &dyn rusqlite::ToSql)> =
-        vec![(":long", &longlink), (":short", &shortlink), (":now", &now)];
+    let mut params: Vec<(&str, Value)> = vec![
+        (":long", longlink.to_owned().into()),
+        (":short", shortlink.to_owned().into()),
+        (":now", now.into()),
+    ];
 
     let mut updates = "long_url = :long".to_string();
     if reset_hits {
         updates.push_str(", hits = 0")
     };
-    let (note, expiry); // Needed to circumvent lifetime issues
-    if let Some(n) = notes {
-        note = n;
-        params.push((":notes", &note));
+    if let Some(note) = notes.as_ref() {
+        params.push((":notes", (*note).to_owned().into()));
         updates.push_str(", notes = :notes");
     };
-    if let Some(exp) = expiry_time {
-        expiry = exp;
-        params.push((":expiry", &expiry));
+    if let Some(expiry) = expiry_time.as_ref() {
+        params.push((":expiry", (*expiry).into()));
         updates.push_str(", expiry_time = :expiry")
     };
 
