@@ -179,10 +179,10 @@ pub fn add_link(
     db: &Connection,
 ) -> Result<i64, ChhotoError> {
     let now = chrono::Utc::now().timestamp();
-    let expiry_time = if expiry_delay == 0 {
-        0
-    } else {
+    let expiry_time = if expiry_delay > 0 {
         now + expiry_delay
+    } else {
+        0
     };
 
     let Ok(mut statement) = db.prepare_cached(
