@@ -142,6 +142,24 @@ async fn expand<T: Service<Request, Response = ServiceResponse, Error = Error>, 
     (status, url)
 }
 
+async fn getall<T: Service<Request, Response = ServiceResponse, Error = Error>>(
+    app: T,
+    api_key: &str,
+    params: &str,
+) -> Rc<[URLData]> {
+    let req = test::TestRequest::get()
+        .uri(&format!("/api/all?{params}"))
+        .insert_header(("X-API-Key", api_key))
+        .to_request();
+
+    let resp = test::call_service(&app, req).await;
+    assert!(resp.status().is_success());
+    let body = to_bytes(resp.into_body()).await.unwrap();
+    let reply_chunks: Rc<[URLData]> = serde_json::from_str(body.as_str()).unwrap();
+
+    reply_chunks
+}
+
 async fn edit_link<T: Service<Request, Response = ServiceResponse, Error = Error>>(
     app: T,
     api_key: &str,
@@ -301,48 +319,24 @@ async fn data_fetching_all() {
     let req = test::TestRequest::get().uri("/test1").to_request();
     let _ = test::call_service(&app, req).await;
 
-    let req = test::TestRequest::get()
-        .uri("/api/all")
-        .insert_header(("X-API-Key", api_key.clone()))
-        .to_request();
+    let reply = getall(&app, &api_key, "").await;
+    assert_eq!(reply.len(), 2);
+    assert_eq!(reply[0].shortlink, "test1");
+    assert_eq!(reply[1].shortlink, "test3");
+    assert_eq!(reply[0].longlink, "https://example-test1.com");
+    assert_eq!(reply[1].longlink, "https://example-test3.com");
+    assert_eq!(reply[0].hits, 1);
+    assert_eq!(reply[1].hits, 0);
+    assert_ne!(reply[0].expiry_time, 0);
+    assert_ne!(reply[1].expiry_time, 0);
 
-    let resp = test::call_service(&app, req).await;
-    assert!(resp.status().is_success());
-    let body = to_bytes(resp.into_body()).await.unwrap();
-    let reply_chunks: Rc<[URLData]> = serde_json::from_str(body.as_str()).unwrap();
-    assert_eq!(reply_chunks.len(), 2);
-    assert_eq!(reply_chunks[0].shortlink, "test1");
-    assert_eq!(reply_chunks[1].shortlink, "test3");
-    assert_eq!(reply_chunks[0].longlink, "https://example-test1.com");
-    assert_eq!(reply_chunks[1].longlink, "https://example-test3.com");
-    assert_eq!(reply_chunks[0].hits, 1);
-    assert_eq!(reply_chunks[1].hits, 0);
-    assert_ne!(reply_chunks[0].expiry_time, 0);
-    assert_ne!(reply_chunks[1].expiry_time, 0);
+    let reply = getall(&app, &api_key, "page_no=2&page_size=1").await;
+    assert_eq!(reply.len(), 1);
+    assert_eq!(reply[0].shortlink, "test1");
 
-    let req = test::TestRequest::get()
-        .uri("/api/all?page_no=2&page_size=1")
-        .insert_header(("X-API-Key", api_key.clone()))
-        .to_request();
-
-    let resp = test::call_service(&app, req).await;
-    assert!(resp.status().is_success());
-    let body = to_bytes(resp.into_body()).await.unwrap();
-    let reply_chunks: Rc<[URLData]> = serde_json::from_str(body.as_str()).unwrap();
-    assert_eq!(reply_chunks.len(), 1);
-    assert_eq!(reply_chunks[0].shortlink, "test1");
-
-    let req = test::TestRequest::get()
-        .uri("/api/all?page_after=test3&page_size=1")
-        .insert_header(("X-API-Key", api_key))
-        .to_request();
-
-    let resp = test::call_service(&app, req).await;
-    assert!(resp.status().is_success());
-    let body = to_bytes(resp.into_body()).await.unwrap();
-    let reply_chunks: Rc<[URLData]> = serde_json::from_str(body.as_str()).unwrap();
-    assert_eq!(reply_chunks.len(), 1);
-    assert_eq!(reply_chunks[0].shortlink, "test1");
+    let reply = getall(&app, &api_key, "page_after=test3&page_size=1").await;
+    assert_eq!(reply.len(), 1);
+    assert_eq!(reply[0].shortlink, "test1");
 
     let _ = fs::remove_file(format!("/tmp/chhoto-url-test-{test}.sqlite"));
 }
@@ -444,16 +438,8 @@ async fn expand_link() {
     let api_key = conf.api_key.unwrap();
     let _ = add_link(&app, &api_key, "test4", 10, "test-note").await;
 
-    let req = test::TestRequest::post()
-        .uri("/api/expand")
-        .insert_header(("X-API-Key", api_key))
-        .set_payload("test4")
-        .to_request();
-
-    let resp = test::call_service(&app, req).await;
-    assert!(resp.status().is_success());
-    let body = to_bytes(resp.into_body()).await.unwrap();
-    let reply: CreatedURL = serde_json::from_str(body.as_str()).unwrap();
+    let (status, reply) = expand(&app, &api_key, "test4").await;
+    assert!(status.is_success());
     assert_eq!(reply.longurl, "https://example-test4.com");
     assert_eq!(reply.notes, "test-note");
 
@@ -544,18 +530,15 @@ async fn notes_and_filtering() {
     let status = edit_link(&app, &api_key, "test2", false, Some("changed")).await;
     assert!(status.is_success());
 
-    let req = test::TestRequest::get()
-        .uri("/api/all?filter=chan")
-        .insert_header(("X-API-Key", api_key))
-        .to_request();
+    let reply = getall(&app, &api_key, "filter=chan").await;
+    assert_eq!(reply.len(), 1);
+    assert_eq!(reply[0].shortlink, "test2");
+    assert_eq!(reply[0].notes, "changed");
 
-    let resp = test::call_service(&app, req).await;
-    assert!(resp.status().is_success());
-    let body = to_bytes(resp.into_body()).await.unwrap();
-    let reply_chunks: Rc<[URLData]> = serde_json::from_str(body.as_str()).unwrap();
-    assert_eq!(reply_chunks.len(), 1);
-    assert_eq!(reply_chunks[0].shortlink, "test2");
-    assert_eq!(reply_chunks[0].notes, "changed");
+    let reply = getall(&app, &api_key, "filter=tes").await;
+    assert_eq!(reply.len(), 2);
+    assert_eq!(reply[1].shortlink, "test2");
+    assert_eq!(reply[0].notes, "note1");
 
     let _ = fs::remove_file(format!("/tmp/chhoto-url-test-{test}.sqlite"));
 }
