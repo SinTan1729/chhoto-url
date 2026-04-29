@@ -69,8 +69,7 @@ pub fn getall(
     let now = chrono::Utc::now().timestamp();
     let size = page_size.unwrap_or(10);
 
-    let mut params: Vec<(&str, &dyn rusqlite::ToSql)> = Vec::new();
-    params.push((":now", &now));
+    let mut params: Vec<(&str, &dyn rusqlite::ToSql)> = vec![(":now", &now)];
 
     let (position, page); // Needed to circumvent lifetime issues
     let mut query_helper = if let Some(pos) = page_after {
