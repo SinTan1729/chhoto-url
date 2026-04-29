@@ -227,26 +227,25 @@ pub fn edit_link(
     let mut params: Vec<(&str, &dyn rusqlite::ToSql)> =
         vec![(":long", &longlink), (":short", &shortlink), (":now", &now)];
 
-    let hits_query = if reset_hits { ", hits = 0" } else { "" };
+    let mut updates = "long_url = :long".to_string();
+    if reset_hits {
+        updates.push_str(", hits = 0")
+    };
     let (note, expiry); // Needed to circumvent lifetime issues
-    let notes_query = if let Some(n) = notes {
+    if let Some(n) = notes {
         note = n;
         params.push((":notes", &note));
-        ", notes = :notes"
-    } else {
-        ""
+        updates.push_str(", notes = :notes");
     };
-    let expiry_query = if let Some(exp) = expiry_time {
+    if let Some(exp) = expiry_time {
         expiry = exp;
         params.push((":expiry", &expiry));
-        ", expiry_time = :expiry"
-    } else {
-        ""
+        updates.push_str(", expiry_time = :expiry")
     };
 
     let query = format!(
         "UPDATE urls
-         SET long_url = :long{hits_query}{expiry_query}{notes_query}
+         SET {updates}
          WHERE short_url = :short AND (expiry_time = 0 OR expiry_time > :now)"
     );
     let Ok(mut statement) = db.prepare_cached(&query) else {
