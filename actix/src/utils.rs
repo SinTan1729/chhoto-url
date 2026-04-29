@@ -4,7 +4,6 @@
 use log::error;
 use nanoid::nanoid;
 use rand::seq::IndexedRandom;
-use regex::Regex;
 use rusqlite::Connection;
 use serde::Deserialize;
 use std::env;
@@ -41,26 +40,46 @@ struct EditURLRequest {
 }
 
 // Only have a-z, 0-9, - and _ as valid characters in a shortlink
+#[inline]
 fn is_link_valid(link: &str, allow_capital_letters: bool) -> bool {
-    let re = if allow_capital_letters {
-        Regex::new("^[A-Za-z0-9_-]+$").expect("Regex generation failed.")
+    if allow_capital_letters {
+        link.chars()
+            .all(|c| c.is_ascii_alphanumeric() || c == '_' || c == '-')
     } else {
-        Regex::new("^[a-z0-9_-]+$").expect("Regex generation failed.")
-    };
-    re.is_match(link)
+        link.chars()
+            .all(|c| c.is_ascii_digit() || c.is_ascii_lowercase() || c == '_' || c == '-')
+    }
 }
 
 // Only have a-z, 0-9, - and _ as valid characters in a shortlink
+#[inline]
 fn normalize_filter(link: &str) -> Option<String> {
-    let re =
-        Regex::new(r#"^[A-Za-z0-9._,;'^&%$#\[\](){}-]{3,}$"#).expect("Regex generation failed.");
-    let normalize = Regex::new(r"[^\p{L}\p{N}]+").expect("Regex generation failed.");
-    re.is_match(link)
-        .then(|| normalize.replace_all(link, " ").into())
-        .filter(|s: &String| s.len() > 2)
+    if link.len() < 3 {
+        return None;
+    }
+
+    let mut out = String::with_capacity(link.len());
+    let mut last_was_sep = false;
+
+    for c in link.chars() {
+        // Allow printable ascii chars
+        if c.is_ascii_alphanumeric() || matches!(c as u8, 33..=126) {
+            if c.is_alphanumeric() {
+                out.push(c);
+                last_was_sep = false;
+            } else if !last_was_sep {
+                out.push(' ');
+                last_was_sep = true;
+            }
+        } else {
+            return None;
+        }
+    }
+
+    let s = out.trim();
+    (s.len() > 2).then(|| s.to_string())
 }
 
-// Get version number
 pub fn get_version() -> String {
     const VERSION: &str = env!("CARGO_PKG_VERSION");
     const GIT_COMMIT: Option<&str> = option_env!("CARGO_GIT_COMMIT");
