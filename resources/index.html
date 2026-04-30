@@ -101,21 +101,43 @@
               autocapitalize="off"
             />
           </div>
-          <div class="pure-control-group">
-            <label for="expiryDelay">Expiry</label>
-            <select class="chhoto-select" name="expiryDelay" id="expiryDelay">
-              <option value="0">Never</option>
-              <option value="600">10 Minutes</option>
-              <option value="1800">30 Minutes</option>
-              <option value="3600">1 Hour</option>
-              <option value="43200">12 Hours</option>
-              <option value="86400">1 Day</option>
-              <option value="604800">1 Week</option>
-              <option value="2592000">1 Month</option>
-              <option value="7776000">3 Months</option>
-              <option value="15552000">6 Months</option>
-              <option value="31536000">1 Year</option>
-            </select>
+          <div class="pure-form-section">
+            <details class="chhoto-input" id="optionsSection">
+              <summary class="pure-controls">More options</summary>
+              <div class="pure-control-group">
+                <label for="expiryDelay">Expiry</label>
+                <select
+                  class="chhoto-select"
+                  name="expiryDelay"
+                  id="expiryDelay"
+                >
+                  <option value="0">Never</option>
+                  <option value="600">10 Minutes</option>
+                  <option value="1800">30 Minutes</option>
+                  <option value="3600">1 Hour</option>
+                  <option value="43200">12 Hours</option>
+                  <option value="86400">1 Day</option>
+                  <option value="604800">1 Week</option>
+                  <option value="2592000">1 Month</option>
+                  <option value="7776000">3 Months</option>
+                  <option value="15552000">6 Months</option>
+                  <option value="31536000">1 Year</option>
+                </select>
+              </div>
+              <div class="pure-control-group">
+                <label for="notes">Notes</label>
+                <input
+                  class="chhoto-input"
+                  type="text"
+                  name="notes"
+                  id="notes"
+                  placeholder="Notes for the link, used for filtering"
+                  pattern="[\x20-\x7E]*"
+                  title="Only printable ASCII characters are allowed"
+                  autocapitalize="off"
+                />
+              </div>
+            </details>
           </div>
           <div class="pure-controls" id="controls">
             <button class="chhoto-button pure-button pure-button-primary">
@@ -174,7 +196,7 @@
       <!-- The version number would be inserted here -->
     </div>
 
-    <dialog id="login-dialog" closedby="none">
+    <dialog id="login-dialog" closedby="none" class="chhoto-dialog">
       <form class="pure-form" name="login-form">
         <p>Please enter password to access this website</p>
         <div>
@@ -197,7 +219,7 @@
       </form>
     </dialog>
 
-    <dialog id="edit-dialog">
+    <dialog id="edit-dialog" class="chhoto-dialog">
       <form class="pure-form pure-form-stacked" name="edit-form">
         <p>
           Enter new long url for <span id="edit-link">placeholder</span>. <br />
@@ -226,9 +248,56 @@
       </form>
     </dialog>
 
-    <dialog id="qr-code-dialog">
+    <dialog id="info-dialog" closedby="any" class="chhoto-dialog">
+      <!-- https://svgicons.com/icon/13141/cross-filled -->
+      <button class="dialog-close-button" id="info-close-button">
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          width="24"
+          height="24"
+          viewBox="0 0 24 24"
+        >
+          <g fill="currentColor" fill-rule="evenodd" clip-rule="evenodd">
+            <path
+              d="M5.47 5.47a.75.75 0 0 1 1.06 0l12 12a.75.75 0 1 1-1.06 1.06l-12-12a.75.75 0 0 1 0-1.06"
+            />
+            <path
+              d="M18.53 5.47a.75.75 0 0 1 0 1.06l-12 12a.75.75 0 0 1-1.06-1.06l12-12a.75.75 0 0 1 1.06 0"
+            />
+          </g>
+        </svg>
+      </button>
+      <div id="info-div">
+        <table class="pure-table" id="info-table">
+          <tbody>
+            <tr>
+              <td class="label">Short:</td>
+              <td id="info-short"></td>
+            </tr>
+            <tr>
+              <td class="label">Long:</td>
+              <td id="info-long"></td>
+            </tr>
+            <tr>
+              <td class="label">Hits:</td>
+              <td id="info-hits"></td>
+            </tr>
+            <tr>
+              <td class="label">Expiry:</td>
+              <td id="info-expiry"></td>
+            </tr>
+            <tr>
+              <td class="label">Notes:</td>
+              <td id="info-notes"></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </dialog>
+
+    <dialog id="qr-code-dialog" closedby="any" class="chhoto-dialog">
       <!-- https://svgicons.com/icon/10667/download-solid -->
-      <a class="qr-button" id="qr-download" href="">
+      <a class="dialog-close-button" id="qr-download-button" href="">
         <svg
           xmlns="http://www.w3.org/2000/svg"
           width="24"
@@ -248,7 +317,7 @@
         </svg>
       </a>
       <!-- https://svgicons.com/icon/13141/cross-filled -->
-      <button class="qr-button" id="qr-close">
+      <button class="dialog-close-button" id="qr-close-button">
         <svg
           xmlns="http://www.w3.org/2000/svg"
           width="24"
