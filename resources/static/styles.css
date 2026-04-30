@@ -114,6 +114,10 @@ a {
   min-width: 6em;
 }
 
+#filter-div {
+  text-size: 0.7em;
+}
+
 #controls,
 #optionsSection summary {
   margin-top: 1em;
