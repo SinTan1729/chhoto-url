@@ -92,13 +92,37 @@ pub fn get_version() -> String {
 }
 
 // Request the DB for all URLs
-pub fn getall(db: &Connection, params: GetReqParams) -> String {
-    let page_after = params.page_after.filter(|s| !s.is_empty());
-    let page_no = params.page_no.filter(|&n| n > 0);
+pub fn getall(db: &Connection, params: GetReqParams) -> Result<String, ChhotoError> {
+    let page_after = match params.page_after {
+        Some(s) if s.is_empty() => {
+            return Err(ChhotoError::ClientError {
+                reason: "Invalid page_after was supplied!".to_string(),
+            })
+        }
+        other => other,
+    };
+    let page_no = match params.page_no {
+        Some(n) if n <= 0 => {
+            return Err(ChhotoError::ClientError {
+                reason: "Invalid page_no was supplied!".to_string(),
+            })
+        }
+        other => other,
+    };
     let page_size = params.page_size.filter(|&n| n > 0);
-    let filter = params.filter.and_then(|s| normalize_filter(&s));
+    let filter = params
+        .filter
+        .map(|s| {
+            normalize_filter(&s).ok_or(ChhotoError::ClientError {
+                reason: "Invalid filter was supplied!".to_string(),
+            })
+        })
+        .transpose()?;
     let links = database::getall(db, page_after.as_deref(), page_no, page_size, filter);
-    serde_json::to_string(&links).expect("Failure during creation of json from db.")
+    serde_json::to_string(&links).map_err(|err| {
+        error!("Failure during creation of json from db columns.\n{err}");
+        ChhotoError::ServerError
+    })
 }
 
 // Make checks and then request the DB to add a new URL entry

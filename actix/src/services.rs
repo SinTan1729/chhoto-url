@@ -162,13 +162,15 @@ pub async fn getall(
     // Call is_api_ok() function, pass HttpRequest
     let result = auth::is_api_ok(http, config);
     // If success, return all links
-    if result.success {
-        HttpResponse::Ok().body(utils::getall(&data.db, params.into_inner()))
-    } else if result.error {
+    if result.error {
         HttpResponse::Unauthorized().json(result)
-    // If password authentication is used - keeps backwards compatibility
-    } else if auth::is_session_valid(session, config) {
-        HttpResponse::Ok().body(utils::getall(&data.db, params.into_inner()))
+    } else if result.success || auth::is_session_valid(session, config) {
+        match utils::getall(&data.db, params.into_inner()) {
+            Ok(s) => HttpResponse::Ok().body(s),
+            Err(ServerError) => HttpResponse::InternalServerError()
+                .body("Something went wrong while loading the links.".to_string()),
+            Err(ClientError { reason }) => HttpResponse::BadRequest().body(reason),
+        }
     } else {
         HttpResponse::Unauthorized().body("Not logged in!")
     }
