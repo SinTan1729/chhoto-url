@@ -149,9 +149,9 @@
       </form>
 
       <p id="loading-text">Loading links table...</p>
-      <table class="chhoto-table pure-table" id="table-box">
+      <table class="chhoto-table pure-table" id="table-box" hidden>
         <caption>
-          <span>Active links</span>
+          <span name="label">Active links</span>
           <span id="pageControls" hidden="true">
             <button
               id="prevPageBtn"
@@ -171,7 +171,7 @@
                   class="chhoto-input"
                   type="text"
                   name="filter"
-                  id="filter"
+                  id="filterText"
                   placeholder="Filter shortlinks"
                   pattern="[\x20-\x7E]*"
                   title="Only printable ASCII characters are allowed"
@@ -179,7 +179,8 @@
                 />
                 <button
                   class="chhoto-button pure-button pure-button-primary"
-                  value="default"
+                  type="button"
+                  id="filterBtn"
                 >
                   Filter
                 </button>

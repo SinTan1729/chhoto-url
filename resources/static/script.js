@@ -9,6 +9,7 @@ let SUBDIR = null;
 let ADMIN = false;
 let LOCAL_DATA = [];
 let CUR_PAGE = 0;
+let FILTER = null;
 
 // Flags
 let PROCESSING_PAGE_TRANSITION = true;
@@ -188,6 +189,9 @@ const refreshData = async () => {
 };
 
 const pullData = async (params) => {
+  if (FILTER != null) {
+    params.append("filter", FILTER);
+  }
   const res = await fetch(prepSubdir(`/api/all?${params}`), {
     cache: "no-cache",
   });
@@ -234,6 +238,35 @@ const updateInputBox = () => {
   }
 };
 
+const refreshWithFilter = () => {
+  const filterInput = document.getElementById("filterText");
+  const filter = filterInput.value;
+
+  filterInput.setCustomValidity("");
+  if (filter.length > 0 && filter.length < 3) {
+    filterInput.setCustomValidity("Filter must be at least 3 characters.");
+    filterInput.reportValidity();
+    return;
+  } else if (!/^[\x00-\x7F]*$/.test(filter)) {
+    filterInput.setCustomValidity(
+      "Filter must contain only printable ASCII characters.",
+    );
+    filterInput.reportValidity();
+    return;
+  }
+
+  const oldFilter = FILTER;
+  if (filter == "") {
+    FILTER = null;
+  } else {
+    FILTER = filter;
+  }
+  if (FILTER != oldFilter) {
+    LOCAL_DATA = [];
+    refreshData();
+  }
+};
+
 const displayData = () => {
   if (CUR_PAGE < 0) {
     console.log("Trying to access negative numbered page.");
@@ -253,7 +286,7 @@ const displayData = () => {
   const loading_text = document.getElementById("loading-text");
   const table = document.getElementById("url-table");
 
-  if (data.length === 0) {
+  if (data.length === 0 && FILTER == null) {
     table_box.hidden = true;
     loading_text.innerHTML = "No active links.";
     loading_text.hidden = false;
@@ -863,6 +896,12 @@ refreshData()
     nextPageBtn.innerHTML = SVG_NEXT_BUTTON;
     nextPageBtn.onclick = () => {
       gotoNextPage();
+    };
+
+    document.getElementById("filterText").value = "";
+    const filterBtn = document.getElementById("filterBtn");
+    filterBtn.onclick = () => {
+      refreshWithFilter();
     };
 
     const infoDialog = document.getElementById("info-dialog");

@@ -115,7 +115,7 @@ a {
 }
 
 #filter-div {
-  text-size: 0.7em;
+  font-size: 0.7em;
 }
 
 #controls,
@@ -159,6 +159,10 @@ td[name="actions"] div button.svg-button svg,
 
 .pure-table caption span {
   margin-right: 1em;
+}
+.pure-table caption span[name="label"] {
+  display: inline-block;
+  margin: 0.2em 1em 0.4em 0em;
 }
 
 form input[name="shortUrl"]::placeholder {
