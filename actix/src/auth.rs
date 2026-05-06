@@ -8,8 +8,10 @@ use log::{debug, warn};
 use passwords::PasswordGenerator;
 use std::{rc::Rc, time::SystemTime};
 
-use crate::config::Config;
-use crate::services::JSONResponse;
+use crate::{
+    config::{Config, HashAlgorithm},
+    services::JSONResponse,
+};
 
 // If the api_key environment variable exists
 pub fn is_api_ok(http: HttpRequest, config: &Config) -> JSONResponse {
@@ -62,15 +64,19 @@ pub fn is_api_ok(http: HttpRequest, config: &Config) -> JSONResponse {
 pub fn is_key_valid(key: &str, config: &Config) -> bool {
     if let Some(api_key) = &config.api_key {
         // Check if API Key is hashed using Argon2. More algorithms maybe added later.
-        let authorized = if config.hash_algorithm.is_some() {
-            debug!("Using Argon2 hash for API key validation.");
-            let hash = PasswordHash::new(api_key).expect("The provided password hash is invalid.");
-            Argon2::default()
-                .verify_password(key.as_bytes(), &hash)
-                .is_ok()
-        } else {
-            // If hashing is not enabled, use the plaintext API key for matching
-            api_key == key
+        let authorized = match config.hash_algorithm {
+            HashAlgorithm::Argon2 => {
+                debug!("Using Argon2 hash for API key validation.");
+                let hash =
+                    PasswordHash::new(api_key).expect("The provided password hash is invalid.");
+                Argon2::default()
+                    .verify_password(key.as_bytes(), &hash)
+                    .is_ok()
+            }
+            HashAlgorithm::None => {
+                // If hashing is not enabled, use the plaintext API key for matching
+                api_key == key
+            }
         };
         if !authorized {
             warn!("Incorrect API key was provided when connecting to Chhoto URL.");

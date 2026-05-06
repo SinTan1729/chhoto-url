@@ -9,7 +9,7 @@ use serde::Deserialize;
 use std::env;
 
 use crate::{
-    config::Config,
+    config::{Config, SlugStyle},
     database,
     services::{
         ChhotoError::{self, ClientError, ServerError},
@@ -179,11 +179,12 @@ pub fn add_link(
                     Err(ClientError { reason })
                 } else {
                     // Optionally, retry with a longer slug length
-                    let retry_len = if config.slug_style == "UID" && config.try_longer_slug {
-                        len + 4
-                    } else {
-                        len
-                    };
+                    let retry_len =
+                        if matches!(config.slug_style, SlugStyle::Uid) && config.try_longer_slug {
+                            len + 4
+                        } else {
+                            len
+                        };
                     chunks.shortlink = gen_link(style, retry_len, allow_capital_letters);
                     match database::add_link(
                         &chunks.shortlink,
@@ -258,7 +259,7 @@ pub fn delete_link(
 }
 
 // Generate a random link using either adjective-name pair (default) of a slug or a-z, 0-9
-fn gen_link(style: &str, len: usize, allow_capital_letters: bool) -> String {
+fn gen_link(style: &SlugStyle, len: usize, allow_capital_letters: bool) -> String {
     #[rustfmt::skip]
     static ADJECTIVES: [&str; 108] = ["admiring", "adoring", "affectionate", "agitated", "amazing", "angry", "awesome", "beautiful", 
 		"blissful", "bold", "boring", "brave", "busy", "charming", "clever", "compassionate", "competent", "condescending", "confident", "cool", 
@@ -303,21 +304,24 @@ fn gen_link(style: &str, len: usize, allow_capital_letters: bool) -> String {
         '6', '7', '8', '9',
     ];
 
-    if style == "UID" {
-        if allow_capital_letters {
-            nanoid!(len, &CHARS_CAPITAL)
-        } else {
-            nanoid!(len, &CHARS_SMALL)
+    match style {
+        SlugStyle::Uid => {
+            if allow_capital_letters {
+                nanoid!(len, &CHARS_CAPITAL)
+            } else {
+                nanoid!(len, &CHARS_SMALL)
+            }
         }
-    } else {
-        format!(
-            "{0}-{1}",
-            ADJECTIVES
-                .choose(&mut rand::rng())
-                .expect("Error choosing random adjective."),
-            NAMES
-                .choose(&mut rand::rng())
-                .expect("Error choosing random name.")
-        )
+        SlugStyle::Pair => {
+            format!(
+                "{0}-{1}",
+                ADJECTIVES
+                    .choose(&mut rand::rng())
+                    .expect("Error choosing random adjective."),
+                NAMES
+                    .choose(&mut rand::rng())
+                    .expect("Error choosing random name.")
+            )
+        }
     }
 }

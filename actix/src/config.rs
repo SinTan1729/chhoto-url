@@ -7,6 +7,18 @@ use std::env::{var, VarError};
 
 use crate::auth;
 
+#[derive(Clone)]
+pub enum SlugStyle {
+    Pair,
+    Uid,
+}
+
+#[derive(Clone)]
+pub enum HashAlgorithm {
+    Argon2,
+    None,
+}
+
 fn read_config_wrapper(new_name: &str, old_name: &str) -> Result<String, VarError> {
     // This is needed to support old variable names.
     // Might be deprecated at a later point.
@@ -34,9 +46,9 @@ pub struct Config {
     pub public_mode_expiry_delay: i64,
     pub use_temp_redirect: bool,
     pub password: Option<String>,
-    pub hash_algorithm: Option<String>,
+    pub hash_algorithm: HashAlgorithm,
     pub api_key: Option<String>,
-    pub slug_style: String,
+    pub slug_style: SlugStyle,
     pub slug_length: usize,
     pub try_longer_slug: bool,
     pub allow_capital_letters: bool,
@@ -125,10 +137,15 @@ pub fn read() -> Config {
         warn!("No password was provided. The API will be accessible to the public.")
     };
 
-    let hash_algorithm = read_config_wrapper("CHHOTO_HASH_ALGORITHM", "hash_algorithm")
-        .ok()
-        .filter(|h| h == "Argon2")
-        .inspect(|h| info!("Will use {h} hashes for password verification."));
+    let hash_algorithm = match read_config_wrapper("CHHOTO_HASH_ALGORITHM", "hash_algorithm")
+        .map(|h| h.trim().to_string())
+    {
+        Ok(hash) if hash == "Argon2" => {
+            info!("Will use Argon2 hashes for password verification.");
+            HashAlgorithm::Argon2
+        }
+        _ => HashAlgorithm::None,
+    };
 
     // If the site_url env variable exists
     let site_url = if let Some(provided_url) = read_config_wrapper("CHHOTO_SITE_URL", "site_url")
@@ -166,28 +183,28 @@ pub fn read() -> Config {
         None
     };
 
-    let slug_style = read_config_wrapper("CHHOTO_SLUG_STYLE", "slug_style")
-        .ok()
-        .map(|s| s.trim().to_string())
-        .filter(|s| !s.is_empty())
-        .unwrap_or(String::from("Pair"));
     let slug_length = read_config_wrapper("CHHOTO_SLUG_LENGTH", "slug_length")
         .ok()
         .and_then(|s| s.parse::<usize>().ok())
         .filter(|&s| s >= 4)
         .unwrap_or(8);
-
     let try_longer_slug = read_config_wrapper("CHHOTO_TRY_LONGER_SLUG", "try_longer_slug")
         .is_ok_and(|s| s.trim() == "True");
-
-    if slug_style == "UID" {
-        info!("Using UID slugs with length {slug_length}.");
-        if try_longer_slug {
-            info!("Will retry with a longer slug upon collision.");
+    let slug_style = match read_config_wrapper("CHHOTO_SLUG_STYLE", "slug_style")
+        .map(|s| s.trim().to_string())
+    {
+        Ok(style) if style == "UID" => {
+            info!("Using UID slugs with length {slug_length}.");
+            if try_longer_slug {
+                info!("Will retry with a longer slug upon collision.");
+            }
+            SlugStyle::Uid
         }
-    } else {
-        info!("Using adjective-noun pair slugs.");
-    }
+        _ => {
+            info!("Using adjective-noun pair slugs.");
+            SlugStyle::Pair
+        }
+    };
 
     let allow_capital_letters =
         read_config_wrapper("CHHOTO_ALLOW_CAPITAL_LETTERS", "allow_capital_letters")

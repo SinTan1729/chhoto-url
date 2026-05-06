@@ -58,9 +58,9 @@ fn default_config(test: &str) -> config::Config {
     public_mode_expiry_delay: 0,
     use_temp_redirect: false,
     password: Some(String::from("testpass")),
-    hash_algorithm: None,
+    hash_algorithm: config::HashAlgorithm::None,
     api_key: Some(String::from("Z8FNjh2J2v3yfb0xPDIVA58Pj4D0e2jSERVdoqM5pJCbU2w5tmg3PNioD6GUhaQwHHaDLBNZj0EQE8MS4TLKcUyusa05")),
-    slug_style: "Pair".to_string(),
+    slug_style: config::SlugStyle::Pair,
     slug_length: 8,
     try_longer_slug: false,
     allow_capital_letters: false,
@@ -359,7 +359,7 @@ async fn adding_link_with_generated_shortlink_with_pair_slug() {
 async fn adding_link_with_generated_shortlink_with_uid_slug() {
     let test = "autogen-with-uid-slug";
     let mut conf = default_config(test);
-    conf.slug_style = "UID".to_string();
+    conf.slug_style = config::SlugStyle::Uid;
     conf.slug_length = 12;
     let app = create_app(&conf, test).await;
     let (status, reply) = add_link(&app, &conf.api_key.unwrap(), "", 10, "").await;
@@ -375,7 +375,7 @@ async fn adding_link_with_generated_shortlink_with_uid_slug() {
 async fn adding_link_with_generated_shortlink_with_uid_slug_capital_letters() {
     let test = "autogen-with-uid-slug-capital";
     let mut conf = default_config(test);
-    conf.slug_style = "UID".to_string();
+    conf.slug_style = config::SlugStyle::Uid;
     conf.slug_length = 12;
     conf.allow_capital_letters = true;
     let app = create_app(&conf, test).await;
@@ -392,7 +392,7 @@ async fn adding_link_with_generated_shortlink_with_uid_slug_capital_letters() {
 async fn adding_link_with_retry_on_collision() {
     let test = "retry_on_collision";
     let mut conf = default_config(test);
-    conf.slug_style = "UID".to_string();
+    conf.slug_style = config::SlugStyle::Uid;
     conf.slug_length = 1;
     conf.try_longer_slug = true;
 

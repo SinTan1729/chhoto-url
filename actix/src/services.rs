@@ -14,16 +14,18 @@ use argon2::{password_hash::PasswordHash, Argon2, PasswordVerifier};
 use log::{debug, info, warn};
 use serde::{Deserialize, Serialize};
 
-use crate::AppState;
-use crate::{auth, database};
-use crate::{auth::is_session_valid, utils};
-use ChhotoError::{ClientError, ServerError};
+use crate::{
+    auth::{self, is_session_valid},
+    config::{HashAlgorithm, SlugStyle},
+    database, utils, AppState,
+};
 
 // Error types
 pub enum ChhotoError {
     ServerError,
     ClientError { reason: String },
 }
+use ChhotoError::{ClientError, ServerError};
 
 // Define JSON struct for returning success/error data
 #[derive(Serialize)]
@@ -312,7 +314,11 @@ pub async fn getconfig(
             public_mode: config.public_mode,
             public_mode_expiry_delay: config.public_mode_expiry_delay,
             site_url: config.site_url.clone(),
-            slug_style: config.slug_style.clone(),
+            slug_style: (match config.slug_style {
+                SlugStyle::Uid => "UID",
+                SlugStyle::Pair => "Pair",
+            })
+            .to_string(),
             slug_length: config.slug_length,
             try_longer_slug: config.try_longer_slug,
             frontend_page_size: config.frontend_page_size,
@@ -361,17 +367,21 @@ pub async fn login(req: String, session: Session, data: web::Data<AppState>) -> 
     let config = &data.config;
     // Check if password is hashed using Argon2. More algorithms maybe added later.
     let authorized = if let Some(password) = &config.password {
-        if config.hash_algorithm.is_some() {
-            debug!("Using Argon2 hash for password validation.");
-            let hash = PasswordHash::new(password).expect("The provided password hash is invalid.");
-            Some(
-                Argon2::default()
-                    .verify_password(req.as_bytes(), &hash)
-                    .is_ok(),
-            )
-        } else {
-            // If hashing is not enabled, use the plaintext password for matching
-            Some(password == &req)
+        match config.hash_algorithm {
+            HashAlgorithm::Argon2 => {
+                debug!("Using Argon2 hash for password validation.");
+                let hash =
+                    PasswordHash::new(password).expect("The provided password hash is invalid.");
+                Some(
+                    Argon2::default()
+                        .verify_password(req.as_bytes(), &hash)
+                        .is_ok(),
+                )
+            }
+            HashAlgorithm::None => {
+                // If hashing is not enabled, use the plaintext password for matching
+                Some(password == &req)
+            }
         }
     } else {
         None
