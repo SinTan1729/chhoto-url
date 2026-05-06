@@ -34,9 +34,15 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v6
+      - name: Compute short SHA
+        id: vars
+        shell: bash
+        run: echo "short_sha=$(echo ${{ github.sha }} | cut -c1-7)" >> "$GITHUB_OUTPUT"
         # Build the binaries and upload
       - name: Build binary and test
         uses: houseabsolute/actions-rust-cross@v1
+        env:
+          CARGO_GIT_COMMIT: ${{ steps.vars.outputs.short_sha }}
         with:
           command: both
           target: ${{ matrix.platform.target }}

@@ -9,6 +9,7 @@ let SUBDIR = null;
 let ADMIN = false;
 let LOCAL_DATA = [];
 let CUR_PAGE = 0;
+let FILTER = null;
 
 // Flags
 let PROCESSING_PAGE_TRANSITION = true;
@@ -30,6 +31,8 @@ SVG_CLOSED_EYE = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24"
 SVG_PREV_BUTTON = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><path fill="currentColor" d="M6.75 7a.75.75 0 0 0-1.5 0v10a.75.75 0 0 0 1.5 0z"/><path fill="currentColor" fill-rule="evenodd" d="M9.393 13.253a1.584 1.584 0 0 1 0-2.505a25.76 25.76 0 0 1 7.143-3.902l.466-.165c1.023-.364 2.1.329 2.238 1.381c.34 2.59.34 5.286 0 7.876c-.138 1.052-1.215 1.745-2.238 1.381l-.466-.165a25.758 25.758 0 0 1-7.143-3.902m.918-1.32a.084.084 0 0 0 0 .133a24.257 24.257 0 0 0 6.727 3.674l.466.166c.1.035.232-.033.249-.163c.322-2.46.322-5.025 0-7.486a.194.194 0 0 0-.25-.163l-.465.166c-2.423.86-4.694 2.1-6.727 3.674" clip-rule="evenodd"/></svg>`;
 // https://svgicons.com/icon/10924/skip-next-outline
 SVG_NEXT_BUTTON = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><path fill="currentColor" fill-rule="evenodd" d="M14.607 10.748c.82.634.82 1.87 0 2.505a25.758 25.758 0 0 1-7.143 3.9l-.466.166c-1.023.364-2.1-.329-2.238-1.381c-.34-2.59-.34-5.286 0-7.876c.138-1.052 1.215-1.745 2.238-1.381l.466.165a25.76 25.76 0 0 1 7.143 3.902m-.918 1.318a.084.084 0 0 0 0-.132A24.257 24.257 0 0 0 6.962 8.26l-.466-.166a.194.194 0 0 0-.249.163a29.063 29.063 0 0 0 0 7.486c.017.13.15.198.25.163l.465-.166c2.423-.86 4.694-2.1 6.727-3.674M18 6.25a.75.75 0 0 1 .75.75v10a.75.75 0 0 1-1.5 0V7a.75.75 0 0 1 .75-.75" clip-rule="evenodd"/></svg>`;
+// https://svgicons.com/icon/10769/info-rect-outline
+SVG_INFO_BUTTON = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><path fill="currentColor" d="M12 10.75a.75.75 0 0 1 .75.75v5a.75.75 0 1 1-1.5 0v-5a.75.75 0 0 1 .75-.75M12 9a1 1 0 1 0 0-2a1 1 0 0 0 0 2"/><path fill="currentColor" fill-rule="evenodd" d="M7.317 3.769a42.5 42.5 0 0 1 9.366 0c1.827.204 3.302 1.642 3.516 3.48c.37 3.156.37 6.346 0 9.503c-.215 1.836-1.69 3.275-3.516 3.48a42.5 42.5 0 0 1-9.366 0c-1.827-.205-3.302-1.644-3.516-3.48a41 41 0 0 1 0-9.504c.214-1.837 1.69-3.275 3.516-3.48m9.2 1.49a41 41 0 0 0-9.034 0A2.486 2.486 0 0 0 5.29 7.423a39.4 39.4 0 0 0 0 9.154a2.486 2.486 0 0 0 2.193 2.163c2.977.333 6.057.333 9.034 0a2.486 2.486 0 0 0 2.192-2.163a39.4 39.4 0 0 0 0-9.154a2.486 2.486 0 0 0-2.192-2.164" clip-rule="evenodd"/></svg>`;
 
 // in miliseconds
 const UNITS = {
@@ -92,8 +95,14 @@ const showVersion = () => {
   const link = document.getElementById("version-number");
   if (VERSION) {
     link.innerText = "v" + VERSION;
-    link.href =
-      "https://github.com/SinTan1729/chhoto-url/releases/tag/" + VERSION;
+    if (VERSION.includes("-dev+")) {
+      link.href =
+        "https://github.com/SinTan1729/chhoto-url/commits/" +
+        VERSION.split("+")[1];
+    } else {
+      link.href =
+        "https://github.com/SinTan1729/chhoto-url/releases/tag/" + VERSION;
+    }
     link.hidden = false;
   } else {
     link.hidden = true;
@@ -180,6 +189,9 @@ const refreshData = async () => {
 };
 
 const pullData = async (params) => {
+  if (FILTER != null) {
+    params.append("filter", FILTER);
+  }
   const res = await fetch(prepSubdir(`/api/all?${params}`), {
     cache: "no-cache",
   });
@@ -226,6 +238,35 @@ const updateInputBox = () => {
   }
 };
 
+const refreshWithFilter = () => {
+  const filterInput = document.getElementById("filterText");
+  const filter = filterInput.value;
+
+  filterInput.setCustomValidity("");
+  if (filter.length > 0 && filter.length < 3) {
+    filterInput.setCustomValidity("Filter must be at least 3 characters.");
+    filterInput.reportValidity();
+    return;
+  } else if (!/^[\x00-\x7F]*$/.test(filter)) {
+    filterInput.setCustomValidity(
+      "Filter must contain only printable ASCII characters.",
+    );
+    filterInput.reportValidity();
+    return;
+  }
+
+  const oldFilter = FILTER;
+  if (filter == "") {
+    FILTER = null;
+  } else {
+    FILTER = filter;
+  }
+  if (FILTER != oldFilter) {
+    LOCAL_DATA = [];
+    refreshData();
+  }
+};
+
 const displayData = () => {
   if (CUR_PAGE < 0) {
     console.log("Trying to access negative numbered page.");
@@ -245,7 +286,7 @@ const displayData = () => {
   const loading_text = document.getElementById("loading-text");
   const table = document.getElementById("url-table");
 
-  if (data.length === 0) {
+  if (data.length === 0 && FILTER == null) {
     table_box.hidden = true;
     loading_text.innerHTML = "No active links.";
     loading_text.hidden = false;
@@ -376,6 +417,7 @@ const TR = (i, row) => {
   btnGrp.role = "group";
   btnGrp.appendChild(copyButton(shortlink));
   btnGrp.appendChild(qrCodeButton(shortlink));
+  btnGrp.appendChild(infoButton(shortlink));
   btnGrp.appendChild(editButton(shortlink, longlink));
   btnGrp.appendChild(deleteButton(shortlink));
   actionsTD.appendChild(btnGrp);
@@ -466,6 +508,25 @@ const editButton = (shortUrl, longUrl) => {
   return btn;
 };
 
+const infoButton = (shortUrl) => {
+  const btn = document.createElement("button");
+  btn.classList.add("svg-button");
+  btn.innerHTML = SVG_INFO_BUTTON;
+  btn.title = "Show Short URL Info";
+
+  btn.onclick = () => {
+    document.getElementById("container").style.filter = "blur(2px)";
+    document.getElementById("info-dialog").showModal();
+    const row = LOCAL_DATA.filter((row) => row.shortlink == shortUrl)[0];
+    document.getElementById("info-short").innerHTML = row.shortlink;
+    document.getElementById("info-long").innerHTML = row.longlink;
+    document.getElementById("info-hits").innerHTML = row.hits;
+    document.getElementById("info-expiry").innerHTML = row.expiry_time;
+    document.getElementById("info-notes").innerHTML = row.notes;
+  };
+  return btn;
+};
+
 const qrCodeButton = (shortlink) => {
   const btn = document.createElement("button");
   btn.classList.add("svg-button");
@@ -503,7 +564,7 @@ const qrCodeButton = (shortlink) => {
       ctx.drawImage(img, 115, 115, 50, 50);
 
       document.getElementById("qr-code").appendChild(newCanvas);
-      const qrDown = document.getElementById("qr-download");
+      const qrDown = document.getElementById("qr-download-button");
       qrDown.href = newCanvas.toDataURL();
       qrDown.download = `chhoto-qr-${shortlink}.png`;
       document.getElementById("container").style.filter = "blur(2px)";
@@ -565,6 +626,7 @@ const submitForm = () => {
     longlink: longUrl.value,
     shortlink: shortUrl.value,
     expiry_delay: parseInt(expiryDelay.value),
+    notes: notes.value,
   };
 
   const url = prepSubdir("/api/new");
@@ -583,6 +645,7 @@ const submitForm = () => {
       longUrl.value = "";
       shortUrl.value = "";
       expiryDelay.value = 0;
+      notes.value = "";
       if (ADMIN) {
         const params = new URLSearchParams();
         params.append("page_size", 1);
@@ -835,8 +898,22 @@ refreshData()
       gotoNextPage();
     };
 
+    document.getElementById("filterText").value = "";
+    const filterBtn = document.getElementById("filterBtn");
+    filterBtn.onclick = () => {
+      refreshWithFilter();
+    };
+
+    const infoDialog = document.getElementById("info-dialog");
+    document.getElementById("info-close-button").onclick = () => {
+      infoDialog.close();
+    };
+    infoDialog.onclose = () => {
+      document.getElementById("container").style.filter = "blur(0px)";
+    };
+
     const qrCodeDialog = document.getElementById("qr-code-dialog");
-    document.getElementById("qr-close").onclick = () => {
+    document.getElementById("qr-close-button").onclick = () => {
       qrCodeDialog.close();
     };
     qrCodeDialog.onclose = () => {

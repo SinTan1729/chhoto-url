@@ -4,9 +4,9 @@
 use log::error;
 use nanoid::nanoid;
 use rand::seq::IndexedRandom;
-use regex::Regex;
 use rusqlite::Connection;
 use serde::Deserialize;
+use std::env;
 
 use crate::{
     config::Config,
@@ -25,6 +25,8 @@ struct NewURLRequest {
     longlink: String,
     #[serde(default)]
     expiry_delay: i64,
+    #[serde(default)]
+    notes: String,
 }
 
 // Struct for reading link pairs sent during API call for editing link
@@ -33,25 +35,94 @@ struct EditURLRequest {
     shortlink: String,
     longlink: String,
     reset_hits: bool,
+    expiry_delay: Option<i64>,
+    notes: Option<String>,
 }
 
 // Only have a-z, 0-9, - and _ as valid characters in a shortlink
+#[inline]
 fn is_link_valid(link: &str, allow_capital_letters: bool) -> bool {
-    let re = if allow_capital_letters {
-        Regex::new("^[A-Za-z0-9-_]+$").expect("Regex generation failed.")
+    if allow_capital_letters {
+        link.chars()
+            .all(|c| c.is_ascii_alphanumeric() || c == '_' || c == '-')
     } else {
-        Regex::new("^[a-z0-9-_]+$").expect("Regex generation failed.")
-    };
-    re.is_match(link)
+        link.chars()
+            .all(|c| c.is_ascii_digit() || c.is_ascii_lowercase() || c == '_' || c == '-')
+    }
+}
+
+// Only have a-z, 0-9, - and _ as valid characters in a shortlink
+#[inline]
+fn normalize_filter(link: &str) -> Option<String> {
+    if link.len() < 3 {
+        return None;
+    }
+
+    let mut out = String::with_capacity(link.len());
+    let mut last_was_sep = false;
+
+    for c in link.chars() {
+        // Allow printable ascii chars
+        if c.is_ascii_alphanumeric() || matches!(c as u8, 33..=126) {
+            if c.is_alphanumeric() {
+                out.push(c);
+                last_was_sep = false;
+            } else if !last_was_sep {
+                out.push(' ');
+                last_was_sep = true;
+            }
+        } else {
+            return None;
+        }
+    }
+
+    let s = out.trim();
+    (s.len() > 2).then(|| s.to_string())
+}
+
+pub fn get_version() -> String {
+    const VERSION: &str = env!("CARGO_PKG_VERSION");
+    const GIT_COMMIT: Option<&str> = option_env!("CARGO_GIT_COMMIT");
+
+    if let Some(commit) = GIT_COMMIT {
+        format!("{VERSION}-dev+{commit}")
+    } else {
+        VERSION.to_string()
+    }
 }
 
 // Request the DB for all URLs
-pub fn getall(db: &Connection, params: GetReqParams) -> String {
-    let page_after = params.page_after.filter(|s| !s.is_empty());
-    let page_no = params.page_no.filter(|&n| n > 0);
+pub fn getall(db: &Connection, params: GetReqParams) -> Result<String, ChhotoError> {
+    let page_after = match params.page_after {
+        Some(s) if s.is_empty() => {
+            return Err(ChhotoError::ClientError {
+                reason: "Invalid page_after was supplied!".to_string(),
+            })
+        }
+        other => other,
+    };
+    let page_no = match params.page_no {
+        Some(n) if n <= 0 => {
+            return Err(ChhotoError::ClientError {
+                reason: "Invalid page_no was supplied!".to_string(),
+            })
+        }
+        other => other,
+    };
     let page_size = params.page_size.filter(|&n| n > 0);
-    let links = database::getall(db, page_after.as_deref(), page_no, page_size);
-    serde_json::to_string(&links).expect("Failure during creation of json from db.")
+    let filter = params
+        .filter
+        .map(|s| {
+            normalize_filter(&s).ok_or(ChhotoError::ClientError {
+                reason: "Invalid filter was supplied!".to_string(),
+            })
+        })
+        .transpose()?;
+    let links = database::getall(db, page_after.as_deref(), page_no, page_size, filter);
+    serde_json::to_string(&links).map_err(|err| {
+        error!("Failure during creation of json from db columns.\n{err}");
+        ChhotoError::ServerError
+    })
 }
 
 // Make checks and then request the DB to add a new URL entry
@@ -95,7 +166,13 @@ pub fn add_link(
     chunks.expiry_delay = chunks.expiry_delay.max(0);
 
     if !shortlink_provided || is_link_valid(chunks.shortlink.as_str(), allow_capital_letters) {
-        match database::add_link(&chunks.shortlink, &chunks.longlink, chunks.expiry_delay, db) {
+        match database::add_link(
+            &chunks.shortlink,
+            &chunks.longlink,
+            chunks.expiry_delay,
+            &chunks.notes,
+            db,
+        ) {
             Ok(expiry_time) => Ok((chunks.shortlink, expiry_time)),
             Err(ClientError { reason }) => {
                 if shortlink_provided {
@@ -112,6 +189,7 @@ pub fn add_link(
                         &chunks.shortlink,
                         &chunks.longlink,
                         chunks.expiry_delay,
+                        &chunks.notes,
                         db,
                     ) {
                         Ok(expiry_time) => Ok((chunks.shortlink, expiry_time)),
@@ -146,7 +224,14 @@ pub fn edit_link(req: &str, db: &Connection, config: &Config) -> Result<(), Chho
             reason: "Invalid shortlink!".to_string(),
         });
     }
-    let result = database::edit_link(&chunks.shortlink, &chunks.longlink, chunks.reset_hits, db);
+    let result = database::edit_link(
+        &chunks.shortlink,
+        &chunks.longlink,
+        chunks.reset_hits,
+        chunks.expiry_delay,
+        chunks.notes.as_deref(),
+        db,
+    );
     match result {
         // Zero rows returned means no updates
         Ok(0) => Err(ClientError {
@@ -156,6 +241,7 @@ pub fn edit_link(req: &str, db: &Connection, config: &Config) -> Result<(), Chho
         Err(()) => Err(ServerError),
     }
 }
+
 // Check if link, and request DB to delete it if exists
 pub fn delete_link(
     shortlink: &str,

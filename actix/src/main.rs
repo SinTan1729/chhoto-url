@@ -64,7 +64,7 @@ async fn main() -> Result<()> {
     let secret_key = Key::generate();
 
     eprintln!("----------------------------------------------------------------------");
-    info!("Starting Chhoto URL Server v{}", env!("CARGO_PKG_VERSION"));
+    info!("Starting Chhoto URL Server v{}", utils::get_version());
     info!("Source: https://github.com/SinTan1729/chhoto-url");
     eprintln!("----------------------------------------------------------------------");
 

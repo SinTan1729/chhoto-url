@@ -114,6 +114,18 @@ a {
   min-width: 6em;
 }
 
+#filter-div {
+  font-size: 0.7em;
+}
+
+#controls,
+#optionsSection summary {
+  margin-top: 1em;
+}
+#optionsSection[open] summary {
+  margin-bottom: 1em;
+}
+
 th[name="hitsColumn"],
 td[name="hitsColumn"] {
   text-align: right;
@@ -148,6 +160,10 @@ td[name="actions"] div button.svg-button svg,
 .pure-table caption span {
   margin-right: 1em;
 }
+.pure-table caption span[name="label"] {
+  display: inline-block;
+  margin: 0.2em 1em 0.4em 0em;
+}
 
 form input[name="shortUrl"]::placeholder {
   text-transform: none;
@@ -159,6 +175,10 @@ div[name="links-div"] {
   top: 0.5%;
 }
 
+details.chhoto-input summary {
+  cursor: pointer;
+}
+
 #password {
   width: 100%;
   margin-bottom: 1em;
@@ -167,11 +187,10 @@ div[name="links-div"] {
   color: light-dark(red, #ff1a1a);
 }
 
-#edit-dialog,
-#qr-code-dialog,
-#login-dialog {
+.chhoto-dialog {
   border-radius: 1em;
   border-width: 0.15em;
+  max-width: 40em;
 }
 #login-dialog div {
   position: relative;
@@ -213,21 +232,39 @@ div[name="links-div"] {
 #qr-code-dialog div {
   margin: 0.5em;
 }
-.qr-button {
+.dialog-close-button {
   background-color: transparent;
-  color: black;
   border-style: none;
   position: absolute;
   top: 0.3em;
   right: 0.3em;
   cursor: pointer;
 }
-.qr-button svg {
+.dialog-close-button svg {
   height: 2em;
 }
-#qr-download {
+#qr-download-button {
   right: 2em;
   text-decoration: none;
+}
+#qr-code-dialog svg,
+#qr-code-dialog svg {
+  color: black;
+}
+
+#info-div {
+  margin: 0.5em 0.5em 0.2em 0.5em;
+}
+#info-table,
+#info-table tr td {
+  border: none;
+  padding-top: 0.1em;
+}
+#info-table tr td:first-child {
+  font-weight: bold;
+}
+#info-table tr td:last-child {
+  word-break: break-all;
 }
 
 .tooltip {

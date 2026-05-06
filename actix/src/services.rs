@@ -13,15 +13,11 @@ use actix_web::{
 use argon2::{password_hash::PasswordHash, Argon2, PasswordVerifier};
 use log::{debug, info, warn};
 use serde::{Deserialize, Serialize};
-use std::env;
 
 use crate::AppState;
 use crate::{auth, database};
 use crate::{auth::is_session_valid, utils};
 use ChhotoError::{ClientError, ServerError};
-
-// Store the version number
-const VERSION: &str = env!("CARGO_PKG_VERSION");
 
 // Error types
 pub enum ChhotoError {
@@ -68,6 +64,7 @@ struct LinkInfo {
     longurl: String,
     hits: i64,
     expiry_time: i64,
+    notes: String,
 }
 
 // Struct for query params in /api/all
@@ -76,6 +73,7 @@ pub struct GetReqParams {
     pub page_after: Option<String>,
     pub page_no: Option<i64>,
     pub page_size: Option<i64>,
+    pub filter: Option<String>,
 }
 
 // Define the routes
@@ -164,13 +162,15 @@ pub async fn getall(
     // Call is_api_ok() function, pass HttpRequest
     let result = auth::is_api_ok(http, config);
     // If success, return all links
-    if result.success {
-        HttpResponse::Ok().body(utils::getall(&data.db, params.into_inner()))
-    } else if result.error {
+    if result.error {
         HttpResponse::Unauthorized().json(result)
-    // If password authentication is used - keeps backwards compatibility
-    } else if auth::is_session_valid(session, config) {
-        HttpResponse::Ok().body(utils::getall(&data.db, params.into_inner()))
+    } else if result.success || auth::is_session_valid(session, config) {
+        match utils::getall(&data.db, params.into_inner()) {
+            Ok(s) => HttpResponse::Ok().body(s),
+            Err(ServerError) => HttpResponse::InternalServerError()
+                .body("Something went wrong while loading the links.".to_string()),
+            Err(ClientError { reason }) => HttpResponse::BadRequest().body(reason),
+        }
     } else {
         HttpResponse::Unauthorized().body("Not logged in!")
     }
@@ -182,13 +182,14 @@ pub async fn expand(req: String, data: web::Data<AppState>, http: HttpRequest) -
     let result = auth::is_api_ok(http, &data.config);
     if result.success {
         match database::find_url(&req, &data.db) {
-            Ok((longurl, hits, expiry_time)) => {
+            Ok((longurl, hits, expiry_time, notes)) => {
                 let body = LinkInfo {
                     success: true,
                     error: false,
                     longurl,
                     hits,
                     expiry_time,
+                    notes,
                 };
                 HttpResponse::Ok().json(body)
             }
@@ -273,7 +274,7 @@ pub async fn siteurl(data: web::Data<AppState>) -> HttpResponse {
 // Use /api/getconfig instead
 #[get("/api/version")]
 pub async fn version() -> HttpResponse {
-    HttpResponse::Ok().body(format!("Chhoto URL v{VERSION}"))
+    HttpResponse::Ok().body(format!("Chhoto URL v{}", utils::get_version()))
 }
 
 // Get the user's current role
@@ -306,7 +307,7 @@ pub async fn getconfig(
     let result = auth::is_api_ok(http, config);
     if result.success || is_session_valid(session, config) || data.config.public_mode {
         let backend_config = BackendConfig {
-            version: VERSION.to_string(),
+            version: utils::get_version(),
             allow_capital_letters: config.allow_capital_letters,
             public_mode: config.public_mode,
             public_mode_expiry_delay: config.public_mode_expiry_delay,

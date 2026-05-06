@@ -9,8 +9,9 @@ setup:
 	rustup target add x86_64-unknown-linux-musl
 	podman buildx inspect --bootstrap
 
+short_sha := $(shell git rev-parse --short HEAD) 
 build:
-	cargo build --release --locked --manifest-path=actix/Cargo.toml --target x86_64-unknown-linux-musl
+	CARGO_GIT_COMMIT=${short_sha} cargo build --release --locked --manifest-path=actix/Cargo.toml --target x86_64-unknown-linux-musl
 
 podman-build: build
 	podman build --tag chhoto-url --build-arg TARGETARCH=amd64 -f Dockerfile.alpine .

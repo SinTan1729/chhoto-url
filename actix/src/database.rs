@@ -1,12 +1,16 @@
 // SPDX-FileCopyrightText: 2023 Sayantan Santra <sayantan.santra689@gmail.com>
 // SPDX-License-Identifier: MIT
 
-use log::{error, info};
-use rusqlite::{fallible_iterator::FallibleIterator, Connection};
+use log::{debug, error, info};
+use rusqlite::{fallible_iterator::FallibleIterator, named_params, types::Value, Connection};
 use serde::Serialize;
 use std::rc::Rc;
 
 use crate::services::ChhotoError::{self, ClientError, ServerError};
+
+// Some constants
+const APPLICATION_ID: u32 = 0x63686874; // Hex for chht, MUST NEVER BE CHANGED
+const USER_VERSION: u32 = 3; // Should be incremented on change of schema
 
 // Struct for encoding a DB row
 #[derive(Serialize)]
@@ -15,25 +19,38 @@ pub struct DBRow {
     longlink: String,
     hits: i64,
     expiry_time: i64,
+    notes: String,
+}
+
+// Struct for creating a get query
+struct QueryHelper {
+    prefix: String,
+    joins: String,
+    conditions: String,
+    suffix: String,
 }
 
 // Find a single URL for /api/expand
-pub fn find_url(shortlink: &str, db: &Connection) -> Result<(String, i64, i64), ChhotoError> {
+pub fn find_url(
+    shortlink: &str,
+    db: &Connection,
+) -> Result<(String, i64, i64, String), ChhotoError> {
     // Long link, hits, expiry time
     let now = chrono::Utc::now().timestamp();
-    let query = "SELECT long_url, hits, expiry_time FROM urls
-                 WHERE short_url = ?1 
-                 AND (expiry_time = 0 OR expiry_time > ?2)";
+    let query = "SELECT long_url, hits, expiry_time, notes FROM urls
+                 WHERE short_url = :short
+                 AND (expiry_time = 0 OR expiry_time > :now)";
     let Ok(mut statement) = db.prepare_cached(query) else {
         error!("Error preparing SQL statement for find_url.");
         return Err(ServerError);
     };
     statement
-        .query_row((shortlink, now), |row| {
+        .query_row(named_params! {":short": shortlink, ":now": now}, |row| {
             Ok((
                 row.get("long_url")?,
                 row.get("hits")?,
                 row.get("expiry_time")?,
+                row.get("notes")?,
             ))
         })
         .map_err(|_| ChhotoError::ClientError {
@@ -47,48 +64,68 @@ pub fn getall(
     page_after: Option<&str>,
     page_no: Option<i64>,
     page_size: Option<i64>,
+    filter: Option<String>,
 ) -> Rc<[DBRow]> {
     let now = chrono::Utc::now().timestamp();
-    let query = if page_after.is_some() {
-        "SELECT short_url, long_url, hits, expiry_time FROM (
-            SELECT t.id, t.short_url, t.long_url, t.hits, t.expiry_time FROM urls AS t 
-            JOIN urls AS u ON u.short_url = ?1 
-            WHERE t.id < u.id AND (t.expiry_time = 0 OR t.expiry_time > ?2) 
-            ORDER BY t.id DESC LIMIT ?3
-         ) ORDER BY id ASC"
-    } else if page_no.is_some() {
-        "SELECT short_url, long_url, hits, expiry_time FROM (
-            SELECT id, short_url, long_url, hits, expiry_time FROM urls 
-            WHERE expiry_time= 0 OR expiry_time > ?1 
-            ORDER BY id DESC LIMIT ?2 OFFSET ?3
-         ) ORDER BY id ASC"
+    let size = page_size.unwrap_or(10);
+
+    let mut params: Vec<(&str, Value)> = vec![(":now", now.into())];
+
+    let mut query_helper = if let Some(pos) = page_after.as_ref() {
+        params.push((":pos", (*pos).to_owned().into()));
+        params.push((":size", size.into()));
+        QueryHelper {
+            prefix: "( SELECT t.id, t.short_url, t.long_url, t.hits, t.expiry_time, t.notes FROM urls AS t".to_string(),
+            joins: "JOIN urls AS u ON u.short_url = :pos".to_string(),
+            conditions: "WHERE t.id < u.id AND ( t.expiry_time = 0 OR t.expiry_time > :now".to_string(),
+            suffix: ") ORDER BY t.id DESC LIMIT :size ) as t".to_string(),
+        }
+    } else if let Some(num) = page_no.as_ref() {
+        let page = (num - 1) * size;
+        params.push((":page", page.into()));
+        params.push((":size", size.into()));
+        QueryHelper {
+            prefix: "( SELECT t.id, t.short_url, t.long_url, t.hits, t.expiry_time, t.notes FROM urls AS t".to_string(),
+            joins: String::new(),
+            conditions: "WHERE ( t.expiry_time = 0 OR t.expiry_time > :now )".to_string(),
+            suffix: "ORDER BY t.id DESC LIMIT :size OFFSET :page ) as t".to_string(),
+        }
     } else if page_size.is_some() {
-        "SELECT short_url, long_url, hits, expiry_time FROM (
-            SELECT id, short_url, long_url, hits, expiry_time FROM urls
-            WHERE expiry_time = 0 OR expiry_time > ?1 
-            ORDER BY id DESC LIMIT ?2
-         ) ORDER BY id ASC"
+        params.push((":size", size.into()));
+        QueryHelper {
+            prefix: "( SELECT t.id, t.short_url, t.long_url, t.hits, t.expiry_time, t.notes FROM urls AS t".to_string(),
+            joins: String::new(),
+            conditions: "WHERE ( t.expiry_time = 0 OR t.expiry_time > :now )".to_string(),
+            suffix: "ORDER BY t.id DESC LIMIT :size ) as t".to_string(),
+        }
     } else {
-        "SELECT short_url, long_url, hits, expiry_time
-         FROM urls WHERE expiry_time = 0 OR expiry_time > ?1 
-         ORDER BY id ASC"
+        QueryHelper {
+            prefix: "urls AS t".to_string(),
+            joins: String::new(),
+            conditions: "WHERE ( t.expiry_time = 0 OR t.expiry_time > :now )".to_string(),
+            suffix: String::new(),
+        }
     };
-    let Ok(mut statement) = db.prepare_cached(query) else {
+
+    if let Some(fil) = filter {
+        query_helper
+            .joins
+            .push_str(" JOIN urls_fts AS f ON t.id = f.rowid");
+        query_helper
+            .conditions
+            .push_str(" AND urls_fts MATCH :filter");
+        params.push((":filter", fil.into()));
+    }
+
+    let query = format!(
+        "SELECT t.short_url, t.long_url, t.hits, t.expiry_time, t.notes FROM {} {} {} {} ORDER BY t.id ASC",
+        query_helper.prefix, query_helper.joins, query_helper.conditions, query_helper.suffix,
+    );
+    let Ok(mut statement) = db.prepare_cached(&query) else {
         error!("Error preparing SQL statement for getall.");
         return [].into();
     };
-
-    let raw_data = if let Some(pos) = page_after {
-        let size = page_size.unwrap_or(10);
-        statement.query((pos, now, size))
-    } else if let Some(num) = page_no {
-        let size = page_size.unwrap_or(10);
-        statement.query((now, size, (num - 1) * size))
-    } else if let Some(size) = page_size {
-        statement.query((now, size))
-    } else {
-        statement.query([now])
-    };
+    let raw_data = statement.query(params.as_slice());
 
     let Ok(data) = raw_data else {
         error!("Error running SQL statement for getall: {query}");
@@ -102,6 +139,7 @@ pub fn getall(
                 longlink: row.get("long_url")?,
                 hits: row.get("hits")?,
                 expiry_time: row.get("expiry_time")?,
+                notes: row.get("notes").unwrap_or_default(),
             })
         })
         .collect()
@@ -119,14 +157,16 @@ pub fn find_and_add_hit(shortlink: &str, db: &Connection) -> Result<String, ()> 
     let Ok(mut statement) = db.prepare_cached(
         "UPDATE urls 
              SET hits = hits + 1 
-             WHERE short_url = ?1 AND (expiry_time = 0 OR expiry_time > ?2)
+             WHERE short_url = :short AND (expiry_time = 0 OR expiry_time > :now)
              RETURNING long_url",
     ) else {
         error!("Error preparing SQL statement for add_hit.");
         return Err(());
     };
     statement
-        .query_one((shortlink, now), |row| row.get("long_url"))
+        .query_one(named_params! {":short": shortlink, ":now": now}, |row| {
+            row.get("long_url")
+        })
         .map_err(|_| ())
 }
 
@@ -135,27 +175,30 @@ pub fn add_link(
     shortlink: &str,
     longlink: &str,
     expiry_delay: i64,
+    notes: &str,
     db: &Connection,
 ) -> Result<i64, ChhotoError> {
     let now = chrono::Utc::now().timestamp();
-    let expiry_time = if expiry_delay == 0 {
-        0
-    } else {
+    let expiry_time = if expiry_delay > 0 {
         now + expiry_delay
+    } else {
+        0
     };
 
     let Ok(mut statement) = db.prepare_cached(
         "INSERT INTO urls
-             (long_url, short_url, hits, expiry_time)
-             VALUES (?1, ?2, 0, ?3)
+             (long_url, short_url, hits, expiry_time, notes)
+             VALUES (:long, :short, 0, :expiry, :notes)
              ON CONFLICT(short_url) DO UPDATE 
-             SET long_url = ?1, hits = 0, expiry_time = ?3 
-             WHERE short_url = ?2 AND expiry_time <= ?4 AND expiry_time > 0",
+             SET long_url = :long, hits = 0, expiry_time = :expiry, notes = :notes
+             WHERE short_url = :short AND expiry_time <= :now AND expiry_time > 0",
     ) else {
         error!("Error preparing SQL statement for add_link.");
         return Err(ServerError);
     };
-    match statement.execute((longlink, shortlink, expiry_time, now)) {
+    match statement.execute(
+        named_params! {":long": longlink, ":short": shortlink, ":expiry": expiry_time, ":now": now, ":notes" : notes},
+    ) {
         Ok(1) => Ok(expiry_time),
         Ok(_) => Err(ClientError {
             reason: "Short URL is already in use!".to_string(),
@@ -172,25 +215,42 @@ pub fn edit_link(
     shortlink: &str,
     longlink: &str,
     reset_hits: bool,
+    expiry_time: Option<i64>,
+    notes: Option<&str>,
     db: &Connection,
 ) -> Result<usize, ()> {
     let now = chrono::Utc::now().timestamp();
-    let query = if reset_hits {
-        "UPDATE urls 
-         SET long_url = ?1, hits = 0 
-         WHERE short_url = ?2 AND (expiry_time = 0 OR expiry_time > ?3)"
-    } else {
-        "UPDATE urls 
-         SET long_url = ?1 
-         WHERE short_url = ?2 AND (expiry_time = 0 OR expiry_time > ?3)"
+    let mut params: Vec<(&str, Value)> = vec![
+        (":long", longlink.to_owned().into()),
+        (":short", shortlink.to_owned().into()),
+        (":now", now.into()),
+    ];
+
+    let mut updates = "long_url = :long".to_string();
+    if reset_hits {
+        updates.push_str(", hits = 0")
     };
-    let Ok(mut statement) = db.prepare_cached(query) else {
+    if let Some(note) = notes.as_ref() {
+        params.push((":notes", (*note).to_owned().into()));
+        updates.push_str(", notes = :notes");
+    };
+    if let Some(expiry) = expiry_time.as_ref() {
+        params.push((":expiry", (*expiry).into()));
+        updates.push_str(", expiry_time = :expiry")
+    };
+
+    let query = format!(
+        "UPDATE urls
+         SET {updates}
+         WHERE short_url = :short AND (expiry_time = 0 OR expiry_time > :now)"
+    );
+    let Ok(mut statement) = db.prepare_cached(&query) else {
         error!("Error preparing SQL statement for edit_link.");
         return Err(());
     };
 
     statement
-        .execute((longlink, shortlink, now))
+        .execute(params.as_slice())
         .inspect_err(|err| {
             error!(
                 "Got an error while editing link ({shortlink}, {longlink}, {reset_hits}): {err}"
@@ -202,17 +262,17 @@ pub fn edit_link(
 // Clean expired links
 pub fn cleanup(db: &Connection, use_wal_mode: bool) {
     let now = chrono::Utc::now().timestamp();
-    info!("Starting database cleanup.");
+    debug!("Starting database cleanup.");
 
     let mut statement = db
-        .prepare_cached("DELETE FROM urls WHERE ?1 >= expiry_time AND expiry_time > 0")
+        .prepare_cached("DELETE FROM urls WHERE :now >= expiry_time AND expiry_time > 0")
         .expect("Error preparing SQL statement for cleanup.");
     statement
-        .execute([now])
+        .execute(named_params! {":now" : now})
         .inspect(|&u| match u {
             0 => (),
-            1 => info!("1 link was deleted."),
-            _ => info!("{u} links were deleted."),
+            1 => info!("1 expired link was deleted."),
+            _ => info!("{u} expired links were deleted."),
         })
         .expect("Error cleaning expired links.");
 
@@ -232,16 +292,16 @@ pub fn cleanup(db: &Connection, use_wal_mode: bool) {
     pragma_statement
         .execute([])
         .expect("Unable to optimize database.");
-    info!("Optimized database.")
+    debug!("Optimized database.")
 }
 
 // Delete an existing link
 pub fn delete_link(shortlink: &str, db: &Connection) -> Result<(), ChhotoError> {
-    let Ok(mut statement) = db.prepare_cached("DELETE FROM urls WHERE short_url = ?1") else {
+    let Ok(mut statement) = db.prepare_cached("DELETE FROM urls WHERE short_url = :short") else {
         error!("Error preparing SQL statement for delete_link.");
         return Err(ServerError);
     };
-    match statement.execute([shortlink]) {
+    match statement.execute(named_params! {":short" : shortlink}) {
         Ok(delta) if delta > 0 => Ok(()),
         _ => Err(ClientError {
             reason: "The shortlink was not found, and could not be deleted.".to_string(),
@@ -249,23 +309,30 @@ pub fn delete_link(shortlink: &str, db: &Connection) -> Result<(), ChhotoError> 
     }
 }
 
+// Open DB, and apply migrations if necessary
 pub fn open_db(path: &str, use_wal_mode: bool, ensure_acid: bool) -> Connection {
-    const APPLICATION_ID: u32 = 0x63686874; // Hex for chht, MUST NEVER BE CHANGED
-    const USER_VERSION: u32 = 2; // Should be incremented on change of schema
-
     let db = Connection::open(path).expect("Unable to open database!");
 
-    let table_exists = db
-        .query_row_and_then(
-            "SELECT COUNT(*) FROM sqlite_master WHERE type = 'table' AND name = 'urls'",
-            [],
-            |row| row.get::<usize, isize>(0),
-        )
-        // It would be 0 if table does not exist, and 1 if it does
-        .expect("Error querying existence of table.")
-        == 1;
+    let tables_list: Rc<[String]> = {
+        let mut statement = db
+            .prepare(
+                "SELECT name
+                 FROM sqlite_master
+                 WHERE type = 'table' AND name NOT LIKE 'sqlite_%'
+                 ORDER BY name",
+            )
+            .expect("Error preparing statement for listing tables.");
+        statement
+            .query_map([], |row| row.get("name"))
+            .unwrap()
+            .filter_map(Result::ok)
+            .collect()
+    };
 
-    let current_user_version: u32 = if !table_exists {
+    let urls_table_exists = tables_list.iter().any(|s| s.as_str() == "urls");
+    let urls_fts_table_exists = tables_list.iter().any(|s| s.as_str() == "urls_fts");
+
+    let current_user_version: u32 = if !urls_table_exists {
         // It would mean that the table is newly created i.e. has the desired schema
         USER_VERSION
     } else {
@@ -282,7 +349,7 @@ pub fn open_db(path: &str, use_wal_mode: bool, ensure_acid: bool) -> Connection 
             |row| row.get(0),
         )
         .unwrap_or_default();
-    if current_application_id > 0 || (table_exists && current_user_version > 1) {
+    if current_application_id > 0 || (urls_table_exists && current_user_version > 1) {
         assert_eq!(
             current_application_id, APPLICATION_ID,
             "Incorrect application_id: The database file seems to belong to some other application."
@@ -296,7 +363,8 @@ pub fn open_db(path: &str, use_wal_mode: bool, ensure_acid: bool) -> Connection 
             long_url TEXT NOT NULL,
             short_url TEXT NOT NULL,
             hits INTEGER NOT NULL,
-            expiry_time INTEGER NOT NULL DEFAULT 0
+            expiry_time INTEGER NOT NULL DEFAULT 0,
+            notes TEXT
          )",
         // expiry_time is added later during migration 1
         [],
@@ -319,8 +387,53 @@ pub fn open_db(path: &str, use_wal_mode: bool, ensure_acid: bool) -> Connection 
         .expect("Unable to apply migration 1.");
     }
 
+    // Migration 2: Add notes, introduced in 7.0.0
+    if current_user_version < 3 {
+        db.execute("ALTER TABLE urls ADD COLUMN notes TEXT", [])
+            .expect("Unable to apply migration 2.");
+    }
+
+    // Create FTS5 table if it doesn't exist, and also create triggers
+    db.execute(
+        "CREATE VIRTUAL TABLE IF NOT EXISTS urls_fts USING fts5(
+             long_url, short_url, notes,
+             content='urls',
+             content_rowid='id',
+             tokenize='trigram remove_diacritics 2'
+         )",
+        [],
+    )
+    .expect("Unable to create FTS table.");
+    if !urls_fts_table_exists {
+        db.execute("INSERT INTO urls_fts(urls_fts) VALUES ('rebuild')", [])
+            .expect("Unable to populate FTS table.");
+        let fts_triggers = [
+            "CREATE TRIGGER IF NOT EXISTS urls_insert
+                 AFTER INSERT ON urls BEGIN
+                 INSERT INTO urls_fts(rowid, long_url, short_url, notes)
+                 VALUES (new.id, new.long_url, new.short_url, new.notes);
+             END",
+            "CREATE TRIGGER IF NOT EXISTS urls_delete
+                 AFTER DELETE ON urls BEGIN
+                 INSERT INTO urls_fts(urls_fts, rowid, long_url, short_url, notes)
+                 VALUES('delete', old.id, old.long_url, old.short_url, old.notes);
+             END",
+            "CREATE TRIGGER IF NOT EXISTS urls_update
+             AFTER UPDATE ON urls BEGIN
+                 INSERT INTO urls_fts(urls_fts, rowid, long_url, short_url, notes)
+                 VALUES('delete', old.id, old.long_url, old.short_url, old.notes);
+                 INSERT INTO urls_fts(rowid, long_url, short_url, notes)
+                 VALUES (new.id, new.long_url, new.short_url, new.notes);
+             END",
+        ];
+        for trigger in fts_triggers {
+            db.execute(trigger, [])
+                .expect("Unable to create FTS trigger(s).");
+        }
+    }
+
     // The migrations have finished successfully by this point
-    if !table_exists || current_user_version < USER_VERSION {
+    if !urls_table_exists || current_user_version < USER_VERSION {
         db.pragma_update(None, "user_version", USER_VERSION)
             .expect("Unable to set pragma: user_version.");
         db.pragma_update(None, "application_id", APPLICATION_ID)
