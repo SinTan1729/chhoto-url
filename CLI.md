@@ -35,7 +35,8 @@ curl -X POST \
     -d '{ \
         "shortlink":"<shortlink>", \
         "longlink":"<longlink>", \
-        "expiry_delay": <expiry_delay> \
+        "expiry_delay": <expiry_delay>, \
+        "notes": "<notes>" \
         }' \
     http://localhost:4567/api/new
 ```
@@ -118,10 +119,14 @@ curl -X PUT \
 -d '{ \
     "shortlink":"<shortlink>", \
     "longlink":"<longlink>", \
-    "reset_hits": <bool> \
+    "reset_hits": <bool>, \
+    "expiry_time": <time>, \
+    "notes": <notes> \
     }' \
 http://localhost:4567/api/edit
 ```
+
+The fields `expiry_time` and `notes` are optional. The existing values will be kept in the database if nothing is provided.
 
 The server will reply in the following format.
 
@@ -150,7 +155,8 @@ The server will reply in the following format.
     "error": false,
     "longurl": "<longurl>",
     "hits": "<hits>",
-    "expiry_time": <expiry_time>
+    "expiry_time": <expiry_time>,
+    "notes": "<notes>"
 }
 ```
 
@@ -180,9 +186,27 @@ Supported query parameters are as follows.
    This is faster, and the preferred way of doing pagination.
 1. `page_size`: The size of a returned page in number of shortlinks. Default value is 10.
 1. `page_no`: Alternative way of doing pagination. This is slower, and should be used only when using `page_after` isn't viable.
+1. `filter`: For filtering links. The filter is applied on `shorturl`, `longurl`, and `notes` fields. Must be ASCII, and at least 3
+   characters long. Only alphanumeric characters are used for the filtering. Everything else is treated as a separator.
 
 None of the parameters are required. In absence of all of those, all shortlinks are returned. The entries should be positive integers.
 If only `page_size` is provided, the first page is returned.
+
+A successful reply would be an array and look like the following.
+
+```json
+[
+    ...
+  {
+    "shortlink": "<shortlink>",
+    "longlink": "<longlink>",
+    "hits": <hits>,
+    "expiry_time": <expiry_time>,
+    "notes": "<notes>"
+  },
+    ...
+]
+```
 
 #### `/api/del/{shortlink}`
 
