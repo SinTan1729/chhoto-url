@@ -243,18 +243,6 @@ const refreshWithFilter = () => {
   const filter = filterInput.value;
 
   filterInput.setCustomValidity("");
-  if (filter.length > 0 && filter.length < 3) {
-    filterInput.setCustomValidity("Filter must be at least 3 characters.");
-    filterInput.reportValidity();
-    return;
-  } else if (!/^[\x00-\x7F]*$/.test(filter)) {
-    filterInput.setCustomValidity(
-      "Filter must contain only printable ASCII characters.",
-    );
-    filterInput.reportValidity();
-    return;
-  }
-
   const oldFilter = FILTER;
   if (filter == "") {
     FILTER = null;
@@ -650,12 +638,8 @@ const submitForm = () => {
         const params = new URLSearchParams();
         params.append("page_size", 1);
         const newEntry = await pullData(params);
-        LOCAL_DATA.unshift(newEntry[0]);
-        if (
-          LOCAL_DATA.length ==
-          (CUR_PAGE + 1) * CONFIG.frontend_page_size + 1
-        ) {
-          LOCAL_DATA.pop();
+        if (LOCAL_DATA[0].shortlink != newEntry[0].shortlink) {
+          LOCAL_DATA.unshift(newEntry[0]);
         }
         CUR_PAGE = 0;
         PROCESSING_PAGE_TRANSITION = true;
@@ -899,8 +883,8 @@ refreshData()
     };
 
     document.getElementById("filterText").value = "";
-    const filterBtn = document.getElementById("filterBtn");
-    filterBtn.onclick = () => {
+    document.forms.namedItem("filter-form").onsubmit = (e) => {
+      e.preventDefault();
       refreshWithFilter();
     };
 

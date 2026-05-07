@@ -99,6 +99,7 @@ a {
   font-size: 1.5em;
   font-style: normal;
   font-family: Montserrat;
+  padding: 0em;
 }
 .chhoto-table thead {
   color: light-dark(black, #e8e6e3);
@@ -115,7 +116,10 @@ a {
 }
 
 #filter-div {
+  min-width: 20em;
   font-size: 0.7em;
+  float: right;
+  text-align: right;
 }
 
 #controls,
@@ -339,6 +343,11 @@ details.chhoto-input summary {
     display: none;
   }
 
+  #filter-div {
+    float: none;
+    text-align: inherit;
+  }
+
   .chhoto-table td::before {
     content: attr(label);
     font-weight: bold;
@@ -353,10 +362,6 @@ details.chhoto-input summary {
   .chhoto-table th[name="numColumn"],
   .chhoto-table td[name="numColumn"] {
     display: none;
-  }
-
-  .chhoto-table caption {
-    padding-top: 0;
   }
 
   .tooltip .tooltiptext {
