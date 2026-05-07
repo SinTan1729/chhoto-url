@@ -3,7 +3,7 @@
 
 use log::error;
 use nanoid::nanoid;
-use rand::seq::IndexedRandom;
+use rand::{random_range, seq::IndexedRandom};
 use rusqlite::Connection;
 use serde::Deserialize;
 use std::env;
@@ -146,7 +146,7 @@ pub fn add_link(
     let len = config.slug_length;
     let allow_capital_letters = config.allow_capital_letters;
     let shortlink_provided = if chunks.shortlink.is_empty() {
-        chunks.shortlink = gen_link(style, len, allow_capital_letters);
+        chunks.shortlink = gen_link(style, len, allow_capital_letters, false);
         false
     } else {
         true
@@ -179,13 +179,8 @@ pub fn add_link(
                     Err(ClientError { reason })
                 } else {
                     // Optionally, retry with a longer slug length
-                    let retry_len =
-                        if matches!(config.slug_style, SlugStyle::Uid) && config.try_longer_slug {
-                            len + 4
-                        } else {
-                            len
-                        };
-                    chunks.shortlink = gen_link(style, retry_len, allow_capital_letters);
+                    chunks.shortlink =
+                        gen_link(style, len, allow_capital_letters, config.try_longer_slug);
                     match database::add_link(
                         &chunks.shortlink,
                         &chunks.longlink,
@@ -259,7 +254,12 @@ pub fn delete_link(
 }
 
 // Generate a random link using either adjective-name pair (default) of a slug or a-z, 0-9
-fn gen_link(style: &SlugStyle, len: usize, allow_capital_letters: bool) -> String {
+fn gen_link(
+    style: &SlugStyle,
+    len: usize,
+    allow_capital_letters: bool,
+    try_longer_slug: bool,
+) -> String {
     #[rustfmt::skip]
     static ADJECTIVES: [&str; 108] = ["admiring", "adoring", "affectionate", "agitated", "amazing", "angry", "awesome", "beautiful", 
 		"blissful", "bold", "boring", "brave", "busy", "charming", "clever", "compassionate", "competent", "condescending", "confident", "cool", 
@@ -295,7 +295,6 @@ fn gen_link(style: &SlugStyle, len: usize, allow_capital_letters: bool) -> Strin
         'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r',
         's', 't', 'u', 'v', 'w', 'x', 'y', 'z', '0', '1', '2', '3', '4', '5', '6', '7', '8', '9',
     ];
-
     // uppercase and lowercase characters; exclude ambiguous characters
     static CHARS_CAPITAL: [char; 58] = [
         'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'J', 'K', 'L', 'M', 'N', 'P', 'Q', 'R', 'S', 'T',
@@ -306,22 +305,26 @@ fn gen_link(style: &SlugStyle, len: usize, allow_capital_letters: bool) -> Strin
 
     match style {
         SlugStyle::Uid => {
+            let slug_len = if try_longer_slug { len + 4 } else { len };
             if allow_capital_letters {
-                nanoid!(len, &CHARS_CAPITAL)
+                nanoid!(slug_len, &CHARS_CAPITAL)
             } else {
-                nanoid!(len, &CHARS_SMALL)
+                nanoid!(slug_len, &CHARS_SMALL)
             }
         }
         SlugStyle::Pair => {
-            format!(
-                "{0}-{1}",
-                ADJECTIVES
-                    .choose(&mut rand::rng())
-                    .expect("Error choosing random adjective."),
-                NAMES
-                    .choose(&mut rand::rng())
-                    .expect("Error choosing random name.")
-            )
+            let adj = ADJECTIVES
+                .choose(&mut rand::rng())
+                .expect("Error choosing random adjective.")
+                .to_string();
+            let name = NAMES
+                .choose(&mut rand::rng())
+                .expect("Error choosing random name.");
+            if try_longer_slug {
+                format!("{adj}-{name}-{:04}", random_range(0..=9999))
+            } else {
+                format!("{adj}-{name}")
+            }
         }
     }
 }

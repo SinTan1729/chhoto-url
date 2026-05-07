@@ -175,7 +175,8 @@ If you intend to have more than a few thousand shortlinks, it's strongly recomme
 
 If you do choose to use a short UID despite anticipating collisions, it's recommended that you set this to `True`.
 In the event of a collision, this variable will result in a single retry attempt using a UID four digits longer than
-[`CHHOTO_SLUG_LENGTH`](#chhoto_slug_length). It has no effect for adjective-name slugs.
+[`CHHOTO_SLUG_LENGTH`](#chhoto_slug_length). For adjective-name slugs, a four digit suffix is added e.g.
+`gifted-ramanujan-1729`.
 
 _Note: If not set, one retry will be attempted, just like adjective-name slugs. But it would use the same slug length._
 
