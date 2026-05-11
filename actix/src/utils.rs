@@ -35,7 +35,7 @@ struct EditURLRequest {
     shortlink: String,
     longlink: String,
     reset_hits: bool,
-    expiry_delay: Option<i64>,
+    expiry_time: Option<i64>,
     notes: Option<String>,
 }
 
@@ -224,7 +224,7 @@ pub fn edit_link(req: &str, db: &Connection, config: &Config) -> Result<(), Chho
         &chunks.shortlink,
         &chunks.longlink,
         chunks.reset_hits,
-        chunks.expiry_delay,
+        chunks.expiry_time,
         chunks.notes.as_deref(),
         db,
     );

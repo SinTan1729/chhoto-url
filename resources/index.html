@@ -239,30 +239,53 @@
     </dialog>
 
     <dialog id="edit-dialog" class="chhoto-dialog">
-      <form class="pure-form pure-form-stacked" name="edit-form">
+      <form class="pure-form pure-form-aligned" name="edit-form">
         <p>
-          Enter new long url for <span id="edit-link">placeholder</span>. <br />
-          Please check twice before you submit. It cannot be undone.
+          Enter new details for <span id="edit-link">placeholder</span>. <br />
+          Be careful. It cannot be undone.
         </p>
         <fieldset>
-          <input class="chhoto-input" type="url" id="edited-url" />
+          <div class="pure-control-group">
+            <label for="edited-url">Long URL</label>
+            <input class="chhoto-input" type="url" id="edited-url" />
+          </div>
+          <div class="pure-control-group">
+            <label for="edited-notes">Notes</label>
+            <input
+              class="chhoto-input"
+              type="text"
+              pattern="[\x20-\x7E]*"
+              id="edited-notes"
+            />
+          </div>
+          <div class="pure-control-group">
+            <label for="edited-expiry">Expiry</label>
+            <input
+              class="chhoto-input"
+              type="datetime-local"
+              step="1"
+              id="edited-expiry"
+            />
+          </div>
           <label for="edit-checkbox">
             <input type="checkbox" id="edit-checkbox" checked="unchecked" />
             Reset hit count
           </label>
-          <button
-            class="chhoto-button pure-button pure-button-primary"
-            id="edit-cancel-button"
-            type="button"
-          >
-            Cancel
-          </button>
-          <button
-            class="chhoto-button pure-button pure-button-primary"
-            value="default"
-          >
-            Submit
-          </button>
+          <div id="edit-buttons">
+            <button
+              class="chhoto-button pure-button pure-button-primary"
+              id="edit-cancel-button"
+              type="button"
+            >
+              Cancel
+            </button>
+            <button
+              class="chhoto-button pure-button pure-button-primary"
+              value="default"
+            >
+              Submit
+            </button>
+          </div>
         </fieldset>
       </form>
     </dialog>

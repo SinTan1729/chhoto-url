@@ -145,7 +145,7 @@ td[name="actions"] div {
   align-items: center;
   justify-items: center;
   text-align: center;
-  min-width: 8em;
+  width: 10em;
 }
 td[name="actions"] div button,
 .pure-table caption button.svg-button {
@@ -194,6 +194,7 @@ details.chhoto-input summary {
 .chhoto-dialog {
   border-radius: 1em;
   border-width: 0.15em;
+  min-width: 25vw;
   max-width: 40em;
 }
 #login-dialog div {
@@ -214,11 +215,18 @@ details.chhoto-input summary {
 #login-dialog form {
   text-align: center;
 }
-#edited-url {
-  width: 100%;
-}
 #edit-cancel-button {
   background-color: light-dark(#dd1a1a, #901010);
+}
+#edit-dialog label {
+  max-width: 5em;
+  margin-right: 0em;
+}
+#edit-dialog label[for="edit-checkbox"] {
+  max-width: 100%;
+}
+#edit-buttons {
+  margin-top: 0.5em;
 }
 
 #alert-box {

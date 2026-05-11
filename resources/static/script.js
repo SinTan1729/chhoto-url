@@ -378,7 +378,7 @@ const TR = (i, row) => {
   const expiryTime = row["expiry_time"];
   let expiryHTML = "-";
   if (expiryTime > 0) {
-    expiryTimeParsed = new Date(expiryTime * 1000);
+    const expiryTimeParsed = new Date(expiryTime * 1000);
     const relativeExpiryTime = formatRelativeTime(expiryTimeParsed);
     const accurateExpiryTime = expiryTimeParsed.toLocaleString();
     expiryHTML =
@@ -406,7 +406,7 @@ const TR = (i, row) => {
   btnGrp.appendChild(copyButton(shortlink));
   btnGrp.appendChild(qrCodeButton(shortlink));
   btnGrp.appendChild(infoButton(shortlink));
-  btnGrp.appendChild(editButton(shortlink, longlink));
+  btnGrp.appendChild(editButton(shortlink, longlink, expiryTime, row["notes"]));
   btnGrp.appendChild(deleteButton(shortlink));
   actionsTD.appendChild(btnGrp);
 
@@ -475,7 +475,7 @@ const copyButton = (shortUrl) => {
   return btn;
 };
 
-const editButton = (shortUrl, longUrl) => {
+const editButton = (shortUrl, longUrl, expiry, notes) => {
   const btn = document.createElement("button");
   btn.classList.add("svg-button");
   btn.innerHTML = SVG_EDIT_BUTTON;
@@ -486,10 +486,23 @@ const editButton = (shortUrl, longUrl) => {
     document.getElementById("edit-dialog").showModal();
     const editUrlSpan = document.getElementById("edit-link");
     const editedUrl = document.getElementById("edited-url");
+    const editedExpiry = document.getElementById("edited-expiry");
     if (editUrlSpan.textContent != shortUrl) {
       editUrlSpan.textContent = shortUrl;
       document.getElementById("edit-checkbox").checked = false;
       editedUrl.value = longUrl;
+      document.getElementById("edited-notes").value = notes;
+      if (expiry > 0) {
+        const date = new Date(expiry * 1000);
+        const local_expiry = new Date(
+          date.getTime() - date.getTimezoneOffset() * 60000,
+        )
+          .toISOString()
+          .slice(0, 19);
+        editedExpiry.value = local_expiry;
+      } else {
+        editedExpiry.value = "";
+      }
     }
     editedUrl.focus();
   };
@@ -509,7 +522,9 @@ const infoButton = (shortUrl) => {
     document.getElementById("info-short").innerHTML = row.shortlink;
     document.getElementById("info-long").innerHTML = row.longlink;
     document.getElementById("info-hits").innerHTML = row.hits;
-    document.getElementById("info-expiry").innerHTML = row.expiry_time;
+    const expiryTimeParsed = new Date(row.expiry_time * 1000);
+    const accurateExpiryTime = expiryTimeParsed.toLocaleString();
+    document.getElementById("info-expiry").innerHTML = accurateExpiryTime;
     document.getElementById("info-notes").innerHTML = row.notes;
   };
   return btn;
@@ -709,11 +724,19 @@ const submitEdit = () => {
   const longUrl = urlInput.value;
   const shortUrl = editUrlSpan.textContent;
   const checkBox = document.getElementById("edit-checkbox");
+  const notes = document.getElementById("edited-notes").value;
+  let expiry = 0;
+  const expiry_raw = document.getElementById("edited-expiry").value;
+  if (expiry_raw != "") {
+    expiry = Math.floor(new Date(expiry_raw).getTime() / 1000);
+  }
   if (confirm("Are you sure that you want to edit " + shortUrl + "?")) {
     data = {
       shortlink: shortUrl,
       longlink: longUrl,
       reset_hits: checkBox.checked,
+      notes: notes,
+      expiry_time: expiry,
     };
     const url = prepSubdir("/api/edit");
     let ok = false;
@@ -740,6 +763,8 @@ const submitEdit = () => {
             (item) => item["shortlink"] == shortUrl,
           );
           LOCAL_DATA[editedIndex]["longlink"] = longUrl;
+          LOCAL_DATA[editedIndex]["notes"] = notes;
+          LOCAL_DATA[editedIndex]["expiry_time"] = expiry;
           if (checkBox.checked) {
             LOCAL_DATA[editedIndex]["hits"] = 0;
           }
