@@ -145,7 +145,7 @@ td[name="actions"] div {
   align-items: center;
   justify-items: center;
   text-align: center;
-  width: 10em;
+  width: 12em;
 }
 td[name="actions"] div button,
 .pure-table caption button.svg-button {
@@ -194,8 +194,11 @@ details.chhoto-input summary {
 .chhoto-dialog {
   border-radius: 1em;
   border-width: 0.15em;
-  min-width: 25vw;
   max-width: 40em;
+}
+#info-dialog,
+#edit-dialog {
+  min-width: 25vw;
 }
 #login-dialog div {
   position: relative;
