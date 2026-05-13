@@ -84,10 +84,11 @@ pub fn get_version() -> String {
     const VERSION: &str = env!("CARGO_PKG_VERSION");
     const GIT_COMMIT: Option<&str> = option_env!("CARGO_GIT_COMMIT");
 
-    if let Some(commit) = GIT_COMMIT {
-        format!("{VERSION}-dev+{commit}")
-    } else {
-        VERSION.to_string()
+    match GIT_COMMIT {
+        Some(commit) if !commit.trim().is_empty() => {
+            format!("{VERSION}-dev+{commit}")
+        }
+        _ => VERSION.to_string(),
     }
 }
 
