@@ -1,0 +1,7 @@
+screenshot-desktop.webp filter=lfs diff=lfs merge=lfs -text
+screenshot-mobile.webp filter=lfs diff=lfs merge=lfs -text
+favicon.svgz filter=lfs diff=lfs merge=lfs -text
+resources/assets/favicon-32.png filter=lfs diff=lfs merge=lfs -text
+resources/assets/favicon-196.png filter=lfs diff=lfs merge=lfs -text
+resources/assets/favicon.ico filter=lfs diff=lfs merge=lfs -text
+resources/assets/favicon.svg filter=lfs diff=lfs merge=lfs -text
