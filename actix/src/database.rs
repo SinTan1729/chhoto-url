@@ -264,10 +264,8 @@ pub fn cleanup(db: &Connection, use_wal_mode: bool) {
     let now = chrono::Utc::now().timestamp();
     debug!("Starting database cleanup.");
 
-    let mut statement = db
-        .prepare_cached("DELETE FROM urls WHERE :now >= expiry_time AND expiry_time > 0")
-        .expect("Error preparing SQL statement for cleanup.");
-    statement
+    db.prepare_cached("DELETE FROM urls WHERE :now >= expiry_time AND expiry_time > 0")
+        .expect("Error preparing SQL statement for cleanup.")
         .execute(named_params! {":now" : now})
         .inspect(|&u| match u {
             0 => (),
@@ -277,19 +275,30 @@ pub fn cleanup(db: &Connection, use_wal_mode: bool) {
         .expect("Error cleaning expired links.");
 
     if use_wal_mode {
-        let mut pragma_statement = db
-            .prepare_cached("PRAGMA wal_checkpoint(TRUNCATE)")
+        let mut statement = db
+            .prepare_cached("PRAGMA wal_checkpoint(PASSIVE)")
             .expect("Error preparing SQL statement for pragma: wal_checkpoint.");
-        pragma_statement
+        statement
             .query_one([], |row| row.get::<usize, isize>(1))
             .ok()
             .filter(|&v| v != -1)
             .expect("Unable to create WAL checkpoint.");
     }
-    let mut pragma_statement = db
-        .prepare_cached("PRAGMA optimize")
-        .expect("Error preparing SQL statement for pragma: optimize.");
-    pragma_statement
+    let freelist_count: i64 = db
+        .prepare_cached("PRAGMA freelist_count")
+        .expect("Error preparing SQL statement for pragma: freelist_count")
+        .query_row([], |r| r.get(0))
+        .expect("failed to get freelist_count");
+
+    // Roughly 20 MB with 4 KiB pages
+    if freelist_count > 5000 {
+        db.prepare_cached("VACUUM")
+            .expect("Error preparing SQL statement for vacuum.")
+            .execute([])
+            .expect("failed to vacuum database");
+    }
+    db.prepare_cached("PRAGMA optimize")
+        .expect("Error preparing SQL statement for pragma: optimize.")
         .execute([])
         .expect("Unable to optimize database.");
     debug!("Optimized database.")
@@ -408,11 +417,18 @@ pub fn initialize_db(path: &str, use_wal_mode: bool, ensure_acid: bool) {
     // Migration 1: Add expiry_time, introduced in 6.0.0
     if current_user_version < 1 {
         info!("Applying migration 1: Adding expiry_time column to urls.");
-        db.execute(
+        let tx = db
+            .transaction()
+            .expect("Unable to create transaction for migration 1.");
+        tx.execute(
             "ALTER TABLE urls ADD COLUMN expiry_time INTEGER NOT NULL DEFAULT 0",
             [],
         )
         .expect("Unable to apply migration 1.");
+        tx.pragma_update(None, "user_version", 1)
+            .expect("Unable to set pragma: user_version.");
+        tx.commit()
+            .expect("Unable to commit transaction for migration 1.");
     }
     // Create index on expiry_time for faster lookups
     if !indices.contains("idx_expiry_time") {
@@ -424,8 +440,15 @@ pub fn initialize_db(path: &str, use_wal_mode: bool, ensure_acid: bool) {
     // Migration 2: Add notes, introduced in 7.0.0
     if current_user_version < 3 {
         info!("Applying migration 2: Adding notes column to urls.");
-        db.execute("ALTER TABLE urls ADD COLUMN notes TEXT", [])
+        let tx = db
+            .transaction()
+            .expect("Unable to create transaction for migration 2.");
+        tx.execute("ALTER TABLE urls ADD COLUMN notes TEXT", [])
             .expect("Unable to apply migration 2.");
+        tx.pragma_update(None, "user_version", 2)
+            .expect("Unable to set pragma: user_version.");
+        tx.commit()
+            .expect("Unable to commit transaction for migration 2.");
     }
 
     // Create FTS5 table if it doesn't exist, and also create triggers
@@ -433,7 +456,7 @@ pub fn initialize_db(path: &str, use_wal_mode: bool, ensure_acid: bool) {
         info!("Creating FTS table urls_fts, and adding triggers.");
         let tx = db
             .transaction()
-            .expect("Error while creating transaction for FTS table creation.");
+            .expect("Unable to create transaction for FTS table creation.");
         tx.execute(
             "CREATE VIRTUAL TABLE urls_fts USING fts5(
              long_url, short_url, notes,
@@ -474,10 +497,6 @@ pub fn initialize_db(path: &str, use_wal_mode: bool, ensure_acid: bool) {
         tx.commit().expect("Unable to create FTS table.");
     }
 
-    // The schema should be up-to-date by this point
-    db.pragma_update(None, "user_version", USER_VERSION)
-        .expect("Unable to set pragma: user_version.");
-
     // Set WAL mode if specified
     let (journal_mode, synchronous) = match (use_wal_mode, ensure_acid) {
         (true, false) => ("WAL", "NORMAL"),
@@ -491,19 +510,18 @@ pub fn initialize_db(path: &str, use_wal_mode: bool, ensure_acid: bool) {
         .expect("Unable to set pragma: synchronous.");
     let tx = db
         .transaction()
-        .expect("Error while creating transaction for pragma updates.");
-    // Set some further optimizations and run vacuum
+        .expect("Unable to create transaction for pragma updates.");
+    // Set some further optimizations and run vacuum if necessary
     tx.pragma_update(None, "temp_store", "memory")
         .expect("Unable to set pragma: temp_store.");
     tx.pragma_update(None, "journal_size_limit", "8388608")
         .expect("Unable to set pragma: journal_size_limit.");
     tx.pragma_update(None, "mmap_size", "16777216")
         .expect("Unable to set pragma: mmap_size.");
-    tx.commit().expect("Unable to set correct pragma.");
-    db.execute("VACUUM", [])
-        .expect("Unable to vacuum database.");
-    db.execute("PRAGMA optimize=0x10002", [])
-        .expect("Error running pragma optimize.");
+    // The schema should be up-to-date by this point
+    tx.pragma_update(None, "user_version", USER_VERSION)
+        .expect("Unable to set pragma: user_version.");
+    tx.commit().expect("Unable to set correct pragma values.");
 
     info!("Database initialization was successful.");
 }
