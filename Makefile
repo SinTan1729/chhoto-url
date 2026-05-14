@@ -3,11 +3,16 @@
 
 include .env
 
-.PHONY: clean test setup build podman-build podman-stop podman-test build-release tag audit
+.PHONY: clean test setup build podman-build podman-stop podman-test build-release tag audit merge
 
 setup:
 	rustup target add x86_64-unknown-linux-musl
 	podman buildx inspect --bootstrap
+
+merge:
+	git switch main
+	git merge dev
+	git switch dev
 
 short_sha := $(shell git rev-parse --short HEAD) 
 build:
