@@ -74,6 +74,7 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v6
         with:
+          lfs: true
           fetch-depth: 0
       - name: Download artifacts
         uses: actions/download-artifact@v8
