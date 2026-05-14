@@ -2,9 +2,9 @@
 // SPDX-License-Identifier: MIT
 
 use actix_files::Files;
-use actix_session::{storage::CookieSessionStore, SessionMiddleware};
+use actix_session::{config::PersistentSession, storage::CookieSessionStore, SessionMiddleware};
 use actix_web::{
-    cookie::Key,
+    cookie::{self, Key},
     middleware,
     web::{self, Redirect},
     App, HttpServer,
@@ -99,6 +99,9 @@ async fn main() -> Result<()> {
             .wrap(
                 SessionMiddleware::builder(CookieSessionStore::default(), secret_key.clone())
                     .cookie_same_site(actix_web::cookie::SameSite::Strict)
+                    .session_lifecycle(
+                        PersistentSession::default().session_ttl(cookie::time::Duration::days(7)),
+                    )
                     .cookie_secure(false)
                     .build(),
             )

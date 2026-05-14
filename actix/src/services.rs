@@ -400,7 +400,7 @@ pub async fn login(req: String, session: Session, data: web::Data<AppState>) -> 
         }
         // Return Ok if no password was set on the server side
         session
-            .insert("chhoto-url-auth", auth::gen_token())
+            .insert("chhoto-url-auth", auth::gen_token_text())
             .expect("Error inserting auth token.");
 
         let response = JSONResponse {
@@ -420,7 +420,7 @@ pub async fn login(req: String, session: Session, data: web::Data<AppState>) -> 
         }
         // Return Ok if no password was set on the server side
         session
-            .insert("chhoto-url-auth", auth::gen_token())
+            .insert("chhoto-url-auth", auth::gen_token_text())
             .expect("Error inserting auth token.");
 
         info!("Successful login.");

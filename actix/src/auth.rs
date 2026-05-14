@@ -134,24 +134,26 @@ fn is_token_valid(token: Option<&str>) -> bool {
             false
         } else {
             let token_text = token_parts[0];
-            let token_time = token_parts[1].parse::<u64>().unwrap_or(0);
+            let token_expiry_time = token_parts[1].parse::<u64>().unwrap_or(0);
             let time_now = SystemTime::now()
                 .duration_since(SystemTime::UNIX_EPOCH)
                 .expect("Time went backwards!")
                 .as_secs();
-            token_text == "chhoto-url-auth" && time_now < token_time + 1209600 // There are 1209600 seconds in 14 days
+            token_text == "chhoto-url-auth" && time_now < token_expiry_time
+            // 7 days
         }
     } else {
         false
     }
 }
 
-// Generate a new cryptographic token
-pub fn gen_token() -> String {
+// Generate a new token for usage in cookie
+pub fn gen_token_text() -> String {
     let token_text = String::from("chhoto-url-auth");
     let time = SystemTime::now()
         .duration_since(SystemTime::UNIX_EPOCH)
         .expect("Time went backwards!")
-        .as_secs();
+        .as_secs()
+        + 604800; // Valid for 7 days
     format!("{token_text};{time}")
 }
