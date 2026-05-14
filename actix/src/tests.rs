@@ -5,6 +5,8 @@ use regex::Regex;
 use serde::Deserialize;
 use std::{fmt::Display, fs, rc::Rc, thread::sleep, time::Duration};
 
+use crate::database::initialize_db;
+
 use super::*;
 
 trait BodyTest {
@@ -77,14 +79,12 @@ async fn create_app(
     test: &str,
 ) -> impl Service<Request, Response = ServiceResponse, Error = Error> {
     let _ = fs::remove_file(format!("/tmp/chhoto-url-test-{test}.sqlite"));
+    let db_file = format!("/tmp/chhoto-url-test-{test}.sqlite");
+    initialize_db(&db_file, conf.use_wal_mode, conf.ensure_acid);
     let app = test::init_service(
         App::new()
             .app_data(web::Data::new(AppState {
-                db: database::open_db(
-                    format!("/tmp/chhoto-url-test-{test}.sqlite").as_str(),
-                    conf.use_wal_mode,
-                    conf.ensure_acid,
-                ),
+                db: database::open_db(&db_file),
                 config: conf.clone(),
             }))
             .service(services::siteurl)

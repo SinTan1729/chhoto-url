@@ -11,7 +11,7 @@ use actix_web::{
 };
 use log::info;
 use rusqlite::Connection;
-use std::{fs, io::Result};
+use std::{io::Result, sync::Once};
 use tokio::{spawn, time};
 
 // Import modules
@@ -30,6 +30,8 @@ struct AppState {
     db: Connection,
     config: config::Config,
 }
+
+static LOGGER: Once = Once::new();
 
 #[actix_web::main]
 async fn main() -> Result<()> {
@@ -71,29 +73,13 @@ async fn main() -> Result<()> {
     // Read config from env vars
     let conf = config::read();
 
-    // Tell the user that the server has started, and where it is listening to, rather than simply outputting nothing
-    info!(
-        "Server has started listening to {} on port {}.",
-        conf.listen_address, conf.port
-    );
-
     // Do periodic cleanup
     let db_location = conf.db_location.clone();
-    // Create backups if WAL mode is being used
-    if conf.use_wal_mode {
-        info!("Creating database backups.");
-        if fs::exists(format!("{db_location}.bak1")).ok() == Some(true) {
-            fs::rename(format!("{db_location}.bak1"), format!("{db_location}.bak2"))
-                .expect("Error creating backups.");
-        }
-        if fs::exists(&db_location).ok() == Some(true) {
-            fs::copy(&db_location, format!("{db_location}.bak1")).expect("Error creating backups.");
-        }
-    }
+    database::initialize_db(&db_location, conf.use_wal_mode, conf.ensure_acid);
 
-    info!("Starting cleanup service, will run once every hour.");
     spawn(async move {
-        let db = database::open_db(&db_location, conf.use_wal_mode, conf.ensure_acid);
+        info!("Starting database cleanup service, will run once every hour.");
+        let db = database::open_db(&db_location);
         let mut interval = time::interval(time::Duration::from_secs(3600));
         loop {
             interval.tick().await;
@@ -118,7 +104,7 @@ async fn main() -> Result<()> {
             )
             // Maintain a single instance of database throughout
             .app_data(web::Data::new(AppState {
-                db: database::open_db(&conf.db_location, conf.use_wal_mode, conf.ensure_acid),
+                db: database::open_db(&conf.db_location),
                 config: conf_clone.clone(),
             }))
             .wrap(if let Some(header) = &conf.cache_control_header {
@@ -153,7 +139,15 @@ async fn main() -> Result<()> {
         app.default_service(actix_web::web::get().to(services::error404))
     })
     // Hardcode the port the server listens to. Allows for more intuitive Docker Compose port management
-    .bind((conf.listen_address, conf.port))?
+    .bind((conf.listen_address.clone(), conf.port))
+    .inspect(|_| {
+        LOGGER.call_once(|| {
+            info!(
+                "Server has started listening to {} on port {}.",
+                &conf.listen_address, conf.port
+            );
+        })
+    })?
     .run()
     .await
 }

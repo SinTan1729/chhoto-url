@@ -4,12 +4,12 @@
 use log::{debug, error, info};
 use rusqlite::{fallible_iterator::FallibleIterator, named_params, types::Value, Connection};
 use serde::Serialize;
-use std::rc::Rc;
+use std::{collections::HashSet, fs, rc::Rc};
 
 use crate::services::ChhotoError::{self, ClientError, ServerError};
 
 // Some constants
-const APPLICATION_ID: u32 = 0x63686874; // Hex for chht, MUST NEVER BE CHANGED
+const APPLICATION_ID: i32 = i32::from_be_bytes(*b"chht"); // MUST NEVER BE CHANGED
 const USER_VERSION: u32 = 3; // Should be incremented on change of schema
 
 // Struct for encoding a DB row
@@ -309,31 +309,55 @@ pub fn delete_link(shortlink: &str, db: &Connection) -> Result<(), ChhotoError> 
     }
 }
 
-// Open DB, and apply migrations if necessary
-pub fn open_db(path: &str, use_wal_mode: bool, ensure_acid: bool) -> Connection {
+// Initialize the database
+pub fn initialize_db(path: &str, use_wal_mode: bool, ensure_acid: bool) {
     let db = Connection::open(path).expect("Unable to open database!");
 
-    let tables_list: Rc<[String]> = {
-        let mut statement = db
-            .prepare(
-                "SELECT name
-                 FROM sqlite_master
-                 WHERE type = 'table' AND name NOT LIKE 'sqlite_%'
-                 ORDER BY name",
-            )
-            .expect("Error preparing statement for listing tables.");
-        statement
-            .query_map([], |row| row.get("name"))
-            .unwrap()
-            .filter_map(Result::ok)
-            .collect()
-    };
+    info!("Creating a backup of the existing database.");
+    let bak1 = format!("{path}.bak1");
+    let bak2 = format!("{path}.bak2");
+    if fs::exists(&bak1).unwrap_or(false) {
+        fs::rename(&bak1, &bak2).expect("Error while renaming old backup.");
+    }
+    db.backup("main", &bak1, None)
+        .expect("Error while creating backup.");
 
-    let urls_table_exists = tables_list.iter().any(|s| s.as_str() == "urls");
-    let urls_fts_table_exists = tables_list.iter().any(|s| s.as_str() == "urls_fts");
+    info!("Initializing database.");
+    let (tables, indices) = db
+        .prepare(
+            "SELECT type, name
+             FROM sqlite_master
+             WHERE type IN ('table', 'index') AND name NOT LIKE 'sqlite_%'",
+        )
+        .expect("Error preparing statement for database objects query.")
+        .query_map([], |row| {
+            Ok((row.get::<_, String>("type")?, row.get::<_, String>("name")?))
+        })
+        .expect("Error executing database objects query.")
+        .filter_map(Result::ok)
+        .fold(
+            (HashSet::new(), HashSet::new()),
+            |(mut tables, mut indices), (obj_type, name)| {
+                match obj_type.as_str() {
+                    "table" => {
+                        tables.insert(name);
+                    }
+                    "index" => {
+                        indices.insert(name);
+                    }
+                    _ => {}
+                }
+
+                (tables, indices)
+            },
+        );
+
+    let urls_table_exists = tables.contains("urls");
 
     let current_user_version: u32 = if !urls_table_exists {
         // It would mean that the table is newly created i.e. has the desired schema
+        db.pragma_update(None, "application_id", APPLICATION_ID)
+            .expect("Unable to set pragma: application_id.");
         USER_VERSION
     } else {
         db.query_row_and_then("SELECT user_version FROM pragma_user_version", [], |row| {
@@ -342,14 +366,14 @@ pub fn open_db(path: &str, use_wal_mode: bool, ensure_acid: bool) -> Connection 
         .unwrap_or_default()
     };
 
-    let current_application_id: u32 = db
+    let current_application_id: i32 = db
         .query_row_and_then(
             "SELECT application_id FROM pragma_application_id",
             [],
             |row| row.get(0),
         )
         .unwrap_or_default();
-    if current_application_id > 0 || (urls_table_exists && current_user_version > 1) {
+    if current_application_id != 0 || (urls_table_exists && current_user_version > 1) {
         assert_eq!(
             current_application_id, APPLICATION_ID,
             "Incorrect application_id: The database file seems to belong to some other application."
@@ -357,8 +381,10 @@ pub fn open_db(path: &str, use_wal_mode: bool, ensure_acid: bool) -> Connection 
     }
 
     // Create table if it doesn't exist
-    db.execute(
-        "CREATE TABLE IF NOT EXISTS urls (
+    if !urls_table_exists {
+        info!("Creating an empty urls table.");
+        db.execute(
+            "CREATE TABLE urls (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             long_url TEXT NOT NULL,
             short_url TEXT NOT NULL,
@@ -366,59 +392,70 @@ pub fn open_db(path: &str, use_wal_mode: bool, ensure_acid: bool) -> Connection 
             expiry_time INTEGER NOT NULL DEFAULT 0,
             notes TEXT
          )",
-        // expiry_time is added later during migration 1
-        [],
-    )
-    .expect("Unable to initialize empty database.");
+            // expiry_time is added later during migration 1
+            [],
+        )
+        .expect("Unable to initialize empty database.");
+    }
 
     // Create index on short_url for faster lookups
-    db.execute(
-        "CREATE UNIQUE INDEX IF NOT EXISTS idx_short_url ON urls (short_url)",
-        [],
-    )
-    .expect("Unable to create index on short_url.");
+    if !indices.contains("idx_short_url") {
+        info!("Creating index idx_short_url on urls(short_url).");
+        db.execute("CREATE UNIQUE INDEX idx_short_url ON urls (short_url)", [])
+            .expect("Unable to create index on short_url.");
+    }
 
     // Migration 1: Add expiry_time, introduced in 6.0.0
     if current_user_version < 1 {
+        info!("Applying migration 1: Adding expiry_time column to urls.");
         db.execute(
             "ALTER TABLE urls ADD COLUMN expiry_time INTEGER NOT NULL DEFAULT 0",
             [],
         )
         .expect("Unable to apply migration 1.");
     }
+    // Create index on expiry_time for faster lookups
+    if !indices.contains("idx_expiry_time") {
+        info!("Creating index idx_expiry_time on urls(expiry_time).");
+        db.execute("CREATE INDEX idx_expiry_time ON urls (expiry_time)", [])
+            .expect("Unable to create index on expiry_time.");
+    }
 
     // Migration 2: Add notes, introduced in 7.0.0
     if current_user_version < 3 {
+        info!("Applying migration 2: Adding notes column to urls.");
         db.execute("ALTER TABLE urls ADD COLUMN notes TEXT", [])
             .expect("Unable to apply migration 2.");
     }
 
     // Create FTS5 table if it doesn't exist, and also create triggers
-    db.execute(
-        "CREATE VIRTUAL TABLE IF NOT EXISTS urls_fts USING fts5(
+    if !tables.contains("urls_fts") {
+        info!("Creating FTS table urls_fts, and adding triggers.");
+        db.execute(
+            "CREATE VIRTUAL TABLE urls_fts USING fts5(
              long_url, short_url, notes,
              content='urls',
              content_rowid='id',
              tokenize='trigram remove_diacritics 2'
          )",
-        [],
-    )
-    .expect("Unable to create FTS table.");
-    if !urls_fts_table_exists {
+            [],
+        )
+        .expect("Unable to create FTS table.");
+
         db.execute("INSERT INTO urls_fts(urls_fts) VALUES ('rebuild')", [])
             .expect("Unable to populate FTS table.");
         let fts_triggers = [
-            "CREATE TRIGGER IF NOT EXISTS urls_insert
+            "CREATE TRIGGER urls_insert
                  AFTER INSERT ON urls BEGIN
                  INSERT INTO urls_fts(rowid, long_url, short_url, notes)
                  VALUES (new.id, new.long_url, new.short_url, new.notes);
              END",
-            "CREATE TRIGGER IF NOT EXISTS urls_delete
+            "CREATE TRIGGER urls_delete
                  AFTER DELETE ON urls BEGIN
                  INSERT INTO urls_fts(urls_fts, rowid, long_url, short_url, notes)
                  VALUES('delete', old.id, old.long_url, old.short_url, old.notes);
              END",
-            "CREATE TRIGGER IF NOT EXISTS urls_update
+            "CREATE TRIGGER urls_update
              AFTER UPDATE ON urls BEGIN
                  INSERT INTO urls_fts(urls_fts, rowid, long_url, short_url, notes)
                  VALUES('delete', old.id, old.long_url, old.short_url, old.notes);
@@ -432,20 +469,9 @@ pub fn open_db(path: &str, use_wal_mode: bool, ensure_acid: bool) -> Connection 
         }
     }
 
-    // The migrations have finished successfully by this point
-    if !urls_table_exists || current_user_version < USER_VERSION {
-        db.pragma_update(None, "user_version", USER_VERSION)
-            .expect("Unable to set pragma: user_version.");
-        db.pragma_update(None, "application_id", APPLICATION_ID)
-            .expect("Unable to set pragma: application_id.");
-    }
-
-    // Create index on expiry_time for faster lookups
-    db.execute(
-        "CREATE INDEX IF NOT EXISTS idx_expiry_time ON urls (expiry_time)",
-        [],
-    )
-    .expect("Unable to create index on expiry_time.");
+    // The schema should be up-to-date by this point
+    db.pragma_update(None, "user_version", USER_VERSION)
+        .expect("Unable to set pragma: user_version.");
 
     // Set WAL mode if specified
     let (journal_mode, synchronous) = match (use_wal_mode, ensure_acid) {
@@ -465,9 +491,15 @@ pub fn open_db(path: &str, use_wal_mode: bool, ensure_acid: bool) -> Connection 
         .expect("Unable to set pragma: journal_size_limit.");
     db.pragma_update(None, "mmap_size", "16777216")
         .expect("Unable to set pragma: mmap_size.");
-    db.execute("VACUUM", []).expect("Unable to vacuum database");
+    db.execute("VACUUM", [])
+        .expect("Unable to vacuum database.");
     db.execute("PRAGMA optimize=0x10002", [])
         .expect("Error running pragma optimize.");
 
-    db
+    info!("Database initialization was successful.");
+}
+
+// Open and return a rusqlite connection
+pub fn open_db(path: &str) -> Connection {
+    Connection::open(path).expect("Unable to open database.")
 }

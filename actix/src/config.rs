@@ -64,7 +64,7 @@ pub fn read() -> Config {
         .map(|s| s.trim().to_string())
         .filter(|s| !s.is_empty())
         .unwrap_or(String::from("urls.sqlite"));
-    info!("DB Location is set to: {db_location}");
+    info!("Database Location is set to: {db_location}");
 
     // Get the address environment variable
     let listen_address = read_config_wrapper("CHHOTO_LISTEN_ADDRESS", "listen_address")
