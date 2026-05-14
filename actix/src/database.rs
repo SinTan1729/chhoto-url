@@ -311,7 +311,7 @@ pub fn delete_link(shortlink: &str, db: &Connection) -> Result<(), ChhotoError> 
 
 // Initialize the database
 pub fn initialize_db(path: &str, use_wal_mode: bool, ensure_acid: bool) {
-    let db = Connection::open(path).expect("Unable to open database!");
+    let mut db = Connection::open(path).expect("Unable to open database!");
 
     info!("Creating a backup of the existing database.");
     let bak1 = format!("{path}.bak1");
@@ -431,7 +431,10 @@ pub fn initialize_db(path: &str, use_wal_mode: bool, ensure_acid: bool) {
     // Create FTS5 table if it doesn't exist, and also create triggers
     if !tables.contains("urls_fts") {
         info!("Creating FTS table urls_fts, and adding triggers.");
-        db.execute(
+        let tx = db
+            .transaction()
+            .expect("Error while creating transaction for FTS table creation.");
+        tx.execute(
             "CREATE VIRTUAL TABLE urls_fts USING fts5(
              long_url, short_url, notes,
              content='urls',
@@ -442,7 +445,7 @@ pub fn initialize_db(path: &str, use_wal_mode: bool, ensure_acid: bool) {
         )
         .expect("Unable to create FTS table.");
 
-        db.execute("INSERT INTO urls_fts(urls_fts) VALUES ('rebuild')", [])
+        tx.execute("INSERT INTO urls_fts(urls_fts) VALUES ('rebuild')", [])
             .expect("Unable to populate FTS table.");
         let fts_triggers = [
             "CREATE TRIGGER urls_insert
@@ -464,9 +467,11 @@ pub fn initialize_db(path: &str, use_wal_mode: bool, ensure_acid: bool) {
              END",
         ];
         for trigger in fts_triggers {
-            db.execute(trigger, [])
+            tx.execute(trigger, [])
                 .expect("Unable to create FTS trigger(s).");
         }
+
+        tx.commit().expect("Unable to create FTS table.");
     }
 
     // The schema should be up-to-date by this point
@@ -484,13 +489,17 @@ pub fn initialize_db(path: &str, use_wal_mode: bool, ensure_acid: bool) {
         .expect("Unable to set pragma: journal_mode.");
     db.pragma_update(None, "synchronous", synchronous)
         .expect("Unable to set pragma: synchronous.");
+    let tx = db
+        .transaction()
+        .expect("Error while creating transaction for pragma updates.");
     // Set some further optimizations and run vacuum
-    db.pragma_update(None, "temp_store", "memory")
+    tx.pragma_update(None, "temp_store", "memory")
         .expect("Unable to set pragma: temp_store.");
-    db.pragma_update(None, "journal_size_limit", "8388608")
+    tx.pragma_update(None, "journal_size_limit", "8388608")
         .expect("Unable to set pragma: journal_size_limit.");
-    db.pragma_update(None, "mmap_size", "16777216")
+    tx.pragma_update(None, "mmap_size", "16777216")
         .expect("Unable to set pragma: mmap_size.");
+    tx.commit().expect("Unable to set correct pragma.");
     db.execute("VACUUM", [])
         .expect("Unable to vacuum database.");
     db.execute("PRAGMA optimize=0x10002", [])
