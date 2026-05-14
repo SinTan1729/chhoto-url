@@ -65,6 +65,7 @@ Password: `chhoto-url-demo-pass`
   based on short link, long link, and notes.
 - QR codes can be generated for easy sharing.
 - Supports operation using API key, and lets the user provide hashed password and API key.
+- Has a robust JSON-RPC adjacent API.
 - Has a mobile friendly UI, and automatic dark mode.
 - Can serve a custom landing page, if needed.
 - Has a public mode, where anyone can add links without authentication. Deleting

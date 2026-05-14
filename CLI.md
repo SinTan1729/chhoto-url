@@ -13,7 +13,7 @@ get the siteurl using `curl http://localhost:4567/api/siteurl`. These routes are
 
 ### API key validation
 
-**This is required for programs that rely on a JSON response from Chhoto URL**
+**This is required for programs that rely on a JSON response from Chhoto URL.**
 
 In order to use API key validation, set the [`CHHOTO_API_KEY`](./INSTALLATION.md#chhoto_api_key) environment variable. If this is not set,
 the API will default to cookie validation (see section above). If the API key is insecure, a warning will be outputted along with a generated
@@ -238,6 +238,5 @@ If you do not define a [`CHHOTO_PASSWORD`](./INSTALLATION.md#chhoto_password) en
 image, authentication will be disabled.
 
 This if not recommended in actual use however, as it will allow anyone to create new links and delete
-old ones. This might not seem like a bad idea, until you have hundreds of links
-pointing to illegal content. Since there are no logs, it's impossible to prove
-that those links aren't created by you.
+old ones. This might not seem like a bad idea, until you have hundreds of links pointing to illegal content.
+Since there are no logs, it's impossible to prove that those links aren't created by you.
