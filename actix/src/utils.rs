@@ -98,7 +98,7 @@ pub fn getall(db: &Connection, params: GetReqParams) -> Result<String, ChhotoErr
         Some(s) if s.is_empty() => {
             return Err(ChhotoError::ClientError {
                 reason: "Invalid page_after was supplied!".to_string(),
-            })
+            });
         }
         other => other,
     };
@@ -106,7 +106,7 @@ pub fn getall(db: &Connection, params: GetReqParams) -> Result<String, ChhotoErr
         Some(n) if n <= 0 => {
             return Err(ChhotoError::ClientError {
                 reason: "Invalid page_no was supplied!".to_string(),
-            })
+            });
         }
         other => other,
     };

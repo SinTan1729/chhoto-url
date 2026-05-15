@@ -3,7 +3,7 @@
 
 use actix_session::Session;
 use actix_web::HttpRequest;
-use argon2::{password_hash::PasswordHash, Argon2, PasswordVerifier};
+use argon2::{Argon2, PasswordVerifier, password_hash::PasswordHash};
 use log::{debug, warn};
 use passwords::PasswordGenerator;
 use std::{rc::Rc, time::SystemTime};
@@ -86,7 +86,9 @@ pub fn is_key_valid(key: &str, config: &Config) -> bool {
             true
         }
     } else {
-        warn!("API was accessed with API key validation but no API key was specified. Set the 'api_key' environment variable.");
+        warn!(
+            "API was accessed with API key validation but no API key was specified. Set the 'api_key' environment variable."
+        );
         false
     }
 }
