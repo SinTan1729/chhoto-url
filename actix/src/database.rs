@@ -458,10 +458,10 @@ pub fn initialize_db(path: &str, use_wal_mode: bool, ensure_acid: bool) {
         )
         .expect("Unable to clone data to the new table.");
         tx.execute("DROP TABLE urls_old", ())
-            .expect("Unable to delete the old urls table.");
+            .expect("Unable to delete old urls table.");
         if urls_fts_table_exists {
             tx.execute("DROP TABLE urls_fts", ())
-                .expect("Unable to delete the old urls table.");
+                .expect("Unable to delete old urls_fts table.");
         }
         (tables, indices) = (HashSet::from(["urls".to_string()]), HashSet::new());
         tx.pragma_update(None, "user_version", 3)
