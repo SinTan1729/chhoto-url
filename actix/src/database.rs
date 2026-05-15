@@ -369,7 +369,7 @@ pub fn initialize_db(path: &str, use_wal_mode: bool, ensure_acid: bool) {
             .expect("Unable to set pragma: application_id.");
         USER_VERSION
     } else {
-        db.query_row_and_then("SELECT user_version FROM pragma_user_version", [], |row| {
+        db.query_row_and_then("SELECT user_version FROM pragma_user_version", (), |row| {
             row.get(0)
         })
         .unwrap_or_default()
@@ -410,7 +410,7 @@ pub fn initialize_db(path: &str, use_wal_mode: bool, ensure_acid: bool) {
     // Create index on short_url for faster lookups
     if !indices.contains("idx_short_url") {
         info!("Creating index idx_short_url on urls(short_url).");
-        db.execute("CREATE UNIQUE INDEX idx_short_url ON urls (short_url)", [])
+        db.execute("CREATE UNIQUE INDEX idx_short_url ON urls (short_url)", ())
             .expect("Unable to create index on short_url.");
     }
 
@@ -433,7 +433,7 @@ pub fn initialize_db(path: &str, use_wal_mode: bool, ensure_acid: bool) {
     // Create index on expiry_time for faster lookups
     if !indices.contains("idx_expiry_time") {
         info!("Creating index idx_expiry_time on urls(expiry_time).");
-        db.execute("CREATE INDEX idx_expiry_time ON urls (expiry_time)", [])
+        db.execute("CREATE INDEX idx_expiry_time ON urls (expiry_time)", ())
             .expect("Unable to create index on expiry_time.");
     }
 
@@ -443,7 +443,7 @@ pub fn initialize_db(path: &str, use_wal_mode: bool, ensure_acid: bool) {
         let tx = db
             .transaction()
             .expect("Unable to create transaction for migration 2.");
-        tx.execute("ALTER TABLE urls ADD COLUMN notes TEXT", [])
+        tx.execute("ALTER TABLE urls ADD COLUMN notes TEXT", ())
             .expect("Unable to apply migration 2.");
         tx.pragma_update(None, "user_version", 2)
             .expect("Unable to set pragma: user_version.");
@@ -468,7 +468,7 @@ pub fn initialize_db(path: &str, use_wal_mode: bool, ensure_acid: bool) {
         )
         .expect("Unable to create FTS table.");
 
-        tx.execute("INSERT INTO urls_fts(urls_fts) VALUES ('rebuild')", [])
+        tx.execute("INSERT INTO urls_fts(urls_fts) VALUES ('rebuild')", ())
             .expect("Unable to populate FTS table.");
         let fts_triggers = [
             "CREATE TRIGGER urls_insert
@@ -490,7 +490,7 @@ pub fn initialize_db(path: &str, use_wal_mode: bool, ensure_acid: bool) {
              END",
         ];
         for trigger in fts_triggers {
-            tx.execute(trigger, [])
+            tx.execute(trigger, ())
                 .expect("Unable to create FTS trigger(s).");
         }
 
