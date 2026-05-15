@@ -10,7 +10,7 @@ use crate::services::ChhotoError::{self, ClientError, ServerError};
 
 // Some constants
 const APPLICATION_ID: i32 = i32::from_be_bytes(*b"chht"); // MUST NEVER BE CHANGED
-const USER_VERSION: u32 = 3; // Should be incremented on change of schema
+const USER_VERSION: u32 = 4; // Should be incremented on change of schema
 
 // Struct for encoding a DB row
 #[derive(Serialize)]
@@ -332,7 +332,7 @@ pub fn initialize_db(path: &str, use_wal_mode: bool, ensure_acid: bool) {
         .expect("Error while creating backup.");
 
     info!("Initializing database.");
-    let (tables, indices) = db
+    let (mut tables, mut indices) = db
         .prepare(
             "SELECT type, name
              FROM sqlite_master
@@ -362,6 +362,7 @@ pub fn initialize_db(path: &str, use_wal_mode: bool, ensure_acid: bool) {
         );
 
     let urls_table_exists = tables.contains("urls");
+    let urls_fts_table_exists = tables.contains("urls_fts");
 
     let current_user_version: u32 = if !urls_table_exists {
         // It would mean that the table is newly created i.e. has the desired schema
@@ -382,41 +383,36 @@ pub fn initialize_db(path: &str, use_wal_mode: bool, ensure_acid: bool) {
             |row| row.get(0),
         )
         .unwrap_or_default();
-    if current_application_id != 0 || (urls_table_exists && current_user_version > 1) {
+    if current_application_id != 0
+        || (urls_table_exists && urls_fts_table_exists && current_user_version > 1)
+    {
         assert_eq!(
             current_application_id, APPLICATION_ID,
             "Incorrect application_id: The database file seems to belong to some other application."
         )
     }
-
+    let urls_table_schema = "CREATE TABLE urls (
+                                 id INTEGER PRIMARY KEY,
+                                 short_url TEXT NOT NULL,
+                                 long_url TEXT NOT NULL,
+                                 hits INTEGER NOT NULL,
+                                 expiry_time INTEGER NOT NULL DEFAULT 0,
+                                 notes TEXT NOT NULL
+                             )";
     // Create table if it doesn't exist
     if !urls_table_exists {
         info!("Creating an empty urls table.");
         db.execute(
-            "CREATE TABLE urls (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            long_url TEXT NOT NULL,
-            short_url TEXT NOT NULL,
-            hits INTEGER NOT NULL,
-            expiry_time INTEGER NOT NULL DEFAULT 0,
-            notes TEXT
-         )",
+            urls_table_schema,
             // expiry_time is added later during migration 1
             [],
         )
         .expect("Unable to initialize empty database.");
     }
 
-    // Create index on short_url for faster lookups
-    if !indices.contains("idx_short_url") {
-        info!("Creating index idx_short_url on urls(short_url).");
-        db.execute("CREATE UNIQUE INDEX idx_short_url ON urls (short_url)", ())
-            .expect("Unable to create index on short_url.");
-    }
-
     // Migration 1: Add expiry_time, introduced in 6.0.0
     if current_user_version < 1 {
-        info!("Applying migration 1: Adding expiry_time column to urls.");
+        info!("Applying migration 1: Add expiry_time column to urls.");
         let tx = db
             .transaction()
             .expect("Unable to create transaction for migration 1.");
@@ -430,16 +426,9 @@ pub fn initialize_db(path: &str, use_wal_mode: bool, ensure_acid: bool) {
         tx.commit()
             .expect("Unable to commit transaction for migration 1.");
     }
-    // Create index on expiry_time for faster lookups
-    if !indices.contains("idx_expiry_time") {
-        info!("Creating index idx_expiry_time on urls(expiry_time).");
-        db.execute("CREATE INDEX idx_expiry_time ON urls (expiry_time)", ())
-            .expect("Unable to create index on expiry_time.");
-    }
-
     // Migration 2: Add notes, introduced in 7.0.0
     if current_user_version < 3 {
-        info!("Applying migration 2: Adding notes column to urls.");
+        info!("Applying migration 2: Add notes column to urls.");
         let tx = db
             .transaction()
             .expect("Unable to create transaction for migration 2.");
@@ -449,6 +438,50 @@ pub fn initialize_db(path: &str, use_wal_mode: bool, ensure_acid: bool) {
             .expect("Unable to set pragma: user_version.");
         tx.commit()
             .expect("Unable to commit transaction for migration 2.");
+    }
+    // Migration 3: Remove AUTOINCRMENT from the id row
+    if current_user_version < 4 {
+        info!("Applying migration 3: Remove AUTOINCRMENT from id row.");
+        let tx = db
+            .transaction()
+            .expect("Unable to create transaction for migration 2.");
+        tx.execute("ALTER TABLE urls RENAME TO urls_old", ())
+            .expect("Unable to temporarily rename urls to urls_old.");
+        tx.execute(urls_table_schema, ())
+            .expect("Unable to create new urls table.");
+        tx.execute(
+            "INSERT INTO urls (long_url, short_url, hits, expiry_time, notes)
+             SELECT long_url, short_url, hits, expiry_time, COALESCE(notes,'')
+             FROM urls_old       
+             ORDER BY id",
+            (),
+        )
+        .expect("Unable to clone data to the new table.");
+        tx.execute("DROP TABLE urls_old", ())
+            .expect("Unable to delete the old urls table.");
+        if urls_fts_table_exists {
+            tx.execute("DROP TABLE urls_fts", ())
+                .expect("Unable to delete the old urls table.");
+        }
+        (tables, indices) = (HashSet::from(["urls".to_string()]), HashSet::new());
+        tx.pragma_update(None, "user_version", 3)
+            .expect("Unable to set pragma: user_version.");
+        tx.commit()
+            .expect("Unable to commit transaction for migration 3.");
+    }
+
+    // Create index on short_url for faster lookups
+    if !indices.contains("idx_short_url") {
+        info!("Creating index idx_short_url on urls(short_url).");
+        db.execute("CREATE UNIQUE INDEX idx_short_url ON urls (short_url)", ())
+            .expect("Unable to create index on short_url.");
+    }
+
+    // Create index on expiry_time for faster lookups
+    if !indices.contains("idx_expiry_time") {
+        info!("Creating index idx_expiry_time on urls(expiry_time).");
+        db.execute("CREATE INDEX idx_expiry_time ON urls (expiry_time)", ())
+            .expect("Unable to create index on expiry_time.");
     }
 
     // Create FTS5 table if it doesn't exist, and also create triggers
@@ -508,12 +541,12 @@ pub fn initialize_db(path: &str, use_wal_mode: bool, ensure_acid: bool) {
         .expect("Unable to set pragma: journal_mode.");
     db.pragma_update(None, "synchronous", synchronous)
         .expect("Unable to set pragma: synchronous.");
+    db.pragma_update(None, "temp_store", "memory")
+        .expect("Unable to set pragma: temp_store.");
     let tx = db
         .transaction()
         .expect("Unable to create transaction for pragma updates.");
     // Set some further optimizations and run vacuum if necessary
-    tx.pragma_update(None, "temp_store", "memory")
-        .expect("Unable to set pragma: temp_store.");
     tx.pragma_update(None, "journal_size_limit", "8388608")
         .expect("Unable to set pragma: journal_size_limit.");
     tx.pragma_update(None, "mmap_size", "16777216")
