@@ -522,8 +522,10 @@ const infoButton = (shortUrl) => {
     document.getElementById("info-short").innerHTML = row.shortlink;
     document.getElementById("info-long").innerHTML = row.longlink;
     document.getElementById("info-hits").innerHTML = row.hits;
-    const expiryTimeParsed = new Date(row.expiry_time * 1000);
-    const accurateExpiryTime = expiryTimeParsed.toLocaleString();
+    const accurateExpiryTime =
+      row.expiry_time > 0
+        ? new Date(row.expiry_time * 1000).toLocaleString()
+        : "Disabled";
     document.getElementById("info-expiry").innerHTML = accurateExpiryTime;
     document.getElementById("info-notes").innerHTML = row.notes;
   };
