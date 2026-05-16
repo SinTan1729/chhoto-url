@@ -14,3 +14,4 @@ cookie*
 # Testing related
 custom_dir
 testing-data
+*.sqlite
