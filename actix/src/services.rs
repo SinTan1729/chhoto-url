@@ -42,7 +42,7 @@ struct BackendConfig {
     site_url: Option<String>,
     allow_capital_letters: bool,
     public_mode: bool,
-    public_mode_expiry_delay: i64,
+    public_mode_expiry_delay: Option<i64>,
     slug_style: String,
     slug_length: usize,
     try_longer_slug: bool,
@@ -184,14 +184,14 @@ pub async fn expand(req: String, data: web::Data<AppState>, http: HttpRequest) -
     let result = auth::is_api_ok(http, &data.config);
     if result.success {
         match database::find_url(&req, &data.db) {
-            Ok((longurl, hits, expiry_time, notes)) => {
+            Ok(chunks) => {
                 let body = LinkInfo {
                     success: true,
                     error: false,
-                    longurl,
-                    hits,
-                    expiry_time,
-                    notes,
+                    longurl: chunks.longlink,
+                    hits: chunks.hits,
+                    expiry_time: chunks.expiry_time,
+                    notes: chunks.notes,
                 };
                 HttpResponse::Ok().json(body)
             }

@@ -43,7 +43,7 @@ pub struct Config {
     pub disable_frontend: bool,
     pub site_url: Option<String>,
     pub public_mode: bool,
-    pub public_mode_expiry_delay: i64,
+    pub public_mode_expiry_delay: Option<i64>,
     pub use_temp_redirect: bool,
     pub password: Option<String>,
     pub hash_algorithm: HashAlgorithm,
@@ -117,12 +117,10 @@ pub fn read() -> Config {
     )
     .ok()
     .and_then(|s| s.parse::<i64>().ok())
-    .unwrap_or_default();
+    .filter(|&s| s > 0);
     if public_mode {
-        if public_mode_expiry_delay > 0 {
-            info!(
-                "Enabling public mode with an enforced expiry delay of {public_mode_expiry_delay} seconds."
-            );
+        if let Some(delay) = public_mode_expiry_delay {
+            info!("Enabling public mode with an enforced expiry delay of {delay} seconds.");
         } else {
             info!("Enabling public mode with no enforced expiry delay.");
         }

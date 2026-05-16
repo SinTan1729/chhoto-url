@@ -57,7 +57,7 @@ fn default_config(test: &str) -> config::Config {
         disable_frontend: true,
         site_url: Some(String::from("https://mydomain.com")),
         public_mode: false,
-        public_mode_expiry_delay: 0,
+        public_mode_expiry_delay: None,
         use_temp_redirect: false,
         password: Some(String::from("testpass")),
         hash_algorithm: config::HashAlgorithm::None,

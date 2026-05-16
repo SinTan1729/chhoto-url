@@ -23,10 +23,8 @@ struct NewURLRequest {
     #[serde(default)]
     shortlink: String,
     longlink: String,
-    #[serde(default)]
-    expiry_delay: i64,
-    #[serde(default)]
-    notes: String,
+    expiry_delay: Option<i64>,
+    notes: Option<String>,
 }
 
 // Struct for reading link pairs sent during API call for editing link
@@ -154,24 +152,22 @@ pub fn add_link(
     };
 
     // In public mode, set automatic expiry delay
-    if using_public_mode && config.public_mode_expiry_delay > 0 {
-        if chunks.expiry_delay == 0 {
-            chunks.expiry_delay = config.public_mode_expiry_delay;
-        } else {
-            chunks.expiry_delay = chunks.expiry_delay.min(config.public_mode_expiry_delay);
-        }
-    }
+    if using_public_mode && let Some(delay) = config.public_mode_expiry_delay {
+        chunks.expiry_delay = Some(chunks.expiry_delay.map_or(delay, |d| d.min(delay)))
+    };
 
     // Allow max delay of 5 years
-    chunks.expiry_delay = chunks.expiry_delay.min(157784760);
-    chunks.expiry_delay = chunks.expiry_delay.max(0);
+    chunks.expiry_delay = chunks
+        .expiry_delay
+        .map(|d| d.clamp(0, 157784760))
+        .filter(|&d| d > 0);
 
     if !shortlink_provided || is_link_valid(chunks.shortlink.as_str(), allow_capital_letters) {
         match database::add_link(
             &chunks.shortlink,
             &chunks.longlink,
             chunks.expiry_delay,
-            &chunks.notes,
+            chunks.notes.as_deref(),
             db,
         ) {
             Ok(expiry_time) => Ok((chunks.shortlink, expiry_time)),
@@ -186,7 +182,7 @@ pub fn add_link(
                         &chunks.shortlink,
                         &chunks.longlink,
                         chunks.expiry_delay,
-                        &chunks.notes,
+                        chunks.notes.as_deref(),
                         db,
                     ) {
                         Ok(expiry_time) => Ok((chunks.shortlink, expiry_time)),
