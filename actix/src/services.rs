@@ -42,7 +42,7 @@ struct BackendConfig {
     site_url: Option<String>,
     allow_capital_letters: bool,
     public_mode: bool,
-    public_mode_expiry_delay: Option<i64>,
+    public_mode_expiry_delay: i64,
     slug_style: String,
     slug_length: usize,
     try_longer_slug: bool,
@@ -312,7 +312,7 @@ pub async fn getconfig(
             version: utils::get_version(),
             allow_capital_letters: config.allow_capital_letters,
             public_mode: config.public_mode,
-            public_mode_expiry_delay: config.public_mode_expiry_delay,
+            public_mode_expiry_delay: config.public_mode_expiry_delay.unwrap_or_default(),
             site_url: config.site_url.clone(),
             slug_style: (match config.slug_style {
                 SlugStyle::Uid => "UID",
