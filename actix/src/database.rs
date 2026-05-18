@@ -437,9 +437,9 @@ pub fn initialize_db(path: &str, use_wal_mode: bool, ensure_acid: bool) {
         tx.commit()
             .expect("Unable to commit transaction for migration 2.");
     }
-    // Migration 3: Remove AUTOINCRMENT from the id row
+    // Migration 3: Remove AUTOINCREMENT from the id row
     if current_user_version < 4 {
-        info!("Applying migration 3: Remove AUTOINCRMENT from id row.");
+        info!("Applying migration 3: Remove AUTOINCREMENT from id row.");
         let tx = db
             .transaction()
             .expect("Unable to create transaction for migration 2.");
@@ -466,6 +466,8 @@ pub fn initialize_db(path: &str, use_wal_mode: bool, ensure_acid: bool) {
             .expect("Unable to set pragma: user_version.");
         tx.commit()
             .expect("Unable to commit transaction for migration 3.");
+        db.execute("VACUUM", ())
+            .expect("failed to vacuum database after migration 3.");
     }
 
     // Create index on short_url for faster lookups
