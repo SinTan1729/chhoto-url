@@ -25,6 +25,12 @@ Example Linux command for generating a secure API key: `tr -dc A-Za-z0-9 </dev/u
 
 For each response, the response code will be `200`, `401`, `400`, `500`, or `404`, depending on the context. The routes are as follows.
 
+## Note
+
+Some of the requests/responses use `shorturl` and `longurl`, while some use `shortlink` and `longlink`. This is due to my own lack of
+foresight while developing the initial API. I don't want to change it since it might break compatibility, and the issue isn't big enough to
+make that worth it. So please be careful if you use the API.
+
 #### `/api/new`
 
 To add a link:
