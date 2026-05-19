@@ -339,6 +339,10 @@ async fn data_fetching_all() {
     assert_ne!(reply[0].expiry_time, 0);
     assert_ne!(reply[1].expiry_time, 0);
 
+    let reply = getall(&app, &api_key, "page_size=1").await;
+    assert_eq!(reply.len(), 1);
+    assert_eq!(reply[0].shortlink, "test3");
+
     let reply = getall(&app, &api_key, "page_no=2&page_size=1").await;
     assert_eq!(reply.len(), 1);
     assert_eq!(reply[0].shortlink, "test1");
