@@ -4,20 +4,20 @@
 use actix_files::NamedFile;
 use actix_session::Session;
 use actix_web::{
-    delete, get,
+    Either, HttpRequest, HttpResponse, Responder, delete, get,
     http::StatusCode,
     post, put,
     web::{self, Redirect},
-    Either, HttpRequest, HttpResponse, Responder,
 };
-use argon2::{password_hash::PasswordHash, Argon2, PasswordVerifier};
+use argon2::{Argon2, PasswordVerifier, password_hash::PasswordHash};
 use log::{debug, info, warn};
 use serde::{Deserialize, Serialize};
 
 use crate::{
+    AppState,
     auth::{self, is_session_valid},
     config::{HashAlgorithm, SlugStyle},
-    database, utils, AppState,
+    database, utils,
 };
 
 // Error types
@@ -184,14 +184,14 @@ pub async fn expand(req: String, data: web::Data<AppState>, http: HttpRequest) -
     let result = auth::is_api_ok(http, &data.config);
     if result.success {
         match database::find_url(&req, &data.db) {
-            Ok((longurl, hits, expiry_time, notes)) => {
+            Ok(chunks) => {
                 let body = LinkInfo {
                     success: true,
                     error: false,
-                    longurl,
-                    hits,
-                    expiry_time,
-                    notes,
+                    longurl: chunks.longlink,
+                    hits: chunks.hits,
+                    expiry_time: chunks.expiry_time,
+                    notes: chunks.notes,
                 };
                 HttpResponse::Ok().json(body)
             }
@@ -312,7 +312,7 @@ pub async fn getconfig(
             version: utils::get_version(),
             allow_capital_letters: config.allow_capital_letters,
             public_mode: config.public_mode,
-            public_mode_expiry_delay: config.public_mode_expiry_delay,
+            public_mode_expiry_delay: config.public_mode_expiry_delay.unwrap_or_default(),
             site_url: config.site_url.clone(),
             slug_style: (match config.slug_style {
                 SlugStyle::Uid => "UID",
@@ -387,16 +387,16 @@ pub async fn login(req: String, session: Session, data: web::Data<AppState>) -> 
         None
     };
     if config.api_key.is_some() {
-        if let Some(valid_pass) = authorized {
-            if !valid_pass {
-                warn!("Failed login attempt!");
-                let response = JSONResponse {
-                    success: false,
-                    error: true,
-                    reason: "Wrong password!".to_string(),
-                };
-                return HttpResponse::Unauthorized().json(response);
-            }
+        if let Some(valid_pass) = authorized
+            && !valid_pass
+        {
+            warn!("Failed login attempt!");
+            let response = JSONResponse {
+                success: false,
+                error: true,
+                reason: "Wrong password!".to_string(),
+            };
+            return HttpResponse::Unauthorized().json(response);
         }
         // Return Ok if no password was set on the server side
         session
@@ -412,11 +412,11 @@ pub async fn login(req: String, session: Session, data: web::Data<AppState>) -> 
         HttpResponse::Ok().json(response)
     } else {
         // Keep this function backwards compatible
-        if let Some(valid_pass) = authorized {
-            if !valid_pass {
-                warn!("Failed login attempt!");
-                return HttpResponse::Unauthorized().body("Wrong password!");
-            }
+        if let Some(valid_pass) = authorized
+            && !valid_pass
+        {
+            warn!("Failed login attempt!");
+            return HttpResponse::Unauthorized().body("Wrong password!");
         }
         // Return Ok if no password was set on the server side
         session

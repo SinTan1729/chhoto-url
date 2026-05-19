@@ -2,12 +2,12 @@
 // SPDX-License-Identifier: MIT
 
 use actix_files::Files;
-use actix_session::{config::PersistentSession, storage::CookieSessionStore, SessionMiddleware};
+use actix_session::{SessionMiddleware, config::PersistentSession, storage::CookieSessionStore};
 use actix_web::{
+    App, HttpServer,
     cookie::{self, Key},
     middleware,
     web::{self, Redirect},
-    App, HttpServer,
 };
 use log::info;
 use rusqlite::Connection;

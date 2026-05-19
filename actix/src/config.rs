@@ -3,7 +3,7 @@
 
 use log::{info, warn};
 use passwords::{analyzer::analyze, scorer::score};
-use std::env::{var, VarError};
+use std::env::{VarError, var};
 
 use crate::auth;
 
@@ -43,7 +43,7 @@ pub struct Config {
     pub disable_frontend: bool,
     pub site_url: Option<String>,
     pub public_mode: bool,
-    pub public_mode_expiry_delay: i64,
+    pub public_mode_expiry_delay: Option<i64>,
     pub use_temp_redirect: bool,
     pub password: Option<String>,
     pub hash_algorithm: HashAlgorithm,
@@ -99,7 +99,11 @@ pub fn read() -> Config {
     if let Some(key) = &api_key {
         // Determine whether the inputted API key is sufficiently secure
         if score(&analyze(key)) < 90.0 {
-            warn!("API key is insecure! Please change it. Current key is: {}. Generated secure key which you may use: {}", key, auth::gen_key());
+            warn!(
+                "API key is insecure! Please change it. Current key is: {}. Generated secure key which you may use: {}",
+                key,
+                auth::gen_key()
+            );
         } else {
             info!("Secure API key was provided.");
         }
@@ -113,10 +117,10 @@ pub fn read() -> Config {
     )
     .ok()
     .and_then(|s| s.parse::<i64>().ok())
-    .unwrap_or_default();
+    .filter(|&s| s > 0);
     if public_mode {
-        if public_mode_expiry_delay > 0 {
-            info!("Enabling public mode with an enforced expiry delay of {public_mode_expiry_delay} seconds.");
+        if let Some(delay) = public_mode_expiry_delay {
+            info!("Enabling public mode with an enforced expiry delay of {delay} seconds.");
         } else {
             info!("Enabling public mode with no enforced expiry delay.");
         }
@@ -161,7 +165,9 @@ pub fn read() -> Config {
         // If the site_url is encapsulated by quotes (i.e. invalid)
         if first == Option::from('"') || first == Option::from('\'') && first == last {
             // Set the site_url without the quotes
-            warn!("The CHHOTO_SITE_URL environment variable is encapsulated by quotes. Automatically adjusting to: {url}");
+            warn!(
+                "The CHHOTO_SITE_URL environment variable is encapsulated by quotes. Automatically adjusting to: {url}"
+            );
             Some(url.to_string())
         } else {
             info!("Configured Site URL is: {provided_url}");

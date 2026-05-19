@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: MIT
 
 use log::{debug, error, info};
-use rusqlite::{fallible_iterator::FallibleIterator, named_params, types::Value, Connection};
+use rusqlite::{Connection, fallible_iterator::FallibleIterator, named_params, types::Value};
 use serde::Serialize;
 use std::{collections::HashSet, fs, rc::Rc};
 
@@ -10,16 +10,16 @@ use crate::services::ChhotoError::{self, ClientError, ServerError};
 
 // Some constants
 const APPLICATION_ID: i32 = i32::from_be_bytes(*b"chht"); // MUST NEVER BE CHANGED
-const USER_VERSION: u32 = 3; // Should be incremented on change of schema
+const USER_VERSION: u32 = 4; // Should be incremented on change of schema
 
 // Struct for encoding a DB row
 #[derive(Serialize)]
 pub struct DBRow {
     shortlink: String,
-    longlink: String,
-    hits: i64,
-    expiry_time: i64,
-    notes: String,
+    pub longlink: String,
+    pub hits: i64,
+    pub expiry_time: i64,
+    pub notes: String,
 }
 
 // Struct for creating a get query
@@ -31,27 +31,25 @@ struct QueryHelper {
 }
 
 // Find a single URL for /api/expand
-pub fn find_url(
-    shortlink: &str,
-    db: &Connection,
-) -> Result<(String, i64, i64, String), ChhotoError> {
+pub fn find_url(shortlink: &str, db: &Connection) -> Result<DBRow, ChhotoError> {
     // Long link, hits, expiry time
     let now = chrono::Utc::now().timestamp();
     let query = "SELECT long_url, hits, expiry_time, notes FROM urls
                  WHERE short_url = :short
-                 AND (expiry_time = 0 OR expiry_time > :now)";
+                 AND (expiry_time IS NULL OR expiry_time > :now)";
     let Ok(mut statement) = db.prepare_cached(query) else {
         error!("Error preparing SQL statement for find_url.");
         return Err(ServerError);
     };
     statement
         .query_row(named_params! {":short": shortlink, ":now": now}, |row| {
-            Ok((
-                row.get("long_url")?,
-                row.get("hits")?,
-                row.get("expiry_time")?,
-                row.get("notes")?,
-            ))
+            Ok(DBRow {
+                shortlink: String::new(),
+                longlink: row.get("long_url")?,
+                hits: row.get("hits")?,
+                expiry_time: row.get("expiry_time").unwrap_or_default(),
+                notes: row.get("notes").unwrap_or_default(),
+            })
         })
         .map_err(|_| ChhotoError::ClientError {
             reason: "The shortlink does not exist on the server!".to_string(),
@@ -77,7 +75,7 @@ pub fn getall(
         QueryHelper {
             prefix: "( SELECT t.id, t.short_url, t.long_url, t.hits, t.expiry_time, t.notes FROM urls AS t".to_string(),
             joins: "JOIN urls AS u ON u.short_url = :pos".to_string(),
-            conditions: "WHERE t.id < u.id AND ( t.expiry_time = 0 OR t.expiry_time > :now".to_string(),
+            conditions: "WHERE t.id < u.id AND ( t.expiry_time IS NULL OR t.expiry_time > :now".to_string(),
             suffix: ") ORDER BY t.id DESC LIMIT :size ) as t".to_string(),
         }
     } else if let Some(num) = page_no.as_ref() {
@@ -87,7 +85,7 @@ pub fn getall(
         QueryHelper {
             prefix: "( SELECT t.id, t.short_url, t.long_url, t.hits, t.expiry_time, t.notes FROM urls AS t".to_string(),
             joins: String::new(),
-            conditions: "WHERE ( t.expiry_time = 0 OR t.expiry_time > :now )".to_string(),
+            conditions: "WHERE ( t.expiry_time IS NULL OR t.expiry_time > :now )".to_string(),
             suffix: "ORDER BY t.id DESC LIMIT :size OFFSET :page ) as t".to_string(),
         }
     } else if page_size.is_some() {
@@ -95,14 +93,14 @@ pub fn getall(
         QueryHelper {
             prefix: "( SELECT t.id, t.short_url, t.long_url, t.hits, t.expiry_time, t.notes FROM urls AS t".to_string(),
             joins: String::new(),
-            conditions: "WHERE ( t.expiry_time = 0 OR t.expiry_time > :now )".to_string(),
+            conditions: "WHERE ( t.expiry_time IS NULL OR t.expiry_time > :now )".to_string(),
             suffix: "ORDER BY t.id DESC LIMIT :size ) as t".to_string(),
         }
     } else {
         QueryHelper {
             prefix: "urls AS t".to_string(),
             joins: String::new(),
-            conditions: "WHERE ( t.expiry_time = 0 OR t.expiry_time > :now )".to_string(),
+            conditions: "WHERE ( t.expiry_time IS NULL OR t.expiry_time > :now )".to_string(),
             suffix: String::new(),
         }
     };
@@ -138,7 +136,7 @@ pub fn getall(
                 shortlink: row.get("short_url")?,
                 longlink: row.get("long_url")?,
                 hits: row.get("hits")?,
-                expiry_time: row.get("expiry_time")?,
+                expiry_time: row.get("expiry_time").unwrap_or_default(),
                 notes: row.get("notes").unwrap_or_default(),
             })
         })
@@ -157,7 +155,7 @@ pub fn find_and_add_hit(shortlink: &str, db: &Connection) -> Result<String, ()> 
     let Ok(mut statement) = db.prepare_cached(
         "UPDATE urls 
              SET hits = hits + 1 
-             WHERE short_url = :short AND (expiry_time = 0 OR expiry_time > :now)
+             WHERE short_url = :short AND (expiry_time IS NULL OR expiry_time > :now)
              RETURNING long_url",
     ) else {
         error!("Error preparing SQL statement for add_hit.");
@@ -174,16 +172,12 @@ pub fn find_and_add_hit(shortlink: &str, db: &Connection) -> Result<String, ()> 
 pub fn add_link(
     shortlink: &str,
     longlink: &str,
-    expiry_delay: i64,
-    notes: &str,
+    expiry_delay: Option<i64>,
+    notes: Option<&str>,
     db: &Connection,
 ) -> Result<i64, ChhotoError> {
     let now = chrono::Utc::now().timestamp();
-    let expiry_time = if expiry_delay > 0 {
-        now + expiry_delay
-    } else {
-        0
-    };
+    let expiry_time = expiry_delay.map(|delay| now + delay);
 
     let Ok(mut statement) = db.prepare_cached(
         "INSERT INTO urls
@@ -191,20 +185,20 @@ pub fn add_link(
              VALUES (:long, :short, 0, :expiry, :notes)
              ON CONFLICT(short_url) DO UPDATE 
              SET long_url = :long, hits = 0, expiry_time = :expiry, notes = :notes
-             WHERE short_url = :short AND expiry_time <= :now AND expiry_time > 0",
+             WHERE short_url = :short AND expiry_time <= :now AND expiry_time IS NOT NULL",
     ) else {
         error!("Error preparing SQL statement for add_link.");
         return Err(ServerError);
     };
     match statement.execute(
-        named_params! {":long": longlink, ":short": shortlink, ":expiry": expiry_time, ":now": now, ":notes" : notes},
+        named_params! {":long": longlink, ":short": shortlink, ":expiry": expiry_time, ":now": now, ":notes" : notes.filter(|s| !s.is_empty())},
     ) {
-        Ok(1) => Ok(expiry_time),
+        Ok(1) => Ok(expiry_time.unwrap_or_default()),
         Ok(_) => Err(ClientError {
             reason: "Short URL is already in use!".to_string(),
         }),
         Err(e) => {
-            error!("There was some error while adding the link ({shortlink}, {longlink}, {expiry_delay}): {e}");
+            error!("There was some error while adding the link ({shortlink}, {longlink}, {:?}): {e}", expiry_delay);
             Err(ServerError)
         }
     }
@@ -230,19 +224,23 @@ pub fn edit_link(
     if reset_hits {
         updates.push_str(", hits = 0")
     };
-    if let Some(note) = notes.as_ref() {
+    if let Some(note) = notes.as_ref()
+        && !note.is_empty()
+    {
         params.push((":notes", (*note).to_owned().into()));
         updates.push_str(", notes = :notes");
     };
-    if let Some(expiry) = expiry_time.as_ref() {
-        params.push((":expiry", (*expiry).into()));
+    if let Some(&expiry) = expiry_time.as_ref()
+        && expiry > 0
+    {
+        params.push((":expiry", expiry.into()));
         updates.push_str(", expiry_time = :expiry")
     };
 
     let query = format!(
         "UPDATE urls
          SET {updates}
-         WHERE short_url = :short AND (expiry_time = 0 OR expiry_time > :now)"
+         WHERE short_url = :short AND (expiry_time IS NULL OR expiry_time > :now)"
     );
     let Ok(mut statement) = db.prepare_cached(&query) else {
         error!("Error preparing SQL statement for edit_link.");
@@ -264,10 +262,8 @@ pub fn cleanup(db: &Connection, use_wal_mode: bool) {
     let now = chrono::Utc::now().timestamp();
     debug!("Starting database cleanup.");
 
-    let mut statement = db
-        .prepare_cached("DELETE FROM urls WHERE :now >= expiry_time AND expiry_time > 0")
-        .expect("Error preparing SQL statement for cleanup.");
-    statement
+    db.prepare_cached("DELETE FROM urls WHERE :now >= expiry_time AND expiry_time IS NOT NULL")
+        .expect("Error preparing SQL statement for cleanup.")
         .execute(named_params! {":now" : now})
         .inspect(|&u| match u {
             0 => (),
@@ -277,19 +273,30 @@ pub fn cleanup(db: &Connection, use_wal_mode: bool) {
         .expect("Error cleaning expired links.");
 
     if use_wal_mode {
-        let mut pragma_statement = db
-            .prepare_cached("PRAGMA wal_checkpoint(TRUNCATE)")
+        let mut statement = db
+            .prepare_cached("PRAGMA wal_checkpoint(PASSIVE)")
             .expect("Error preparing SQL statement for pragma: wal_checkpoint.");
-        pragma_statement
+        statement
             .query_one([], |row| row.get::<usize, isize>(1))
             .ok()
             .filter(|&v| v != -1)
             .expect("Unable to create WAL checkpoint.");
     }
-    let mut pragma_statement = db
-        .prepare_cached("PRAGMA optimize")
-        .expect("Error preparing SQL statement for pragma: optimize.");
-    pragma_statement
+    let freelist_count: i64 = db
+        .prepare_cached("PRAGMA freelist_count")
+        .expect("Error preparing SQL statement for pragma: freelist_count")
+        .query_row([], |r| r.get(0))
+        .expect("failed to get freelist_count");
+
+    // Roughly 20 MB with 4 KiB pages
+    if freelist_count > 5000 {
+        db.prepare_cached("VACUUM")
+            .expect("Error preparing SQL statement for vacuum.")
+            .execute([])
+            .expect("failed to vacuum database");
+    }
+    db.prepare_cached("PRAGMA optimize")
+        .expect("Error preparing SQL statement for pragma: optimize.")
         .execute([])
         .expect("Unable to optimize database.");
     debug!("Optimized database.")
@@ -311,7 +318,7 @@ pub fn delete_link(shortlink: &str, db: &Connection) -> Result<(), ChhotoError> 
 
 // Initialize the database
 pub fn initialize_db(path: &str, use_wal_mode: bool, ensure_acid: bool) {
-    let db = Connection::open(path).expect("Unable to open database!");
+    let mut db = Connection::open(path).expect("Unable to open database!");
 
     info!("Creating a backup of the existing database.");
     let bak1 = format!("{path}.bak1");
@@ -323,7 +330,7 @@ pub fn initialize_db(path: &str, use_wal_mode: bool, ensure_acid: bool) {
         .expect("Error while creating backup.");
 
     info!("Initializing database.");
-    let (tables, indices) = db
+    let (mut tables, mut indices) = db
         .prepare(
             "SELECT type, name
              FROM sqlite_master
@@ -353,17 +360,15 @@ pub fn initialize_db(path: &str, use_wal_mode: bool, ensure_acid: bool) {
         );
 
     let urls_table_exists = tables.contains("urls");
+    let urls_fts_table_exists = tables.contains("urls_fts");
 
-    let current_user_version: u32 = if !urls_table_exists {
-        // It would mean that the table is newly created i.e. has the desired schema
-        db.pragma_update(None, "application_id", APPLICATION_ID)
-            .expect("Unable to set pragma: application_id.");
-        USER_VERSION
-    } else {
-        db.query_row_and_then("SELECT user_version FROM pragma_user_version", [], |row| {
+    let current_user_version: u32 = if urls_table_exists {
+        db.query_row_and_then("SELECT user_version FROM pragma_user_version", (), |row| {
             row.get(0)
         })
         .unwrap_or_default()
+    } else {
+        USER_VERSION
     };
 
     let current_application_id: i32 = db
@@ -373,65 +378,119 @@ pub fn initialize_db(path: &str, use_wal_mode: bool, ensure_acid: bool) {
             |row| row.get(0),
         )
         .unwrap_or_default();
-    if current_application_id != 0 || (urls_table_exists && current_user_version > 1) {
+    if current_application_id != 0
+        || (urls_table_exists && urls_fts_table_exists && current_user_version > 1)
+    {
         assert_eq!(
             current_application_id, APPLICATION_ID,
             "Incorrect application_id: The database file seems to belong to some other application."
         )
+    } else {
+        db.pragma_update(None, "application_id", APPLICATION_ID)
+            .expect("Unable to set pragma: application_id.");
     }
-
+    let urls_table_schema = "CREATE TABLE urls (
+                                 id INTEGER PRIMARY KEY,
+                                 short_url TEXT NOT NULL,
+                                 long_url TEXT NOT NULL,
+                                 hits INTEGER NOT NULL,
+                                 expiry_time INTEGER,
+                                 notes TEXT
+                             )";
     // Create table if it doesn't exist
     if !urls_table_exists {
         info!("Creating an empty urls table.");
         db.execute(
-            "CREATE TABLE urls (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            long_url TEXT NOT NULL,
-            short_url TEXT NOT NULL,
-            hits INTEGER NOT NULL,
-            expiry_time INTEGER NOT NULL DEFAULT 0,
-            notes TEXT
-         )",
+            urls_table_schema,
             // expiry_time is added later during migration 1
             [],
         )
         .expect("Unable to initialize empty database.");
     }
 
-    // Create index on short_url for faster lookups
-    if !indices.contains("idx_short_url") {
-        info!("Creating index idx_short_url on urls(short_url).");
-        db.execute("CREATE UNIQUE INDEX idx_short_url ON urls (short_url)", [])
-            .expect("Unable to create index on short_url.");
-    }
-
     // Migration 1: Add expiry_time, introduced in 6.0.0
     if current_user_version < 1 {
-        info!("Applying migration 1: Adding expiry_time column to urls.");
-        db.execute(
+        info!("Applying migration 1: Add expiry_time column to urls.");
+        let tx = db
+            .transaction()
+            .expect("Unable to create transaction for migration 1.");
+        tx.execute(
             "ALTER TABLE urls ADD COLUMN expiry_time INTEGER NOT NULL DEFAULT 0",
             [],
         )
         .expect("Unable to apply migration 1.");
+        tx.pragma_update(None, "user_version", 1)
+            .expect("Unable to set pragma: user_version.");
+        tx.commit()
+            .expect("Unable to commit transaction for migration 1.");
     }
+    // Migration 2: Add notes, introduced in 7.0.0
+    if current_user_version < 3 {
+        info!("Applying migration 2: Add notes column to urls.");
+        let tx = db
+            .transaction()
+            .expect("Unable to create transaction for migration 2.");
+        tx.execute("ALTER TABLE urls ADD COLUMN notes TEXT", ())
+            .expect("Unable to apply migration 2.");
+        tx.pragma_update(None, "user_version", 2)
+            .expect("Unable to set pragma: user_version.");
+        tx.commit()
+            .expect("Unable to commit transaction for migration 2.");
+    }
+    // Migration 3: Remove AUTOINCREMENT from the id row
+    if current_user_version < 4 {
+        info!("Applying migration 3: Remove AUTOINCREMENT from id row.");
+        let tx = db
+            .transaction()
+            .expect("Unable to create transaction for migration 2.");
+        tx.execute("ALTER TABLE urls RENAME TO urls_old", ())
+            .expect("Unable to temporarily rename urls to urls_old.");
+        tx.execute(urls_table_schema, ())
+            .expect("Unable to create new urls table.");
+        tx.execute(
+            "INSERT INTO urls (long_url, short_url, hits, expiry_time, notes)
+             SELECT long_url, short_url, hits, NULLIF(expiry_time,0), NULLIF(notes,'')
+             FROM urls_old       
+             ORDER BY id",
+            (),
+        )
+        .expect("Unable to clone data to the new table.");
+        tx.execute("DROP TABLE urls_old", ())
+            .expect("Unable to delete old urls table.");
+        if urls_fts_table_exists {
+            tx.execute("DROP TABLE urls_fts", ())
+                .expect("Unable to delete old urls_fts table.");
+        }
+        (tables, indices) = (HashSet::from(["urls".to_string()]), HashSet::new());
+        tx.pragma_update(None, "user_version", 3)
+            .expect("Unable to set pragma: user_version.");
+        tx.commit()
+            .expect("Unable to commit transaction for migration 3.");
+        db.execute("VACUUM", ())
+            .expect("failed to vacuum database after migration 3.");
+    }
+
+    // Create index on short_url for faster lookups
+    if !indices.contains("idx_short_url") {
+        info!("Creating index idx_short_url on urls(short_url).");
+        db.execute("CREATE UNIQUE INDEX idx_short_url ON urls (short_url)", ())
+            .expect("Unable to create index on short_url.");
+    }
+
     // Create index on expiry_time for faster lookups
     if !indices.contains("idx_expiry_time") {
         info!("Creating index idx_expiry_time on urls(expiry_time).");
-        db.execute("CREATE INDEX idx_expiry_time ON urls (expiry_time)", [])
+        db.execute("CREATE INDEX idx_expiry_time ON urls (expiry_time)", ())
             .expect("Unable to create index on expiry_time.");
-    }
-
-    // Migration 2: Add notes, introduced in 7.0.0
-    if current_user_version < 3 {
-        info!("Applying migration 2: Adding notes column to urls.");
-        db.execute("ALTER TABLE urls ADD COLUMN notes TEXT", [])
-            .expect("Unable to apply migration 2.");
     }
 
     // Create FTS5 table if it doesn't exist, and also create triggers
     if !tables.contains("urls_fts") {
         info!("Creating FTS table urls_fts, and adding triggers.");
-        db.execute(
+        let tx = db
+            .transaction()
+            .expect("Unable to create transaction for FTS table creation.");
+        tx.execute(
             "CREATE VIRTUAL TABLE urls_fts USING fts5(
              long_url, short_url, notes,
              content='urls',
@@ -442,7 +501,7 @@ pub fn initialize_db(path: &str, use_wal_mode: bool, ensure_acid: bool) {
         )
         .expect("Unable to create FTS table.");
 
-        db.execute("INSERT INTO urls_fts(urls_fts) VALUES ('rebuild')", [])
+        tx.execute("INSERT INTO urls_fts(urls_fts) VALUES ('rebuild')", ())
             .expect("Unable to populate FTS table.");
         let fts_triggers = [
             "CREATE TRIGGER urls_insert
@@ -464,14 +523,12 @@ pub fn initialize_db(path: &str, use_wal_mode: bool, ensure_acid: bool) {
              END",
         ];
         for trigger in fts_triggers {
-            db.execute(trigger, [])
+            tx.execute(trigger, ())
                 .expect("Unable to create FTS trigger(s).");
         }
-    }
 
-    // The schema should be up-to-date by this point
-    db.pragma_update(None, "user_version", USER_VERSION)
-        .expect("Unable to set pragma: user_version.");
+        tx.commit().expect("Unable to create FTS table.");
+    }
 
     // Set WAL mode if specified
     let (journal_mode, synchronous) = match (use_wal_mode, ensure_acid) {
@@ -484,17 +541,20 @@ pub fn initialize_db(path: &str, use_wal_mode: bool, ensure_acid: bool) {
         .expect("Unable to set pragma: journal_mode.");
     db.pragma_update(None, "synchronous", synchronous)
         .expect("Unable to set pragma: synchronous.");
-    // Set some further optimizations and run vacuum
     db.pragma_update(None, "temp_store", "memory")
         .expect("Unable to set pragma: temp_store.");
-    db.pragma_update(None, "journal_size_limit", "8388608")
+    let tx = db
+        .transaction()
+        .expect("Unable to create transaction for pragma updates.");
+    // Set some further optimizations and run vacuum if necessary
+    tx.pragma_update(None, "journal_size_limit", "8388608")
         .expect("Unable to set pragma: journal_size_limit.");
-    db.pragma_update(None, "mmap_size", "16777216")
+    tx.pragma_update(None, "mmap_size", "16777216")
         .expect("Unable to set pragma: mmap_size.");
-    db.execute("VACUUM", [])
-        .expect("Unable to vacuum database.");
-    db.execute("PRAGMA optimize=0x10002", [])
-        .expect("Error running pragma optimize.");
+    // The schema should be up-to-date by this point
+    tx.pragma_update(None, "user_version", USER_VERSION)
+        .expect("Unable to set pragma: user_version.");
+    tx.commit().expect("Unable to set correct pragma values.");
 
     info!("Database initialization was successful.");
 }
