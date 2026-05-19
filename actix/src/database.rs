@@ -58,7 +58,7 @@ pub fn getall(
     let has_filter = filter.is_some();
     let paginated = has_cursor || page_no.is_some();
 
-    let size = page_size.unwrap_or(if paginated { 10 } else { i64::MAX });
+    let size = page_size.unwrap_or(if paginated { 10 } else { -1 });
     let offset = page_no.map(|n| (n - 1) * size).unwrap_or(0);
 
     let (query, params) = match (has_cursor, has_filter) {
