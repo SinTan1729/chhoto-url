@@ -5,7 +5,7 @@ use regex::Regex;
 use serde::Deserialize;
 use std::{fmt::Display, fs, rc::Rc, thread::sleep, time::Duration};
 
-use crate::database::initialize_db;
+use crate::database::utils::initialize_db;
 
 use super::*;
 
@@ -87,7 +87,7 @@ async fn create_app(
     test::init_service(
         App::new()
             .app_data(web::Data::new(AppState {
-                db: database::open_db(&db_file),
+                db: database::utils::open_db(&db_file),
                 config: conf.clone(),
             }))
             .service(services::siteurl)
