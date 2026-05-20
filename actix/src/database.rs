@@ -1,7 +1,7 @@
 // SPDX-FileCopyrightText: 2023 Sayantan Santra <sayantan.santra689@gmail.com>
 // SPDX-License-Identifier: MIT
 
-use log::error;
+use log::{debug, error};
 use rusqlite::{Connection, fallible_iterator::FallibleIterator, named_params};
 use serde::Serialize;
 use std::rc::Rc;
@@ -38,6 +38,9 @@ pub fn find_url(shortlink: &str, db: &Connection) -> Result<DBRow, ChhotoError> 
                 expiry_time: row.get("expiry_time").unwrap_or_default(),
                 notes: row.get("notes").unwrap_or_default(),
             })
+        })
+        .inspect(|_| {
+            debug!("Expanded link: {shortlink}.");
         })
         .map_err(|_| ChhotoError::ClientError {
             reason: "The shortlink does not exist on the server!".to_string(),
@@ -126,6 +129,10 @@ pub fn getall(
             [].into()
         });
 
+    debug!(
+        "Path getall was accessed with page_no: {:?}, page_after: {:?}, page_size: {:?}, filter: {:?}",
+        page_no, page_after, page_size, filter
+    );
     links
 }
 
@@ -139,6 +146,9 @@ pub fn find_and_add_hit(shortlink: &str, db: &Connection) -> Result<String, ()> 
     statement
         .query_one(named_params! {":short": shortlink, ":now": now}, |row| {
             row.get("long_url")
+        })
+        .inspect(|_| {
+            debug!("Accessed link: {shortlink}.");
         })
         .map_err(|_| ())
 }
@@ -161,10 +171,19 @@ pub fn add_link(
     match statement.execute(named_params! {":long": longlink, ":short": shortlink,
     ":expiry": expiry_time, ":now": now, ":notes" : notes.filter(|s| !s.is_empty())})
     {
-        Ok(1) => Ok(expiry_time.unwrap_or_default()),
-        Ok(_) => Err(ClientError {
-            reason: "Short URL is already in use!".to_string(),
-        }),
+        Ok(1) => {
+            debug!(
+                "Added link shortlink: {}, longlink: {}, expiry_delay: {:?}, notes: {:?}",
+                shortlink, longlink, expiry_delay, notes
+            );
+            Ok(expiry_time.unwrap_or_default())
+        }
+        Ok(_) => {
+            debug!("Duplicate insertion attempted for {shortlink}.");
+            Err(ClientError {
+                reason: "Short URL is already in use!".to_string(),
+            })
+        }
         Err(e) => {
             error!(
                 "There was some error while adding the link ({shortlink}, {longlink}, {:?}): {e}",
@@ -203,6 +222,12 @@ pub fn edit_link(
                 "Got an error while editing link ({shortlink}, {longlink}, {reset_hits}): {err}"
             );
         })
+        .inspect(|_| {
+            debug!(
+                "Link {} was edited using longlink: {}, reset_hits: {}, expiry_time: {:?}, notes: {:?}.",
+                shortlink, longlink, reset_hits, expiry_time, notes
+            );
+        })
         .map_err(|_| ())
 }
 
@@ -213,7 +238,10 @@ pub fn delete_link(shortlink: &str, db: &Connection) -> Result<(), ChhotoError> 
         return Err(ServerError);
     };
     match statement.execute(named_params! {":short" : shortlink}) {
-        Ok(delta) if delta > 0 => Ok(()),
+        Ok(delta) if delta > 0 => {
+            debug!("Deleted link {shortlink}.");
+            Ok(())
+        }
         _ => Err(ClientError {
             reason: "The shortlink was not found, and could not be deleted.".to_string(),
         }),
