@@ -1,4 +1,4 @@
-<!-- SPDX-FileCopyrightText: 2023 Sayantan Santra <sayantan.santra689@gmail.com> -->
+<!-- SPDX-FileCopyrightText: 2023-2026 Sayantan Santra <sayantan.santra689@gmail.com> -->
 <!-- SPDX-License-Identifier: MIT -->
 
 [![github-tests-badge](https://github.com/SinTan1729/chhoto-url/actions/workflows/rust-tests.yml/badge.svg)](https://github.com/SinTan1729/chhoto-url/actions/workflows/rust-tests.yml)
