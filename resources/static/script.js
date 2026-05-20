@@ -483,7 +483,6 @@ const editButton = (shortUrl, longUrl, expiry, notes) => {
 
   btn.onclick = () => {
     document.getElementById("container").style.filter = "blur(2px)";
-    document.getElementById("edit-dialog").showModal();
     const editUrlSpan = document.getElementById("edit-link");
     const editedUrl = document.getElementById("edited-url");
     const editedExpiry = document.getElementById("edited-expiry");
@@ -503,7 +502,30 @@ const editButton = (shortUrl, longUrl, expiry, notes) => {
       } else {
         editedExpiry.value = "";
       }
+      const min = new Date();
+      min.setMinutes(min.getMinutes() + 1);
+      const max = new Date();
+      max.setFullYear(max.getFullYear() + 5);
+
+      const toLocalISOString = (date) => {
+        const pad = (n) => String(n).padStart(2, "0");
+        return (
+          date.getFullYear() +
+          "-" +
+          pad(date.getMonth() + 1) +
+          "-" +
+          pad(date.getDate()) +
+          "T" +
+          pad(date.getHours()) +
+          ":" +
+          pad(date.getMinutes())
+        );
+      };
+
+      editedExpiry.min = toLocalISOString(min);
+      editedExpiry.max = toLocalISOString(max);
     }
+    document.getElementById("edit-dialog").showModal();
     editedUrl.focus();
   };
   return btn;

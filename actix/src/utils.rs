@@ -1,7 +1,7 @@
 // SPDX-FileCopyrightText: 2023 Sayantan Santra <sayantan.santra689@gmail.com>
 // SPDX-License-Identifier: MIT
 
-use log::error;
+use log::{debug, error};
 use nanoid::nanoid;
 use rand::{random_range, seq::IndexedRandom};
 use rusqlite::Connection;
@@ -303,6 +303,9 @@ fn gen_link(
     match style {
         SlugStyle::Uid => {
             let slug_len = if try_longer_slug { len + 4 } else { len };
+            debug!(
+                "Generating a link with style: UID, length: {slug_len}, allow_capital_letters: {allow_capital_letters}"
+            );
             if allow_capital_letters {
                 nanoid!(slug_len, &CHARS_CAPITAL)
             } else {
@@ -310,6 +313,7 @@ fn gen_link(
             }
         }
         SlugStyle::Pair => {
+            debug!("Generating a link with style: Pair.");
             let adj = ADJECTIVES
                 .choose(&mut rand::rng())
                 .expect("Error choosing random adjective.")

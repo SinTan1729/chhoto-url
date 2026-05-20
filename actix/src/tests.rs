@@ -5,7 +5,7 @@ use regex::Regex;
 use serde::Deserialize;
 use std::{fmt::Display, fs, rc::Rc, thread::sleep, time::Duration};
 
-use crate::database::initialize_db;
+use crate::database::utils::initialize_db;
 
 use super::*;
 
@@ -21,25 +21,18 @@ impl BodyTest for Bytes {
 
 #[derive(Deserialize)]
 struct URLData {
+    #[serde(default, alias = "shorturl")]
     shortlink: String,
+    #[serde(default, alias = "longurl")]
     longlink: String,
+    #[serde(default)]
     hits: i64,
+    #[serde(default)]
     expiry_time: i64,
+    #[serde(default)]
     notes: String,
-}
-
-#[derive(Deserialize)]
-struct CreatedURL {
     #[serde(default)]
     reason: String,
-    #[serde(default)]
-    shorturl: String,
-    #[serde(default)]
-    longurl: String,
-    #[serde(default)]
-    hits: i64,
-    #[serde(default)]
-    notes: String,
 }
 
 #[derive(Deserialize)]
@@ -87,7 +80,7 @@ async fn create_app(
     test::init_service(
         App::new()
             .app_data(web::Data::new(AppState {
-                db: database::open_db(&db_file),
+                db: database::utils::open_db(&db_file),
                 config: conf.clone(),
             }))
             .service(services::siteurl)
@@ -116,7 +109,7 @@ async fn add_link<T: Service<Request, Response = ServiceResponse, Error = Error>
     shortlink: S,
     expiry_delay: i64,
     notes: &str,
-) -> (StatusCode, CreatedURL) {
+) -> (StatusCode, URLData) {
     let req = test::TestRequest::post().uri("/api/new")
         .insert_header(("X-API-Key", api_key))
         .set_payload(format!(
@@ -127,7 +120,7 @@ async fn add_link<T: Service<Request, Response = ServiceResponse, Error = Error>
     let resp = test::call_service(&app, req).await;
     let status = resp.status();
     let body = to_bytes(resp.into_body()).await.unwrap();
-    let url: CreatedURL = serde_json::from_str(body.as_str()).unwrap();
+    let url: URLData = serde_json::from_str(body.as_str()).unwrap();
 
     (status, url)
 }
@@ -136,7 +129,7 @@ async fn expand<T: Service<Request, Response = ServiceResponse, Error = Error>, 
     app: T,
     api_key: &str,
     shortlink: S,
-) -> (StatusCode, CreatedURL) {
+) -> (StatusCode, URLData) {
     let req = test::TestRequest::post()
         .uri("/api/expand")
         .insert_header(("X-API-Key", api_key))
@@ -145,7 +138,7 @@ async fn expand<T: Service<Request, Response = ServiceResponse, Error = Error>, 
     let resp = test::call_service(&app, req).await;
     let status = resp.status();
     let body = to_bytes(resp.into_body()).await.unwrap();
-    let url: CreatedURL = serde_json::from_str(body.as_str()).unwrap();
+    let url: URLData = serde_json::from_str(body.as_str()).unwrap();
 
     (status, url)
 }
@@ -173,11 +166,15 @@ async fn edit_link<T: Service<Request, Response = ServiceResponse, Error = Error
     api_key: &str,
     shortlink: &str,
     reset_hits: bool,
+    expiry_time: Option<i64>,
     notes: Option<&str>,
 ) -> StatusCode {
     let mut payload = format!(
         "\"shortlink\":\"{shortlink}\",\"longlink\":\"https://edited-{shortlink}.com\",\"reset_hits\":{reset_hits}"
     );
+    if let Some(expiry) = expiry_time {
+        payload.push_str(&format!(",\"expiry_time\":{expiry}"));
+    }
     if let Some(note) = notes {
         payload.push_str(&format!(",\"notes\":\"{note}\""));
     }
@@ -248,7 +245,7 @@ async fn adding_link_with_shortlink() {
     for shortlink in ["test1", "test2", "test3"] {
         let (status, reply) = add_link(&app, &api_key, shortlink, 10, "").await;
         assert!(status.is_success());
-        assert_eq!(reply.shorturl, format!("https://mydomain.com/{shortlink}"));
+        assert_eq!(reply.shortlink, format!("https://mydomain.com/{shortlink}"));
     }
 
     let (status, reply) = add_link(&app, &api_key, "test1", 10, "").await;
@@ -268,7 +265,7 @@ async fn adding_link_with_shortlink_capital_letters() {
     for shortlink in ["Test1", "Test2", "Test3"] {
         let (status, reply) = add_link(&app, &api_key, shortlink, 10, "").await;
         assert!(status.is_success());
-        assert_eq!(reply.shorturl, format!("https://mydomain.com/{shortlink}"));
+        assert_eq!(reply.shortlink, format!("https://mydomain.com/{shortlink}"));
     }
 
     let (status, reply) = add_link(&app, &api_key, "Test1", 10, "").await;
@@ -339,6 +336,10 @@ async fn data_fetching_all() {
     assert_ne!(reply[0].expiry_time, 0);
     assert_ne!(reply[1].expiry_time, 0);
 
+    let reply = getall(&app, &api_key, "page_size=1").await;
+    assert_eq!(reply.len(), 1);
+    assert_eq!(reply[0].shortlink, "test3");
+
     let reply = getall(&app, &api_key, "page_no=2&page_size=1").await;
     assert_eq!(reply.len(), 1);
     assert_eq!(reply[0].shortlink, "test1");
@@ -359,7 +360,7 @@ async fn adding_link_with_generated_shortlink_with_pair_slug() {
 
     assert!(status.is_success());
     let re = Regex::new(r"^https://mydomain.com/[a-z]+-[a-z]+$").unwrap();
-    assert!(re.is_match(reply.shorturl.as_str()));
+    assert!(re.is_match(reply.shortlink.as_str()));
 
     test_cleanup(test);
 }
@@ -375,7 +376,7 @@ async fn adding_link_with_generated_shortlink_with_uid_slug() {
 
     assert!(status.is_success());
     let re = Regex::new(r"^https://mydomain.com/[a-z0-9]{12}$").unwrap();
-    assert!(re.is_match(reply.shorturl.as_str()));
+    assert!(re.is_match(reply.shortlink.as_str()));
 
     test_cleanup(test);
 }
@@ -392,7 +393,7 @@ async fn adding_link_with_generated_shortlink_with_uid_slug_capital_letters() {
 
     assert!(status.is_success());
     let re = Regex::new(r"^https://mydomain.com/[A-Za-z0-9]{12}$").unwrap();
-    assert!(re.is_match(reply.shorturl.as_str()));
+    assert!(re.is_match(reply.shortlink.as_str()));
 
     test_cleanup(test);
 }
@@ -408,7 +409,7 @@ async fn adding_link_with_retry_on_collision() {
     let app = create_app(&conf, test).await;
     let api_key = &conf.api_key.unwrap();
 
-    // Add every possible single-character shorturl
+    // Add every possible single-character shortlink
     {
         #[rustfmt::skip]
         static CHARS: [char; 36] = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x',
@@ -420,17 +421,17 @@ async fn adding_link_with_retry_on_collision() {
         }
     }
 
-    // Generated shorturls should now be 5 characters
+    // Generated shortlinks should now be 5 characters
     {
         let (status, reply) = add_link(&app, api_key, "", 10, "").await;
         assert!(status.is_success());
         assert_eq!(
-            reply.shorturl.chars().count(),
+            reply.shortlink.chars().count(),
             "https://mydomain.com/".len() + 5
         );
     }
 
-    // But a colliding provided shorturl should fail
+    // But a colliding provided shortlink should fail
     {
         let (status, _) = add_link(&app, api_key, "a", 10, "").await;
         assert!(status.is_client_error());
@@ -449,7 +450,7 @@ async fn expand_link() {
 
     let (status, reply) = expand(&app, &api_key, "test4").await;
     assert!(status.is_success());
-    assert_eq!(reply.longurl, "https://example-test4.com");
+    assert_eq!(reply.longlink, "https://example-test4.com");
     assert_eq!(reply.notes, "test-note");
 
     test_cleanup(test);
@@ -496,29 +497,31 @@ async fn link_editing() {
     let resp = test::call_service(&app, req).await;
     assert!(resp.status().is_redirection());
 
-    let status = edit_link(&app, &api_key, "test2", false, None).await;
+    let now = chrono::Utc::now().timestamp();
+    let status = edit_link(&app, &api_key, "test2", false, Some(now + 1), None).await;
     assert!(status.is_success());
 
     let (status, reply) = expand(&app, &api_key, "test2").await;
     assert!(status.is_success());
-    assert_eq!(reply.longurl, "https://edited-test2.com");
+    assert_eq!(reply.longlink, "https://edited-test2.com");
     assert_eq!(reply.hits, 1);
+    assert_eq!(reply.expiry_time, now + 1);
 
     let req = test::TestRequest::get().uri("/test1").to_request();
     let resp = test::call_service(&app, req).await;
 
     assert!(resp.status().is_redirection());
-    let status = edit_link(&app, &api_key, "test1", true, None).await;
+    let status = edit_link(&app, &api_key, "test1", true, None, None).await;
     assert!(status.is_success());
 
     let (status, reply) = expand(&app, &api_key, "test1").await;
     assert!(status.is_success());
-    assert_eq!(reply.longurl, "https://edited-test1.com");
+    assert_eq!(reply.longlink, "https://edited-test1.com");
     assert_eq!(reply.hits, 0);
 
     let one_second = Duration::from_secs(1);
     sleep(one_second);
-    let status = edit_link(&app, &api_key, "test2", true, None).await;
+    let status = edit_link(&app, &api_key, "test2", true, None, None).await;
     assert!(status.is_client_error());
 
     test_cleanup(test);
@@ -536,7 +539,7 @@ async fn notes_and_filtering() {
     let (status, _) = add_link(&app, &api_key, "test2", 10, "note2").await;
     assert!(status.is_success());
 
-    let status = edit_link(&app, &api_key, "test2", false, Some("changed")).await;
+    let status = edit_link(&app, &api_key, "test2", false, None, Some("changed")).await;
     assert!(status.is_success());
 
     let reply = getall(&app, &api_key, "filter=chan").await;
