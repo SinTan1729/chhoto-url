@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: MIT
 
 use chrono::{Local, Timelike, Utc};
-use log::{debug, info};
+use log::{debug, error, info};
 use rusqlite::{Connection, named_params};
 use std::{collections::HashSet, fs};
 
@@ -67,14 +67,17 @@ fn manage_backups(db: &Connection) {
     let path = db.path().expect("The database path should exist.");
     info!("Creating a backup of the existing database.");
 
-    for i in (2..8).rev() {
+    let _ = db
+        .backup("main", format!("{path}.bak0"), None)
+        .inspect_err(|e| error!("There was an error while creating the backup: {e}"));
+
+    for i in (1..8).rev() {
         let prev_bak = format!("{path}.bak{}", i - 1);
         if fs::exists(&prev_bak).unwrap_or(false) {
-            fs::rename(&prev_bak, format!("{path}.bak{i}")).expect("Error renaming old backup.");
+            let _ = fs::rename(&prev_bak, format!("{path}.bak{i}"))
+                .inspect_err(|e| error!("There was an error while renaming an old backup: {e}"));
         }
     }
-    db.backup("main", format!("{path}.bak1"), None)
-        .expect("Error while creating backup.");
 }
 
 // Initialize the database
