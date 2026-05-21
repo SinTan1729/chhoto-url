@@ -222,7 +222,7 @@ pub fn edit_link(req: &str, db: &Connection, config: &Config) -> Result<(), Chho
         &chunks.longlink,
         chunks.reset_hits,
         chunks.expiry_time.filter(|&t| t > 0),
-        chunks.notes.as_deref(),
+        chunks.notes.filter(|s| !s.is_empty()).as_deref(),
         db,
     );
     match result {
