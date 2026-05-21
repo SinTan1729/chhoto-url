@@ -1,6 +1,7 @@
 // SPDX-FileCopyrightText: 2023-2026 Sayantan Santra <sayantan.santra689@gmail.com>
 // SPDX-License-Identifier: MIT
 
+use chrono::{Local, Timelike, Utc};
 use log::{debug, info};
 use rusqlite::{Connection, named_params};
 use std::{collections::HashSet, fs};
@@ -13,8 +14,12 @@ const USER_VERSION: u32 = 4; // Should be incremented on change of schema
 
 // Clean expired links
 pub fn cleanup(db: &Connection, use_wal_mode: bool) {
-    let now = chrono::Utc::now().timestamp();
+    let now = Utc::now().timestamp();
     debug!("Starting database cleanup.");
+
+    if Local::now().hour() == 15 {
+        manage_backups(db);
+    }
 
     db.prepare_cached(queries::CLEANUP)
         .expect("Error preparing SQL statement for cleanup.")
@@ -56,18 +61,25 @@ pub fn cleanup(db: &Connection, use_wal_mode: bool) {
     debug!("Optimized database.")
 }
 
+// Create backups
+fn manage_backups(db: &Connection) {
+    let path = db.path().expect("The database path should exist.");
+    info!("Creating a backup of the existing database.");
+
+    for i in (2..8).rev() {
+        let prev_bak = format!("{path}.bak{}", i - 1);
+        if fs::exists(&prev_bak).unwrap_or(false) {
+            fs::rename(&prev_bak, format!("{path}.bak{i}")).expect("Error renaming old backup.");
+        }
+    }
+    db.backup("main", format!("{path}.bak1"), None)
+        .expect("Error while creating backup.");
+}
+
 // Initialize the database
 pub fn initialize_db(path: &str, use_wal_mode: bool, ensure_acid: bool) {
     let mut db = Connection::open(path).expect("Unable to open database!");
-
-    info!("Creating a backup of the existing database.");
-    let bak1 = format!("{path}.bak1");
-    let bak2 = format!("{path}.bak2");
-    if fs::exists(&bak1).unwrap_or(false) {
-        fs::rename(&bak1, &bak2).expect("Error while renaming old backup.");
-    }
-    db.backup("main", &bak1, None)
-        .expect("Error while creating backup.");
+    manage_backups(&db);
 
     info!("Initializing database.");
     let (mut tables, mut indices) = db
