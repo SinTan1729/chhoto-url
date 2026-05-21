@@ -3,7 +3,7 @@
 
 include .env
 
-.PHONY: clean test setup build podman-build podman-stop podman-test build-release tag audit merge
+.PHONY: clean test setup build podman-build podman-stop podman-run podman-test build-release tag audit merge
 
 setup:
 	rustup target add x86_64-unknown-linux-musl
@@ -31,9 +31,11 @@ test: audit
 audit:
 	cargo audit --file actix/Cargo.lock
 
-podman-test: test podman-build podman-stop
+podman-run: podman-stop
 	podman run -t -p ${CHHOTO_LISTEN_PORT}:${CHHOTO_LISTEN_PORT} --name chhoto-url --env-file ./.env -v "${DB_DIR}:/data" -d chhoto-url
 	podman logs chhoto-url -f 
+
+podman-test: test podman-build podman-run
 
 conf_tag := $(shell cat actix/Cargo.toml | sed -rn 's/^version = "(.+)"$$/\1/p')
 last_tag := $(shell git tag -l | tail -1)
