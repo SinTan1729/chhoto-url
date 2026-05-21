@@ -6,7 +6,7 @@ use rusqlite::{Connection, fallible_iterator::FallibleIterator, named_params};
 use serde::Serialize;
 use std::rc::Rc;
 
-mod strings;
+mod queries;
 pub mod utils;
 
 use crate::services::ChhotoError::{self, ClientError, ServerError};
@@ -25,7 +25,7 @@ pub struct DBRow {
 pub fn find_url(shortlink: &str, db: &Connection) -> Result<DBRow, ChhotoError> {
     // Long link, hits, expiry time
     let now = chrono::Utc::now().timestamp();
-    let Ok(mut statement) = db.prepare_cached(strings::FIND_URL) else {
+    let Ok(mut statement) = db.prepare_cached(queries::FIND_URL) else {
         error!("Error preparing SQL statement for find_url.");
         return Err(ServerError);
     };
@@ -66,7 +66,7 @@ pub fn getall(
 
     let (query, params) = match (has_cursor, has_filter) {
         (false, false) => (
-            strings::GETALL_QUERIES[0],
+            queries::GETALL_QUERIES[0],
             named_params! {
                 ":now": now,
                 ":size": size,
@@ -74,7 +74,7 @@ pub fn getall(
             },
         ),
         (true, false) => (
-            strings::GETALL_QUERIES[1],
+            queries::GETALL_QUERIES[1],
             named_params! {
                 ":now": now,
                 ":size": size,
@@ -82,7 +82,7 @@ pub fn getall(
             },
         ),
         (false, true) => (
-            strings::GETALL_QUERIES[2],
+            queries::GETALL_QUERIES[2],
             named_params! {
                 ":now": now,
                 ":size": size,
@@ -91,7 +91,7 @@ pub fn getall(
             },
         ),
         (true, true) => (
-            strings::GETALL_QUERIES[3],
+            queries::GETALL_QUERIES[3],
             named_params! {
                 ":now": now,
                 ":size": size,
@@ -139,7 +139,7 @@ pub fn getall(
 // Add a hit when site is visited during link resolution
 pub fn find_and_add_hit(shortlink: &str, db: &Connection) -> Result<String, ()> {
     let now = chrono::Utc::now().timestamp();
-    let Ok(mut statement) = db.prepare_cached(strings::FIND_AND_ADD_HIT) else {
+    let Ok(mut statement) = db.prepare_cached(queries::FIND_AND_ADD_HIT) else {
         error!("Error preparing SQL statement for add_hit.");
         return Err(());
     };
@@ -164,7 +164,7 @@ pub fn add_link(
     let now = chrono::Utc::now().timestamp();
     let expiry_time = expiry_delay.map(|delay| now + delay);
 
-    let Ok(mut statement) = db.prepare_cached(strings::ADD_LINK) else {
+    let Ok(mut statement) = db.prepare_cached(queries::ADD_LINK) else {
         error!("Error preparing SQL statement for add_link.");
         return Err(ServerError);
     };
@@ -204,7 +204,7 @@ pub fn edit_link(
     db: &Connection,
 ) -> Result<usize, ()> {
     let now = chrono::Utc::now().timestamp();
-    let Ok(mut statement) = db.prepare_cached(strings::EDIT_LINK) else {
+    let Ok(mut statement) = db.prepare_cached(queries::EDIT_LINK) else {
         error!("Error preparing SQL statement for edit_link.");
         return Err(());
     };
@@ -233,7 +233,7 @@ pub fn edit_link(
 
 // Delete an existing link
 pub fn delete_link(shortlink: &str, db: &Connection) -> Result<(), ChhotoError> {
-    let Ok(mut statement) = db.prepare_cached(strings::DELETE_LINK) else {
+    let Ok(mut statement) = db.prepare_cached(queries::DELETE_LINK) else {
         error!("Error preparing SQL statement for delete_link.");
         return Err(ServerError);
     };

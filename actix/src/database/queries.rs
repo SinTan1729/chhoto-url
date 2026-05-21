@@ -4,12 +4,19 @@
 pub const FIND_URL: &str = "
 SELECT long_url, hits, expiry_time, notes FROM urls
   WHERE short_url = :short
-  AND (expiry_time IS NULL OR expiry_time > :now)";
+    AND (
+      expiry_time IS NULL 
+      OR expiry_time > :now
+    )";
 
 pub const FIND_AND_ADD_HIT: &str = "
 UPDATE urls 
   SET hits = hits + 1 
-  WHERE short_url = :short AND (expiry_time IS NULL OR expiry_time > :now)
+  WHERE short_url = :short 
+    AND (
+      expiry_time IS NULL 
+      OR expiry_time > :now
+    )
 RETURNING long_url";
 
 pub const ADD_LINK: &str = "
@@ -18,8 +25,9 @@ INSERT INTO urls
   VALUES (:long, :short, 0, :expiry, :notes)
 ON CONFLICT(short_url) DO UPDATE 
   SET long_url = :long, hits = 0, expiry_time = :expiry, notes = :notes
-  WHERE short_url = :short AND expiry_time <= :now
-  AND expiry_time IS NOT NULL";
+  WHERE short_url = :short 
+    AND expiry_time <= :now
+    AND expiry_time IS NOT NULL";
 
 pub const DELETE_LINK: &str = "DELETE FROM urls WHERE short_url = :short";
 
@@ -38,7 +46,7 @@ pub const CLEANUP: &str = "DELETE FROM urls WHERE :now >= expiry_time AND expiry
 pub const TABLE_LIST: &str = "
 SELECT type, name FROM sqlite_master
   WHERE type IN ('table', 'index') 
-  AND name NOT LIKE 'sqlite_%'";
+    AND name NOT LIKE 'sqlite_%'";
 
 pub const FTS_TABLE_SCHEMA: &str = "
 CREATE VIRTUAL TABLE urls_fts USING fts5(
@@ -78,13 +86,13 @@ INSERT INTO urls (long_url, short_url, hits, expiry_time, notes)
 
 pub const EDIT_LINK: &str = "
 UPDATE urls
-SET
-  long_url = :long,
-  hits = COALESCE(:hits, hits),
-  notes = COALESCE(:notes, notes),
-  expiry_time = COALESCE(:expiry, expiry_time)
-WHERE short_url = :short
-AND (expiry_time IS NULL OR expiry_time > :now)
+  SET
+    long_url = :long,
+    hits = COALESCE(:hits, hits),
+    notes = COALESCE(:notes, notes),
+    expiry_time = COALESCE(:expiry, expiry_time)
+  WHERE short_url = :short
+    AND (expiry_time IS NULL OR expiry_time > :now)
 ";
 
 pub const GETALL_QUERIES: [&str; 4] = [
@@ -96,9 +104,11 @@ SELECT short_url, long_url, hits, expiry_time, notes FROM (
   WHERE (
     t.expiry_time IS NULL
     OR t.expiry_time > :now
-  ) ORDER BY t.id DESC
+  ) 
+  ORDER BY t.id DESC
   LIMIT :size OFFSET :offset
-) ORDER BY id ASC",
+) 
+ORDER BY id ASC",
     // 1 => cursor
     "
 SELECT short_url, long_url, hits, expiry_time, notes FROM (
@@ -111,7 +121,8 @@ SELECT short_url, long_url, hits, expiry_time, notes FROM (
   AND (
     t.expiry_time IS NULL
     OR t.expiry_time > :now
-  ) ORDER BY t.id DESC
+  ) 
+  ORDER BY t.id DESC
   LIMIT :size
 ) ORDER BY id ASC",
     // 2 => standard + fts
@@ -121,13 +132,15 @@ SELECT short_url, long_url, hits, expiry_time, notes FROM (
   FROM urls AS t
   JOIN urls_fts AS f
     ON t.id = f.rowid
-  WHERE ( 
+  WHERE (
     t.expiry_time IS NULL
     OR t.expiry_time > :now
-    ) AND urls_fts MATCH :filter
+    )
+  AND urls_fts MATCH :filter
   ORDER BY t.id DESC
   LIMIT :size OFFSET :offset
-) ORDER BY id ASC",
+)
+ORDER BY id ASC",
     // 3 => cursor + fts
     "
 SELECT short_url, long_url, hits, expiry_time, notes FROM (
@@ -141,9 +154,11 @@ SELECT short_url, long_url, hits, expiry_time, notes FROM (
     t.id < u.id
     AND (
       t.expiry_time IS NULL
-      OR t.expiry_time > :now )
+      OR t.expiry_time > :now
+    )
     AND urls_fts MATCH :filter
   ORDER BY t.id DESC
   LIMIT :size
-) ORDER BY id ASC",
+)
+ORDER BY id ASC",
 ];

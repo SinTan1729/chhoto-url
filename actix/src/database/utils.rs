@@ -5,7 +5,7 @@ use log::{debug, info};
 use rusqlite::{Connection, named_params};
 use std::{collections::HashSet, fs};
 
-use crate::database::strings;
+use crate::database::queries;
 
 // Some constants
 const APPLICATION_ID: i32 = i32::from_be_bytes(*b"chht"); // MUST NEVER BE CHANGED
@@ -16,7 +16,7 @@ pub fn cleanup(db: &Connection, use_wal_mode: bool) {
     let now = chrono::Utc::now().timestamp();
     debug!("Starting database cleanup.");
 
-    db.prepare_cached(strings::CLEANUP)
+    db.prepare_cached(queries::CLEANUP)
         .expect("Error preparing SQL statement for cleanup.")
         .execute(named_params! {":now" : now})
         .inspect(|&u| match u {
@@ -71,7 +71,7 @@ pub fn initialize_db(path: &str, use_wal_mode: bool, ensure_acid: bool) {
 
     info!("Initializing database.");
     let (mut tables, mut indices) = db
-        .prepare(strings::TABLE_LIST)
+        .prepare(queries::TABLE_LIST)
         .expect("Error preparing statement for database objects query.")
         .query_map((), |row| {
             Ok((row.get::<_, String>("type")?, row.get::<_, String>("name")?))
@@ -129,7 +129,7 @@ pub fn initialize_db(path: &str, use_wal_mode: bool, ensure_acid: bool) {
     if !urls_table_exists {
         info!("Creating an empty urls table.");
         db.execute(
-            strings::URLS_TABLE_SCHEMA,
+            queries::URLS_TABLE_SCHEMA,
             // expiry_time is added later during migration 1
             (),
         )
@@ -173,9 +173,9 @@ pub fn initialize_db(path: &str, use_wal_mode: bool, ensure_acid: bool) {
             .expect("Unable to create transaction for migration 2.");
         tx.execute("ALTER TABLE urls RENAME TO urls_old", ())
             .expect("Unable to temporarily rename urls to urls_old.");
-        tx.execute(strings::URLS_TABLE_SCHEMA, ())
+        tx.execute(queries::URLS_TABLE_SCHEMA, ())
             .expect("Unable to create new urls table.");
-        tx.execute(strings::URLS_MIGRATION_3, ())
+        tx.execute(queries::URLS_MIGRATION_3, ())
             .expect("Unable to clone data to the new table.");
         tx.execute("DROP TABLE urls_old", ())
             .expect("Unable to delete old urls table.");
@@ -212,12 +212,12 @@ pub fn initialize_db(path: &str, use_wal_mode: bool, ensure_acid: bool) {
         let tx = db
             .transaction()
             .expect("Unable to create transaction for FTS table creation.");
-        tx.execute(strings::FTS_TABLE_SCHEMA, ())
+        tx.execute(queries::FTS_TABLE_SCHEMA, ())
             .expect("Unable to create FTS table.");
 
         tx.execute("INSERT INTO urls_fts(urls_fts) VALUES ('rebuild')", ())
             .expect("Unable to populate FTS table.");
-        for trigger in strings::FTS_TRIGGERS {
+        for trigger in queries::FTS_TRIGGERS {
             tx.execute(trigger, ())
                 .expect("Unable to create FTS trigger(s).");
         }
