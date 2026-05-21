@@ -18,6 +18,7 @@ pub fn cleanup(db: &Connection, use_wal_mode: bool) {
     debug!("Starting database cleanup.");
 
     if Local::now().hour() == 15 {
+        info!("Doing a scheduled daily backup.");
         manage_backups(db);
     }
 
