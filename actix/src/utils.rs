@@ -161,6 +161,7 @@ pub fn add_link(
         .expiry_delay
         .map(|d| d.clamp(0, 157784760))
         .filter(|&d| d > 0);
+    chunks.notes = chunks.notes.filter(|s| !s.is_empty());
 
     if !shortlink_provided || is_link_valid(chunks.shortlink.as_str(), allow_capital_letters) {
         match database::add_link(

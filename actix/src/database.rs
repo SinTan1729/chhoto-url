@@ -169,7 +169,7 @@ pub fn add_link(
         return Err(ServerError);
     };
     match statement.execute(named_params! {":long": longlink, ":short": shortlink,
-    ":expiry": expiry_time, ":now": now, ":notes" : notes.filter(|s| !s.is_empty())})
+    ":expiry": expiry_time, ":now": now, ":notes" : notes})
     {
         Ok(1) => {
             debug!(
