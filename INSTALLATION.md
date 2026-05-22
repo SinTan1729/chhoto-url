@@ -256,6 +256,24 @@ served through a proxy.
 This can be used to set the number of items shown per page in the frontend. This does not have any effect on the backend code.
 Defaults to 10.
 
+### `RUST_LOG`
+
+It controls the level of logging.
+
+Logging is done using the `env_logger` crate. No personal information of the end user is ever logged, nor will it ever supported. The
+logging level can be controlled using the [`RUST_LOG`](https://docs.rs/env_logger/latest/env_logger/#enabling-logging) variable. By default,
+the value is set to the following.
+
+```
+warn,chhoto_url=info,actix_session::middleware=error
+```
+
+If you want a bit more logging, try this.
+
+```
+warn,chhoto_url=debug,actix_session::middleware=error
+```
+
 ## Note of eventual deprecation of old config options
 
 The config variables used to have different names up to commit 228eb7a, after which they were changed to adhere to norms for config variable
