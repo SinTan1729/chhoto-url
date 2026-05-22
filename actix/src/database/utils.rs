@@ -17,7 +17,7 @@ pub fn cleanup(db: &Connection, use_wal_mode: bool) {
     let now = Utc::now().timestamp();
     debug!("Starting database cleanup.");
 
-    if Local::now().hour() == 15 {
+    if Local::now().hour() == 3 {
         info!("Doing a scheduled daily backup.");
         manage_backups(db);
     }
