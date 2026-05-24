@@ -349,6 +349,10 @@ details.chhoto-input summary {
   .chhoto-table tr td[name="actions"] {
     padding-bottom: 0.5em;
   }
+  .chhoto-table tr td[name="actions"] div {
+    text-align: left;
+    margin-left: -0.5em;
+  }
 
   #alert-box {
     display: none;

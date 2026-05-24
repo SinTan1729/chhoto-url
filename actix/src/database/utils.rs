@@ -106,7 +106,6 @@ fn manage_backups(db: &Connection, backup_type: BackupType) {
     // Migrate legacy backups
     for path in fs::read_dir(parent).into_iter().flatten().flatten() {
         let path = path.path();
-
         if path
             .file_name()
             .and_then(|f| f.to_str())
