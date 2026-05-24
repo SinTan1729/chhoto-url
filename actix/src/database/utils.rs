@@ -71,7 +71,6 @@ pub fn cleanup(db: &Connection, use_wal_mode: bool) {
 // Create backups
 fn manage_backups(db: &Connection, backup_type: BackupType) {
     let path = db.path().expect("The database path should exist.");
-    info!("Creating a backup of the existing database.");
 
     let db_path = PathBuf::from(path);
 
@@ -92,8 +91,14 @@ fn manage_backups(db: &Connection, backup_type: BackupType) {
     }
 
     let (suffix, retain) = match backup_type {
-        BackupType::Init => ("init", 3),
-        BackupType::Daily => ("bak", 7),
+        BackupType::Init => {
+            info!("Creating an init backup of the database.");
+            ("init", 3)
+        }
+        BackupType::Daily => {
+            info!("Creating a daily backup of the database.");
+            ("bak", 7)
+        }
     };
 
     let backup_path = |idx: usize| backup_dir.join(format!("{db_name}.{suffix}{idx}"));
