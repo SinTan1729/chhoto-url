@@ -4,13 +4,19 @@
 use chrono::{Local, Timelike, Utc};
 use log::{debug, error, info};
 use rusqlite::{Connection, named_params};
-use std::{collections::HashSet, fs};
+use std::{collections::HashSet, fs, path::PathBuf};
 
 use crate::database::queries;
 
 // Some constants
 const APPLICATION_ID: i32 = i32::from_be_bytes(*b"chht"); // MUST NEVER BE CHANGED
 const USER_VERSION: u32 = 4; // Should be incremented on change of schema
+
+// Enum for backup types
+enum BackupType {
+    Daily,
+    Init,
+}
 
 // Clean expired links
 pub fn cleanup(db: &Connection, use_wal_mode: bool) {
@@ -19,7 +25,7 @@ pub fn cleanup(db: &Connection, use_wal_mode: bool) {
 
     if Local::now().hour() == 3 {
         info!("Doing a scheduled daily backup.");
-        manage_backups(db);
+        manage_backups(db, BackupType::Daily);
     }
 
     db.prepare_cached(queries::CLEANUP)
@@ -63,19 +69,58 @@ pub fn cleanup(db: &Connection, use_wal_mode: bool) {
 }
 
 // Create backups
-fn manage_backups(db: &Connection) {
+fn manage_backups(db: &Connection, backup_type: BackupType) {
     let path = db.path().expect("The database path should exist.");
     info!("Creating a backup of the existing database.");
 
-    let _ = db
-        .backup("main", format!("{path}.bak0"), None)
-        .inspect_err(|e| error!("There was an error while creating the backup: {e}"));
+    let db_path = PathBuf::from(path);
 
-    for i in (1..8).rev() {
-        let prev_bak = format!("{path}.bak{}", i - 1);
-        if fs::exists(&prev_bak).unwrap_or(false) {
-            let _ = fs::rename(&prev_bak, format!("{path}.bak{i}"))
-                .inspect_err(|e| error!("There was an error while renaming an old backup: {e}"));
+    let parent = db_path
+        .parent()
+        .expect("Database should have a parent directory.");
+
+    let db_name = db_path
+        .file_name()
+        .expect("Database should have a file name.")
+        .to_string_lossy();
+
+    let backup_dir = parent.join("backups");
+
+    if let Err(e) = fs::create_dir_all(&backup_dir) {
+        error!("Failed to create backup directory: {e}");
+        return;
+    }
+
+    let (suffix, retain) = match backup_type {
+        BackupType::Init => ("init", 3),
+        BackupType::Daily => ("bak", 7),
+    };
+
+    let backup_path = |idx: usize| backup_dir.join(format!("{db_name}.{suffix}{idx}"));
+
+    if let Err(e) = db.backup("main", backup_path(0).to_string_lossy().as_ref(), None) {
+        error!("There was an error while creating the backup: {e}");
+        return;
+    }
+
+    // Migrate legacy backups
+    for path in fs::read_dir(parent).into_iter().flatten().flatten() {
+        let path = path.path();
+
+        if path
+            .file_name()
+            .and_then(|f| f.to_str())
+            .is_some_and(|f| f.starts_with(&format!("{db_name}.{suffix}")))
+        {
+            let _ = fs::rename(&path, backup_dir.join(path.file_name().unwrap()));
+        }
+    }
+
+    for i in (0..retain).rev() {
+        if let Err(e) = fs::rename(backup_path(i), backup_path(i + 1))
+            && e.kind() != std::io::ErrorKind::NotFound
+        {
+            error!("Failed to rotate backup {i}: {e}");
         }
     }
 }
@@ -83,7 +128,7 @@ fn manage_backups(db: &Connection) {
 // Initialize the database
 pub fn initialize_db(path: &str, use_wal_mode: bool, ensure_acid: bool) {
     let mut db = Connection::open(path).expect("Unable to open database!");
-    manage_backups(&db);
+    manage_backups(&db, BackupType::Init);
 
     info!("Initializing database.");
     let (mut tables, mut indices) = db

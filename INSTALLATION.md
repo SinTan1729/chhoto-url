@@ -127,9 +127,8 @@ volume, and have the database inside it. DO NOT mount a single file, as there wi
 data loss in that case.
 
 If this is enabled, there'll be a significant boost in performance under high load, since write will no longer block reads.
-Also, automated backups of the database will be enabled. Otherwise, `DELETE` journal mode is used by default, along with
-[`EXTRA` synchronous](https://sqlite.org/pragma.html#pragma_synchronous) pragma. In `WAL` mode, `FULL` synchronous pragma is
-used instead.
+Otherwise, `DELETE` journal mode is used by default, along with [`EXTRA` synchronous](https://sqlite.org/pragma.html#pragma_synchronous)
+pragma. In `WAL` mode, `FULL` synchronous pragma is used instead.
 
 In both cases, we have full ACID compliance, but it does cost a bit of performance. If you expect to see high throughput (in the
 order of hundreds of read/writes per second), take a look at the [`CHHOTO_SQLITE_ENSURE_ACID`](#chhoto_sqlite_ensure_acid) configuration option.
@@ -279,6 +278,16 @@ warn,chhoto_url=debug,actix_session::middleware=error
 The config variables used to have different names up to commit 228eb7a, after which they were changed to adhere to norms for config variable
 naming. The old names will keep working for now, but _it is highly recommended to migrate to the new variable names_ as support for these
 will eventually be dropped in some future major release.
+
+## Backups
+
+Database backups are created during init, along with daily backups taken between 3am and 4am. The backup files are created in a directory
+called `backups`, which is in the same directory as the database file. The backups are SQLite files, and are named using the original
+database file name, and backup type. Daily backups have `.bak1`, `.bak2` etc. as the suffix, whereas the init backups have
+`.init1`, `.init2` etc. as the suffix.
+
+Backups are automatically purged, keeping up to 3 init backups, and 7 daily backups at any time. It's still recommended to keep your own
+backups on top of these.
 
 ## Deploying in your Kubernetes cluster with Helm
 
