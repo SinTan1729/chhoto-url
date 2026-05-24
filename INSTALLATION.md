@@ -283,7 +283,7 @@ will eventually be dropped in some future major release.
 
 Database backups are created during init, along with daily backups taken between 3am and 4am. The backup files are created in a directory
 called `backups`, which is in the same directory as the database file. The backups are SQLite files, and are named using the original
-database file name, and backup type. Daily backups have `.bak1`, `.bak2` etc. as the suffix, whereas the init backups have
+database file name, and backup type. Daily backups have `.daily1`, `.daily2` etc. as the suffix, whereas the init backups have
 `.init1`, `.init2` etc. as the suffix.
 
 Backups are automatically purged, keeping up to 3 init backups, and 7 daily backups at any time. It's still recommended to keep your own

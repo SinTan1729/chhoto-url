@@ -97,7 +97,7 @@ fn manage_backups(db: &Connection, backup_type: BackupType) {
         }
         BackupType::Daily => {
             info!("Creating a daily backup of the database.");
-            ("bak", 7)
+            ("daily", 7)
         }
     };
 
@@ -109,14 +109,20 @@ fn manage_backups(db: &Connection, backup_type: BackupType) {
     }
 
     // Migrate legacy backups
-    for path in fs::read_dir(parent).into_iter().flatten().flatten() {
-        let path = path.path();
-        if path
-            .file_name()
-            .and_then(|f| f.to_str())
-            .is_some_and(|f| f.starts_with(&format!("{db_name}.{suffix}")))
-        {
-            let _ = fs::rename(&path, backup_dir.join(path.file_name().unwrap()));
+    if matches!(backup_type, BackupType::Daily) {
+        for path in fs::read_dir(parent).into_iter().flatten().flatten() {
+            let path = path.path();
+            if path
+                .file_name()
+                .and_then(|f| f.to_str())
+                .is_some_and(|f| f.starts_with(&format!("{db_name}.bak")))
+            {
+                let filename = path.file_name().unwrap().to_string_lossy();
+                let daily_name = filename.replacen(".bak", ".daily", 1);
+                if let Err(e) = fs::rename(&path, backup_dir.join(daily_name)) {
+                    error!("There was an error migrating legacy backup: {e}");
+                }
+            }
         }
     }
 
