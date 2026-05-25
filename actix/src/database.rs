@@ -173,7 +173,7 @@ pub fn add_link(
     {
         Ok(1) => {
             debug!(
-                "Added link shortlink: {}, longlink: {}, expiry_delay: {:?}, notes: {:?}",
+                "Added link with shortlink: {}, longlink: {}, expiry_delay: {:?}, notes: {:?}",
                 shortlink, longlink, expiry_delay, notes
             );
             Ok(expiry_time.unwrap_or_default())
