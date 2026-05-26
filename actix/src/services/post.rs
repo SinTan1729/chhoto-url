@@ -22,7 +22,7 @@ use crate::{
 
 // Add new links
 #[post("/api/new")]
-pub async fn add_link(
+pub(crate) async fn add_link(
     req: String,
     data: web::Data<AppState>,
     session: Session,
@@ -94,7 +94,11 @@ pub async fn add_link(
 
 // Get information about a single shortlink
 #[post("/api/expand")]
-pub async fn expand(req: String, data: web::Data<AppState>, http: HttpRequest) -> HttpResponse {
+pub(crate) async fn expand(
+    req: String,
+    data: web::Data<AppState>,
+    http: HttpRequest,
+) -> HttpResponse {
     let result = auth::is_api_ok(http, &data.config);
     if result.success {
         match database::find_url(&req, &data.db) {
@@ -133,7 +137,11 @@ pub async fn expand(req: String, data: web::Data<AppState>, http: HttpRequest) -
 
 // Handle login
 #[post("/api/login")]
-pub async fn login(req: String, session: Session, data: web::Data<AppState>) -> HttpResponse {
+pub(crate) async fn login(
+    req: String,
+    session: Session,
+    data: web::Data<AppState>,
+) -> HttpResponse {
     let config = &data.config;
     // Check if password is hashed using Argon2. More algorithms maybe added later.
     let authorized = if let Some(password) = &config.password {

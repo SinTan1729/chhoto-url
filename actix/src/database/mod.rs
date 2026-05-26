@@ -3,7 +3,7 @@
 
 mod events;
 mod queries;
-pub(crate) mod utils;
+mod utils;
 
-pub use self::events::*;
-pub use self::utils::*;
+pub(crate) use self::events::*;
+pub(crate) use self::utils::*;

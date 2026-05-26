@@ -16,7 +16,7 @@ use crate::{
 
 // Get information about a single shortlink
 #[put("/api/edit")]
-pub async fn edit_link(
+pub(crate) async fn edit_link(
     req: String,
     session: Session,
     data: web::Data<AppState>,

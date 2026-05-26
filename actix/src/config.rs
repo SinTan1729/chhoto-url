@@ -8,13 +8,13 @@ use std::env::{VarError, var};
 use crate::auth;
 
 #[derive(Clone)]
-pub enum SlugStyle {
+pub(crate) enum SlugStyle {
     Pair,
     Uid,
 }
 
 #[derive(Clone)]
-pub enum HashAlgorithm {
+pub(crate) enum HashAlgorithm {
     Argon2,
     None,
 }
@@ -35,30 +35,30 @@ fn read_config_wrapper(new_name: &str, old_name: &str) -> Result<String, VarErro
 
 // Struct for storing config read form env vars that might be accessed more than once
 #[derive(Clone)]
-pub struct Config {
-    pub listen_address: String,
-    pub port: u16,
-    pub db_location: String,
-    pub cache_control_header: Option<String>,
-    pub disable_frontend: bool,
-    pub site_url: Option<String>,
-    pub public_mode: bool,
-    pub public_mode_expiry_delay: Option<i64>,
-    pub use_temp_redirect: bool,
-    pub password: Option<String>,
-    pub hash_algorithm: HashAlgorithm,
-    pub api_key: Option<String>,
-    pub slug_style: SlugStyle,
-    pub slug_length: usize,
-    pub try_longer_slug: bool,
-    pub allow_capital_letters: bool,
-    pub custom_landing_directory: Option<String>,
-    pub use_wal_mode: bool,
-    pub ensure_acid: bool,
-    pub frontend_page_size: u16,
+pub(crate) struct Config {
+    pub(crate) listen_address: String,
+    pub(crate) port: u16,
+    pub(crate) db_location: String,
+    pub(crate) cache_control_header: Option<String>,
+    pub(crate) disable_frontend: bool,
+    pub(crate) site_url: Option<String>,
+    pub(crate) public_mode: bool,
+    pub(crate) public_mode_expiry_delay: Option<i64>,
+    pub(crate) use_temp_redirect: bool,
+    pub(crate) password: Option<String>,
+    pub(crate) hash_algorithm: HashAlgorithm,
+    pub(crate) api_key: Option<String>,
+    pub(crate) slug_style: SlugStyle,
+    pub(crate) slug_length: usize,
+    pub(crate) try_longer_slug: bool,
+    pub(crate) allow_capital_letters: bool,
+    pub(crate) custom_landing_directory: Option<String>,
+    pub(crate) use_wal_mode: bool,
+    pub(crate) ensure_acid: bool,
+    pub(crate) frontend_page_size: u16,
 }
 
-pub fn read() -> Config {
+pub(crate) fn read() -> Config {
     let db_location = read_config_wrapper("CHHOTO_DB_URL", "db_url")
         .ok()
         .map(|s| s.trim().to_string())

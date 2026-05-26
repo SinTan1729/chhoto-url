@@ -75,24 +75,24 @@ pub(super) async fn create_app(
     let _ = fs::create_dir("/tmp/chhoto-url-test");
     test_cleanup(test);
     let db_file = format!("/tmp/chhoto-url-test/{test}.sqlite");
-    database::utils::initialize_db(&db_file, conf.use_wal_mode, conf.ensure_acid);
+    database::initialize_db(&db_file, conf.use_wal_mode, conf.ensure_acid);
 
     test::init_service(
         App::new()
             .app_data(web::Data::new(AppState {
-                db: database::utils::open_db(&db_file),
+                db: database::open_db(&db_file),
                 config: conf.clone(),
             }))
-            .service(services::get::siteurl)
-            .service(services::get::version)
-            .service(services::get::getconfig)
-            .service(services::post::add_link)
-            .service(services::get::getall)
-            .service(services::get::link_handler)
-            .service(services::put::edit_link)
-            .service(services::delete::delete_link)
-            .service(services::get::whoami)
-            .service(services::post::expand),
+            .service(services::siteurl)
+            .service(services::version)
+            .service(services::getconfig)
+            .service(services::add_link)
+            .service(services::getall)
+            .service(services::link_handler)
+            .service(services::edit_link)
+            .service(services::delete_link)
+            .service(services::whoami)
+            .service(services::expand),
     )
     .await
 }

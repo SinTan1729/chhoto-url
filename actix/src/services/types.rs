@@ -4,17 +4,17 @@
 use serde::{Deserialize, Serialize};
 
 // Error types
-pub enum ChhotoError {
+pub(crate) enum ChhotoError {
     ServerError,
     ClientError { reason: String },
 }
 
 // Define JSON struct for returning success/error data
 #[derive(Serialize)]
-pub struct JSONResponse {
-    pub success: bool,
-    pub error: bool,
-    pub reason: String,
+pub(crate) struct JSONResponse {
+    pub(crate) success: bool,
+    pub(crate) error: bool,
+    pub(crate) reason: String,
 }
 
 // Define JSON struct for returning backend config
@@ -53,9 +53,9 @@ pub(super) struct LinkInfo {
 
 // Struct for query params in /api/all
 #[derive(Deserialize)]
-pub struct GetReqParams {
-    pub page_after: Option<String>,
-    pub page_no: Option<i64>,
-    pub page_size: Option<i64>,
-    pub filter: Option<String>,
+pub(crate) struct GetReqParams {
+    pub(crate) page_after: Option<String>,
+    pub(crate) page_no: Option<i64>,
+    pub(crate) page_size: Option<i64>,
+    pub(crate) filter: Option<String>,
 }

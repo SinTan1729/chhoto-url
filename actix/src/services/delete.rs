@@ -17,7 +17,7 @@ use crate::{
 // Handle logout
 // There's no reason to be calling this route with an API key
 #[delete("/api/logout")]
-pub async fn logout(session: Session) -> HttpResponse {
+pub(crate) async fn logout(session: Session) -> HttpResponse {
     if session.remove("chhoto-url-auth").is_some() {
         info!("Successful logout.");
         HttpResponse::Ok().body("Logged out!")
@@ -28,7 +28,7 @@ pub async fn logout(session: Session) -> HttpResponse {
 
 // Delete a given shortlink
 #[delete("/api/del/{shortlink}")]
-pub async fn delete_link(
+pub(crate) async fn delete_link(
     shortlink: web::Path<String>,
     data: web::Data<AppState>,
     session: Session,

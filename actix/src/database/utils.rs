@@ -19,7 +19,7 @@ enum BackupType {
 }
 
 // Clean expired links
-pub fn cleanup(db: &Connection, use_wal_mode: bool) {
+pub(crate) fn cleanup(db: &Connection, use_wal_mode: bool) {
     let now = Utc::now().timestamp();
     debug!("Starting database cleanup.");
 
@@ -136,7 +136,7 @@ fn manage_backups(db: &Connection, backup_type: BackupType) {
 }
 
 // Initialize the database
-pub fn initialize_db(path: &str, use_wal_mode: bool, ensure_acid: bool) {
+pub(crate) fn initialize_db(path: &str, use_wal_mode: bool, ensure_acid: bool) {
     let mut db = Connection::open(path).expect("Unable to open database!");
     manage_backups(&db, BackupType::Init);
 
@@ -326,6 +326,6 @@ pub fn initialize_db(path: &str, use_wal_mode: bool, ensure_acid: bool) {
 }
 
 // Open and return a rusqlite connection
-pub fn open_db(path: &str) -> Connection {
+pub(crate) fn open_db(path: &str) -> Connection {
     Connection::open(path).expect("Unable to open database.")
 }

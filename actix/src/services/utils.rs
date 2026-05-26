@@ -80,7 +80,7 @@ fn normalize_filter(link: &str) -> Option<String> {
     (s.len() > 2).then(|| s.to_string())
 }
 
-pub fn get_version() -> String {
+pub(crate) fn get_version() -> String {
     const VERSION: &str = env!("CARGO_PKG_VERSION");
     const GIT_COMMIT: Option<&str> = option_env!("CARGO_GIT_COMMIT");
 
@@ -338,7 +338,7 @@ fn gen_link(
 }
 
 // 404 error page
-pub async fn error404() -> impl Responder {
+pub(crate) async fn error404() -> impl Responder {
     NamedFile::open_async("./resources/static/404.html")
         .await
         .customize()

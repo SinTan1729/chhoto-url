@@ -24,7 +24,7 @@ use crate::{
 
 // Return all active links
 #[get("/api/all")]
-pub async fn getall(
+pub(crate) async fn getall(
     data: web::Data<AppState>,
     session: Session,
     params: web::Query<GetReqParams>,
@@ -52,7 +52,7 @@ pub async fn getall(
 // This is deprecated, and might be removed in the future.
 // Use /api/getconfig instead
 #[get("/api/siteurl")]
-pub async fn siteurl(data: web::Data<AppState>) -> HttpResponse {
+pub(crate) async fn siteurl(data: web::Data<AppState>) -> HttpResponse {
     if let Some(url) = &data.config.site_url {
         HttpResponse::Ok().body(url.clone())
     } else {
@@ -64,13 +64,13 @@ pub async fn siteurl(data: web::Data<AppState>) -> HttpResponse {
 // This is deprecated, and might be removed in the future.
 // Use /api/getconfig instead
 #[get("/api/version")]
-pub async fn version() -> HttpResponse {
+pub(crate) async fn version() -> HttpResponse {
     HttpResponse::Ok().body(format!("Chhoto URL v{}", utils::get_version()))
 }
 
 // Get the user's current role
 #[get("/api/whoami")]
-pub async fn whoami(
+pub(crate) async fn whoami(
     data: web::Data<AppState>,
     session: Session,
     http: HttpRequest,
@@ -89,7 +89,7 @@ pub async fn whoami(
 
 // Get some useful backend config
 #[get("/api/getconfig")]
-pub async fn getconfig(
+pub(crate) async fn getconfig(
     data: web::Data<AppState>,
     session: Session,
     http: HttpRequest,
@@ -120,7 +120,7 @@ pub async fn getconfig(
 
 // Handle a given shortlink
 #[get("/{shortlink}")]
-pub async fn link_handler(
+pub(crate) async fn link_handler(
     shortlink: web::Path<String>,
     data: web::Data<AppState>,
 ) -> impl Responder {

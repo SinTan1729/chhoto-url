@@ -13,16 +13,16 @@ use crate::{
 
 // Struct for encoding a DB row
 #[derive(Serialize)]
-pub struct DBRow {
+pub(crate) struct DBRow {
     shortlink: String,
-    pub longlink: String,
-    pub hits: i64,
-    pub expiry_time: i64,
-    pub notes: String,
+    pub(crate) longlink: String,
+    pub(crate) hits: i64,
+    pub(crate) expiry_time: i64,
+    pub(crate) notes: String,
 }
 
 // Find a single URL for /api/expand
-pub fn find_url(shortlink: &str, db: &Connection) -> Result<DBRow, ChhotoError> {
+pub(crate) fn find_url(shortlink: &str, db: &Connection) -> Result<DBRow, ChhotoError> {
     // Long link, hits, expiry time
     let now = chrono::Utc::now().timestamp();
     let Ok(mut statement) = db.prepare_cached(queries::FIND_URL) else {
@@ -48,7 +48,7 @@ pub fn find_url(shortlink: &str, db: &Connection) -> Result<DBRow, ChhotoError> 
 }
 
 // Get all URLs in DB
-pub fn getall(
+pub(crate) fn getall(
     db: &Connection,
     page_after: Option<&str>,
     page_no: Option<i64>,
@@ -137,7 +137,7 @@ pub fn getall(
 }
 
 // Add a hit when site is visited during link resolution
-pub fn find_and_add_hit(shortlink: &str, db: &Connection) -> Result<String, ()> {
+pub(crate) fn find_and_add_hit(shortlink: &str, db: &Connection) -> Result<String, ()> {
     let now = chrono::Utc::now().timestamp();
     let Ok(mut statement) = db.prepare_cached(queries::FIND_AND_ADD_HIT) else {
         error!("Error preparing SQL statement for add_hit.");
@@ -154,7 +154,7 @@ pub fn find_and_add_hit(shortlink: &str, db: &Connection) -> Result<String, ()> 
 }
 
 // Insert a new link
-pub fn add_link(
+pub(crate) fn add_link(
     shortlink: &str,
     longlink: &str,
     expiry_delay: Option<i64>,
@@ -195,7 +195,7 @@ pub fn add_link(
 }
 
 // Edit an existing link
-pub fn edit_link(
+pub(crate) fn edit_link(
     shortlink: &str,
     longlink: &str,
     reset_hits: bool,
@@ -232,7 +232,7 @@ pub fn edit_link(
 }
 
 // Delete an existing link
-pub fn delete_link(shortlink: &str, db: &Connection) -> Result<(), ChhotoError> {
+pub(crate) fn delete_link(shortlink: &str, db: &Connection) -> Result<(), ChhotoError> {
     let Ok(mut statement) = db.prepare_cached(queries::DELETE_LINK) else {
         error!("Error preparing SQL statement for delete_link.");
         return Err(ServerError);
