@@ -8,7 +8,7 @@ use std::rc::Rc;
 
 use crate::{
     database::queries,
-    services::ChhotoError::{self, ClientError, ServerError},
+    services::types::ChhotoError::{self, ClientError, ServerError},
 };
 
 // Struct for encoding a DB row

@@ -9,7 +9,7 @@ use std::{fmt::Display, fs, rc::Rc};
 
 use crate::*;
 
-pub(crate) trait BodyTest {
+pub(super) trait BodyTest {
     fn as_str(&self) -> &str;
 }
 
@@ -20,28 +20,28 @@ impl BodyTest for Bytes {
 }
 
 #[derive(Deserialize)]
-pub(crate) struct URLData {
+pub(super) struct URLData {
     #[serde(default, alias = "shorturl")]
-    pub(crate) shortlink: String,
+    pub(super) shortlink: String,
     #[serde(default, alias = "longurl")]
-    pub(crate) longlink: String,
+    pub(super) longlink: String,
     #[serde(default)]
-    pub(crate) hits: i64,
+    pub(super) hits: i64,
     #[serde(default)]
-    pub(crate) expiry_time: i64,
+    pub(super) expiry_time: i64,
     #[serde(default)]
-    pub(crate) notes: String,
+    pub(super) notes: String,
     #[serde(default)]
-    pub(crate) reason: String,
+    pub(super) reason: String,
 }
 
 #[derive(Deserialize)]
-pub(crate) struct BackendConfig {
-    pub(crate) version: String,
-    pub(crate) slug_length: usize,
+pub(super) struct BackendConfig {
+    pub(super) version: String,
+    pub(super) slug_length: usize,
 }
 
-pub(crate) fn default_config(test: &str) -> config::Config {
+pub(super) fn default_config(test: &str) -> config::Config {
     config::Config {
         listen_address: String::from("0.0.0.0"),
         port: 4567,
@@ -68,7 +68,7 @@ pub(crate) fn default_config(test: &str) -> config::Config {
     }
 }
 
-pub(crate) async fn create_app(
+pub(super) async fn create_app(
     conf: &config::Config,
     test: &str,
 ) -> impl Service<Request, Response = ServiceResponse, Error = Error> + use<> {
@@ -83,27 +83,27 @@ pub(crate) async fn create_app(
                 db: database::utils::open_db(&db_file),
                 config: conf.clone(),
             }))
-            .service(services::siteurl)
-            .service(services::version)
-            .service(services::getconfig)
-            .service(services::add_link)
-            .service(services::getall)
-            .service(services::link_handler)
-            .service(services::edit_link)
-            .service(services::delete_link)
-            .service(services::whoami)
-            .service(services::expand),
+            .service(services::get::siteurl)
+            .service(services::get::version)
+            .service(services::get::getconfig)
+            .service(services::post::add_link)
+            .service(services::get::getall)
+            .service(services::get::link_handler)
+            .service(services::put::edit_link)
+            .service(services::delete::delete_link)
+            .service(services::get::whoami)
+            .service(services::post::expand),
     )
     .await
 }
 
-pub(crate) fn test_cleanup(test: &str) {
+pub(super) fn test_cleanup(test: &str) {
     for suffix in ["", ".bak1", ".bak2", "-shm", "-wal"] {
         let _ = fs::remove_file(format!("/tmp/chhoto-url-test/{test}.sqlite{suffix}"));
     }
 }
 
-pub(crate) async fn add_link<
+pub(super) async fn add_link<
     T: Service<Request, Response = ServiceResponse, Error = Error>,
     S: Display,
 >(
@@ -128,7 +128,7 @@ pub(crate) async fn add_link<
     (status, url)
 }
 
-pub(crate) async fn expand<
+pub(super) async fn expand<
     T: Service<Request, Response = ServiceResponse, Error = Error>,
     S: Display,
 >(
@@ -149,7 +149,7 @@ pub(crate) async fn expand<
     (status, url)
 }
 
-pub(crate) async fn getall<T: Service<Request, Response = ServiceResponse, Error = Error>>(
+pub(super) async fn getall<T: Service<Request, Response = ServiceResponse, Error = Error>>(
     app: T,
     api_key: &str,
     params: &str,
@@ -167,7 +167,7 @@ pub(crate) async fn getall<T: Service<Request, Response = ServiceResponse, Error
     reply_chunks
 }
 
-pub(crate) async fn edit_link<T: Service<Request, Response = ServiceResponse, Error = Error>>(
+pub(super) async fn edit_link<T: Service<Request, Response = ServiceResponse, Error = Error>>(
     app: T,
     api_key: &str,
     shortlink: &str,

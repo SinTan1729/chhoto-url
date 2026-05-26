@@ -10,7 +10,7 @@ use std::{rc::Rc, time::SystemTime};
 
 use crate::{
     config::{Config, HashAlgorithm},
-    services::JSONResponse,
+    services::types::JSONResponse,
 };
 
 // If the api_key environment variable exists

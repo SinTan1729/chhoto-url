@@ -19,7 +19,8 @@ mod auth;
 mod config;
 mod database;
 mod services;
-mod utils;
+
+use services::utils;
 
 // Tests
 #[cfg(test)]
@@ -115,18 +116,18 @@ async fn main() -> Result<()> {
             } else {
                 middleware::DefaultHeaders::new()
             })
-            .service(services::link_handler)
-            .service(services::edit_link)
-            .service(services::getall)
-            .service(services::siteurl)
-            .service(services::version)
-            .service(services::getconfig)
-            .service(services::add_link)
-            .service(services::delete_link)
-            .service(services::login)
-            .service(services::logout)
-            .service(services::expand)
-            .service(services::whoami);
+            .service(services::get::link_handler)
+            .service(services::put::edit_link)
+            .service(services::get::getall)
+            .service(services::get::siteurl)
+            .service(services::get::version)
+            .service(services::get::getconfig)
+            .service(services::post::add_link)
+            .service(services::delete::delete_link)
+            .service(services::post::login)
+            .service(services::delete::logout)
+            .service(services::post::expand)
+            .service(services::get::whoami);
 
         if !conf.disable_frontend {
             if let Some(dir) = &conf.custom_landing_directory {
@@ -139,7 +140,7 @@ async fn main() -> Result<()> {
             }
         }
 
-        app.default_service(actix_web::web::get().to(services::error404))
+        app.default_service(actix_web::web::get().to(services::utils::error404))
     })
     // Hardcode the port the server listens to. Allows for more intuitive Docker Compose port management
     .bind((conf.listen_address.clone(), conf.port))

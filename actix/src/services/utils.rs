@@ -1,6 +1,8 @@
 // SPDX-FileCopyrightText: 2023-2026 Sayantan Santra <sayantan.santra689@gmail.com>
 // SPDX-License-Identifier: MIT
 
+use actix_files::NamedFile;
+use actix_web::{Responder, http::StatusCode};
 use log::{debug, error};
 use nanoid::nanoid;
 use rand::{random_range, seq::IndexedRandom};
@@ -11,7 +13,7 @@ use std::env;
 use crate::{
     config::{Config, SlugStyle},
     database,
-    services::{
+    services::types::{
         ChhotoError::{self, ClientError, ServerError},
         GetReqParams,
     },
@@ -91,7 +93,7 @@ pub fn get_version() -> String {
 }
 
 // Request the DB for all URLs
-pub fn getall(db: &Connection, params: GetReqParams) -> Result<String, ChhotoError> {
+pub(super) fn getall(db: &Connection, params: GetReqParams) -> Result<String, ChhotoError> {
     let page_after = match params.page_after {
         Some(s) if s.is_empty() => {
             return Err(ChhotoError::ClientError {
@@ -125,7 +127,7 @@ pub fn getall(db: &Connection, params: GetReqParams) -> Result<String, ChhotoErr
 }
 
 // Make checks and then request the DB to add a new URL entry
-pub fn add_link(
+pub(super) fn add_link(
     req: &str,
     db: &Connection,
     config: &Config,
@@ -204,7 +206,7 @@ pub fn add_link(
 }
 
 // Make checks and then request the DB to edit an URL entry
-pub fn edit_link(req: &str, db: &Connection, config: &Config) -> Result<(), ChhotoError> {
+pub(super) fn edit_link(req: &str, db: &Connection, config: &Config) -> Result<(), ChhotoError> {
     let chunks: EditURLRequest;
     if let Ok(json) = serde_json::from_str(req) {
         chunks = json;
@@ -237,7 +239,7 @@ pub fn edit_link(req: &str, db: &Connection, config: &Config) -> Result<(), Chho
 }
 
 // Check if link, and request DB to delete it if exists
-pub fn delete_link(
+pub(super) fn delete_link(
     shortlink: &str,
     db: &Connection,
     allow_capital_letters: bool,
@@ -329,4 +331,12 @@ fn gen_link(
             }
         }
     }
+}
+
+// 404 error page
+pub async fn error404() -> impl Responder {
+    NamedFile::open_async("./resources/static/404.html")
+        .await
+        .customize()
+        .with_status(StatusCode::NOT_FOUND)
 }
