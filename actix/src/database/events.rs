@@ -6,10 +6,10 @@ use rusqlite::{Connection, fallible_iterator::FallibleIterator, named_params};
 use serde::Serialize;
 use std::rc::Rc;
 
-mod queries;
-pub mod utils;
-
-use crate::services::ChhotoError::{self, ClientError, ServerError};
+use crate::{
+    database::queries,
+    services::ChhotoError::{self, ClientError, ServerError},
+};
 
 // Struct for encoding a DB row
 #[derive(Serialize)]
