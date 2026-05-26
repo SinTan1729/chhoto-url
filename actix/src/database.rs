@@ -150,7 +150,7 @@ pub fn find_and_add_hit(shortlink: &str, db: &Connection) -> Result<String, ()> 
         .inspect(|_| {
             debug!("Accessed link: {shortlink}.");
         })
-        .map_err(|_| ())
+        .map_err(drop)
 }
 
 // Insert a new link
@@ -228,7 +228,7 @@ pub fn edit_link(
                 shortlink, longlink, reset_hits, expiry_time, notes
             );
         })
-        .map_err(|_| ())
+        .map_err(drop)
 }
 
 // Delete an existing link
