@@ -25,7 +25,7 @@ pub async fn edit_link(
     let config = &data.config;
     let result = auth::is_api_ok(http, config);
     if result.success || is_session_valid(session, config) {
-        match utils::edit_link(&req, &data.db, config) {
+        match utils::edit_link_helper(&req, &data.db, config) {
             Ok(()) => {
                 let body = JSONResponse {
                     success: true,

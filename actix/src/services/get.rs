@@ -37,7 +37,7 @@ pub async fn getall(
     if result.error {
         HttpResponse::Unauthorized().json(result)
     } else if result.success || auth::is_session_valid(session, config) {
-        match utils::getall(&data.db, params.into_inner()) {
+        match utils::getall_helper(&data.db, params.into_inner()) {
             Ok(s) => HttpResponse::Ok().body(s),
             Err(ServerError) => HttpResponse::InternalServerError()
                 .body("Something went wrong while loading the links.".to_string()),

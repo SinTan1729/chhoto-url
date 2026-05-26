@@ -39,7 +39,7 @@ pub async fn delete_link(
     let result = auth::is_api_ok(http, config);
     // If success, delete shortlink
     if result.success {
-        match utils::delete_link(&shortlink, &data.db, data.config.allow_capital_letters) {
+        match utils::delete_link_helper(&shortlink, &data.db, data.config.allow_capital_letters) {
             Ok(()) => {
                 let response = JSONResponse {
                     success: true,
@@ -69,7 +69,9 @@ pub async fn delete_link(
         HttpResponse::Unauthorized().json(result)
     // If using password - keeps backwards compatibility
     } else if auth::is_session_valid(session, config) {
-        if utils::delete_link(&shortlink, &data.db, data.config.allow_capital_letters).is_ok() {
+        if utils::delete_link_helper(&shortlink, &data.db, data.config.allow_capital_letters)
+            .is_ok()
+        {
             HttpResponse::Ok().body(format!("Deleted {shortlink}"))
         } else {
             HttpResponse::NotFound().body("Not found!")

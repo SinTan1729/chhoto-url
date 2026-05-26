@@ -93,7 +93,7 @@ pub fn get_version() -> String {
 }
 
 // Request the DB for all URLs
-pub(super) fn getall(db: &Connection, params: GetReqParams) -> Result<String, ChhotoError> {
+pub(super) fn getall_helper(db: &Connection, params: GetReqParams) -> Result<String, ChhotoError> {
     let page_after = match params.page_after {
         Some(s) if s.is_empty() => {
             return Err(ChhotoError::ClientError {
@@ -127,7 +127,7 @@ pub(super) fn getall(db: &Connection, params: GetReqParams) -> Result<String, Ch
 }
 
 // Make checks and then request the DB to add a new URL entry
-pub(super) fn add_link(
+pub(super) fn add_link_helper(
     req: &str,
     db: &Connection,
     config: &Config,
@@ -206,7 +206,11 @@ pub(super) fn add_link(
 }
 
 // Make checks and then request the DB to edit an URL entry
-pub(super) fn edit_link(req: &str, db: &Connection, config: &Config) -> Result<(), ChhotoError> {
+pub(super) fn edit_link_helper(
+    req: &str,
+    db: &Connection,
+    config: &Config,
+) -> Result<(), ChhotoError> {
     let chunks: EditURLRequest;
     if let Ok(json) = serde_json::from_str(req) {
         chunks = json;
@@ -239,7 +243,7 @@ pub(super) fn edit_link(req: &str, db: &Connection, config: &Config) -> Result<(
 }
 
 // Check if link, and request DB to delete it if exists
-pub(super) fn delete_link(
+pub(super) fn delete_link_helper(
     shortlink: &str,
     db: &Connection,
     allow_capital_letters: bool,
