@@ -53,7 +53,7 @@ jobs:
           cross-version: ${{ matrix.platform.cross-version }}
           rust-cache-parameters: '{"workspaces":"actix -> target"}'
       - name: Upload artifacts
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         with:
           name: ${{ matrix.platform.target }}
           path: ./actix/target/${{ matrix.platform.target }}/release/${{ env.IMAGE_NAME }}
@@ -111,7 +111,7 @@ jobs:
       # Extract metadata
       - name: Extract metadata (tags, labels) for Docker - alpine
         id: meta-alpine
-        uses: docker/metadata-action@v5
+        uses: docker/metadata-action@v6
         if: github.ref_type == 'tag'
         env:
           DOCKER_METADATA_ANNOTATIONS_LEVELS: manifest,index
@@ -127,7 +127,7 @@ jobs:
             type=semver,pattern={{version}}
       - name: Extract metadata (tags, labels) for Docker - scratch
         id: meta-scratch
-        uses: docker/metadata-action@v5
+        uses: docker/metadata-action@v6
         if: github.ref_type == 'tag'
         env:
           DOCKER_METADATA_ANNOTATIONS_LEVELS: manifest,index
@@ -141,7 +141,7 @@ jobs:
             type=semver,pattern={{version}}
       - name: Extract metadata (tags, labels) for Docker - dev
         id: meta-dev
-        uses: docker/metadata-action@v5
+        uses: docker/metadata-action@v6
         if: github.ref_type != 'tag'
         env:
           DOCKER_METADATA_ANNOTATIONS_LEVELS: manifest,index
@@ -156,7 +156,7 @@ jobs:
         uses: docker/setup-buildx-action@v4
       - name: Build and push Docker image - alpine
         id: push-alpine
-        uses: docker/build-push-action@v6
+        uses: docker/build-push-action@v7
         if: github.ref_type == 'tag'
         with:
           context: .
@@ -168,7 +168,7 @@ jobs:
           annotations: ${{ steps.meta-alpine.outputs.annotations }}
       - name: Build and push Docker image - scratch
         id: push-scratch
-        uses: docker/build-push-action@v6
+        uses: docker/build-push-action@v7
         if: github.ref_type == 'tag'
         with:
           context: .
@@ -180,7 +180,7 @@ jobs:
           annotations: ${{ steps.meta-scratch.outputs.annotations }}
       - name: Build and push Docker image - dev
         id: push-dev
-        uses: docker/build-push-action@v6
+        uses: docker/build-push-action@v7
         if: github.ref_type != 'tag'
         with:
           context: .
@@ -225,7 +225,7 @@ jobs:
         if: github.ref_type == 'tag'
         run: cat CHANGELOG.md
       - name: Release
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@v3
         if: github.ref_type == 'tag'
         with:
           body_path: ${{ steps.git-cliff.outputs.changelog }}

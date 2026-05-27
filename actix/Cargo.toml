@@ -5,7 +5,7 @@
 name = "chhoto-url"
 version = "7.1.5"
 edition = "2024"
-authors = ["Sayantan Santra <sayantan[dot]santra689[at]gmail[dot]com"]
+authors = ["Sayantan Santra <mail@sayantansantra.com>"]
 license = "mit"
 description = "A simple selfhosted URL shortener with no unnecessary features."
 homepage = "https://github.com/SinTan1729/chhoto-url"

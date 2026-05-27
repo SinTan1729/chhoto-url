@@ -1,7 +1,7 @@
 // SPDX-FileCopyrightText: 2023-2026 Sayantan Santra <sayantan.santra689@gmail.com>
 // SPDX-License-Identifier: MIT
 
-pub const FIND_URL: &str = "
+pub(super) const FIND_URL: &str = "
 SELECT long_url, hits, expiry_time, notes FROM urls
   WHERE short_url = :short
     AND (
@@ -9,7 +9,7 @@ SELECT long_url, hits, expiry_time, notes FROM urls
       OR expiry_time > :now
     )";
 
-pub const FIND_AND_ADD_HIT: &str = "
+pub(super) const FIND_AND_ADD_HIT: &str = "
 UPDATE urls 
   SET hits = hits + 1 
   WHERE short_url = :short 
@@ -19,7 +19,7 @@ UPDATE urls
     )
 RETURNING long_url";
 
-pub const ADD_LINK: &str = "
+pub(super) const ADD_LINK: &str = "
 INSERT INTO urls
   (long_url, short_url, hits, expiry_time, notes)
   VALUES (:long, :short, 0, :expiry, :notes)
@@ -29,9 +29,9 @@ ON CONFLICT(short_url) DO UPDATE
     AND expiry_time <= :now
     AND expiry_time IS NOT NULL";
 
-pub const DELETE_LINK: &str = "DELETE FROM urls WHERE short_url = :short";
+pub(super) const DELETE_LINK: &str = "DELETE FROM urls WHERE short_url = :short";
 
-pub const URLS_TABLE_SCHEMA: &str = "
+pub(super) const URLS_TABLE_SCHEMA: &str = "
 CREATE TABLE urls (
   id INTEGER PRIMARY KEY,
   short_url TEXT NOT NULL,
@@ -41,14 +41,15 @@ CREATE TABLE urls (
   notes TEXT
 )";
 
-pub const CLEANUP: &str = "DELETE FROM urls WHERE :now >= expiry_time AND expiry_time IS NOT NULL";
+pub(super) const CLEANUP: &str =
+    "DELETE FROM urls WHERE :now >= expiry_time AND expiry_time IS NOT NULL";
 
-pub const TABLE_LIST: &str = "
+pub(super) const TABLE_LIST: &str = "
 SELECT type, name FROM sqlite_master
   WHERE type IN ('table', 'index') 
     AND name NOT LIKE 'sqlite_%'";
 
-pub const FTS_TABLE_SCHEMA: &str = "
+pub(super) const FTS_TABLE_SCHEMA: &str = "
 CREATE VIRTUAL TABLE urls_fts USING fts5(
   long_url, short_url, notes,
   content='urls',
@@ -56,7 +57,7 @@ CREATE VIRTUAL TABLE urls_fts USING fts5(
   tokenize='trigram remove_diacritics 2'
 )";
 
-pub const FTS_TRIGGERS: [&str; 3] = [
+pub(super) const FTS_TRIGGERS: [&str; 3] = [
     "
 CREATE TRIGGER urls_insert
 AFTER INSERT ON urls BEGIN
@@ -78,13 +79,13 @@ AFTER UPDATE ON urls BEGIN
   VALUES (new.id, new.long_url, new.short_url, new.notes);
 END",
 ];
-pub const URLS_MIGRATION_3: &str = "
+pub(super) const URLS_MIGRATION_3: &str = "
 INSERT INTO urls (long_url, short_url, hits, expiry_time, notes)
   SELECT long_url, short_url, hits, NULLIF(expiry_time,0), NULLIF(notes,'')
   FROM urls_old       
   ORDER BY id";
 
-pub const EDIT_LINK: &str = "
+pub(super) const EDIT_LINK: &str = "
 UPDATE urls
   SET
     long_url = :long,
@@ -95,7 +96,7 @@ UPDATE urls
     AND (expiry_time IS NULL OR expiry_time > :now)
 ";
 
-pub const GETALL_QUERIES: [&str; 4] = [
+pub(super) const GETALL_QUERIES: [&str; 4] = [
     // 0 => standard
     "
 SELECT short_url, long_url, hits, expiry_time, notes FROM (

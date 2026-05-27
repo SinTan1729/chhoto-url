@@ -87,14 +87,13 @@ Password: `chhoto-url-demo-pass`
 # Bloat that will not be implemented
 
 - **Tracking or spying of any kind.** The only logs that still exist are
-  errors printed to stderr and some basic logging of configs.
+  some very simple ones, mostly meant for debugging.
 - **User management.** If you need a shortener for your whole organization, either
   run separate containers for everyone or use something else.
 - **Cookies, newsletters**, "we value your privacy" popups or any of the multiple
   other ways modern web shows how anti-user it is. We all hate those, and they're
   not needed here.
-- **Paywalls** or messages begging for donations. If you want to buy me a coffee,
-  you can message me through GitHub discussions or mail me.
+- **Paywalls** or messages begging for donations.
 
 # Screenshots
 
