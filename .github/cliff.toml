@@ -4,7 +4,7 @@
 [changelog]
 # A Tera template to be rendered as the changelog's header.
 # See https://keats.github.io/tera/docs/#introduction
-header = ""
+header = "## Chhoto URL v{{ releases.0.version }}"
 body = """
 {%- macro remote_url() -%}
   https://github.com/{{ remote.github.owner }}/{{ remote.github.repo }}
@@ -16,8 +16,10 @@ body = """
         - {{ commit.message | split(pat="\n") | first | upper_first | trim }}\
             {% if commit.remote.username %} by @{{ commit.remote.username }}{%- endif -%}
             {% if commit.remote.pr_number %} in \
-            [#{{ commit.remote.pr_number }}]({{ self::remote_url() }}/pull/{{ commit.remote.pr_number }}) \
-            {%- endif -%}
+                [#{{ commit.remote.pr_number }}]({{ self::remote_url() }}/pull/{{ commit.remote.pr_number }}) \
+            {% else %} in \
+                {{ commit.id | truncate(length=7, end="") }}\
+            {% endif %}\
     {% endfor %}
 {% endfor %}
 
@@ -30,7 +32,7 @@ body = """
     {%- if contributor.pr_number %} in \
       [#{{ contributor.pr_number }}]({{ self::remote_url() }}/pull/{{ contributor.pr_number }}) \
     {%- endif %}
-{%- endfor %}\n\n
+{%- endfor %}\n
 """
 # A Tera template to be rendered as the changelog's footer.
 # See https://keats.github.io/tera/docs/#introduction
@@ -44,13 +46,12 @@ footer = """
         {% if release.previous.version -%}
             **Full Changelog:** \
                 {{ self::remote_url() }}/compare/{{ release.previous.version }}...{{ release.version }}
-                [Link to Docker Hub](https://hub.docker.com/r/sintan1729/{{ remote.github.repo }})
         {% endif -%}
     {% else -%}
         **Full Changelog:** {{ self::remote_url() }}/compare/{{ release.previous.version }}...HEAD
-        [Link to Docker Hub](https://hub.docker.com/r/sintan1729/{{ remote.github.repo }})
     {% endif -%}
-{% endfor %}
+{% endfor %}\
+[Link to Docker Hub](https://hub.docker.com/r/sintan1729/{{ remote.github.repo }})
 """
 # Remove leading and trailing whitespaces from the changelog's body.
 trim = true
@@ -78,6 +79,7 @@ commit_parsers = [
   { message = "^[c|C]hg", group = "<2>Changes" },
   { message = "^[r|R]emove", group = "<3>Removed" },
   { message = "^[r|R]mv", group = "<3>Removed" },
+  { message = ".*", skip = true },
 ]
 # Exclude commits that are not matched by any commit parser.
 filter_commits = true
