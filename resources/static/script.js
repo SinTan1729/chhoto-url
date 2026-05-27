@@ -560,42 +560,53 @@ const qrCodeButton = (shortlink) => {
   btn.innerHTML = SVG_QR_BUTTON;
   btn.title = "Show QR Code";
 
+  const qrWidth = 512;
+  const qrPadding = 24;
+  const logoWidth = 100;
+  const logoRadius = 30;
+  const canvasWidth = qrWidth + qrPadding * 2;
+
   btn.onclick = () => {
     const tmpDiv = document.createElement("div");
     new QRCode(tmpDiv, {
       text: `${SITE_URL}/${shortlink}`,
       correctLevel: QRCode.CorrectLevel.H,
+      height: qrWidth,
+      width: qrWidth,
     });
     const oldCanvas = tmpDiv.firstChild;
 
-    const padding = "12";
     const newCanvas = document.createElement("canvas");
-    newCanvas.height = 280;
-    newCanvas.width = 280;
+    newCanvas.height = canvasWidth;
+    newCanvas.width = canvasWidth;
 
     const ctx = newCanvas.getContext("2d");
     ctx.fillStyle = "white";
-    ctx.fillRect(0, 0, 280, 280);
-    ctx.drawImage(oldCanvas, 12, 12);
+    ctx.fillRect(0, 0, canvasWidth, canvasWidth);
+    ctx.drawImage(oldCanvas, qrPadding, qrPadding);
 
     const img = new Image();
     img.src = "assets/favicon.svg";
     img.onload = () => {
       ctx.fillStyle = "white";
       ctx.beginPath();
-      ctx.arc(140, 140, 30, 0, Math.PI * 2);
+      ctx.arc(canvasWidth / 2, canvasWidth / 2, logoRadius * 2, 0, Math.PI * 2);
       ctx.fill();
 
-      const imgWidth = 50;
-      const imgHeight = 50;
-      ctx.drawImage(img, 115, 115, 50, 50);
+      ctx.drawImage(
+        img,
+        (canvasWidth - logoWidth) / 2,
+        (canvasWidth - logoWidth) / 2,
+        logoWidth,
+        logoWidth,
+      );
 
       document.getElementById("qr-code").appendChild(newCanvas);
+      document.getElementById("container").style.filter = "blur(2px)";
+      document.getElementById("qr-code-dialog").showModal();
       const qrDown = document.getElementById("qr-download-button");
       qrDown.href = newCanvas.toDataURL();
       qrDown.download = `chhoto-qr-${shortlink}.png`;
-      document.getElementById("container").style.filter = "blur(2px)";
-      document.getElementById("qr-code-dialog").showModal();
     };
   };
   return btn;

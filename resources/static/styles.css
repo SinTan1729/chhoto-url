@@ -247,6 +247,9 @@ details.chhoto-input summary {
 #qr-code-dialog div {
   margin: 0.5em;
 }
+#qr-code canvas {
+  max-width: min(20em, 80vw);
+}
 .dialog-close-button {
   background-color: transparent;
   border-style: none;
