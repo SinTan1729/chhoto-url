@@ -321,6 +321,8 @@ pub(crate) fn initialize_db(path: &str, use_wal_mode: bool, ensure_acid: bool) {
     tx.pragma_update(None, "user_version", USER_VERSION)
         .expect("Unable to set pragma: user_version.");
     tx.commit().expect("Unable to set correct pragma values.");
+    db.execute("PRAGMA optimize=0x10002", ())
+        .expect("Unable to optimize database.");
 
     info!("Database initialization was successful.");
 }
