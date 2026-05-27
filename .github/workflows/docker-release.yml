@@ -162,7 +162,9 @@ jobs:
           context: .
           push: true
           file: Dockerfile.alpine
-          tags: ${{ steps.meta-alpine.outputs.tags }}
+          tags: |
+            ${{ steps.meta-alpine.outputs.tags }}
+            ghcr.io/sintan1729/${{ env.IMAGE_NAME }}:dev
           labels: ${{ steps.meta-alpine.outputs.labels }}
           platforms: linux/amd64,linux/arm64,linux/arm/v7,linux/riscv64
           annotations: ${{ steps.meta-alpine.outputs.annotations }}
