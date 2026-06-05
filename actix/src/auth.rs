@@ -1,36 +1,40 @@
 // SPDX-FileCopyrightText: 2023-2026 Sayantan Santra <sayantan.santra689@gmail.com>
 // SPDX-License-Identifier: MIT
 
-use actix_session::Session;
-use actix_web::HttpRequest;
+use actix_session::{Session, SessionExt};
+use actix_web::{Error, FromRequest, HttpRequest, dev::Payload, web};
 use argon2::{Argon2, PasswordVerifier, password_hash::PasswordHash};
 use log::{debug, warn};
 use passwords::PasswordGenerator;
+use std::future::{Ready, ready};
 use std::{rc::Rc, time::SystemTime};
 
 use crate::{
+    AppState,
     config::{Config, HashAlgorithm},
     services::types::JSONResponse,
 };
 
-// If the api_key environment variable exists
-pub(crate) fn is_api_ok(http: HttpRequest, config: &Config) -> JSONResponse {
+// Read API key from header and process it
+fn is_api_ok(req: &HttpRequest, config: &Config) -> JSONResponse {
+    let api_header = req.headers().get("X-API-Key").and_then(|h| h.to_str().ok());
+
     // If the api_key environment variable exists
     if config.api_key.is_some() {
         // If the header exists
-        if let Some(header) = get_api_header(&http) {
+        if let Some(header) = api_header {
             // If the header is correct
             if is_key_valid(header, config) {
                 JSONResponse {
                     success: true,
                     error: false,
-                    reason: "Correct API key".to_string(),
+                    reason: "Correct API key.".to_string(),
                 }
             } else {
                 JSONResponse {
                     success: false,
                     error: true,
-                    reason: "Incorrect API key".to_string(),
+                    reason: "API validation failed.".to_string(),
                 }
             }
         // The header may not exist when the user logs in through the web interface, so allow a request with no header.
@@ -40,28 +44,29 @@ pub(crate) fn is_api_ok(http: HttpRequest, config: &Config) -> JSONResponse {
             JSONResponse {
                 success: false,
                 error: false,
-                reason: "No valid authentication was found".to_string(),
+                reason: "No valid authentication.".to_string(),
             }
         }
     } else {
         // If the API key isn't set, but an API Key header is provided
-        if get_api_header(&http).is_some() {
+        if api_header.is_some() {
             JSONResponse {
                 success: false,
                 error: true,
-                reason: "An API key was provided, but the 'api_key' environment variable is not configured in the Chhoto URL instance".to_string(), 
+                reason: "API validation failed.".to_string(),
             }
         } else {
             JSONResponse {
                 success: false,
                 error: false,
-                reason: "".to_string(),
+                reason: "No valid authentication.".to_string(),
             }
         }
     }
 }
+
 // Validate API key
-pub(crate) fn is_key_valid(key: &str, config: &Config) -> bool {
+fn is_key_valid(key: &str, config: &Config) -> bool {
     if let Some(api_key) = &config.api_key {
         // Check if API Key is hashed using Argon2. More algorithms maybe added later.
         let authorized = match config.hash_algorithm {
@@ -79,22 +84,19 @@ pub(crate) fn is_key_valid(key: &str, config: &Config) -> bool {
             }
         };
         if !authorized {
-            warn!("Incorrect API key was provided when connecting to Chhoto URL.");
+            warn!("Incorrect API key was provided.");
             false
         } else {
             debug!("Server accessed with API key.");
             true
         }
     } else {
-        warn!(
-            "API was accessed with API key validation but no API key was specified. Set the 'api_key' environment variable."
-        );
+        warn!("API was accessed with API key validation but no API key was configured.");
         false
     }
 }
 
 // Generate an API key if the user doesn't specify a secure key
-// Called in main.rs
 pub(crate) fn gen_key() -> String {
     let key = PasswordGenerator {
         length: 128,
@@ -109,13 +111,8 @@ pub(crate) fn gen_key() -> String {
     key.generate_one().unwrap()
 }
 
-// Check if the API key header exists
-pub(crate) fn get_api_header(req: &HttpRequest) -> Option<&str> {
-    req.headers().get("X-API-Key")?.to_str().ok()
-}
-
 // Validate a session
-pub(crate) fn is_session_valid(session: Session, config: &Config) -> bool {
+fn is_session_valid(session: Session, config: &Config) -> bool {
     // If there's no password provided, just return true
     if config.password.is_none() {
         return true;
@@ -146,6 +143,42 @@ fn is_token_valid(token: Option<&str>) -> bool {
         }
     } else {
         false
+    }
+}
+
+// Enum for auth state
+pub(crate) enum Auth {
+    ValidAPIKey,
+    ValidSession,
+    None { result: JSONResponse },
+    InvalidAPIKey { result: JSONResponse },
+}
+// Extractor for authentication
+impl FromRequest for Auth {
+    type Error = Error;
+    type Future = Ready<Result<Self, Self::Error>>;
+
+    fn from_request(req: &HttpRequest, _: &mut Payload) -> Self::Future {
+        let config = &req
+            .app_data::<web::Data<AppState>>()
+            .expect("Appstate wasn't created yet. THIS SHOULD NEVER OCCUR!!!")
+            .config;
+
+        // API key auth
+        let api_result = is_api_ok(req, config);
+        if api_result.success {
+            return ready(Ok(Auth::ValidAPIKey));
+        } else if api_result.error {
+            return ready(Ok(Auth::InvalidAPIKey { result: api_result }));
+        }
+
+        // Session auth
+        let session = req.get_session();
+        if is_session_valid(session, config) {
+            return ready(Ok(Auth::ValidSession));
+        }
+
+        ready(Ok(Auth::None { result: api_result }))
     }
 }
 

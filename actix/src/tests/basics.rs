@@ -49,3 +49,35 @@ async fn basic_site_config() {
 
     test_cleanup(test);
 }
+
+#[test]
+async fn auth_verification() {
+    let test = "auth_verification";
+    let conf = default_config(test);
+    let app = create_app(&conf, test).await;
+
+    let req = test::TestRequest::get().uri("/api/all").to_request();
+    let resp = test::call_service(&app, req).await;
+    assert_eq!(resp.status(), 401);
+    let body = to_bytes(resp.into_body()).await.unwrap();
+    assert_eq!(body.as_str(), "Unauthorized");
+
+    let status = edit_link(&app, "a", "test2", false, None, None).await;
+    assert_eq!(status, 401);
+
+    let (status, reply) = add_link(&app, "a", "test1", 0, "").await;
+    assert_eq!(status, 401);
+    assert_eq!(reply.reason, "API validation failed.");
+
+    let req = test::TestRequest::delete()
+        .uri("/api/del/link")
+        .to_request();
+    let resp = test::call_service(&app, req).await;
+    assert_eq!(resp.status(), 401);
+
+    let req = test::TestRequest::get().uri("/api/getconfig").to_request();
+    let resp = test::call_service(&app, req).await;
+    assert_eq!(resp.status(), 401);
+
+    test_cleanup(test);
+}

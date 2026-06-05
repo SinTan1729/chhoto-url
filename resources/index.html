@@ -173,7 +173,7 @@
                   name="filter"
                   id="filterText"
                   placeholder="Filter shortlinks"
-                  pattern="^$|[\x20-\x7E]{3,}"
+                  pattern="^$|(?=(?:.*[A-Za-z0-9]){3,})[\x20-\x7E]+$"
                   title="Only printable ASCII is allowed, min length 3 chars"
                   autocapitalize="off"
                 />

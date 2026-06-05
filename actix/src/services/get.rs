@@ -2,16 +2,15 @@
 // SPDX-License-Identifier: MIT
 
 use actix_files::NamedFile;
-use actix_session::Session;
 use actix_web::{
-    Either, HttpRequest, HttpResponse, Responder, get,
+    Either, HttpResponse, Responder, get,
     http::StatusCode,
     web::{self, Redirect},
 };
 
 use crate::{
     AppState,
-    auth::{self, is_session_valid},
+    auth::Auth,
     config::SlugStyle,
     database,
     services::types::{
@@ -25,26 +24,19 @@ use crate::{
 // Return all active links
 #[get("/api/all")]
 pub(crate) async fn getall(
+    auth: Auth,
     data: web::Data<AppState>,
-    session: Session,
     params: web::Query<GetReqParams>,
-    http: HttpRequest,
 ) -> HttpResponse {
-    let config = &data.config;
-    // Call is_api_ok() function, pass HttpRequest
-    let result = auth::is_api_ok(http, config);
-    // If success, return all links
-    if result.error {
-        HttpResponse::Unauthorized().json(result)
-    } else if result.success || auth::is_session_valid(session, config) {
-        match utils::getall_helper(&data.db, params.into_inner()) {
+    match auth {
+        Auth::None { result: _ } => HttpResponse::Unauthorized().body("Unauthorized"),
+        Auth::InvalidAPIKey { result } => HttpResponse::Unauthorized().body(result.reason),
+        _ => match utils::getall_helper(&data.db, params.into_inner()) {
             Ok(s) => HttpResponse::Ok().body(s),
             Err(ServerError) => HttpResponse::InternalServerError()
                 .body("Something went wrong while loading the links.".to_string()),
             Err(ClientError { reason }) => HttpResponse::BadRequest().body(reason),
-        }
-    } else {
-        HttpResponse::Unauthorized().body("Not logged in!")
+        },
     }
 }
 
@@ -70,33 +62,26 @@ pub(crate) async fn version() -> HttpResponse {
 
 // Get the user's current role
 #[get("/api/whoami")]
-pub(crate) async fn whoami(
-    data: web::Data<AppState>,
-    session: Session,
-    http: HttpRequest,
-) -> HttpResponse {
+pub(crate) async fn whoami(data: web::Data<AppState>, auth: Auth) -> HttpResponse {
     let config = &data.config;
-    let result = auth::is_api_ok(http, config);
-    let acting_user = if result.success || is_session_valid(session, config) {
-        "admin"
-    } else if config.public_mode {
-        "public"
-    } else {
-        "nobody"
+    let acting_user = match auth {
+        Auth::ValidAPIKey | Auth::ValidSession => "admin",
+        _ => {
+            if config.public_mode {
+                "public"
+            } else {
+                "nobody"
+            }
+        }
     };
     HttpResponse::Ok().body(acting_user)
 }
 
 // Get some useful backend config
 #[get("/api/getconfig")]
-pub(crate) async fn getconfig(
-    data: web::Data<AppState>,
-    session: Session,
-    http: HttpRequest,
-) -> HttpResponse {
+pub(crate) async fn getconfig(auth: Auth, data: web::Data<AppState>) -> HttpResponse {
     let config = &data.config;
-    let result = auth::is_api_ok(http, config);
-    if result.success || is_session_valid(session, config) || data.config.public_mode {
+    let ok_response = || {
         let backend_config = BackendConfig {
             version: utils::get_version(),
             allow_capital_letters: config.allow_capital_letters,
@@ -113,8 +98,16 @@ pub(crate) async fn getconfig(
             frontend_page_size: config.frontend_page_size,
         };
         HttpResponse::Ok().json(backend_config)
-    } else {
-        HttpResponse::Unauthorized().json(result)
+    };
+    match auth {
+        Auth::ValidSession | Auth::ValidAPIKey => ok_response(),
+        Auth::None { result } | Auth::InvalidAPIKey { result } => {
+            if data.config.public_mode {
+                ok_response()
+            } else {
+                HttpResponse::Unauthorized().json(result)
+            }
+        }
     }
 }
 

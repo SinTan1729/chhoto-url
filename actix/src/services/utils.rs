@@ -59,15 +59,15 @@ fn normalize_filter(link: &str) -> Option<String> {
     }
 
     let mut out = String::with_capacity(link.len());
-    let mut last_was_sep = false;
+    let mut last_was_sep = true;
 
     for c in link.chars() {
         // Allow printable ascii chars
-        if c.is_ascii_alphanumeric() || matches!(c as u8, 33..=126) {
-            if c.is_alphanumeric() {
-                out.push(c);
-                last_was_sep = false;
-            } else if !last_was_sep {
+        if c.is_ascii_alphanumeric() {
+            out.push(c);
+            last_was_sep = false;
+        } else if c.is_ascii_punctuation() || c == ' ' {
+            if !last_was_sep {
                 out.push(' ');
                 last_was_sep = true;
             }
@@ -76,10 +76,11 @@ fn normalize_filter(link: &str) -> Option<String> {
         }
     }
 
-    let s = out.trim();
+    let s = out.trim_ascii_end();
     (s.len() > 2).then(|| s.to_string())
 }
 
+// Simply get the version string
 pub(crate) fn get_version() -> String {
     const VERSION: &str = env!("CARGO_PKG_VERSION");
     const GIT_COMMIT: Option<&str> = option_env!("CARGO_GIT_COMMIT");

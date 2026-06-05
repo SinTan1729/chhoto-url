@@ -3,14 +3,15 @@
 
 use actix_session::Session;
 use actix_web::{
-    HttpRequest, HttpResponse, post,
+    HttpResponse, post,
     web::{self},
 };
 use argon2::{Argon2, PasswordVerifier, password_hash::PasswordHash};
 use log::{debug, info, warn};
 
 use crate::{
-    AppState, auth,
+    AppState,
+    auth::{self, Auth},
     config::HashAlgorithm,
     database,
     services::types::{
@@ -22,18 +23,19 @@ use crate::{
 
 // Add new links
 #[post("/api/new")]
-pub(crate) async fn add_link(
-    req: String,
-    data: web::Data<AppState>,
-    session: Session,
-    http: HttpRequest,
-) -> HttpResponse {
+pub(crate) async fn add_link(req: String, auth: Auth, data: web::Data<AppState>) -> HttpResponse {
     let config = &data.config;
-    // Call is_api_ok() function, pass HttpRequest
-    let result = auth::is_api_ok(http, config);
-    // If success, add new link
-    if result.success {
-        match utils::add_link_helper(&req, &data.db, config, false) {
+    let cookie_response = |public_mode: bool| {
+        let result = utils::add_link_helper(&req, &data.db, config, public_mode);
+        match result {
+            Ok((shorturl, _)) => HttpResponse::Created().body(shorturl),
+            Err(ServerError) => HttpResponse::InternalServerError()
+                .body("Something went wrong when adding the link.".to_string()),
+            Err(ClientError { reason }) => HttpResponse::Conflict().body(reason),
+        }
+    };
+    match auth {
+        Auth::ValidAPIKey => match utils::add_link_helper(&req, &data.db, config, false) {
             Ok((shorturl, expiry_time)) => {
                 let site_url = config.site_url.clone();
                 let shorturl = if let Some(url) = site_url {
@@ -71,37 +73,25 @@ pub(crate) async fn add_link(
                 };
                 HttpResponse::Conflict().json(response)
             }
-        }
-    } else if result.error {
-        HttpResponse::Unauthorized().json(result)
-    // If password authentication or public mode is used - keeps backwards compatibility
-    } else {
-        let result = if auth::is_session_valid(session, config) {
-            utils::add_link_helper(&req, &data.db, config, false)
-        } else if config.public_mode {
-            utils::add_link_helper(&req, &data.db, config, true)
-        } else {
-            return HttpResponse::Unauthorized().body("Not logged in!");
-        };
-        match result {
-            Ok((shorturl, _)) => HttpResponse::Created().body(shorturl),
-            Err(ServerError) => HttpResponse::InternalServerError()
-                .body("Something went wrong when adding the link.".to_string()),
-            Err(ClientError { reason }) => HttpResponse::Conflict().body(reason),
+        },
+        Auth::InvalidAPIKey { result } => HttpResponse::Unauthorized().json(result),
+        // If password authentication or public mode is used - keeps backwards compatibility
+        Auth::ValidSession => cookie_response(false),
+        Auth::None { result: _ } => {
+            if data.config.public_mode {
+                cookie_response(true)
+            } else {
+                HttpResponse::Unauthorized().body("Not logged in!")
+            }
         }
     }
 }
 
 // Get information about a single shortlink
 #[post("/api/expand")]
-pub(crate) async fn expand(
-    req: String,
-    data: web::Data<AppState>,
-    http: HttpRequest,
-) -> HttpResponse {
-    let result = auth::is_api_ok(http, &data.config);
-    if result.success {
-        match database::find_url(&req, &data.db) {
+pub(crate) async fn expand(req: String, auth: Auth, data: web::Data<AppState>) -> HttpResponse {
+    match auth {
+        Auth::ValidAPIKey => match database::find_url(&req, &data.db) {
             Ok(chunks) => {
                 let body = LinkInfo {
                     success: true,
@@ -129,20 +119,31 @@ pub(crate) async fn expand(
                 };
                 HttpResponse::BadRequest().json(body)
             }
+        },
+        Auth::ValidSession => HttpResponse::Unauthorized().json(JSONResponse {
+            success: false,
+            error: true,
+            reason: "This route needs API auth.".to_string(),
+        }),
+        Auth::None { result } | Auth::InvalidAPIKey { result } => {
+            HttpResponse::Unauthorized().json(result)
         }
-    } else {
-        HttpResponse::Unauthorized().json(result)
     }
 }
 
 // Handle login
 #[post("/api/login")]
 pub(crate) async fn login(
+    auth: Auth,
     req: String,
     session: Session,
     data: web::Data<AppState>,
 ) -> HttpResponse {
     let config = &data.config;
+    if matches!(auth, Auth::ValidSession) {
+        return HttpResponse::Ok().body("Already authorized.");
+    }
+
     // Check if password is hashed using Argon2. More algorithms maybe added later.
     let authorized = if let Some(password) = &config.password {
         match config.hash_algorithm {
