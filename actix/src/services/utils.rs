@@ -134,15 +134,21 @@ pub(super) fn add_link_helper(
     using_public_mode: bool,
 ) -> Result<(String, i64), ChhotoError> {
     // Ok : shortlink, expiry_time
-    let mut chunks: NewURLRequest;
-    if let Ok(json) = serde_json::from_str(req) {
-        chunks = json;
-    } else {
-        return Err(ClientError {
-            reason: "Invalid request!".to_string(),
-        });
-    }
+    let chunks: NewURLRequest = serde_json::from_str(req).map_err(|_| ClientError {
+        reason: "Invalid request!".to_string(),
+    })?;
+    add_link_request(chunks, db, config, using_public_mode)
+}
 
+// Core insert logic for a single (already parsed) link request. Every statement
+// runs on the passed connection, so if a transaction is already open on `db`
+// (see add_links_batch) the insert enrolls in it.
+fn add_link_request(
+    mut chunks: NewURLRequest,
+    db: &Connection,
+    config: &Config,
+    using_public_mode: bool,
+) -> Result<(String, i64), ChhotoError> {
     let style = &config.slug_style;
     let len = config.slug_length;
     let allow_capital_letters = config.allow_capital_letters;
@@ -203,6 +209,38 @@ pub(super) fn add_link_helper(
             reason: "Short URL is not valid!".to_string(),
         })
     }
+}
+
+// Add a batch of URLs in a single transaction. One commit (one fsync) covers the
+// whole batch instead of one per link. Per-link failures are returned
+// individually and do not abort the rest of the batch.
+pub(super) fn add_links_batch(
+    req: &str,
+    db: &Connection,
+    config: &Config,
+    using_public_mode: bool,
+) -> Result<Vec<Result<(String, i64), ChhotoError>>, ChhotoError> {
+    let items: Vec<NewURLRequest> = serde_json::from_str(req).map_err(|_| ClientError {
+        reason: "Invalid request! Expected a JSON array of links.".to_string(),
+    })?;
+
+    // unchecked_transaction() is used because handlers only hold &Connection.
+    let tx = db.unchecked_transaction().map_err(|e| {
+        error!("Failed to open batch transaction: {e}");
+        ServerError
+    })?;
+
+    let results = items
+        .into_iter()
+        .map(|chunks| add_link_request(chunks, db, config, using_public_mode))
+        .collect();
+
+    tx.commit().map_err(|e| {
+        error!("Failed to commit batch transaction: {e}");
+        ServerError
+    })?;
+
+    Ok(results)
 }
 
 // Make checks and then request the DB to edit an URL entry

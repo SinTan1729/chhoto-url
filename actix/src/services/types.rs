@@ -40,6 +40,19 @@ pub(super) struct CreatedURL {
     pub(super) expiry_time: i64,
 }
 
+// One entry in the /api/batch response array
+#[derive(Serialize)]
+pub(super) struct BatchURL {
+    pub(super) success: bool,
+    pub(super) error: bool,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub(super) shorturl: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub(super) expiry_time: Option<i64>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub(super) reason: Option<String>,
+}
+
 // Struct for returning information about a shortlink in expand
 #[derive(Serialize)]
 pub(super) struct LinkInfo {

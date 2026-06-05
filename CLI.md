@@ -71,6 +71,33 @@ or
 }
 ```
 
+#### `/api/batch`
+
+To add many links in a single request. The body is a JSON array, each element
+having the same fields as `/api/new`. All links are inserted in one database
+transaction, so a single commit covers the whole batch.
+
+```bash
+curl -X POST \
+    -H "X-API-Key: <YOUR_API_KEY>" \
+    -d '[
+        { "longlink":"<longlink>" },
+        { "shortlink":"<shortlink>", "longlink":"<longlink>" }
+        ]' \
+    http://localhost:4567/api/batch
+```
+
+The server replies with an array of results, one per submitted link, in order.
+A link that fails (for example a duplicate shortlink) is reported on its own
+entry and does not stop the others.
+
+```json
+[
+    { "success": true, "error": false, "shorturl": "<shortlink>", "expiry_time": <expiry_time> },
+    { "success": false, "error": true, "reason": "<reason>" }
+]
+```
+
 #### `/api/getconfig`
 
 To get the config for the backend:

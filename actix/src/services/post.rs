@@ -14,11 +14,27 @@ use crate::{
     config::HashAlgorithm,
     database,
     services::types::{
+        BatchURL,
         ChhotoError::{ClientError, ServerError},
         CreatedURL, JSONResponse, LinkInfo,
     },
     utils,
 };
+
+// Build the full short URL for a slug, mirroring the logic in add_link.
+fn full_short_url(slug: &str, site_url: &Option<String>, port: u16) -> String {
+    if let Some(url) = site_url {
+        format!("{url}/{slug}")
+    } else {
+        let protocol = if port == 443 { "https" } else { "http" };
+        let port_text = if [80, 443].contains(&port) {
+            String::new()
+        } else {
+            format!(":{port}")
+        };
+        format!("{protocol}://localhost{port_text}/{slug}")
+    }
+}
 
 // Add new links
 #[post("/api/new")]
@@ -89,6 +105,74 @@ pub(crate) async fn add_link(
                 .body("Something went wrong when adding the link.".to_string()),
             Err(ClientError { reason }) => HttpResponse::Conflict().body(reason),
         }
+    }
+}
+
+// Add a batch of new links in a single transaction
+#[post("/api/batch")]
+pub(crate) async fn add_links(
+    req: String,
+    data: web::Data<AppState>,
+    session: Session,
+    http: HttpRequest,
+) -> HttpResponse {
+    let config = &data.config;
+    // Resolve auth once for the whole batch, mirroring add_link's branches.
+    let result = auth::is_api_ok(http, config);
+    let using_public_mode = if result.success {
+        false
+    } else if result.error {
+        return HttpResponse::Unauthorized().json(result);
+    } else if auth::is_session_valid(session, config) {
+        false
+    } else if config.public_mode {
+        true
+    } else {
+        return HttpResponse::Unauthorized().body("Not logged in!");
+    };
+
+    match utils::add_links_batch(&req, &data.db, config, using_public_mode) {
+        Ok(results) => {
+            let site_url = config.site_url.clone();
+            let port = config.port;
+            let items: Vec<BatchURL> = results
+                .into_iter()
+                .map(|r| match r {
+                    Ok((shorturl, expiry_time)) => BatchURL {
+                        success: true,
+                        error: false,
+                        shorturl: Some(full_short_url(&shorturl, &site_url, port)),
+                        expiry_time: Some(expiry_time),
+                        reason: None,
+                    },
+                    Err(ClientError { reason }) => BatchURL {
+                        success: false,
+                        error: true,
+                        shorturl: None,
+                        expiry_time: None,
+                        reason: Some(reason),
+                    },
+                    Err(ServerError) => BatchURL {
+                        success: false,
+                        error: true,
+                        shorturl: None,
+                        expiry_time: None,
+                        reason: Some("Something went wrong when adding the link.".to_string()),
+                    },
+                })
+                .collect();
+            HttpResponse::Created().json(items)
+        }
+        Err(ClientError { reason }) => HttpResponse::BadRequest().json(JSONResponse {
+            success: false,
+            error: true,
+            reason,
+        }),
+        Err(ServerError) => HttpResponse::InternalServerError().json(JSONResponse {
+            success: false,
+            error: true,
+            reason: "Something went wrong when adding the links.".to_string(),
+        }),
     }
 }
 

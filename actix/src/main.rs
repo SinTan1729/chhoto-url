@@ -123,6 +123,7 @@ async fn main() -> Result<()> {
             .service(services::version)
             .service(services::getconfig)
             .service(services::add_link)
+            .service(services::add_links)
             .service(services::delete_link)
             .service(services::login)
             .service(services::logout)
