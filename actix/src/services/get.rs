@@ -11,7 +11,6 @@ use actix_web::{
 use crate::{
     AppState,
     auth::Auth,
-    config::SlugStyle,
     database,
     services::types::{
         BackendConfig,
@@ -88,11 +87,7 @@ pub(crate) async fn getconfig(auth: Auth, data: web::Data<AppState>) -> HttpResp
             public_mode: config.public_mode,
             public_mode_expiry_delay: config.public_mode_expiry_delay.unwrap_or_default(),
             site_url: config.site_url.clone(),
-            slug_style: (match config.slug_style {
-                SlugStyle::Uid => "UID",
-                SlugStyle::Pair => "Pair",
-            })
-            .to_string(),
+            slug_style: config.slug_style.to_string(),
             slug_length: config.slug_length,
             try_longer_slug: config.try_longer_slug,
             frontend_page_size: config.frontend_page_size,

@@ -3,7 +3,10 @@
 
 use log::{info, warn};
 use passwords::{analyzer::analyze, scorer::score};
-use std::env::{VarError, var};
+use std::{
+    env::{VarError, var},
+    fmt::Display,
+};
 
 use crate::auth;
 
@@ -11,6 +14,18 @@ use crate::auth;
 pub(crate) enum SlugStyle {
     Pair,
     Uid,
+}
+impl Display for SlugStyle {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(
+            f,
+            "{}",
+            match self {
+                Self::Pair => "Pair",
+                Self::Uid => "UID",
+            }
+        )
+    }
 }
 
 #[derive(Clone)]
