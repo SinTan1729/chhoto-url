@@ -161,7 +161,7 @@ jobs:
         with:
           context: .
           push: true
-          file: Dockerfile.alpine
+          file: deploy/Dockerfile.alpine
           tags: |
             ${{ steps.meta-alpine.outputs.tags }}
             ghcr.io/sintan1729/${{ env.IMAGE_NAME }}:dev
@@ -175,7 +175,7 @@ jobs:
         with:
           context: .
           push: true
-          file: Dockerfile.scratch
+          file: deploy/Dockerfile.scratch
           tags: ${{ steps.meta-scratch.outputs.tags }}
           labels: ${{ steps.meta-scratch.outputs.labels }}
           platforms: linux/amd64,linux/arm64,linux/arm/v7,linux/riscv64
@@ -187,7 +187,7 @@ jobs:
         with:
           context: .
           push: true
-          file: Dockerfile.alpine
+          file: deploy/Dockerfile.alpine
           tags: ${{ steps.meta-dev.outputs.tags }}
           labels: ${{ steps.meta-dev.outputs.labels }}
           platforms: linux/amd64,linux/arm64,linux/arm/v7,linux/riscv64
