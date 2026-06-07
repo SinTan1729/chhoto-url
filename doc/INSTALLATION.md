@@ -4,7 +4,7 @@
 
 There is a sample `compose.yaml` file in this repository. It contains
 everything needed for a basic install. The OCI image itself is built with
-a GitHub action (starting from version 6.2.6), and you can [check the workflow for yourself](./.github/workflows/docker-release.yml)
+a GitHub action (starting from version 6.2.6), and you can [check the workflow for yourself](../.github/workflows/docker-release.yml)
 and confirm that it's indeed built from source and nothing silly is going on.
 
 The container images come in two flavors. The default one is made from scratch, and is as light as possible.
@@ -15,7 +15,7 @@ and GHCR, except the `dev` builds which are only available on GHCR. All of these
 `linux/arm64`, `linux/arm/v7`, and `linux/riscv64` architectures on Linux. These should also work just fine with `podman`,
 or any other container engine supporting OCI images.
 
-You can use the [provided compose file](./compose.yaml) as a base, modifying it as needed. Run it with
+You can use the [provided compose file](../deploy/compose.yaml) as a base, modifying it as needed. Run it with
 
 ```
 docker compose up -d
@@ -36,13 +36,13 @@ feel free to open a discussion.
 0. (Only if you really want to) Build the image for the default `x86_64-unknown-linux-musl` target:
 
 ```
-docker build . -t chhoto-url
+docker build -f build/Dockerfile . -t chhoto-url
 ```
 
 For building on `arm64`, `arm/v7`, or `riscv64`, use the following:
 
 ```
-docker build . -t chhoto-url --build-arg target=<desired-target>
+docker build -f build/Dockerfile . -t chhoto-url --build-arg target=<desired-target>
 ```
 
 Make sure that the desired target is a `musl` one, since the docker image is built from `scratch`.
@@ -52,8 +52,9 @@ mentioned above., For any other architectures, open a discussion, and I'll try t
 1. Run the image
 
 ```
-docker run -p 4567:4567
-    -e CHHOTO_PASSWORD="password"
+docker run -p 4567:4567 \
+    -f build/Dockerfile \
+    -e CHHOTO_PASSWORD="password" \
     -d chhoto-url:latest
 ```
 
@@ -62,6 +63,7 @@ docker run -p 4567:4567
 ```
 touch ./urls.sqlite
 docker run -p 4567:4567 \
+    -f build/Dockerfile
     -e CHHOTO_PASSWORD="password" \
     -v ./data:/data \
     -e CHHOTO_DB_URL=/data/urls.sqlite \
@@ -70,7 +72,7 @@ docker run -p 4567:4567 \
 
 _Note: All of this pretty much works exactly the same if you replace `docker` with `podman`. In fact,
 that's what I use for testing. A sample file for podman quadlets is provided at
-[`chhoto-url.container`](./chhoto-url.container)_
+[`chhoto-url.container`](../deploy/chhoto-url.container)_
 
 ## Configuration options
 
@@ -300,8 +302,10 @@ certificates managed easily in your cluster. Feel free to remove the issuer and 
 AWS with EKS for example. To install cert-manager, I recommend using the
 ["kubectl apply" way](https://cert-manager.io/docs/installation/kubectl/) to install cert-manager.
 
-To get started, `cp helm-chart/values.yaml helm-chart/my-values.yaml` and adjust `password`, `fqdn`
-and `letsencryptmail` in your new `my-values.yaml`, then just run
+To get started, `cp deploy/helm-chart/values.yaml deploy/helm-chart/my-values.yaml` and adjust `password`, `fqdn`
+and `letsencryptmail` in your new `my-values.yaml`, then just run.
+
+[All the related files can be found here.](../deploy/helm-chart)
 
 ```bash
 cd helm-chart

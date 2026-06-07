@@ -98,29 +98,29 @@ Password: `chhoto-url-demo-pass`
 # Screenshots
 
 <p align="middle">
-  <img src="screenshot-desktop.webp" height="250" alt="desktop screenshot" />
-  <img src="screenshot-mobile.webp" height="250" alt="mobile screenshot" />
+  <img src="doc/screenshot-desktop.webp" height="250" alt="desktop screenshot" />
+  <img src="doc/screenshot-mobile.webp" height="250" alt="mobile screenshot" />
 </p>
 
 # Installation and configuration
 
-[See here.](./INSTALLATION.md)
+[See here.](./doc/INSTALLATION.md)
 
 # Instructions for CLI usage
 
-[See here.](./CLI.md)
+[See here.](./doc/CLI.md)
 
 # Related software
 
-[See here.](./TOOLS.md)
+[See here.](./doc/TOOLS.md)
 
 # Notes
 
 - The list of adjectives and names used for random short url generation is a modified
   version of [this list used by docker](https://github.com/moby/moby/blob/master/pkg/namesgenerator/names-generator.go).
-- It is highly recommended that you [enable WAL mode](./INSTALLATION.md#chhoto_sqlite_use_wal_mode).
+- It is highly recommended that you [enable WAL mode](./doc/INSTALLATION.md#chhoto_sqlite_use_wal_mode).
 - Although it's unlikely, it's possible that your database is mangled after some update. For mission critical use cases,
   it's recommended to keep regular versioned backups of the database, and sticking to a minor release tag e.g. 5.8.
 - If you intend to have more than a few thousand short links, it's strongly recommended that you use the UID
-  [`CHHOTO_SLUG_STYLE`](./INSTALLATION.md#chhoto_slug_style) with a [`CHHOTO_SLUG_LENGTH`](./INSTALLATION.md#chhoto_slug_length)
+  [`CHHOTO_SLUG_STYLE`](./doc/INSTALLATION.md#chhoto_slug_style) with a [`CHHOTO_SLUG_LENGTH`](./doc/INSTALLATION.md#chhoto_slug_length)
   of 16 or more. Otherwise, generating new links will start to fail after a while.
