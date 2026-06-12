@@ -122,7 +122,7 @@ pub(crate) async fn link_handler(
         }
     } else {
         Either::Right(
-            NamedFile::open_async("./resources/static/404.html")
+            NamedFile::open_async("./frontend/static/404.html")
                 .await
                 .customize()
                 .with_status(StatusCode::NOT_FOUND),

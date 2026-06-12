@@ -8,7 +8,7 @@
 [![docker-image-size-badge](https://img.shields.io/docker/image-size/sintan1729/chhoto-url)](https://hub.docker.com/r/sintan1729/chhoto-url/tags)
 [![license-badge](https://img.shields.io/github/license/SinTan1729/chhoto-url)](https://spdx.org/licenses/MIT.html)
 
-# ![Logo](resources/assets/favicon-32.png) <span style="font-size:42px">Chhoto URL</span>
+# ![Logo](frontend/assets/favicon-32.png) <span style="font-size:42px">Chhoto URL</span>
 
 # What is it?
 

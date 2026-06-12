@@ -1,6 +1,6 @@
 # Ignore build outputs
-actix/target
-resources-final
+backend/target
+frontend-final
 target
 
 # Ignore irrelevant dotfiles

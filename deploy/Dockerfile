@@ -5,8 +5,8 @@ FROM docker.io/lukemathwalker/cargo-chef:latest-rust-slim AS chef
 WORKDIR /chhoto-url
 
 FROM chef AS planner
-COPY ./actix/Cargo.toml ./actix/Cargo.lock ./
-COPY ./actix/src ./src
+COPY ./backend/Cargo.toml ./backend/Cargo.lock ./
+COPY ./backend/src ./src
 RUN cargo chef prepare --recipe-path recipe.json
 
 FROM chef AS builder
@@ -18,13 +18,13 @@ COPY --from=planner /chhoto-url/recipe.json recipe.json
 # Build dependencies - this is the caching Docker layer
 RUN cargo chef cook --release --target=$target --recipe-path recipe.json
 
-COPY ./actix/Cargo.toml ./actix/Cargo.lock ./
-COPY ./actix/src ./src
+COPY ./backend/Cargo.toml ./backend/Cargo.lock ./
+COPY ./backend/src ./src
 # Build application
 RUN cargo build --release --target=$target --locked --bin chhoto-url
 RUN cp /chhoto-url/target/$target/release/chhoto-url /chhoto-url/release
 
 FROM scratch
 COPY --from=builder /chhoto-url/release /chhoto-url
-COPY ./resources /resources
+COPY ./frontend /frontend
 ENTRYPOINT ["/chhoto-url"]

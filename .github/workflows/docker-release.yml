@@ -4,7 +4,7 @@ on:
     tags:
       - "*"
     branches: ["dev"]
-    paths: ["actix/**", "resources/**"]
+    paths: ["backend/**", "frontend/**"]
   workflow_dispatch:
 env:
   CARGO_TERM_COLOR: always
@@ -49,14 +49,14 @@ jobs:
         with:
           command: both
           target: ${{ matrix.platform.target }}
-          args: "--locked --release --manifest-path=actix/Cargo.toml"
+          args: "--locked --release --manifest-path=backend/Cargo.toml"
           cross-version: ${{ matrix.platform.cross-version }}
-          rust-cache-parameters: '{"workspaces":"actix -> target"}'
+          rust-cache-parameters: '{"workspaces":"backend -> target"}'
       - name: Upload artifacts
         uses: actions/upload-artifact@v7
         with:
           name: ${{ matrix.platform.target }}
-          path: ./actix/target/${{ matrix.platform.target }}/release/${{ env.IMAGE_NAME }}
+          path: ./backend/target/${{ matrix.platform.target }}/release/${{ env.IMAGE_NAME }}
           retention-days: 1
           if-no-files-found: error
 
@@ -82,17 +82,17 @@ jobs:
         run: |
           for f in *-unknown-linux-musl*
           do
-            mkdir -p actix/target/$f/release
-            mv $f/chhoto-url actix/target/$f/release/
-            chmod +x actix/target/$f/release/chhoto-url
+            mkdir -p backend/target/$f/release
+            mv $f/chhoto-url backend/target/$f/release/
+            chmod +x backend/target/$f/release/chhoto-url
           done
-      - name: Minify resources for release
+      - name: Minify frontend for release
         if: github.ref_type == 'tag'
         run: |
-          mv resources/ resources-original/
+          mv frontend/ frontend-original/
           sudo apt update
           sudo apt install minify
-          minify -rs resources-original/ -o resources/
+          minify -rs frontend-original/ -o frontend/
       - name: Display current directory structure
         run: ls -R
       - name: Log in to the Docker Hub

@@ -133,10 +133,10 @@ async fn main() -> Result<()> {
             if let Some(dir) = &conf.custom_landing_directory {
                 app = app
                     .service(Redirect::new("/admin/manage", "/admin/manage/"))
-                    .service(Files::new("/admin/manage/", "./resources/").index_file("index.html"))
+                    .service(Files::new("/admin/manage/", "./frontend/").index_file("index.html"))
                     .service(Files::new("/", dir).index_file("index.html"));
             } else {
-                app = app.service(Files::new("/", "./resources/").index_file("index.html"));
+                app = app.service(Files::new("/", "./frontend/").index_file("index.html"));
             }
         }
 

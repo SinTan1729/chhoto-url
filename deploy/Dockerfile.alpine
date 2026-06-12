@@ -2,21 +2,21 @@
 # SPDX-License-Identifier: MIT
 
 FROM --platform=$TARGETARCH alpine AS builder-amd64
-COPY ./actix/target/x86_64-unknown-linux-musl/release/chhoto-url /chhoto-url
+COPY ./backend/target/x86_64-unknown-linux-musl/release/chhoto-url /chhoto-url
 
 FROM --platform=$TARGETARCH alpine AS builder-arm64
-COPY ./actix/target/aarch64-unknown-linux-musl/release/chhoto-url /chhoto-url
+COPY ./backend/target/aarch64-unknown-linux-musl/release/chhoto-url /chhoto-url
 
 FROM --platform=$TARGETARCH alpine AS builder-arm
-COPY ./actix/target/armv7-unknown-linux-musleabihf/release/chhoto-url /chhoto-url
+COPY ./backend/target/armv7-unknown-linux-musleabihf/release/chhoto-url /chhoto-url
 
 FROM --platform=$TARGETARCH alpine AS builder-riscv64
-COPY ./actix/target/riscv64gc-unknown-linux-musl/release/chhoto-url /chhoto-url
+COPY ./backend/target/riscv64gc-unknown-linux-musl/release/chhoto-url /chhoto-url
 
 ARG TARGETARCH
 FROM builder-$TARGETARCH
 RUN apk add --no-cache tzdata
-COPY ./resources /resources
+COPY ./frontend /frontend
 
 ENTRYPOINT ["/chhoto-url"]
 

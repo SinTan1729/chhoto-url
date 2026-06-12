@@ -16,7 +16,7 @@ merge:
 
 short_sha := $(shell git rev-parse --short HEAD) 
 build:
-	CARGO_GIT_COMMIT=${short_sha} cargo build --release --locked --manifest-path=actix/Cargo.toml --target x86_64-unknown-linux-musl
+	CARGO_GIT_COMMIT=${short_sha} cargo build --release --locked --manifest-path=backend/Cargo.toml --target x86_64-unknown-linux-musl
 
 podman-build: build
 	podman build --tag chhoto-url --build-arg TARGETARCH=amd64 -f deploy/Dockerfile.alpine .
@@ -26,10 +26,10 @@ podman-stop:
 	podman ps -aq --filter "name=chhoto-url" | xargs -r podman rm
 
 test: audit
-	cargo test --release --locked --manifest-path=actix/Cargo.toml --target x86_64-unknown-linux-musl
+	cargo test --release --locked --manifest-path=backend/Cargo.toml --target x86_64-unknown-linux-musl
 
 audit:
-	cargo audit --file actix/Cargo.lock
+	cargo audit --file backend/Cargo.lock
 
 podman-run: podman-stop
 	podman run -t -p ${CHHOTO_LISTEN_PORT}:${CHHOTO_LISTEN_PORT} --name chhoto-url --env-file ./.env -v "${DB_DIR}:/data" -d chhoto-url
@@ -37,7 +37,7 @@ podman-run: podman-stop
 
 podman-test: test podman-build podman-run
 
-conf_tag := $(shell cat actix/Cargo.toml | sed -rn 's/^version = "(.+)"$$/\1/p')
+conf_tag := $(shell cat backend/Cargo.toml | sed -rn 's/^version = "(.+)"$$/\1/p')
 last_tag := $(shell git tag -l | tail -1)
 bumped := $(shell git log -1 --pretty=%B | grep "build: Bumped version to " | wc -l)
 uncommitted := $(shell git status --porcelain=v1 2>/dev/null | wc -l)
@@ -54,5 +54,5 @@ else
 endif
 
 clean: podman-stop
-	cargo clean --manifest-path=actix/Cargo.toml
+	cargo clean --manifest-path=backend/Cargo.toml
 

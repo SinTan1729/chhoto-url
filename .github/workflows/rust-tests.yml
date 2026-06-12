@@ -3,7 +3,7 @@ name: Tests
 on:
   push:
     branches: ["*"]
-    paths: ["actix/**"]
+    paths: ["backend/**"]
   pull_request:
     branches: ["*"]
   workflow_dispatch:
@@ -16,16 +16,16 @@ jobs:
     runs-on: ubuntu-latest
     defaults:
       run:
-        working-directory: ./actix
+        working-directory: ./backend
     steps:
       - uses: actions/checkout@v6
       - name: Cache Dependencies
         uses: actions/cache@v5
         with:
           path: |
-            actix/target
-            actix/.cargo
-          key: cargo-${{ runner.os }}-${{ hashFiles('actix/Cargo.lock') }}
+            backend/target
+            backend/.cargo
+          key: cargo-${{ runner.os }}-${{ hashFiles('backend/Cargo.lock') }}
           restore-keys: |
             cargo-${{ runner.os }}-
       - name: Build
