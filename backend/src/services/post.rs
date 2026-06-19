@@ -23,10 +23,10 @@ use crate::{
 
 // Add new links
 #[post("/api/new")]
-pub(crate) async fn add_link(req: String, auth: Auth, data: web::Data<AppState>) -> HttpResponse {
+pub(crate) async fn add_links(req: String, auth: Auth, data: web::Data<AppState>) -> HttpResponse {
     let config = &data.config;
     let cookie_response = |public_mode: bool| {
-        let result = utils::add_link_helper(&req, &data.db, config, public_mode);
+        let result = utils::add_links_helper(&req, &mut data.db, config, public_mode);
         match result {
             Ok((shorturl, _)) => HttpResponse::Created().body(shorturl),
             Err(ServerError) => HttpResponse::InternalServerError()
@@ -35,7 +35,7 @@ pub(crate) async fn add_link(req: String, auth: Auth, data: web::Data<AppState>)
         }
     };
     match auth {
-        Auth::ValidAPIKey => match utils::add_link_helper(&req, &data.db, config, false) {
+        Auth::ValidAPIKey => match utils::add_links_helper(&req, &mut data.db, config, false) {
             Ok((shorturl, expiry_time)) => {
                 let site_url = config.site_url.clone();
                 let shorturl = if let Some(url) = site_url {

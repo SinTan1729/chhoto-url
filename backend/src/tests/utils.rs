@@ -86,7 +86,7 @@ pub(super) async fn create_app(
             .service(services::siteurl)
             .service(services::version)
             .service(services::getconfig)
-            .service(services::add_link)
+            .service(services::add_links)
             .service(services::getall)
             .service(services::link_handler)
             .service(services::edit_link)
