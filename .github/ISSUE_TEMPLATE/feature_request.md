@@ -1,4 +1,8 @@
+<!-- SPDX-FileCopyrightText: 2023-2026 Sayantan Santra <sayantan.santra689@gmail.com> -->
+<!-- SPDX-License-Identifier: MIT -->
+
 ---
+
 name: Feature request
 about: Suggest an idea for this project
 title: ''
