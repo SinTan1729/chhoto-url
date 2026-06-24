@@ -790,9 +790,8 @@ const submitEdit = () => {
       })
       .then(async (text) => {
         if (!ok) {
-          showAlert(text, "light-dark(red, #a01e1e)");
+          showAlert(JSON.parse(text).reason, "light-dark(red, #a01e1e)");
         } else {
-          document.getElementById("edit-dialog").close();
           editUrlSpan.textContent = shortUrl;
           const editedIndex = LOCAL_DATA.findIndex(
             (item) => item["shortlink"] == shortUrl,
@@ -805,6 +804,7 @@ const submitEdit = () => {
           }
           checkBox.checked = false;
         }
+        document.getElementById("edit-dialog").close();
         displayData();
       })
       .catch((err) => {

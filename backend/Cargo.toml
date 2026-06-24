@@ -42,6 +42,7 @@ chrono = "0.4.45"
 tokio = "1.52.3"
 log = "0.4.32"
 env_logger = "0.11.10"
+url = "2.5.8"
 
 [dev-dependencies]
 actix-http = "3.12.1"

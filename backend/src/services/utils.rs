@@ -9,6 +9,7 @@ use rand::{random_range, seq::IndexedRandom};
 use rusqlite::Connection;
 use serde::Deserialize;
 use std::env;
+use url::Url;
 
 use crate::{
     config::{Config, SlugStyle},
@@ -39,9 +40,16 @@ struct EditURLRequest {
     notes: Option<String>,
 }
 
+// Only allow safe URI schemes
+#[inline]
+fn is_longurl_valid(link: &str) -> bool {
+    let parts = Url::parse(link);
+    parts.is_ok_and(|u| u.is_special() || u.scheme() == "magnet")
+}
+
 // Only have a-z, 0-9, - and _ as valid characters in a shortlink
 #[inline]
-fn is_link_valid(link: &str, allow_capital_letters: bool) -> bool {
+fn is_shortlink_valid(link: &str, allow_capital_letters: bool) -> bool {
     if allow_capital_letters {
         link.chars()
             .all(|c| c.is_ascii_alphanumeric() || c == '_' || c == '-')
@@ -143,6 +151,11 @@ pub(super) fn add_link_helper(
             reason: "Invalid request!".to_string(),
         });
     }
+    if !is_longurl_valid(&chunks.longlink) {
+        return Err(ClientError {
+            reason: "Unsupported URL scheme.".to_string(),
+        });
+    }
 
     let style = &config.slug_style;
     let len = config.slug_length;
@@ -166,7 +179,7 @@ pub(super) fn add_link_helper(
         .filter(|&d| d > 0);
     chunks.notes = chunks.notes.filter(|s| !s.is_empty());
 
-    if !shortlink_provided || is_link_valid(chunks.shortlink.as_str(), allow_capital_letters) {
+    if !shortlink_provided || is_shortlink_valid(chunks.shortlink.as_str(), allow_capital_letters) {
         match database::add_link(
             &chunks.shortlink,
             &chunks.longlink,
@@ -220,9 +233,14 @@ pub(super) fn edit_link_helper(
             reason: "Malformed request!".to_string(),
         });
     }
-    if !is_link_valid(&chunks.shortlink, config.allow_capital_letters) {
+    if !is_shortlink_valid(&chunks.shortlink, config.allow_capital_letters) {
         return Err(ClientError {
             reason: "Invalid shortlink!".to_string(),
+        });
+    }
+    if !is_longurl_valid(&chunks.longlink) {
+        return Err(ClientError {
+            reason: "Unsupported URL scheme.".to_string(),
         });
     }
     let result = database::edit_link(
@@ -249,7 +267,7 @@ pub(super) fn delete_link_helper(
     db: &Connection,
     allow_capital_letters: bool,
 ) -> Result<(), ChhotoError> {
-    if is_link_valid(shortlink, allow_capital_letters) {
+    if is_shortlink_valid(shortlink, allow_capital_letters) {
         database::delete_link(shortlink, db)
     } else {
         Err(ClientError {
