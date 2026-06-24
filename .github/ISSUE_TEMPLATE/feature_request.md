@@ -1,14 +1,9 @@
-<!-- SPDX-FileCopyrightText: 2023-2026 Sayantan Santra <sayantan.santra689@gmail.com> -->
-<!-- SPDX-License-Identifier: MIT -->
-
 ---
-
 name: Feature request
 about: Suggest an idea for this project
-title: ''
-labels: 'feature-request'
-assignees: 'SinTan1729'
-
+title: "[FR] "
+labels: "feature-request"
+assignees: "SinTan1729"
 ---
 
 **Is your feature request related to a problem? Please describe.**

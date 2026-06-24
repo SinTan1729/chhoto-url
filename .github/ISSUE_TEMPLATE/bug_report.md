@@ -1,14 +1,9 @@
-<!-- SPDX-FileCopyrightText: 2023-2026 Sayantan Santra <sayantan.santra689@gmail.com> -->
-<!-- SPDX-License-Identifier: MIT -->
-
 ---
-
 name: Bug report
 about: Create a report to help us improve
-title: ""
+title: "[Bug] "
 labels: "bug"
 assignees: "SinTan1729"
-
 ---
 
 **Describe the bug**

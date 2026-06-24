@@ -1,0 +1,11 @@
+# SPDX-FileCopyrightText: 2023-2026 Sayantan Santra <sayantan.santra689@gmail.com>
+# SPDX-License-Identifier: MIT
+
+blank_issues_enabled: false
+contact_links:
+  - name: GitHub Community Support
+    url: https://github.com/SinTan1729/chhoto-url/discussions
+    about: Please ask and answer questions here.
+  - name: Security Advisory
+    url: https://github.com/SinTan1729/chhoto-url/security/advisories
+    about: Privately report a security vulnerability
