@@ -39,13 +39,13 @@ feel free to open a discussion.
 0. (Only if you really want to) Build the image for the default `x86_64-unknown-linux-musl` target:
 
 ```
-docker build -f build/Dockerfile . -t chhoto-url
+docker build -f build/Containerfile . -t chhoto-url
 ```
 
 For building on `arm64`, `arm/v7`, or `riscv64`, use the following:
 
 ```
-docker build -f build/Dockerfile . -t chhoto-url --build-arg target=<desired-target>
+docker build -f build/Containerfile . -t chhoto-url --build-arg target=<desired-target>
 ```
 
 Make sure that the desired target is a `musl` one, since the docker image is built from `scratch`.
@@ -56,7 +56,7 @@ mentioned above., For any other architectures, open a discussion, and I'll try t
 
 ```
 docker run -p 4567:4567 \
-    -f build/Dockerfile \
+    -f build/Containerfile \
     -e CHHOTO_PASSWORD="password" \
     -d chhoto-url:latest
 ```
@@ -66,7 +66,7 @@ docker run -p 4567:4567 \
 ```
 touch ./urls.sqlite
 docker run -p 4567:4567 \
-    -f build/Dockerfile
+    -f build/Containerfile
     -e CHHOTO_PASSWORD="password" \
     -v ./data:/data \
     -e CHHOTO_DB_URL=/data/urls.sqlite \
