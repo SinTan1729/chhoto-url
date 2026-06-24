@@ -52,9 +52,13 @@ const prepSubdir = (link) => {
   return (SUBDIR + link).replace("//", "/");
 };
 
-const hasProtocol = (url) => {
-  const regex = /[A-Za-z][A-Za-z0-9\+\-\.]*\:(?:\/\/)?.*\D.*/; // RFC 2396 Appendix A
-  return regex.test(url);
+const hasAllowedScheme = (url) => {
+  const allowedSchemes = ["http:", "https:", "ftp:", "magnet:"];
+  try {
+    return allowedSchemes.includes(new URL(url).protocol);
+  } catch {
+    return false;
+  }
 };
 
 const getConfig = async () => {
@@ -84,7 +88,7 @@ const getConfig = async () => {
       CONFIG.frontend_page_size = 10;
     }
 
-    if (!hasProtocol(SITE_URL)) {
+    if (!hasAllowedScheme(SITE_URL)) {
       SITE_URL = window.location.protocol + "//" + SITE_URL;
     }
   }
@@ -460,7 +464,7 @@ const copyShortUrl = (shortLink, doCopy) => {
 const addHTTPSToLongURL = (id) => {
   const input = document.getElementById(id);
   let url = input.value.trim();
-  if (!!url && !hasProtocol(url)) {
+  if (!!url && !hasAllowedScheme(url)) {
     url = "https://" + url;
   }
   input.value = url;

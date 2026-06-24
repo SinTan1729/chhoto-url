@@ -44,7 +44,7 @@ struct EditURLRequest {
 #[inline]
 fn is_longurl_valid(link: &str) -> bool {
     let parts = Url::parse(link);
-    parts.is_ok_and(|u| u.is_special() || u.scheme() == "magnet")
+    parts.is_ok_and(|u| ["http", "https", "ftp", "magnet"].contains(&u.scheme()))
 }
 
 // Only have a-z, 0-9, - and _ as valid characters in a shortlink
