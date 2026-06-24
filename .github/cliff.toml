@@ -51,7 +51,8 @@ footer = """
         **Full Changelog:** {{ self::remote_url() }}/compare/{{ release.previous.version }}...HEAD
     {% endif -%}
 {% endfor %}\
-[Link to Docker Hub](https://hub.docker.com/r/sintan1729/{{ remote.github.repo }})
+[Docker Hub](https://hub.docker.com/r/sintan1729/chhoto-url)
+[GHCR](https://github.com/SinTan1729/chhoto-url/pkgs/container/chhoto-url)
 """
 # Remove leading and trailing whitespaces from the changelog's body.
 trim = true
