@@ -373,9 +373,12 @@ const TR = (i, row) => {
   a.href = longlink;
   a.textContent = longlink;
   a.target = "_blank";
-  const long_td = document.createElement("td");
-  long_td.appendChild(a);
-  const longTD = long_td;
+  const div = document.createElement("div");
+  div.appendChild(a);
+  const longTD = document.createElement("td");
+  longTD.setAttribute("label", "Long URL");
+  longTD.setAttribute("name", "longColumn");
+  longTD.appendChild(div);
 
   const shortlink = row["shortlink"];
   tr.id = shortlink;
