@@ -3,7 +3,7 @@
 
 include .env
 
-.PHONY: clean test setup build podman-build podman-stop podman-run podman-test build-release tag audit merge
+.PHONY: clean test setup build podman-build podman-stop podman-run podman-test build-release tag audit upgrade merge
 
 setup:
 	rustup target add x86_64-unknown-linux-musl
@@ -25,11 +25,20 @@ podman-stop:
 	podman ps -q --filter "name=chhoto-url" | xargs -r podman stop
 	podman ps -aq --filter "name=chhoto-url" | xargs -r podman rm
 
-test: audit
-	cargo test --release --locked --manifest-path=backend/Cargo.toml --target x86_64-unknown-linux-musl
-
-audit:
+BUILD := backend/target/x86_64-unknown-linux-musl/release/chhoto-url
+STAMP := backend/target/tests.passed
+$(STAMP): $(BUILD)
 	cargo audit --file backend/Cargo.lock
+	cargo test --release --locked --manifest-path=backend/Cargo.toml --target x86_64-unknown-linux-musl
+	@touch $@
+test: $(STAMP)
+
+upgrade:
+	cargo upgrade --manifest-path=backend/Cargo.toml --verbose
+	cargo update --manifest-path=backend/Cargo.toml --verbose
+	git add backend/Cargo.{toml,lock}
+	git commit -m "chore: Updated deps"
+
 
 podman-run: podman-stop
 	podman run -t -p ${CHHOTO_LISTEN_PORT}:${CHHOTO_LISTEN_PORT} --name chhoto-url --env-file ./.env -v "${DB_DIR}:/data" -d chhoto-url
