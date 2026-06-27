@@ -26,12 +26,15 @@ use crate::{
 pub(crate) async fn add_links(req: String, auth: Auth, data: web::Data<AppState>) -> HttpResponse {
     let config = &data.config;
     let cookie_response = |public_mode: bool| {
-        let result = utils::add_links_helper(&req, &mut data.db, config, public_mode);
+        let result =
+            utils::add_links_helper(&req, &mut data.db, config, public_mode).map(|(v, _)| v[0]);
         match result {
-            Ok((shorturl, _)) => HttpResponse::Created().body(shorturl),
-            Err(ServerError) => HttpResponse::InternalServerError()
+            Ok(Ok((shorturl, _))) => HttpResponse::Created().body(shorturl),
+            Err(ClientError { reason }) | Ok(Err(ClientError { reason })) => {
+                HttpResponse::Conflict().body(reason)
+            }
+            Err(ServerError) | Ok(Err(ServerError)) => HttpResponse::InternalServerError()
                 .body("Something went wrong when adding the link.".to_string()),
-            Err(ClientError { reason }) => HttpResponse::Conflict().body(reason),
         }
     };
     match auth {
