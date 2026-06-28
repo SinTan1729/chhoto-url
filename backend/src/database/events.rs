@@ -155,10 +155,11 @@ pub(crate) fn find_and_add_hit(shortlink: &str, db: &Connection) -> Result<Strin
 }
 
 // Insert a new link
+type AddLinksReturnType = Vec<(usize, Result<(String, i64), ChhotoError>)>;
 pub(crate) fn add_links(
     requests: Vec<(usize, NewURLRequest)>,
     db: &mut Connection,
-) -> Vec<(usize, Result<(String, i64), ChhotoError>)> {
+) -> AddLinksReturnType {
     let now = chrono::Utc::now().timestamp();
     let in_use_error = ClientError {
         reason: "Short URL is already in use!".to_string(),

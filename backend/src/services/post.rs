@@ -13,7 +13,6 @@ use actix_web::{
 };
 use argon2::{Argon2, PasswordVerifier, password_hash::PasswordHash};
 use log::{debug, info, warn};
-use serde::Serialize;
 
 use crate::{
     AppState,
@@ -21,19 +20,12 @@ use crate::{
     config::HashAlgorithm,
     database,
     services::types::{
+        AddLinkResponse,
         ChhotoError::{ClientError, ServerError},
         CreatedURL, JSONResponse, LinkInfo,
     },
     utils,
 };
-
-// Response type for add_links
-#[derive(Serialize)]
-#[serde(untagged)]
-enum AddLinkResponse {
-    Success(CreatedURL),
-    Error(JSONResponse),
-}
 
 // Add new links
 #[post("/api/new")]
@@ -55,43 +47,78 @@ pub(crate) async fn add_links(req: String, auth: Auth, data: web::Data<AppState>
             match utils::add_links_helper(&req, data.db.lock().await.deref_mut(), config, false) {
                 Ok((reply, single_request)) => {
                     let site_url = config.site_url.clone();
-                    let response: Rc<_> = reply
-                        .into_iter()
-                        .map(|res| match res {
+                    let full_link = |shortlink| {
+                        if let Some(url) = &site_url {
+                            format!("{url}/{shortlink}")
+                        } else {
+                            let protocol = if config.port == 443 { "https" } else { "http" };
+                            let port_text = if [80, 443].contains(&config.port) {
+                                String::new()
+                            } else {
+                                format!(":{}", config.port)
+                            };
+                            format!("{protocol}://localhost{port_text}/{shortlink}")
+                        }
+                    };
+
+                    if single_request {
+                        match reply
+                            .first()
+                            .expect("There should be one response here.")
+                            .to_owned()
+                        {
                             Ok((shortlink, expiry_time)) => {
-                                let shorturl = if let Some(url) = &site_url {
-                                    format!("{url}/{shortlink}")
-                                } else {
-                                    let protocol =
-                                        if config.port == 443 { "https" } else { "http" };
-                                    let port_text = if [80, 443].contains(&config.port) {
-                                        String::new()
-                                    } else {
-                                        format!(":{}", config.port)
-                                    };
-                                    format!("{protocol}://localhost{port_text}/{shortlink}")
-                                };
-                                AddLinkResponse::Success(CreatedURL {
+                                HttpResponse::Ok().json(AddLinkResponse::Success(CreatedURL {
                                     success: true,
                                     error: false,
-                                    shorturl,
+                                    shorturl: full_link(shortlink),
                                     expiry_time,
-                                })
+                                }))
                             }
-                            Err(_) => AddLinkResponse::Error(JSONResponse {
-                                success: false,
-                                error: true,
-                                reason: "Something went wrong when adding the link.".to_string(),
-                            }),
-                        })
-                        .collect();
-                    if single_request {
-                        HttpResponse::Ok().json(
-                            response
-                                .first()
-                                .expect("There should be one response here."),
-                        )
+                            Err(ClientError { reason }) => HttpResponse::BadRequest().json(
+                                AddLinkResponse::Error(JSONResponse {
+                                    success: false,
+                                    error: true,
+                                    reason,
+                                }),
+                            ),
+                            Err(ServerError) => HttpResponse::InternalServerError().json(
+                                AddLinkResponse::Error(JSONResponse {
+                                    success: false,
+                                    error: true,
+                                    reason: "Something went wrong when adding the link."
+                                        .to_string(),
+                                }),
+                            ),
+                        }
                     } else {
+                        let response: Rc<_> = reply
+                            .into_iter()
+                            .map(|res| match res {
+                                Ok((shortlink, expiry_time)) => {
+                                    let shorturl = full_link(shortlink);
+                                    AddLinkResponse::Success(CreatedURL {
+                                        success: true,
+                                        error: false,
+                                        shorturl,
+                                        expiry_time,
+                                    })
+                                }
+                                Err(ClientError { reason }) => {
+                                    AddLinkResponse::Error(JSONResponse {
+                                        success: false,
+                                        error: true,
+                                        reason,
+                                    })
+                                }
+                                Err(ServerError) => AddLinkResponse::Error(JSONResponse {
+                                    success: false,
+                                    error: true,
+                                    reason: "Something went wrong when adding the link."
+                                        .to_string(),
+                                }),
+                            })
+                            .collect();
                         HttpResponse::Ok().json(response)
                     }
                 }
