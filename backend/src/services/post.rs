@@ -24,6 +24,7 @@ use crate::{
     utils,
 };
 
+const SERVER_ERROR_RES: &str = "Something went wrong when adding the link.";
 // Add new links
 #[post("/api/new")]
 pub(crate) async fn add_links(req: String, auth: Auth, data: web::Data<AppState>) -> HttpResponse {
@@ -35,105 +36,75 @@ pub(crate) async fn add_links(req: String, auth: Auth, data: web::Data<AppState>
         match result {
             Ok((shorturl, _)) => HttpResponse::Created().body(shorturl),
             Err(ClientError { reason }) => HttpResponse::Conflict().body(reason),
-            Err(ServerError) => HttpResponse::InternalServerError()
-                .body("Something went wrong when adding the link.".to_string()),
+            Err(ServerError) => {
+                HttpResponse::InternalServerError().body(SERVER_ERROR_RES.to_string())
+            }
         }
     };
     match auth {
         Auth::ValidAPIKey => {
-            match utils::add_links_helper(&req, data.db.borrow_mut().deref_mut(), config, false) {
-                Ok((reply, single_request)) => {
+            let to_response = |res| match res {
+                Ok((shortlink, expiry_time)) => {
                     let site_url = config.site_url.clone();
-                    let full_link = |shortlink| {
-                        if let Some(url) = &site_url {
-                            format!("{url}/{shortlink}")
+                    let shorturl = if let Some(url) = &site_url {
+                        format!("{url}/{shortlink}")
+                    } else {
+                        let protocol = if config.port == 443 { "https" } else { "http" };
+                        let port_text = if [80, 443].contains(&config.port) {
+                            String::new()
                         } else {
-                            let protocol = if config.port == 443 { "https" } else { "http" };
-                            let port_text = if [80, 443].contains(&config.port) {
-                                String::new()
-                            } else {
-                                format!(":{}", config.port)
-                            };
-                            format!("{protocol}://localhost{port_text}/{shortlink}")
-                        }
+                            format!(":{}", config.port)
+                        };
+                        format!("{protocol}://localhost{port_text}/{shortlink}")
                     };
 
-                    if single_request {
-                        match reply
-                            .first()
-                            .expect("There should be one response here.")
-                            .to_owned()
-                        {
-                            Ok((shortlink, expiry_time)) => {
-                                HttpResponse::Ok().json(AddLinkResponse::Success(CreatedURL {
-                                    success: true,
-                                    error: false,
-                                    shorturl: full_link(shortlink),
-                                    expiry_time,
-                                }))
-                            }
-                            Err(ClientError { reason }) => HttpResponse::BadRequest().json(
-                                AddLinkResponse::Error(JSONResponse {
-                                    success: false,
-                                    error: true,
-                                    reason,
-                                }),
-                            ),
-                            Err(ServerError) => HttpResponse::InternalServerError().json(
-                                AddLinkResponse::Error(JSONResponse {
-                                    success: false,
-                                    error: true,
-                                    reason: "Something went wrong when adding the link."
-                                        .to_string(),
-                                }),
-                            ),
-                        }
-                    } else {
-                        let response: Rc<_> = reply
-                            .into_iter()
-                            .map(|res| match res {
-                                Ok((shortlink, expiry_time)) => {
-                                    let shorturl = full_link(shortlink);
-                                    AddLinkResponse::Success(CreatedURL {
-                                        success: true,
-                                        error: false,
-                                        shorturl,
-                                        expiry_time,
-                                    })
-                                }
-                                Err(ClientError { reason }) => {
-                                    AddLinkResponse::Error(JSONResponse {
-                                        success: false,
-                                        error: true,
-                                        reason,
-                                    })
-                                }
-                                Err(ServerError) => AddLinkResponse::Error(JSONResponse {
-                                    success: false,
-                                    error: true,
-                                    reason: "Something went wrong when adding the link."
-                                        .to_string(),
-                                }),
-                            })
-                            .collect();
-                        HttpResponse::Ok().json(response)
-                    }
+                    (
+                        actix_web::http::StatusCode::OK,
+                        AddLinkResponse::Success(CreatedURL {
+                            success: true,
+                            error: false,
+                            shorturl,
+                            expiry_time,
+                        }),
+                    )
                 }
-                Err(ServerError) => {
-                    let response = JSONResponse {
-                        success: false,
-                        error: true,
-                        reason: "Something went wrong when adding the link.".to_string(),
-                    };
-                    HttpResponse::InternalServerError().json(response)
-                }
-                Err(ClientError { reason }) => {
-                    let response = JSONResponse {
+                Err(ClientError { reason }) => (
+                    actix_web::http::StatusCode::BAD_REQUEST,
+                    AddLinkResponse::Error(JSONResponse {
                         success: false,
                         error: true,
                         reason,
-                    };
-                    HttpResponse::Conflict().json(response)
+                    }),
+                ),
+                Err(ServerError) => (
+                    actix_web::http::StatusCode::INTERNAL_SERVER_ERROR,
+                    AddLinkResponse::Error(JSONResponse {
+                        success: false,
+                        error: true,
+                        reason: SERVER_ERROR_RES.to_string(),
+                    }),
+                ),
+            };
+
+            match utils::add_links_helper(&req, data.db.borrow_mut().deref_mut(), config, false) {
+                Ok((reply, single_request)) => {
+                    if single_request {
+                        let (status, response) = to_response(
+                            reply
+                                .into_iter()
+                                .next()
+                                .expect("There should be one response here."),
+                        );
+                        HttpResponse::build(status).json(response)
+                    } else {
+                        let response: Rc<_> =
+                            reply.into_iter().map(to_response).map(|(_, r)| r).collect();
+                        HttpResponse::Ok().json(response)
+                    }
+                }
+                Err(error) => {
+                    let (status, response) = to_response(Err(error));
+                    HttpResponse::build(status).json(response)
                 }
             }
         }
@@ -170,7 +141,7 @@ pub(crate) async fn expand(req: String, auth: Auth, data: web::Data<AppState>) -
                 let body = JSONResponse {
                     success: false,
                     error: true,
-                    reason: "Something went wrong when finding the link.".to_string(),
+                    reason: SERVER_ERROR_RES.to_string(),
                 };
                 HttpResponse::BadRequest().json(body)
             }

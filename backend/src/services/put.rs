@@ -13,7 +13,7 @@ use crate::{
     utils,
 };
 
-// Get information about a single shortlink
+// Edit a shortlink
 #[put("/api/edit")]
 pub(crate) async fn edit_link(req: String, auth: Auth, data: web::Data<AppState>) -> HttpResponse {
     let config = &data.config;
