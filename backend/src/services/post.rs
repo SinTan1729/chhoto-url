@@ -1,10 +1,7 @@
 // SPDX-FileCopyrightText: 2023-2026 Sayantan Santra <sayantan.santra689@gmail.com>
 // SPDX-License-Identifier: MIT
 
-use std::{
-    ops::{Deref, DerefMut},
-    rc::Rc,
-};
+use std::{ops::DerefMut, rc::Rc};
 
 use actix_session::Session;
 use actix_web::{
@@ -33,7 +30,7 @@ pub(crate) async fn add_links(req: String, auth: Auth, data: web::Data<AppState>
     let config = &data.config;
     let cookie_response = async |public_mode: bool| {
         let result =
-            utils::add_links_helper(&req, data.db.lock().await.deref_mut(), config, public_mode)
+            utils::add_links_helper(&req, data.db.borrow_mut().deref_mut(), config, public_mode)
                 .and_then(|(v, _)| v.into_iter().next().unwrap_or(Err(ServerError)));
         match result {
             Ok((shorturl, _)) => HttpResponse::Created().body(shorturl),
@@ -44,7 +41,7 @@ pub(crate) async fn add_links(req: String, auth: Auth, data: web::Data<AppState>
     };
     match auth {
         Auth::ValidAPIKey => {
-            match utils::add_links_helper(&req, data.db.lock().await.deref_mut(), config, false) {
+            match utils::add_links_helper(&req, data.db.borrow_mut().deref_mut(), config, false) {
                 Ok((reply, single_request)) => {
                     let site_url = config.site_url.clone();
                     let full_link = |shortlink| {
@@ -157,7 +154,7 @@ pub(crate) async fn add_links(req: String, auth: Auth, data: web::Data<AppState>
 #[post("/api/expand")]
 pub(crate) async fn expand(req: String, auth: Auth, data: web::Data<AppState>) -> HttpResponse {
     match auth {
-        Auth::ValidAPIKey => match database::find_url(&req, data.db.lock().await.deref()) {
+        Auth::ValidAPIKey => match database::find_url(&req, &data.db.borrow()) {
             Ok(chunks) => {
                 let body = LinkInfo {
                     success: true,

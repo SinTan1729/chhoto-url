@@ -11,8 +11,8 @@ use actix_web::{
 };
 use log::info;
 use rusqlite::Connection;
-use std::{io::Result, sync::Once};
-use tokio::{spawn, sync::Mutex, time};
+use std::{cell::RefCell, io::Result, sync::Once};
+use tokio::{spawn, time};
 
 // Import modules
 mod auth;
@@ -28,7 +28,7 @@ mod tests;
 
 // This struct represents state
 struct AppState {
-    db: Mutex<Connection>,
+    db: RefCell<Connection>,
     config: config::Config,
 }
 
@@ -108,7 +108,7 @@ async fn main() -> Result<()> {
             )
             // Maintain a single instance of database throughout
             .app_data(web::Data::new(AppState {
-                db: Mutex::from(database::open_db(&conf.db_location)),
+                db: RefCell::from(database::open_db(&conf.db_location)),
                 config: conf_clone.clone(),
             }))
             .wrap(if let Some(header) = &conf.cache_control_header {

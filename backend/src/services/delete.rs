@@ -1,8 +1,6 @@
 // SPDX-FileCopyrightText: 2023-2026 Sayantan Santra <sayantan.santra689@gmail.com>
 // SPDX-License-Identifier: MIT
 
-use std::ops::Deref;
-
 use actix_session::Session;
 use actix_web::{HttpResponse, delete, web};
 use log::info;
@@ -40,7 +38,7 @@ pub(crate) async fn delete_link(
         Auth::ValidAPIKey => {
             match utils::delete_link_helper(
                 &shortlink,
-                data.db.lock().await.deref(),
+                &data.db.borrow(),
                 data.config.allow_capital_letters,
             ) {
                 Ok(()) => {
@@ -74,7 +72,7 @@ pub(crate) async fn delete_link(
         Auth::ValidSession => {
             if utils::delete_link_helper(
                 &shortlink,
-                data.db.lock().await.deref(),
+                &data.db.borrow(),
                 data.config.allow_capital_letters,
             )
             .is_ok()
