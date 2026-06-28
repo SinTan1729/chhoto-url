@@ -29,7 +29,7 @@ const SERVER_ERROR_RES: &str = "Something went wrong when adding the link.";
 #[post("/api/new")]
 pub(crate) async fn add_links(req: String, auth: Auth, data: web::Data<AppState>) -> HttpResponse {
     let config = &data.config;
-    let cookie_response = async |public_mode: bool| {
+    let cookie_response = |public_mode: bool| {
         let result =
             utils::add_links_helper(&req, data.db.borrow_mut().deref_mut(), config, public_mode)
                 .and_then(|(v, _)| v.into_iter().next().unwrap_or(Err(ServerError)));
@@ -110,10 +110,10 @@ pub(crate) async fn add_links(req: String, auth: Auth, data: web::Data<AppState>
         }
         Auth::InvalidAPIKey { result } => HttpResponse::Unauthorized().json(result),
         // If password authentication or public mode is used - keeps backwards compatibility
-        Auth::ValidSession => cookie_response(false).await,
+        Auth::ValidSession => cookie_response(false),
         Auth::None { result: _ } => {
             if data.config.public_mode {
-                cookie_response(true).await
+                cookie_response(true)
             } else {
                 HttpResponse::Unauthorized().body("Not logged in!")
             }
