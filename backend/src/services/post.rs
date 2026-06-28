@@ -1,7 +1,10 @@
 // SPDX-FileCopyrightText: 2023-2026 Sayantan Santra <sayantan.santra689@gmail.com>
 // SPDX-License-Identifier: MIT
 
-use std::ops::{Deref, DerefMut};
+use std::{
+    ops::{Deref, DerefMut},
+    rc::Rc,
+};
 
 use actix_session::Session;
 use actix_web::{
@@ -36,10 +39,10 @@ enum AddLinkResponse {
 #[post("/api/new")]
 pub(crate) async fn add_links(req: String, auth: Auth, data: web::Data<AppState>) -> HttpResponse {
     let config = &data.config;
-    let mut db = data.db.lock().unwrap();
-    let mut cookie_response = |public_mode: bool| {
-        let result = utils::add_links_helper(&req, db.deref_mut(), config, public_mode)
-            .and_then(|(v, _)| v.into_iter().next().unwrap_or(Err(ServerError)));
+    let cookie_response = async |public_mode: bool| {
+        let result =
+            utils::add_links_helper(&req, data.db.lock().await.deref_mut(), config, public_mode)
+                .and_then(|(v, _)| v.into_iter().next().unwrap_or(Err(ServerError)));
         match result {
             Ok((shorturl, _)) => HttpResponse::Created().body(shorturl),
             Err(ClientError { reason }) => HttpResponse::Conflict().body(reason),
@@ -48,63 +51,74 @@ pub(crate) async fn add_links(req: String, auth: Auth, data: web::Data<AppState>
         }
     };
     match auth {
-        Auth::ValidAPIKey => match utils::add_links_helper(&req, db.deref_mut(), config, false) {
-            Ok((reply, _single_request)) => {
-                let site_url = config.site_url.clone();
-                let response: Vec<_> = reply
-                    .into_iter()
-                    .map(|res| match res {
-                        Ok((shorturl, expiry_time)) => {
-                            let shorturl = if let Some(url) = &site_url {
-                                format!("{url}/{shorturl}")
-                            } else {
-                                let protocol = if config.port == 443 { "https" } else { "http" };
-                                let port_text = if [80, 443].contains(&config.port) {
-                                    String::new()
+        Auth::ValidAPIKey => {
+            match utils::add_links_helper(&req, data.db.lock().await.deref_mut(), config, false) {
+                Ok((reply, single_request)) => {
+                    let site_url = config.site_url.clone();
+                    let response: Rc<_> = reply
+                        .into_iter()
+                        .map(|res| match res {
+                            Ok((shortlink, expiry_time)) => {
+                                let shorturl = if let Some(url) = &site_url {
+                                    format!("{url}/{shortlink}")
                                 } else {
-                                    format!(":{}", config.port)
+                                    let protocol =
+                                        if config.port == 443 { "https" } else { "http" };
+                                    let port_text = if [80, 443].contains(&config.port) {
+                                        String::new()
+                                    } else {
+                                        format!(":{}", config.port)
+                                    };
+                                    format!("{protocol}://localhost{port_text}/{shortlink}")
                                 };
-                                format!("{protocol}://localhost{port_text}/{shorturl}")
-                            };
-                            AddLinkResponse::Success(CreatedURL {
-                                success: true,
-                                error: false,
-                                shorturl,
-                                expiry_time,
-                            })
-                        }
-                        Err(_) => AddLinkResponse::Error(JSONResponse {
-                            success: false,
-                            error: true,
-                            reason: "Something went wrong when adding the link.".to_string(),
-                        }),
-                    })
-                    .collect();
-                HttpResponse::Ok().json(response)
+                                AddLinkResponse::Success(CreatedURL {
+                                    success: true,
+                                    error: false,
+                                    shorturl,
+                                    expiry_time,
+                                })
+                            }
+                            Err(_) => AddLinkResponse::Error(JSONResponse {
+                                success: false,
+                                error: true,
+                                reason: "Something went wrong when adding the link.".to_string(),
+                            }),
+                        })
+                        .collect();
+                    if single_request {
+                        HttpResponse::Ok().json(
+                            response
+                                .first()
+                                .expect("There should be one response here."),
+                        )
+                    } else {
+                        HttpResponse::Ok().json(response)
+                    }
+                }
+                Err(ServerError) => {
+                    let response = JSONResponse {
+                        success: false,
+                        error: true,
+                        reason: "Something went wrong when adding the link.".to_string(),
+                    };
+                    HttpResponse::InternalServerError().json(response)
+                }
+                Err(ClientError { reason }) => {
+                    let response = JSONResponse {
+                        success: false,
+                        error: true,
+                        reason,
+                    };
+                    HttpResponse::Conflict().json(response)
+                }
             }
-            Err(ServerError) => {
-                let response = JSONResponse {
-                    success: false,
-                    error: true,
-                    reason: "Something went wrong when adding the link.".to_string(),
-                };
-                HttpResponse::InternalServerError().json(response)
-            }
-            Err(ClientError { reason }) => {
-                let response = JSONResponse {
-                    success: false,
-                    error: true,
-                    reason,
-                };
-                HttpResponse::Conflict().json(response)
-            }
-        },
+        }
         Auth::InvalidAPIKey { result } => HttpResponse::Unauthorized().json(result),
         // If password authentication or public mode is used - keeps backwards compatibility
-        Auth::ValidSession => cookie_response(false),
+        Auth::ValidSession => cookie_response(false).await,
         Auth::None { result: _ } => {
             if data.config.public_mode {
-                cookie_response(true)
+                cookie_response(true).await
             } else {
                 HttpResponse::Unauthorized().body("Not logged in!")
             }
@@ -116,7 +130,7 @@ pub(crate) async fn add_links(req: String, auth: Auth, data: web::Data<AppState>
 #[post("/api/expand")]
 pub(crate) async fn expand(req: String, auth: Auth, data: web::Data<AppState>) -> HttpResponse {
     match auth {
-        Auth::ValidAPIKey => match database::find_url(&req, &data.db.lock().unwrap().deref()) {
+        Auth::ValidAPIKey => match database::find_url(&req, data.db.lock().await.deref()) {
             Ok(chunks) => {
                 let body = LinkInfo {
                     success: true,

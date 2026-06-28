@@ -1,6 +1,8 @@
 // SPDX-FileCopyrightText: 2023-2026 Sayantan Santra <sayantan.santra689@gmail.com>
 // SPDX-License-Identifier: MIT
 
+use std::ops::Deref;
+
 use actix_web::{HttpResponse, put, web};
 
 use crate::{
@@ -19,7 +21,7 @@ pub(crate) async fn edit_link(req: String, auth: Auth, data: web::Data<AppState>
     let config = &data.config;
     match auth {
         Auth::ValidAPIKey | Auth::ValidSession => {
-            match utils::edit_link_helper(&req, &data.db, config) {
+            match utils::edit_link_helper(&req, data.db.lock().await.deref(), config) {
                 Ok(()) => {
                     let body = JSONResponse {
                         success: true,

@@ -6,6 +6,7 @@ use actix_service::Service;
 use actix_web::{App, Error, body::to_bytes, dev::ServiceResponse, test, web::Bytes};
 use serde::Deserialize;
 use std::{fmt::Display, fs, rc::Rc};
+use tokio::sync::Mutex;
 
 use crate::*;
 
@@ -80,7 +81,7 @@ pub(super) async fn create_app(
     test::init_service(
         App::new()
             .app_data(web::Data::new(AppState {
-                db: database::open_db(&db_file),
+                db: Mutex::from(database::open_db(&db_file)),
                 config: conf.clone(),
             }))
             .service(services::siteurl)

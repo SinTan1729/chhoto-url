@@ -158,7 +158,7 @@ pub(crate) fn find_and_add_hit(shortlink: &str, db: &Connection) -> Result<Strin
 pub(crate) fn add_links(
     requests: Vec<(usize, NewURLRequest)>,
     db: &mut Connection,
-) -> Vec<(usize, Result<i64, ChhotoError>)> {
+) -> Vec<(usize, Result<(String, i64), ChhotoError>)> {
     let now = chrono::Utc::now().timestamp();
     let in_use_error = ClientError {
         reason: "Short URL is already in use!".to_string(),
@@ -190,7 +190,7 @@ pub(crate) fn add_links(
                         "Added link with shortlink: {}, longlink: {}, expiry_delay: {:?}, notes: {:?}",
                         req.shortlink, req.longlink, req.expiry_delay, req.notes
                     );
-                    (*i, Ok(expiry_time.unwrap_or_default()))
+                    (*i, Ok((req.shortlink.clone(), expiry_time.unwrap_or_default())))
                 }
                 Ok(0) => {
                     debug!("Duplicate insertion attempted for {}.", req.shortlink);

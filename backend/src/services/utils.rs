@@ -136,12 +136,13 @@ pub(super) fn getall_helper(db: &Connection, params: GetReqParams) -> Result<Str
 }
 
 // Make checks and then request the DB to add a new URL entry
+type AddLinksReturnType = Result<(Vec<Result<(String, i64), ChhotoError>>, bool), ChhotoError>;
 pub(super) fn add_links_helper(
     req: &str,
     db: &mut Connection,
     config: &Config,
     using_public_mode: bool,
-) -> Result<(Vec<Result<(String, i64), ChhotoError>>, bool), ChhotoError> {
+) -> AddLinksReturnType {
     // Ok : Vec<shortlink, expiry_time>, single_request
     let Ok((single_request, chunks)) =
         serde_json::from_str::<OneOrMany<NewURLRequest>>(req).map(|s| {
@@ -183,7 +184,7 @@ pub(super) fn add_links_helper(
     }
 
     for (i, res) in add_links(with_shortlinks, db) {
-        output[i] = res.map(|exp| (String::new(), exp));
+        output[i] = res
     }
 
     let retry_links = without_shortlinks.clone();
@@ -204,19 +205,19 @@ pub(super) fn add_links_helper(
         db,
     ) {
         if res.is_ok() {
-            output[i] = res.map(|exp| (String::new(), exp));
+            output[i] = res
         }
     }
     for (i, res) in add_links(
         retry_links
             .into_iter()
-            .filter(|(i, _)| !output[*i].is_ok())
+            .filter(|(i, _)| output[*i].is_err())
             .map(|(i, r)| (i, with_link(r, true)))
             .collect(),
         db,
     ) {
         if res.is_ok() {
-            output[i] = res.map(|exp| (String::new(), exp));
+            output[i] = res
         }
     }
 

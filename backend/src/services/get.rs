@@ -1,6 +1,8 @@
 // SPDX-FileCopyrightText: 2023-2026 Sayantan Santra <sayantan.santra689@gmail.com>
 // SPDX-License-Identifier: MIT
 
+use std::ops::Deref;
+
 use actix_files::NamedFile;
 use actix_web::{
     Either, HttpResponse, Responder, get,
@@ -30,7 +32,7 @@ pub(crate) async fn getall(
     match auth {
         Auth::None { result: _ } => HttpResponse::Unauthorized().body("Unauthorized"),
         Auth::InvalidAPIKey { result } => HttpResponse::Unauthorized().body(result.reason),
-        _ => match utils::getall_helper(&data.db, params.into_inner()) {
+        _ => match utils::getall_helper(data.db.lock().await.deref(), params.into_inner()) {
             Ok(s) => HttpResponse::Ok().body(s),
             Err(ServerError) => HttpResponse::InternalServerError()
                 .body("Something went wrong while loading the links.".to_string()),
@@ -113,7 +115,7 @@ pub(crate) async fn link_handler(
     data: web::Data<AppState>,
 ) -> impl Responder {
     let shortlink_str = shortlink.as_str();
-    if let Ok(longlink) = database::find_and_add_hit(shortlink_str, &data.db) {
+    if let Ok(longlink) = database::find_and_add_hit(shortlink_str, data.db.lock().await.deref()) {
         if data.config.use_temp_redirect {
             Either::Left(Redirect::to(longlink))
         } else {

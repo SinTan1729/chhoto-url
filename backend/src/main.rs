@@ -11,11 +11,8 @@ use actix_web::{
 };
 use log::info;
 use rusqlite::Connection;
-use std::{
-    io::Result,
-    sync::{Mutex, Once},
-};
-use tokio::{spawn, time};
+use std::{io::Result, sync::Once};
+use tokio::{spawn, sync::Mutex, time};
 
 // Import modules
 mod auth;
