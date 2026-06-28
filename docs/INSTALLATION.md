@@ -251,7 +251,7 @@ mount the directory inside the container. The admin page will then be located at
 
 By default, the server sends no Cache-Control headers. You can set custom headers here
 to send your desired headers. It must be a comma separated list of valid
-[RFC 7234 §5.2](https://datatracker.ietf.org/doc/html/rfc7234#section-5.2) headers. For example,
+[RFC 7234 §5.2](https://datatracker.ietf.org/docs/html/rfc7234#section-5.2) headers. For example,
 you can set it to `no-cache, private` to disable caching. It might help during testing if
 served through a proxy.
 
