@@ -1,6 +1,8 @@
 // SPDX-FileCopyrightText: 2023-2026 Sayantan Santra <sayantan.santra689@gmail.com>
 // SPDX-License-Identifier: MIT
 
+use std::ops::{Deref, DerefMut};
+
 use actix_session::Session;
 use actix_web::{
     HttpResponse, post,
@@ -8,6 +10,7 @@ use actix_web::{
 };
 use argon2::{Argon2, PasswordVerifier, password_hash::PasswordHash};
 use log::{debug, info, warn};
+use serde::Serialize;
 
 use crate::{
     AppState,
@@ -21,44 +24,63 @@ use crate::{
     utils,
 };
 
+// Response type for add_links
+#[derive(Serialize)]
+#[serde(untagged)]
+enum AddLinkResponse {
+    Success(CreatedURL),
+    Error(JSONResponse),
+}
+
 // Add new links
 #[post("/api/new")]
 pub(crate) async fn add_links(req: String, auth: Auth, data: web::Data<AppState>) -> HttpResponse {
     let config = &data.config;
-    let cookie_response = |public_mode: bool| {
-        let result =
-            utils::add_links_helper(&req, &mut data.db, config, public_mode).map(|(v, _)| v[0]);
+    let mut db = data.db.lock().unwrap();
+    let mut cookie_response = |public_mode: bool| {
+        let result = utils::add_links_helper(&req, db.deref_mut(), config, public_mode)
+            .and_then(|(v, _)| v.into_iter().next().unwrap_or(Err(ServerError)));
         match result {
-            Ok(Ok((shorturl, _))) => HttpResponse::Created().body(shorturl),
-            Err(ClientError { reason }) | Ok(Err(ClientError { reason })) => {
-                HttpResponse::Conflict().body(reason)
-            }
-            Err(ServerError) | Ok(Err(ServerError)) => HttpResponse::InternalServerError()
+            Ok((shorturl, _)) => HttpResponse::Created().body(shorturl),
+            Err(ClientError { reason }) => HttpResponse::Conflict().body(reason),
+            Err(ServerError) => HttpResponse::InternalServerError()
                 .body("Something went wrong when adding the link.".to_string()),
         }
     };
     match auth {
-        Auth::ValidAPIKey => match utils::add_links_helper(&req, &mut data.db, config, false) {
-            Ok((shorturl, expiry_time)) => {
+        Auth::ValidAPIKey => match utils::add_links_helper(&req, db.deref_mut(), config, false) {
+            Ok((reply, _single_request)) => {
                 let site_url = config.site_url.clone();
-                let shorturl = if let Some(url) = site_url {
-                    format!("{url}/{shorturl}")
-                } else {
-                    let protocol = if config.port == 443 { "https" } else { "http" };
-                    let port_text = if [80, 443].contains(&config.port) {
-                        String::new()
-                    } else {
-                        format!(":{}", config.port)
-                    };
-                    format!("{protocol}://localhost{port_text}/{shorturl}")
-                };
-                let response = CreatedURL {
-                    success: true,
-                    error: false,
-                    shorturl,
-                    expiry_time,
-                };
-                HttpResponse::Created().json(response)
+                let response: Vec<_> = reply
+                    .into_iter()
+                    .map(|res| match res {
+                        Ok((shorturl, expiry_time)) => {
+                            let shorturl = if let Some(url) = &site_url {
+                                format!("{url}/{shorturl}")
+                            } else {
+                                let protocol = if config.port == 443 { "https" } else { "http" };
+                                let port_text = if [80, 443].contains(&config.port) {
+                                    String::new()
+                                } else {
+                                    format!(":{}", config.port)
+                                };
+                                format!("{protocol}://localhost{port_text}/{shorturl}")
+                            };
+                            AddLinkResponse::Success(CreatedURL {
+                                success: true,
+                                error: false,
+                                shorturl,
+                                expiry_time,
+                            })
+                        }
+                        Err(_) => AddLinkResponse::Error(JSONResponse {
+                            success: false,
+                            error: true,
+                            reason: "Something went wrong when adding the link.".to_string(),
+                        }),
+                    })
+                    .collect();
+                HttpResponse::Ok().json(response)
             }
             Err(ServerError) => {
                 let response = JSONResponse {
@@ -94,7 +116,7 @@ pub(crate) async fn add_links(req: String, auth: Auth, data: web::Data<AppState>
 #[post("/api/expand")]
 pub(crate) async fn expand(req: String, auth: Auth, data: web::Data<AppState>) -> HttpResponse {
     match auth {
-        Auth::ValidAPIKey => match database::find_url(&req, &data.db) {
+        Auth::ValidAPIKey => match database::find_url(&req, &data.db.lock().unwrap().deref()) {
             Ok(chunks) => {
                 let body = LinkInfo {
                     success: true,
