@@ -18,20 +18,16 @@ short_sha := $(shell git rev-parse --short HEAD)
 build:
 	CARGO_GIT_COMMIT=${short_sha} cargo build --release --locked --manifest-path=backend/Cargo.toml --target x86_64-unknown-linux-musl
 
-podman-build: build
+podman-build: test
 	podman build --tag chhoto-url --build-arg TARGETARCH=amd64 -f deploy/Containerfile.alpine .
 
 podman-stop:
 	podman ps -q --filter "name=chhoto-url" | xargs -r podman stop
 	podman ps -aq --filter "name=chhoto-url" | xargs -r podman rm
 
-BUILD := backend/target/x86_64-unknown-linux-musl/release/chhoto-url
-STAMP := backend/target/tests.passed
-$(STAMP): $(BUILD)
+test:
 	cargo audit --file backend/Cargo.lock
 	cargo test --release --locked --manifest-path=backend/Cargo.toml --target x86_64-unknown-linux-musl
-	@touch $@
-test: $(STAMP)
 
 upgrade-deps:
 	cargo upgrade --manifest-path=backend/Cargo.toml --verbose
