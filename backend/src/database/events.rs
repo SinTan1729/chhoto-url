@@ -191,13 +191,13 @@ pub(crate) fn add_links(
                         "Added link with shortlink: {}, longlink: {}, expiry_delay: {:?}, notes: {:?}",
                         req.shortlink, req.longlink, req.expiry_delay, req.notes
                     );
-                    (*i, Ok((req.shortlink.clone(), expiry_time.unwrap_or_default())))
+                    (*i, Ok((req.shortlink.to_owned(), expiry_time.unwrap_or_default())))
                 }
                 Ok(0) => {
                     debug!("Duplicate insertion attempted for {}.", req.shortlink);
                     (
                         *i,
-                        Err(in_use_error.clone()),
+                        Err(in_use_error.to_owned()),
                     )
                 }
                 Ok(n) => {

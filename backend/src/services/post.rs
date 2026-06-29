@@ -45,7 +45,7 @@ pub(crate) async fn add_links(req: String, auth: Auth, data: web::Data<AppState>
         Auth::ValidAPIKey => {
             let to_response = |res| match res {
                 Ok((shortlink, expiry_time)) => {
-                    let site_url = config.site_url.clone();
+                    let site_url = config.site_url.to_owned();
                     let shorturl = if let Some(url) = &site_url {
                         format!("{url}/{shortlink}")
                     } else {
