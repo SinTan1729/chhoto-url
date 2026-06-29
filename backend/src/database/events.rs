@@ -198,12 +198,14 @@ type AddLinksReturnType = Vec<(usize, Result<(String, i64), ChhotoError>)>;
 pub(crate) fn add_links(
     requests: Vec<(usize, NewURLRequest)>,
     db: &mut Connection,
-) -> AddLinksReturnType {
+    return_rejected: bool,
+) -> (AddLinksReturnType, Option<Vec<(usize, NewURLRequest)>>) {
     let now = chrono::Utc::now().timestamp();
     let in_use_error = ClientError {
         reason: "Short URL is already in use!".to_string(),
     };
     let mut output = Vec::with_capacity(requests.len());
+    let mut rejected = Vec::with_capacity(requests.len());
 
     for chunk in requests.chunks(500) {
         let chunk_error = || chunk.iter().map(|(i, _)| (*i, Err(ServerError)));
@@ -235,10 +237,12 @@ pub(crate) fn add_links(
                 }
                 Ok(0) => {
                     debug!("Duplicate insertion attempted for {}.", req.shortlink);
-                    (
-                        *i,
-                        Err(in_use_error.to_owned()),
-                    )
+                        if return_rejected {
+                            rejected.push((*i, req.to_owned()));
+                            (0, Err(ServerError)) // Placeholder; add_links_helper ignores errors in this mode.
+                        } else {
+                            (*i, Err(in_use_error.to_owned()))
+                        }
                 }
                 Ok(n) => {
                     error!("Unexpected row count while adding link {}: {}", req.shortlink, n);
@@ -261,7 +265,7 @@ pub(crate) fn add_links(
         }
     }
 
-    output
+    (output, Some(rejected).filter(|_| return_rejected))
 }
 
 // Edit an existing link

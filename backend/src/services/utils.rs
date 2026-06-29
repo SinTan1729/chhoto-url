@@ -183,11 +183,10 @@ pub(super) fn add_links_helper(
         }
     }
 
-    for (i, res) in add_links(with_shortlinks, db) {
+    for (i, res) in add_links(with_shortlinks, db, false).0 {
         output[i] = res
     }
 
-    let retry_links = without_shortlinks.clone();
     let with_link = |mut req: NewURLRequest, retry: bool| {
         req.shortlink = gen_link(
             &config.slug_style,
@@ -197,26 +196,29 @@ pub(super) fn add_links_helper(
         );
         req
     };
-    for (i, res) in add_links(
+    let (successful, rejected) = add_links(
         without_shortlinks
             .into_iter()
             .map(|(i, r)| (i, with_link(r, false)))
             .collect(),
         db,
-    ) {
+        true,
+    );
+    for (i, res) in successful {
         if res.is_ok() {
             output[i] = res
         }
     }
-    for (i, res) in add_links(
-        retry_links
-            .into_iter()
-            .filter(|(i, _)| output[*i].is_err())
-            .map(|(i, r)| (i, with_link(r, true)))
-            .collect(),
-        db,
-    ) {
-        if res.is_ok() {
+    if let Some(rej) = rejected {
+        for (i, res) in add_links(
+            rej.into_iter()
+                .map(|(i, r)| (i, with_link(r, true)))
+                .collect(),
+            db,
+            false,
+        )
+        .0
+        {
             output[i] = res
         }
     }
