@@ -166,3 +166,9 @@ SELECT short_url, long_url, hits, expiry_time, notes FROM (
 )
 ORDER BY id ASC",
 ];
+
+pub(super) const Z_STAT1_INIT: &str = "ANALYZE sqlite_schema;DELETE FROM sqlite_stat1;
+INSERT INTO sqlite_stat1(tbl,idx,stat)VALUES('urls_fts_config','urls_fts_config','1 1'),
+('urls_fts_docsize',NULL,'110003'),('urls_fts_idx','urls_fts_idx','5977 352 1'),
+('urls','idx_expiry_time','110003 809'),('urls','idx_short_url','110003 1'),
+('urls_fts_data',NULL,'6842');ANALYZE sqlite_schema;";

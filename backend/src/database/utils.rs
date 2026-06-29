@@ -39,34 +39,30 @@ pub(crate) fn cleanup(db: &Connection, use_wal_mode: bool) {
         .expect("Error cleaning expired links.");
 
     if use_wal_mode {
-        let mut statement = db
-            .prepare_cached("PRAGMA wal_checkpoint(RESTART)")
-            .expect("Error preparing SQL statement for pragma: wal_checkpoint.");
-        statement
-            .query_one((), |row| row.get::<usize, isize>(1))
-            .inspect_err(|e| warn!("Error while creating checkpoint: {e}"))
-            .ok()
-            .filter(|&v| v != -1)
-            .expect("Unable to create WAL checkpoint.");
+        db.query_one("PRAGMA wal_checkpoint(RESTART)", (), |row| {
+            row.get::<usize, isize>(1)
+        })
+        .inspect_err(|e| warn!("Error while creating checkpoint: {e}"))
+        .ok()
+        .filter(|&v| v != -1)
+        .expect("Unable to create WAL checkpoint.");
     }
     let freelist_count: i64 = db
-        .prepare_cached("PRAGMA freelist_count")
-        .expect("Error preparing SQL statement for pragma: freelist_count")
-        .query_row((), |r| r.get(0))
+        .query_one("PRAGMA freelist_count", (), |r| r.get(0))
         .expect("failed to get freelist_count");
 
     // Roughly 20 MB with 4 KiB pages
     if freelist_count > 5000 {
-        db.prepare_cached("VACUUM")
-            .expect("Error preparing SQL statement for vacuum.")
-            .execute(())
-            .expect("failed to vacuum database");
+        db.execute("VACUUM", ()).expect("failed to vacuum database");
     }
-    db.prepare_cached("PRAGMA optimize")
-        .expect("Error preparing SQL statement for pragma: optimize.")
-        .execute(())
-        .expect("Unable to optimize database.");
-    debug!("Optimized database.")
+    let link_count: i64 = db
+        .query_one("SELECT COUNT(id) FROM urls", (), |row| row.get(0))
+        .unwrap_or_default();
+    if link_count > 2000 {
+        db.execute("PRAGMA optimize", ())
+            .expect("Unable to optimize database.");
+        debug!("Optimized database.");
+    }
 }
 
 // Create backups
@@ -322,8 +318,18 @@ pub(crate) fn initialize_db(path: &str, use_wal_mode: bool, ensure_acid: bool) {
     tx.pragma_update(None, "user_version", USER_VERSION)
         .expect("Unable to set pragma: user_version.");
     tx.commit().expect("Unable to set correct pragma values.");
-    db.execute("PRAGMA optimize=0x10002", ())
-        .expect("Unable to optimize database.");
+    let link_count: i64 = db
+        .query_one("SELECT COUNT(id) FROM urls", (), |row| row.get(0))
+        .unwrap_or_default();
+    if link_count > 2000 {
+        db.execute("PRAGMA optimize=0x10002", ())
+            .expect("Unable to optimize database.");
+        debug!("Optimized database.");
+    } else {
+        debug!("Using bootstrap stat1 table");
+        db.execute_batch(queries::Z_STAT1_INIT)
+            .expect("Error applying migration 4.");
+    }
 
     info!("Database initialization was successful.");
 }
