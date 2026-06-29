@@ -12,10 +12,16 @@ use actix_web::{
 use log::info;
 use rusqlite::Connection;
 use std::{
+    collections::HashMap,
     io::Result,
+    ops::DerefMut,
     sync::{Arc, Once},
 };
-use tokio::{spawn, sync::Mutex, time};
+use tokio::{
+    spawn,
+    sync::{Mutex, mpsc},
+    time::{Duration, Instant, interval, sleep_until},
+};
 
 // Import modules
 mod auth;
@@ -31,6 +37,7 @@ mod tests;
 
 // This struct represents state
 struct AppState {
+    hit_tx: mpsc::Sender<String>,
     reader: Connection,
     writer: Arc<Mutex<Connection>>,
     config: config::Config,
@@ -85,7 +92,7 @@ async fn main() -> Result<()> {
     spawn(async move {
         info!("Starting database cleanup service, will run once every hour.");
         let db = database::open_db(&db_location);
-        let mut interval = time::interval(time::Duration::from_secs(3600));
+        let mut interval = interval(Duration::from_secs(3600));
         loop {
             interval.tick().await;
             database::cleanup(&db, conf.use_wal_mode);
@@ -93,6 +100,34 @@ async fn main() -> Result<()> {
     });
 
     let writer = Arc::new(Mutex::new(database::open_db(&conf.db_location)));
+
+    let (tx, mut rx) = mpsc::channel::<String>(1024);
+    let writer_clone = writer.clone();
+    spawn(async move {
+        let mut pending = HashMap::new();
+        loop {
+            let Some(first) = rx.recv().await else {
+                break;
+            };
+            *pending.entry(first).or_insert(0) += 1;
+            let deadline = Instant::now() + Duration::from_millis(500);
+
+            while pending.len() < 500 {
+                tokio::select! {
+                    Some(link) = rx.recv() => *pending.entry(link).or_insert(0) += 1,
+                    _ = sleep_until(deadline) => break,
+                    else => break,
+                }
+            }
+            if !pending.is_empty() {
+                database::add_hits(
+                    std::mem::take(&mut pending),
+                    writer_clone.lock().await.deref_mut(),
+                );
+            }
+        }
+    });
+
     let conf_clone = conf.clone();
     // Actually start the server
     HttpServer::new(move || {
@@ -113,6 +148,7 @@ async fn main() -> Result<()> {
             )
             // Maintain a single instance of database throughout
             .app_data(web::Data::new(AppState {
+                hit_tx: tx.clone(),
                 reader: database::open_db(&conf.db_location),
                 writer: writer.clone(),
                 config: conf_clone.clone(),

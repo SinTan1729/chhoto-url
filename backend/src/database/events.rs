@@ -1,10 +1,11 @@
 // SPDX-FileCopyrightText: 2023-2026 Sayantan Santra <sayantan.santra689@gmail.com>
 // SPDX-License-Identifier: MIT
 
-use log::{debug, error};
+use log::{debug, error, warn};
 use rusqlite::{Connection, fallible_iterator::FallibleIterator, named_params};
 use serde::Serialize;
-use std::rc::Rc;
+use std::{collections::HashMap, rc::Rc};
+use tokio::sync::mpsc;
 
 use crate::{
     database::queries,
@@ -137,21 +138,59 @@ pub(crate) fn getall(
     links
 }
 
-// Add a hit when site is visited during link resolution
-pub(crate) fn find_and_add_hit(shortlink: &str, db: &Connection) -> Result<String, ()> {
+// Resolve site and add link to add_hit queue
+pub(crate) async fn find_and_add_hit(
+    shortlink: &str,
+    db: &Connection,
+    tx: &mpsc::Sender<String>,
+) -> Result<String, ()> {
     let now = chrono::Utc::now().timestamp();
-    let Ok(mut statement) = db.prepare_cached(queries::FIND_AND_ADD_HIT) else {
-        error!("Error preparing SQL statement for add_hit.");
+    let Ok(mut statement) = db.prepare_cached(queries::FIND_LINK) else {
+        error!("Error preparing SQL statement for find link.");
         return Err(());
     };
-    statement
+    let Ok(long_url) = statement
         .query_one(named_params! {":short": shortlink, ":now": now}, |row| {
             row.get("long_url")
         })
-        .inspect(|_| {
-            debug!("Accessed link: {shortlink}.");
-        })
-        .map_err(drop)
+    else {
+        return Err(());
+    };
+
+    debug!("Accessed link: {shortlink}.");
+    let _ = tx
+        .send(shortlink.to_string())
+        .await
+        .inspect_err(|e| warn!("Error adding link to add hit queue: {e}"));
+    Ok(long_url)
+}
+// Add hits
+pub(crate) fn add_hits(shortlinks: HashMap<String, i64>, db: &mut Connection) {
+    let Ok(tx) = db.transaction() else {
+        warn!("Unable to start a transaction for add hit.");
+        return;
+    };
+    {
+        let Ok(mut statement) = tx.prepare_cached(queries::ADD_HIT) else {
+            warn!("Error preparing SQL statement for add hit.");
+            return;
+        };
+        for (link, count) in shortlinks.iter() {
+            let _ = statement
+                .execute(named_params! {":short": link, ":count": count})
+                .inspect_err(|e| {
+                    warn!("Unable to update hit for {link}: {e}");
+                });
+        }
+    }
+    if let Err(e) = tx.commit() {
+        warn!("Add hit commit failed: {e}");
+        warn!(
+            "Dropped a total of {} hit increments, with {} distinct links.",
+            shortlinks.values().sum::<i64>(),
+            shortlinks.len()
+        );
+    }
 }
 
 // Insert a new link
@@ -170,13 +209,13 @@ pub(crate) fn add_links(
         let chunk_error = || chunk.iter().map(|(i, _)| (*i, Err(ServerError)));
         let start = output.len();
         let Ok(tx) = db.transaction() else {
-            error!("Unable to start a transaction.");
+            error!("Unable to start a transaction for add link.");
             output.extend(chunk_error());
             continue;
         };
         {
             let Ok(mut statement) = tx.prepare_cached(queries::ADD_LINK) else {
-                error!("Error preparing SQL statement for add_link.");
+                error!("Error preparing SQL statement for add link.");
                 output.extend(chunk_error());
                 continue;
             };
@@ -216,7 +255,7 @@ pub(crate) fn add_links(
             }
         }
         if let Err(e) = tx.commit() {
-            error!("Commit failed: {e}");
+            error!("Add link commit failed: {e}");
             output.truncate(start);
             output.extend(chunk_error());
         }

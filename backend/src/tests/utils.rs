@@ -77,11 +77,40 @@ pub(super) async fn create_app(
     let db_file = format!("/tmp/chhoto-url-test/{test}.sqlite");
     database::initialize_db(&db_file, conf.use_wal_mode, conf.ensure_acid);
 
+    let writer = Arc::from(Mutex::from(database::open_db(&db_file)));
+    let (tx, mut rx) = mpsc::channel::<String>(1024);
+    let writer_clone = writer.clone();
+    spawn(async move {
+        let mut pending = HashMap::new();
+        loop {
+            let Some(first) = rx.recv().await else {
+                break;
+            };
+            *pending.entry(first).or_insert(0) += 1;
+            let deadline = Instant::now() + Duration::from_millis(500);
+
+            while pending.len() < 500 {
+                tokio::select! {
+                    Some(link) = rx.recv() => *pending.entry(link).or_insert(0) += 1,
+                    _ = sleep_until(deadline) => break,
+                    else => break,
+                }
+            }
+            if !pending.is_empty() {
+                database::add_hits(
+                    std::mem::take(&mut pending),
+                    writer_clone.lock().await.deref_mut(),
+                );
+            }
+        }
+    });
+
     test::init_service(
         App::new()
             .app_data(web::Data::new(AppState {
+                hit_tx: tx,
                 reader: database::open_db(&db_file),
-                writer: Arc::from(Mutex::from(database::open_db(&db_file))),
+                writer,
                 config: conf.clone(),
             }))
             .service(services::siteurl)

@@ -9,15 +9,18 @@ SELECT long_url, hits, expiry_time, notes FROM urls
       OR expiry_time > :now
     )";
 
-pub(super) const FIND_AND_ADD_HIT: &str = "
-UPDATE urls 
-  SET hits = hits + 1 
+pub(super) const FIND_LINK: &str = "
+SELECT long_url FROM urls 
   WHERE short_url = :short 
     AND (
       expiry_time IS NULL 
       OR expiry_time > :now
-    )
-RETURNING long_url";
+    )";
+
+pub(super) const ADD_HIT: &str = "
+UPDATE urls 
+  SET hits = hits + :count
+  WHERE short_url = :short";
 
 pub(super) const ADD_LINK: &str = "
 INSERT INTO urls

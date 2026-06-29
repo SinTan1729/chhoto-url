@@ -56,6 +56,8 @@ async fn data_fetching_all() {
     let req = test::TestRequest::get().uri("/test1").to_request();
     let _ = test::call_service(&app, req).await;
 
+    let timer = Duration::from_millis(600);
+    tokio::time::sleep(timer).await;
     let reply = getall(&app, &api_key, "").await;
     assert_eq!(reply.len(), 2);
     assert_eq!(reply[0].shortlink, "test1");

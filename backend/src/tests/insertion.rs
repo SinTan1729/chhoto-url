@@ -177,13 +177,15 @@ async fn link_editing() {
 
     let (status, _) = add_link(&app, &api_key, "test1", 0, "").await;
     assert!(status.is_success());
-    let (status, _) = add_link(&app, &api_key, "test2", 1, "").await;
+    let (status, _) = add_link(&app, &api_key, "test2", 10, "").await;
     assert!(status.is_success());
 
     let req = test::TestRequest::get().uri("/test2").to_request();
     let resp = test::call_service(&app, req).await;
     assert!(resp.status().is_redirection());
 
+    let timer = Duration::from_millis(600);
+    tokio::time::sleep(timer).await;
     let now = chrono::Utc::now().timestamp();
     let status = edit_link(&app, &api_key, "test2", false, Some(now + 1), None).await;
     assert!(status.is_success());
