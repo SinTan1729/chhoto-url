@@ -80,7 +80,8 @@ pub(super) async fn create_app(
     test::init_service(
         App::new()
             .app_data(web::Data::new(AppState {
-                db: RefCell::from(database::open_db(&db_file)),
+                reader: database::open_db(&db_file),
+                writer: Arc::from(Mutex::from(database::open_db(&db_file))),
                 config: conf.clone(),
             }))
             .service(services::siteurl)

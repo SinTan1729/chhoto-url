@@ -29,10 +29,14 @@ const SERVER_ERROR_RES: &str = "Something went wrong when adding the link.";
 #[post("/api/new")]
 pub(crate) async fn add_links(req: String, auth: Auth, data: web::Data<AppState>) -> HttpResponse {
     let config = &data.config;
-    let cookie_response = |public_mode| {
-        let result =
-            utils::add_links_helper(&req, data.db.borrow_mut().deref_mut(), config, public_mode)
-                .and_then(|(v, _)| v.into_iter().next().unwrap_or(Err(ServerError)));
+    let cookie_response = async |public_mode| {
+        let result = utils::add_links_helper(
+            &req,
+            data.writer.lock().await.deref_mut(),
+            config,
+            public_mode,
+        )
+        .and_then(|(v, _)| v.into_iter().next().unwrap_or(Err(ServerError)));
         match result {
             Ok((shorturl, _)) => HttpResponse::Created().body(shorturl),
             Err(ClientError { reason }) => HttpResponse::Conflict().body(reason),
@@ -86,7 +90,8 @@ pub(crate) async fn add_links(req: String, auth: Auth, data: web::Data<AppState>
                 ),
             };
 
-            match utils::add_links_helper(&req, data.db.borrow_mut().deref_mut(), config, false) {
+            match utils::add_links_helper(&req, data.writer.lock().await.deref_mut(), config, false)
+            {
                 Ok((reply, single_request)) => {
                     if single_request {
                         let (status, response) = to_response(
@@ -110,10 +115,10 @@ pub(crate) async fn add_links(req: String, auth: Auth, data: web::Data<AppState>
         }
         Auth::InvalidAPIKey { result } => HttpResponse::Unauthorized().json(result),
         // If password authentication or public mode is used - keeps backwards compatibility
-        Auth::ValidSession => cookie_response(false),
+        Auth::ValidSession => cookie_response(false).await,
         Auth::None { result: _ } => {
             if data.config.public_mode {
-                cookie_response(true)
+                cookie_response(true).await
             } else {
                 HttpResponse::Unauthorized().body("Not logged in!")
             }
@@ -125,7 +130,7 @@ pub(crate) async fn add_links(req: String, auth: Auth, data: web::Data<AppState>
 #[post("/api/expand")]
 pub(crate) async fn expand(req: String, auth: Auth, data: web::Data<AppState>) -> HttpResponse {
     match auth {
-        Auth::ValidAPIKey => match database::find_url(&req, &data.db.borrow()) {
+        Auth::ValidAPIKey => match database::find_url(&req, &data.reader) {
             Ok(chunks) => {
                 let body = LinkInfo {
                     success: true,

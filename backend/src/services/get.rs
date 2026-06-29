@@ -30,7 +30,7 @@ pub(crate) async fn getall(
     match auth {
         Auth::None { result: _ } => HttpResponse::Unauthorized().body("Unauthorized"),
         Auth::InvalidAPIKey { result } => HttpResponse::Unauthorized().body(result.reason),
-        _ => match utils::getall_helper(&data.db.borrow(), params.into_inner()) {
+        _ => match utils::getall_helper(&data.reader, params.into_inner()) {
             Ok(s) => HttpResponse::Ok().body(s),
             Err(ServerError) => HttpResponse::InternalServerError()
                 .body("Something went wrong while loading the links.".to_string()),
@@ -113,7 +113,7 @@ pub(crate) async fn link_handler(
     data: web::Data<AppState>,
 ) -> impl Responder {
     let shortlink_str = shortlink.as_str();
-    if let Ok(longlink) = database::find_and_add_hit(shortlink_str, &data.db.borrow()) {
+    if let Ok(longlink) = database::find_and_add_hit(shortlink_str, &data.reader) {
         if data.config.use_temp_redirect {
             Either::Left(Redirect::to(longlink))
         } else {
