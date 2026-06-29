@@ -91,7 +91,7 @@ async fn main() -> Result<()> {
 
     spawn(async move {
         info!("Starting database cleanup service, will run once every hour.");
-        let db = database::open_db(&db_location);
+        let db = database::open_db(&db_location, false);
         let mut interval = interval(Duration::from_secs(3600));
         loop {
             interval.tick().await;
@@ -99,7 +99,7 @@ async fn main() -> Result<()> {
         }
     });
 
-    let writer = Arc::new(Mutex::new(database::open_db(&conf.db_location)));
+    let writer = Arc::new(Mutex::new(database::open_db(&conf.db_location, false)));
 
     let (hits_tx, mut hits_rx) = mpsc::channel::<String>(1024);
     let writer_clone = writer.clone();
@@ -149,7 +149,7 @@ async fn main() -> Result<()> {
             // Maintain a single instance of database throughout
             .app_data(web::Data::new(AppState {
                 hits_tx: hits_tx.clone(),
-                reader: database::open_db(&conf.db_location),
+                reader: database::open_db(&conf.db_location, true),
                 writer: writer.clone(),
                 config: conf_clone.clone(),
             }))

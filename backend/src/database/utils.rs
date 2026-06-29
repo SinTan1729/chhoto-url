@@ -3,7 +3,7 @@
 
 use chrono::{Local, Timelike, Utc};
 use log::{debug, error, info, warn};
-use rusqlite::{Connection, named_params};
+use rusqlite::{Connection, OpenFlags, named_params};
 use std::{collections::HashSet, fs, path::PathBuf};
 
 use crate::database::queries;
@@ -329,6 +329,13 @@ pub(crate) fn initialize_db(path: &str, use_wal_mode: bool, ensure_acid: bool) {
 }
 
 // Open and return a rusqlite connection
-pub(crate) fn open_db(path: &str) -> Connection {
-    Connection::open(path).expect("Unable to open database.")
+pub(crate) fn open_db(path: &str, read_only: bool) -> Connection {
+    if read_only {
+        let flags = OpenFlags::SQLITE_OPEN_READ_ONLY
+            | OpenFlags::SQLITE_OPEN_URI
+            | OpenFlags::SQLITE_OPEN_NO_MUTEX;
+        Connection::open_with_flags(path, flags).expect("Unable to open database.")
+    } else {
+        Connection::open(path).expect("Unable to open database.")
+    }
 }
