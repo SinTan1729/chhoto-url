@@ -114,7 +114,7 @@ pub(crate) async fn link_handler(
 ) -> impl Responder {
     let shortlink_str = shortlink.as_str();
     if let Ok(longlink) =
-        database::find_and_add_hit(shortlink_str, &data.reader, &data.hit_tx).await
+        database::find_and_add_hit(shortlink_str, &data.reader, &data.hits_tx).await
     {
         if data.config.use_temp_redirect {
             Either::Left(Redirect::to(longlink))

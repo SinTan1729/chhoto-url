@@ -37,7 +37,7 @@ mod tests;
 
 // This struct represents state
 struct AppState {
-    hit_tx: mpsc::Sender<String>,
+    hits_tx: mpsc::Sender<String>,
     reader: Connection,
     writer: Arc<Mutex<Connection>>,
     config: config::Config,
@@ -101,12 +101,12 @@ async fn main() -> Result<()> {
 
     let writer = Arc::new(Mutex::new(database::open_db(&conf.db_location)));
 
-    let (tx, mut rx) = mpsc::channel::<String>(1024);
+    let (hits_tx, mut hits_rx) = mpsc::channel::<String>(1024);
     let writer_clone = writer.clone();
     spawn(async move {
         let mut pending = HashMap::new();
         loop {
-            let Some(first) = rx.recv().await else {
+            let Some(first) = hits_rx.recv().await else {
                 break;
             };
             *pending.entry(first).or_insert(0) += 1;
@@ -114,7 +114,7 @@ async fn main() -> Result<()> {
 
             while pending.len() < 500 {
                 tokio::select! {
-                    Some(link) = rx.recv() => *pending.entry(link).or_insert(0) += 1,
+                    Some(link) = hits_rx.recv() => *pending.entry(link).or_insert(0) += 1,
                     _ = sleep_until(deadline) => break,
                     else => break,
                 }
@@ -148,7 +148,7 @@ async fn main() -> Result<()> {
             )
             // Maintain a single instance of database throughout
             .app_data(web::Data::new(AppState {
-                hit_tx: tx.clone(),
+                hits_tx: hits_tx.clone(),
                 reader: database::open_db(&conf.db_location),
                 writer: writer.clone(),
                 config: conf_clone.clone(),
