@@ -32,7 +32,7 @@ podman-run: podman-stop
 	podman run -t -p ${CHHOTO_LISTEN_PORT}:${CHHOTO_LISTEN_PORT} --name chhoto-url --env-file ./.env -v "${DB_DIR}:/data" -d chhoto-url
 	podman logs chhoto-url -f 
 
-reset-db:
+reset-db: podman-stop
 	rm -f testing-data/urls.sqlite-shm testing-data/urls.sqlite-wal
 	cp testing-data/urls1.sqlite testing-data/urls.sqlite
 podman-test: test podman-build podman-run

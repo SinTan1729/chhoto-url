@@ -170,6 +170,7 @@ pub(crate) fn add_links(
         let chunk_error = || chunk.iter().map(|(i, _)| (*i, Err(ServerError)));
         let start = output.len();
         let Ok(tx) = db.transaction() else {
+            error!("Unable to start a transaction.");
             output.extend(chunk_error());
             continue;
         };
