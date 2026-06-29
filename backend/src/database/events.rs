@@ -9,6 +9,7 @@ use std::rc::Rc;
 use crate::{
     database::queries,
     services::types::ChhotoError::{self, ClientError, ServerError},
+    utils::NewURLRequest,
 };
 
 // Struct for encoding a DB row
@@ -154,44 +155,74 @@ pub(crate) fn find_and_add_hit(shortlink: &str, db: &Connection) -> Result<Strin
 }
 
 // Insert a new link
-pub(crate) fn add_link(
-    shortlink: &str,
-    longlink: &str,
-    expiry_delay: Option<i64>,
-    notes: Option<&str>,
-    db: &Connection,
-) -> Result<i64, ChhotoError> {
+type AddLinksReturnType = Vec<(usize, Result<(String, i64), ChhotoError>)>;
+pub(crate) fn add_links(
+    requests: Vec<(usize, NewURLRequest)>,
+    db: &mut Connection,
+) -> AddLinksReturnType {
     let now = chrono::Utc::now().timestamp();
-    let expiry_time = expiry_delay.map(|delay| now + delay);
-
-    let Ok(mut statement) = db.prepare_cached(queries::ADD_LINK) else {
-        error!("Error preparing SQL statement for add_link.");
-        return Err(ServerError);
+    let in_use_error = ClientError {
+        reason: "Short URL is already in use!".to_string(),
     };
-    match statement.execute(named_params! {":long": longlink, ":short": shortlink,
-    ":expiry": expiry_time, ":now": now, ":notes" : notes})
-    {
-        Ok(1) => {
-            debug!(
-                "Added link with shortlink: {}, longlink: {}, expiry_delay: {:?}, notes: {:?}",
-                shortlink, longlink, expiry_delay, notes
-            );
-            Ok(expiry_time.unwrap_or_default())
+    let mut output = Vec::with_capacity(requests.len());
+
+    for chunk in requests.chunks(500) {
+        let chunk_error = || chunk.iter().map(|(i, _)| (*i, Err(ServerError)));
+        let start = output.len();
+        let Ok(tx) = db.transaction() else {
+            error!("Unable to start a transaction.");
+            output.extend(chunk_error());
+            continue;
+        };
+        {
+            let Ok(mut statement) = tx.prepare_cached(queries::ADD_LINK) else {
+                error!("Error preparing SQL statement for add_link.");
+                output.extend(chunk_error());
+                continue;
+            };
+
+            for (i, req) in chunk {
+                let expiry_time = req.expiry_delay.map(|delay| now + delay);
+                output.push(match statement.execute(
+                named_params! {":long": req.longlink, ":short": req.shortlink,
+                ":expiry": expiry_time, ":now": now, ":notes" : req.notes},
+            ) {
+                Ok(1) => {
+                    debug!(
+                        "Added link with shortlink: {}, longlink: {}, expiry_delay: {:?}, notes: {:?}",
+                        req.shortlink, req.longlink, req.expiry_delay, req.notes
+                    );
+                    (*i, Ok((req.shortlink.to_owned(), expiry_time.unwrap_or_default())))
+                }
+                Ok(0) => {
+                    debug!("Duplicate insertion attempted for {}.", req.shortlink);
+                    (
+                        *i,
+                        Err(in_use_error.to_owned()),
+                    )
+                }
+                Ok(n) => {
+                    error!("Unexpected row count while adding link {}: {}", req.shortlink, n);
+                    (*i, Err(ServerError))
+                }
+                Err(e) => {
+                    error!(
+                        "There was some error while adding the link ({}, {}, {:?}): {}",
+                        req.shortlink, req.longlink, req.expiry_delay, e
+                    );
+                    (*i, Err(ServerError))
+                }
+            });
+            }
         }
-        Ok(_) => {
-            debug!("Duplicate insertion attempted for {shortlink}.");
-            Err(ClientError {
-                reason: "Short URL is already in use!".to_string(),
-            })
-        }
-        Err(e) => {
-            error!(
-                "There was some error while adding the link ({shortlink}, {longlink}, {:?}): {e}",
-                expiry_delay
-            );
-            Err(ServerError)
+        if let Err(e) = tx.commit() {
+            error!("Commit failed: {e}");
+            output.truncate(start);
+            output.extend(chunk_error());
         }
     }
+
+    output
 }
 
 // Edit an existing link

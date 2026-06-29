@@ -13,21 +13,21 @@ use url::Url;
 
 use crate::{
     config::{Config, SlugStyle},
-    database,
+    database::{self, add_links},
     services::types::{
         ChhotoError::{self, ClientError, ServerError},
-        GetReqParams,
+        GetReqParams, OneOrMany,
     },
 };
 
 // Struct for reading link pairs sent during API call for new link
-#[derive(Deserialize)]
-struct NewURLRequest {
+#[derive(Deserialize, Clone)]
+pub(crate) struct NewURLRequest {
     #[serde(default)]
-    shortlink: String,
-    longlink: String,
-    expiry_delay: Option<i64>,
-    notes: Option<String>,
+    pub(crate) shortlink: String,
+    pub(crate) longlink: String,
+    pub(crate) expiry_delay: Option<i64>,
+    pub(crate) notes: Option<String>,
 }
 
 // Struct for reading link pairs sent during API call for editing link
@@ -42,7 +42,7 @@ struct EditURLRequest {
 
 // Only allow safe URI schemes
 #[inline]
-fn is_longurl_valid(link: &str) -> bool {
+fn is_longlink_valid(link: &str) -> bool {
     let parts = Url::parse(link);
     parts.is_ok_and(|u| ["http", "https", "ftp", "magnet"].contains(&u.scheme()))
 }
@@ -136,87 +136,92 @@ pub(super) fn getall_helper(db: &Connection, params: GetReqParams) -> Result<Str
 }
 
 // Make checks and then request the DB to add a new URL entry
-pub(super) fn add_link_helper(
+type AddLinksReturnType = Result<(Vec<Result<(String, i64), ChhotoError>>, bool), ChhotoError>;
+pub(super) fn add_links_helper(
     req: &str,
-    db: &Connection,
+    db: &mut Connection,
     config: &Config,
     using_public_mode: bool,
-) -> Result<(String, i64), ChhotoError> {
-    // Ok : shortlink, expiry_time
-    let mut chunks: NewURLRequest;
-    if let Ok(json) = serde_json::from_str(req) {
-        chunks = json;
-    } else {
+) -> AddLinksReturnType {
+    // Ok : Vec<shortlink, expiry_time>, single_request
+    let Ok((single_request, chunks)) =
+        serde_json::from_str::<OneOrMany<NewURLRequest>>(req).map(|s| {
+            let single = matches!(s, OneOrMany::One(_));
+            (single, s.normalize())
+        })
+    else {
         return Err(ClientError {
             reason: "Invalid request!".to_string(),
         });
-    }
-    if !is_longurl_valid(&chunks.longlink) {
-        return Err(ClientError {
-            reason: "Unsupported URL scheme.".to_string(),
-        });
-    }
-
-    let style = &config.slug_style;
-    let len = config.slug_length;
-    let allow_capital_letters = config.allow_capital_letters;
-    let shortlink_provided = if chunks.shortlink.is_empty() {
-        chunks.shortlink = gen_link(style, len, allow_capital_letters, false);
-        false
-    } else {
-        true
     };
 
-    // In public mode, set automatic expiry delay
-    if using_public_mode && let Some(delay) = config.public_mode_expiry_delay {
-        chunks.expiry_delay = Some(chunks.expiry_delay.map_or(delay, |d| d.min(delay)))
+    let mut output: Vec<_> = (0..chunks.len()).map(|_| Err(ServerError)).collect();
+    let (mut with_shortlinks, mut without_shortlinks) = (Vec::new(), Vec::new());
+    let clean_req = |mut req: NewURLRequest| {
+        // Allow max delay of 5 years
+        let exp = req
+            .expiry_delay
+            .map(|d| d.clamp(0, 157_784_760))
+            .filter(|&d| d > 0);
+        req.expiry_delay = match (using_public_mode, config.public_mode_expiry_delay) {
+            (true, Some(delay)) => Some(exp.map_or(delay, |d| d.min(delay))),
+            _ => exp,
+        };
+        req.notes = req.notes.filter(|s| !s.is_empty());
+        req
     };
-
-    // Allow max delay of 5 years
-    chunks.expiry_delay = chunks
-        .expiry_delay
-        .map(|d| d.clamp(0, 157784760))
-        .filter(|&d| d > 0);
-    chunks.notes = chunks.notes.filter(|s| !s.is_empty());
-
-    if !shortlink_provided || is_shortlink_valid(chunks.shortlink.as_str(), allow_capital_letters) {
-        match database::add_link(
-            &chunks.shortlink,
-            &chunks.longlink,
-            chunks.expiry_delay,
-            chunks.notes.as_deref(),
-            db,
-        ) {
-            Ok(expiry_time) => Ok((chunks.shortlink, expiry_time)),
-            Err(ClientError { reason }) => {
-                if shortlink_provided {
-                    Err(ClientError { reason })
-                } else {
-                    // Optionally, retry with a longer slug length
-                    chunks.shortlink =
-                        gen_link(style, len, allow_capital_letters, config.try_longer_slug);
-                    match database::add_link(
-                        &chunks.shortlink,
-                        &chunks.longlink,
-                        chunks.expiry_delay,
-                        chunks.notes.as_deref(),
-                        db,
-                    ) {
-                        Ok(expiry_time) => Ok((chunks.shortlink, expiry_time)),
-                        Err(_) => {
-                            error!("Something went wrong while adding a generated link.");
-                            Err(ServerError)
-                        }
-                    }
-                }
-            }
-            Err(ServerError) => Err(ServerError),
+    for (i, req) in chunks.into_iter().enumerate() {
+        let req = clean_req(req);
+        if !is_longlink_valid(&req.longlink) {
+            output[i] = Err(ClientError {
+                reason: "Invalid longlink!".to_string(),
+            });
+        } else if req.shortlink.is_empty() {
+            without_shortlinks.push((i, req));
+        } else {
+            with_shortlinks.push((i, req));
         }
-    } else {
-        Err(ClientError {
-            reason: "Short URL is not valid!".to_string(),
-        })
     }
+
+    for (i, res) in add_links(with_shortlinks, db) {
+        output[i] = res
+    }
+
+    let retry_links = without_shortlinks.clone();
+    let with_link = |mut req: NewURLRequest, retry: bool| {
+        req.shortlink = gen_link(
+            &config.slug_style,
+            config.slug_length,
+            config.allow_capital_letters,
+            retry,
+        );
+        req
+    };
+    for (i, res) in add_links(
+        without_shortlinks
+            .into_iter()
+            .map(|(i, r)| (i, with_link(r, false)))
+            .collect(),
+        db,
+    ) {
+        if res.is_ok() {
+            output[i] = res
+        }
+    }
+    for (i, res) in add_links(
+        retry_links
+            .into_iter()
+            .filter(|(i, _)| output[*i].is_err())
+            .map(|(i, r)| (i, with_link(r, true)))
+            .collect(),
+        db,
+    ) {
+        if res.is_ok() {
+            output[i] = res
+        }
+    }
+
+    Ok((output, single_request))
 }
 
 // Make checks and then request the DB to edit an URL entry
@@ -238,7 +243,7 @@ pub(super) fn edit_link_helper(
             reason: "Invalid shortlink!".to_string(),
         });
     }
-    if !is_longurl_valid(&chunks.longlink) {
+    if !is_longlink_valid(&chunks.longlink) {
         return Err(ClientError {
             reason: "Unsupported URL scheme.".to_string(),
         });

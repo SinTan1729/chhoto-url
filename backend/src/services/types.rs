@@ -4,9 +4,26 @@
 use serde::{Deserialize, Serialize};
 
 // Error types
+#[derive(Clone)]
 pub(crate) enum ChhotoError {
     ServerError,
     ClientError { reason: String },
+}
+
+// Enum for optional batching
+#[derive(Deserialize)]
+#[serde(untagged)]
+pub(super) enum OneOrMany<T> {
+    One(T),
+    Many(Vec<T>),
+}
+impl<T> OneOrMany<T> {
+    pub(super) fn normalize(self) -> Vec<T> {
+        match self {
+            Self::One(item) => Vec::from([item]),
+            Self::Many(items) => items,
+        }
+    }
 }
 
 // Define JSON struct for returning success/error data
@@ -38,6 +55,14 @@ pub(super) struct CreatedURL {
     pub(super) error: bool,
     pub(super) shorturl: String,
     pub(super) expiry_time: i64,
+}
+
+// Response type for add_links
+#[derive(Serialize)]
+#[serde(untagged)]
+pub(super) enum AddLinkResponse {
+    Success(CreatedURL),
+    Error(JSONResponse),
 }
 
 // Struct for returning information about a shortlink in expand

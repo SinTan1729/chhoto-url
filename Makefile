@@ -3,7 +3,7 @@
 
 include .env
 
-.PHONY: clean test setup build podman-build podman-stop podman-run podman-test build-release tag upgrade-deps merge
+.PHONY: clean test setup build podman-build podman-stop podman-run podman-test build-release tag upgrade-deps merge reset db
 
 setup:
 	rustup target add x86_64-unknown-linux-musl
@@ -17,33 +17,31 @@ merge:
 short_sha := $(shell git rev-parse --short HEAD) 
 build:
 	CARGO_GIT_COMMIT=${short_sha} cargo build --release --locked --manifest-path=backend/Cargo.toml --target x86_64-unknown-linux-musl
+test: build
+	cargo audit --file backend/Cargo.lock
+	CARGO_GIT_COMMIT=${short_sha} cargo test --release --locked --manifest-path=backend/Cargo.toml --target x86_64-unknown-linux-musl
 
-podman-build: build
+podman-build: test
 	podman build --tag chhoto-url --build-arg TARGETARCH=amd64 -f deploy/Containerfile.alpine .
 
 podman-stop:
 	podman ps -q --filter "name=chhoto-url" | xargs -r podman stop
 	podman ps -aq --filter "name=chhoto-url" | xargs -r podman rm
 
-BUILD := backend/target/x86_64-unknown-linux-musl/release/chhoto-url
-STAMP := backend/target/tests.passed
-$(STAMP): $(BUILD)
-	cargo audit --file backend/Cargo.lock
-	cargo test --release --locked --manifest-path=backend/Cargo.toml --target x86_64-unknown-linux-musl
-	@touch $@
-test: $(STAMP)
+podman-run: podman-stop
+	podman run -t -p ${CHHOTO_LISTEN_PORT}:${CHHOTO_LISTEN_PORT} --name chhoto-url --env-file ./.env -v "${DB_DIR}:/data" -d chhoto-url
+	podman logs chhoto-url -f 
+
+reset-db: podman-stop
+	rm -f testing-data/urls.sqlite-shm testing-data/urls.sqlite-wal
+	cp testing-data/urls1.sqlite testing-data/urls.sqlite
+podman-test: test podman-build podman-run
 
 upgrade-deps:
 	cargo upgrade --manifest-path=backend/Cargo.toml --verbose
 	cargo update --manifest-path=backend/Cargo.toml --verbose
 	git add backend/Cargo.{toml,lock}
 	git commit -m "chore: Updated deps"
-
-podman-run: podman-stop
-	podman run -t -p ${CHHOTO_LISTEN_PORT}:${CHHOTO_LISTEN_PORT} --name chhoto-url --env-file ./.env -v "${DB_DIR}:/data" -d chhoto-url
-	podman logs chhoto-url -f 
-
-podman-test: test podman-build podman-run
 
 conf_tag := $(shell cat backend/Cargo.toml | sed -rn 's/^version = "(.+)"$$/\1/p')
 last_tag := $(shell git tag -l | tail -1)

@@ -1,7 +1,7 @@
 // SPDX-FileCopyrightText: 2023-2026 Sayantan Santra <sayantan.santra689@gmail.com>
 // SPDX-License-Identifier: MIT
 
-use actix_web::test;
+use actix_web::{body::to_bytes, test};
 use regex::Regex;
 use std::{thread::sleep, time::Duration};
 
@@ -78,6 +78,37 @@ async fn adding_link_with_generated_shortlink_with_uid_slug() {
 }
 
 #[test]
+async fn batch_insertion() {
+    let test = "batch-insertion";
+    let mut conf = default_config(test);
+    conf.slug_style = config::SlugStyle::Uid;
+    conf.slug_length = 12;
+    let app = create_app(&conf, test).await;
+    let req = test::TestRequest::post()
+        .uri("/api/new")
+        .insert_header(("X-API-Key", conf.api_key.unwrap()))
+        .set_payload(
+            r#"[{"shortlink":"test1","longlink":"https://example.com/test1"},
+        {"shortlink":"test2","longlink":"https://example.com/test2"},
+        {"longlink":"https://example.com/test2", "expiry_delay": 10},
+        {"shortlink":"test1","longlink":"https://example.com/test3"}]"#,
+        )
+        .to_request();
+    let resp = test::call_service(&app, req).await;
+    let status = resp.status();
+    let body = to_bytes(resp.into_body()).await.unwrap();
+    let mut urls: Vec<URLData> = serde_json::from_str(body.as_str()).unwrap();
+
+    assert!(status.is_success());
+    assert_eq!(urls.pop().unwrap().reason, "Short URL is already in use!");
+    assert!(urls.pop().unwrap().expiry_time > 0);
+    assert_eq!(urls.pop().unwrap().shortlink, "https://mydomain.com/test2");
+    assert_eq!(urls.pop().unwrap().shortlink, "https://mydomain.com/test1");
+
+    test_cleanup(test);
+}
+
+#[test]
 async fn adding_link_with_generated_shortlink_with_uid_slug_capital_letters() {
     let test = "autogen-with-uid-slug-capital";
     let mut conf = default_config(test);
@@ -108,8 +139,9 @@ async fn adding_link_with_retry_on_collision() {
     // Add every possible single-character shortlink
     {
         #[rustfmt::skip]
-        static CHARS: [char; 36] = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x',
-            'y', 'z', '0', '1', '2', '3', '4', '5', '6', '7', '8', '9'];
+        static CHARS: [char; 36] = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j',
+            'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x','y',
+            'z', '0', '1', '2', '3', '4', '5', '6', '7', '8', '9'];
 
         for c in CHARS.iter() {
             let (status, _) = add_link(&app, api_key, c, 10, "").await;

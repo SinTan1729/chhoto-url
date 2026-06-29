@@ -80,13 +80,14 @@ pub(super) async fn create_app(
     test::init_service(
         App::new()
             .app_data(web::Data::new(AppState {
-                db: database::open_db(&db_file),
+                reader: database::open_db(&db_file),
+                writer: Arc::from(Mutex::from(database::open_db(&db_file))),
                 config: conf.clone(),
             }))
             .service(services::siteurl)
             .service(services::version)
             .service(services::getconfig)
-            .service(services::add_link)
+            .service(services::add_links)
             .service(services::getall)
             .service(services::link_handler)
             .service(services::edit_link)

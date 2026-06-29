@@ -1,6 +1,8 @@
 // SPDX-FileCopyrightText: 2023-2026 Sayantan Santra <sayantan.santra689@gmail.com>
 // SPDX-License-Identifier: MIT
 
+use std::ops::Deref;
+
 use actix_session::Session;
 use actix_web::{HttpResponse, delete, web};
 use log::info;
@@ -36,8 +38,11 @@ pub(crate) async fn delete_link(
 ) -> HttpResponse {
     match auth {
         Auth::ValidAPIKey => {
-            match utils::delete_link_helper(&shortlink, &data.db, data.config.allow_capital_letters)
-            {
+            match utils::delete_link_helper(
+                &shortlink,
+                data.writer.lock().await.deref(),
+                data.config.allow_capital_letters,
+            ) {
                 Ok(()) => {
                     let response = JSONResponse {
                         success: true,
@@ -67,8 +72,12 @@ pub(crate) async fn delete_link(
         Auth::InvalidAPIKey { result } => HttpResponse::Unauthorized().json(result),
         // If using password - keeps backwards compatibility
         Auth::ValidSession => {
-            if utils::delete_link_helper(&shortlink, &data.db, data.config.allow_capital_letters)
-                .is_ok()
+            if utils::delete_link_helper(
+                &shortlink,
+                data.writer.lock().await.deref(),
+                data.config.allow_capital_letters,
+            )
+            .is_ok()
             {
                 HttpResponse::Ok().body(format!("Deleted {shortlink}"))
             } else {
