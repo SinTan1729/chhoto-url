@@ -50,8 +50,9 @@ curl -X POST \
     http://localhost:4567/api/new
 ```
 
-An empty or missing `<shortlink>` will result in it being auto-generated.
-Expiry delay is in seconds. It is capped to a maximum of 5 years. A missing `<expiry_delay>` or a value of 0 will disable expiry.
+If `<shortlink>` is empty or omitted, one will be generated automatically.
+The `<expiry_delay>` is specified in seconds. It is capped to a maximum of 5 years. A missing `<expiry_delay>` or a value of 0 will disable
+expiry.
 
 The server will reply in the following format.
 
@@ -73,6 +74,12 @@ or
   "reason": "<reason>"
 }
 ```
+
+Multiple links can be created in a single request by sending an array of objects. In that case, the response is an array containing one
+result per input object (in order), each in one of the formats shown above.
+
+Except for malformed requests or internal server errors, the HTTP status code is always `200`. Clients must inspect the `success` field of
+each response object to determine whether the operation succeeded.
 
 #### `/api/getconfig`
 

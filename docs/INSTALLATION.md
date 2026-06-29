@@ -191,6 +191,8 @@ The address Chhoto URL will bind to. Defaults to `0.0.0.0`.
 Take a look at [this page](https://docs.rs/actix-web/4.11.0/actix_web/struct.HttpServer.html#method.bind)
 for supported values and potential consequences. Changing [`CHHOTO_LISTEN_ADDRESS`](#chhoto_listen_address) is not
 recommended if using docker.
+If running locally, you may not be able to access Chhoto URL depending on your OS, browser configs etc. In that case,
+try setting `::` as the listen address to also support IPV6.
 
 ### `CHHOTO_LISTEN_PORT`
 
