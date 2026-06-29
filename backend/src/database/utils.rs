@@ -328,7 +328,7 @@ pub(crate) fn initialize_db(path: &str, use_wal_mode: bool, ensure_acid: bool) {
     } else {
         debug!("Using bootstrap stat1 table");
         db.execute_batch(queries::Z_STAT1_INIT)
-            .expect("Error applying migration 4.");
+            .expect("Error inserting bootstrap table.");
     }
 
     info!("Database initialization was successful.");
