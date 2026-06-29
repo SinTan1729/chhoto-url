@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: MIT
 
 use chrono::{Local, Timelike, Utc};
-use log::{debug, error, info};
+use log::{debug, error, info, warn};
 use rusqlite::{Connection, named_params};
 use std::{collections::HashSet, fs, path::PathBuf};
 
@@ -40,10 +40,11 @@ pub(crate) fn cleanup(db: &Connection, use_wal_mode: bool) {
 
     if use_wal_mode {
         let mut statement = db
-            .prepare_cached("PRAGMA wal_checkpoint(PASSIVE)")
+            .prepare_cached("PRAGMA wal_checkpoint(RESTART)")
             .expect("Error preparing SQL statement for pragma: wal_checkpoint.");
         statement
             .query_one((), |row| row.get::<usize, isize>(1))
+            .inspect_err(|e| warn!("Error while creating checkpoint: {e}"))
             .ok()
             .filter(|&v| v != -1)
             .expect("Unable to create WAL checkpoint.");
