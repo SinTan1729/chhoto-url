@@ -3,7 +3,7 @@
 
 include .env
 
-.PHONY: clean test setup build podman-build podman-stop podman-run podman-test build-release tag upgrade-deps merge reset db
+.PHONY: clean test setup build podman-build podman-stop podman-run podman-test build-release tag upgrade-deps upgrade-deps-test merge reset db
 
 setup:
 	rustup target add x86_64-unknown-linux-musl
@@ -42,13 +42,14 @@ upgrade-deps:
 	cargo update --manifest-path=backend/Cargo.toml --verbose
 	git add backend/Cargo.{toml,lock}
 	git commit -m "chore: Updated deps"
+upgrade-deps-test: upgrade-deps test
 
 conf_tag := $(shell cat backend/Cargo.toml | sed -rn 's/^version = "(.+)"$$/\1/p')
 last_tag := $(shell git tag -l | tail -1)
 bumped := $(shell git log -1 --pretty=%B | grep "build: Bumped version to " | wc -l)
 uncommitted := $(shell git status --porcelain=v1 2>/dev/null | wc -l)
 upgrade-version:
-	cargo update --manifest-path=backend/Cargo.toml --verbose
+	cargo update --manifest-path=backend/Cargo.toml -p chhoto-url --verbose
 	git add backend/Cargo.{toml,lock}
 	git commit -m "build: Bumped version to ${conf_tag}"
 
