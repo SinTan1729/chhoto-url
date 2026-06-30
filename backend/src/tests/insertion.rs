@@ -3,7 +3,7 @@
 
 use actix_web::{body::to_bytes, test};
 use regex::Regex;
-use std::{thread::sleep, time::Duration};
+use std::time::Duration;
 
 use super::utils::*;
 use crate::*;
@@ -193,9 +193,4 @@ async fn link_editing() {
     assert!(status.is_success());
     assert_eq!(reply.longlink, "https://edited-test1.com");
     assert_eq!(reply.hits, 0);
-
-    let one_second = Duration::from_secs(1);
-    sleep(one_second);
-    let status = edit_link(&app, &api_key, "test2", true, None, None).await;
-    assert!(status.is_client_error());
 }

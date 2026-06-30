@@ -140,3 +140,31 @@ async fn notes_and_filtering() {
     assert_eq!(reply[1].shortlink, "test2");
     assert_eq!(reply[0].notes, "note1");
 }
+#[test]
+async fn edit_expiry() {
+    let test = "link-editing";
+    let conf = default_config(test);
+    let (_tempdir, app) = create_app(&conf, test).await;
+    let api_key = conf.api_key.clone().unwrap();
+
+    let (status, _) = add_link(&app, &api_key, "test1", 10, "").await;
+    assert!(status.is_success());
+
+    let req = test::TestRequest::get().uri("/test1").to_request();
+    let resp = test::call_service(&app, req).await;
+    assert!(resp.status().is_redirection());
+
+    let now = chrono::Utc::now().timestamp();
+    let status = edit_link(&app, &api_key, "test1", false, Some(now + 1), None).await;
+    assert!(status.is_success());
+
+    let (status, reply) = expand(&app, &api_key, "test1").await;
+    assert!(status.is_success());
+    assert_eq!(reply.longlink, "https://edited-test1.com");
+    assert_eq!(reply.expiry_time, now + 1);
+
+    let one_second = Duration::from_secs(1);
+    sleep(one_second);
+    let status = edit_link(&app, &api_key, "test1", true, None, None).await;
+    assert!(status.is_client_error());
+}
