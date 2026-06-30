@@ -1,7 +1,7 @@
 // SPDX-FileCopyrightText: 2023-2026 Sayantan Santra <sayantan.santra689@gmail.com>
 // SPDX-License-Identifier: MIT
 
-use std::{ops::DerefMut, rc::Rc};
+use std::rc::Rc;
 
 use actix_session::Session;
 use actix_web::{
@@ -30,13 +30,9 @@ const SERVER_ERROR_RES: &str = "Something went wrong when adding the link.";
 pub(crate) async fn add_links(req: String, auth: Auth, data: web::Data<AppState>) -> HttpResponse {
     let config = &data.config;
     let cookie_response = async |public_mode| {
-        let result = utils::add_links_helper(
-            &req,
-            data.writer.lock().await.deref_mut(),
-            config,
-            public_mode,
-        )
-        .and_then(|(v, _)| v.into_iter().next().unwrap_or(Err(ServerError)));
+        let result =
+            utils::add_links_helper(&req, &mut *data.writer.lock().await, config, public_mode)
+                .and_then(|(v, _)| v.into_iter().next().unwrap_or(Err(ServerError)));
         match result {
             Ok((shorturl, _)) => HttpResponse::Created().body(shorturl),
             Err(ClientError { reason }) => HttpResponse::Conflict().body(reason),
@@ -90,8 +86,7 @@ pub(crate) async fn add_links(req: String, auth: Auth, data: web::Data<AppState>
                 ),
             };
 
-            match utils::add_links_helper(&req, data.writer.lock().await.deref_mut(), config, false)
-            {
+            match utils::add_links_helper(&req, &mut *data.writer.lock().await, config, false) {
                 Ok((reply, single_request)) => {
                     if single_request {
                         let (status, response) = to_response(

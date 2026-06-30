@@ -14,7 +14,6 @@ use rusqlite::Connection;
 use std::{
     collections::HashMap,
     io::Result,
-    ops::DerefMut,
     sync::{Arc, Once},
 };
 use tokio::{
@@ -98,9 +97,10 @@ async fn main() -> Result<()> {
             database::cleanup(&db, conf.use_wal_mode);
         }
     });
-
+    // ArcMutex is necessary since the writer is shared across threads
     let writer = Arc::new(Mutex::new(database::open_db(&conf.db_location, false)));
 
+    // Hit counts are updated in batches of 500, or every 500ms, whichever happens first
     let (hits_tx, mut hits_rx) = mpsc::channel::<String>(1024);
     let writer_clone = writer.clone();
     spawn(async move {
@@ -122,7 +122,7 @@ async fn main() -> Result<()> {
             if !pending.is_empty() {
                 database::add_hits(
                     std::mem::take(&mut pending),
-                    writer_clone.lock().await.deref_mut(),
+                    &mut *writer_clone.lock().await,
                 );
             }
         }

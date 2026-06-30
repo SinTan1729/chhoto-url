@@ -99,7 +99,7 @@ pub(super) async fn create_app(
             if !pending.is_empty() {
                 database::add_hits(
                     std::mem::take(&mut pending),
-                    writer_clone.lock().await.deref_mut(),
+                    &mut *writer_clone.lock().await,
                 );
             }
         }
