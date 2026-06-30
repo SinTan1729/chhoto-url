@@ -75,9 +75,13 @@ pub(super) async fn create_app(
     let _ = fs::create_dir("/tmp/chhoto-url-test");
     test_cleanup(test);
     let db_file = format!("/tmp/chhoto-url-test/{test}.sqlite");
-    database::initialize_db(&db_file, conf.use_wal_mode, conf.ensure_acid);
-
     let writer = Arc::from(Mutex::from(database::open_db(&db_file, false)));
+    database::init_db(
+        &mut *writer.lock().await,
+        conf.use_wal_mode,
+        conf.ensure_acid,
+    );
+
     let (hits_tx, mut hits_rx) = mpsc::channel::<String>(1024);
     let writer_clone = writer.clone();
     spawn(async move {

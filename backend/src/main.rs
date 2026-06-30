@@ -83,52 +83,57 @@ async fn main() -> Result<()> {
 
     // Read config from env vars
     let conf = config::read();
-
-    // Do periodic cleanup
-    let db_location = conf.db_location.clone();
-    database::initialize_db(&db_location, conf.use_wal_mode, conf.ensure_acid);
-
-    spawn(async move {
-        info!("Starting database cleanup service, will run once every hour.");
-        let db = database::open_db(&db_location, false);
-        let mut interval = interval(Duration::from_secs(3600));
-        loop {
-            interval.tick().await;
-            database::cleanup(&db, conf.use_wal_mode);
-        }
-    });
     // ArcMutex is necessary since the writer is shared across threads
     let writer = Arc::new(Mutex::new(database::open_db(&conf.db_location, false)));
+    // Initialize the database and perform migrations
+    database::init_db(
+        &mut *writer.lock().await,
+        conf.use_wal_mode,
+        conf.ensure_acid,
+    );
+    // Do periodic cleanup
+    let use_wal_mode = conf.use_wal_mode;
+    spawn({
+        let writer = Arc::clone(&writer);
+        async move {
+            info!("Starting database cleanup service, will run once every hour.");
+            let mut interval = interval(Duration::from_secs(3600));
+            loop {
+                interval.tick().await;
+                database::cleanup(&*writer.lock().await, use_wal_mode);
+            }
+        }
+    });
 
     // Hit counts are updated in batches of 500, or every 500ms, whichever happens first
     let (hits_tx, mut hits_rx) = mpsc::channel::<String>(1024);
-    let writer_clone = writer.clone();
-    spawn(async move {
-        let mut pending = HashMap::new();
-        loop {
-            let Some(first) = hits_rx.recv().await else {
-                break;
-            };
-            *pending.entry(first).or_insert(0) += 1;
-            let deadline = Instant::now() + Duration::from_millis(500);
+    spawn({
+        let writer = Arc::clone(&writer);
+        async move {
+            let mut pending = HashMap::new();
+            loop {
+                let Some(first) = hits_rx.recv().await else {
+                    break;
+                };
+                *pending.entry(first).or_insert(0) += 1;
+                let deadline = Instant::now() + Duration::from_millis(500);
 
-            while pending.len() < 500 {
-                tokio::select! {
-                    Some(link) = hits_rx.recv() => *pending.entry(link).or_insert(0) += 1,
-                    _ = sleep_until(deadline) => break,
-                    else => break,
+                while pending.len() < 500 {
+                    tokio::select! {
+                        Some(link) = hits_rx.recv() => *pending.entry(link).or_insert(0) += 1,
+                        _ = sleep_until(deadline) => break,
+                        else => break,
+                    }
                 }
-            }
-            if !pending.is_empty() {
-                database::add_hits(
-                    std::mem::take(&mut pending),
-                    &mut *writer_clone.lock().await,
-                );
+                if !pending.is_empty() {
+                    database::add_hits(std::mem::take(&mut pending), &mut *writer.lock().await);
+                }
             }
         }
     });
 
-    let conf_clone = conf.clone();
+    let port = conf.port;
+    let addr = conf.listen_address.clone();
     // Actually start the server
     HttpServer::new(move || {
         let mut app = App::new()
@@ -150,8 +155,8 @@ async fn main() -> Result<()> {
             .app_data(web::Data::new(AppState {
                 hits_tx: hits_tx.clone(),
                 reader: database::open_db(&conf.db_location, true),
-                writer: writer.clone(),
-                config: conf_clone.clone(),
+                writer: Arc::clone(&writer),
+                config: conf.clone(),
             }))
             .wrap(if let Some(header) = &conf.cache_control_header {
                 middleware::DefaultHeaders::new().add(("Cache-Control", header.to_owned()))
@@ -185,12 +190,12 @@ async fn main() -> Result<()> {
         app.default_service(actix_web::web::get().to(utils::error404))
     })
     // Hardcode the port the server listens to. Allows for more intuitive Docker Compose port management
-    .bind((conf.listen_address.clone(), conf.port))
+    .bind((&*addr, port))
     .inspect(|_| {
         LOGGER.call_once(|| {
             info!(
                 "Server has started listening to {} on port {}.",
-                &conf.listen_address, conf.port
+                &addr, port
             );
         })
     })?

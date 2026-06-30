@@ -133,9 +133,8 @@ fn manage_backups(db: &Connection, backup_type: BackupType) {
 }
 
 // Initialize the database
-pub(crate) fn initialize_db(path: &str, use_wal_mode: bool, ensure_acid: bool) {
-    let mut db = Connection::open(path).expect("Unable to open database!");
-    manage_backups(&db, BackupType::Init);
+pub(crate) fn init_db(db: &mut Connection, use_wal_mode: bool, ensure_acid: bool) {
+    manage_backups(db, BackupType::Init);
 
     info!("Initializing database.");
     let (mut tables, mut indices) = db
@@ -149,7 +148,7 @@ pub(crate) fn initialize_db(path: &str, use_wal_mode: bool, ensure_acid: bool) {
         .fold(
             (HashSet::new(), HashSet::new()),
             |(mut tables, mut indices), (obj_type, name)| {
-                match obj_type.as_str() {
+                match &*obj_type {
                     "table" => {
                         tables.insert(name);
                     }
