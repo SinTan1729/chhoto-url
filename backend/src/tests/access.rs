@@ -10,7 +10,7 @@ use super::utils::*;
 async fn link_resolution() {
     let test = "link-resolution";
     let conf = default_config(test);
-    let app = create_app(&conf, test).await;
+    let (_tempdir, app) = create_app(&conf, test).await;
     let (status, _) = add_link(&app, &conf.api_key.unwrap(), "test1", 10, "").await;
     assert!(status.is_success());
 
@@ -21,15 +21,13 @@ async fn link_resolution() {
         resp.headers().get("location").unwrap(),
         "https://example-test1.com"
     );
-
-    test_cleanup(test);
 }
 
 #[test]
 async fn link_deletion() {
     let test = "link-deletion";
     let conf = default_config(test);
-    let app = create_app(&conf, test).await;
+    let (_tempdir, app) = create_app(&conf, test).await;
     let api_key = conf.api_key.clone().unwrap();
     let (status, _) = add_link(&app, &api_key, "test2", 10, "").await;
     assert!(status.is_success());
@@ -41,15 +39,13 @@ async fn link_deletion() {
 
     let resp = test::call_service(&app, req).await;
     assert!(resp.status().is_success());
-
-    test_cleanup(test);
 }
 
 #[test]
 async fn data_fetching_all() {
     let test = "data-fetching-all";
     let conf = default_config(test);
-    let app = create_app(&conf, test).await;
+    let (_tempdir, app) = create_app(&conf, test).await;
     let api_key = conf.api_key.clone().unwrap();
     let _ = add_link(&app, &api_key, "test1", 10, "").await;
     let _ = add_link(&app, &api_key, "test3", 10, "").await;
@@ -80,15 +76,13 @@ async fn data_fetching_all() {
     let reply = getall(&app, &api_key, "page_after=test3&page_size=1").await;
     assert_eq!(reply.len(), 1);
     assert_eq!(reply[0].shortlink, "test1");
-
-    test_cleanup(test);
 }
 
 #[test]
 async fn expand_link() {
     let test = "expand-link";
     let conf = default_config(test);
-    let app = create_app(&conf, test).await;
+    let (_tempdir, app) = create_app(&conf, test).await;
     let api_key = conf.api_key.unwrap();
     let _ = add_link(&app, &api_key, "test4", 10, "test-note").await;
 
@@ -96,15 +90,13 @@ async fn expand_link() {
     assert!(status.is_success());
     assert_eq!(reply.longlink, "https://example-test4.com");
     assert_eq!(reply.notes, "test-note");
-
-    test_cleanup(test);
 }
 
 #[test]
 async fn link_expiry() {
     let test = "link-expiry";
     let conf = default_config(test);
-    let app = create_app(&conf, test).await;
+    let (_tempdir, app) = create_app(&conf, test).await;
     let api_key = conf.api_key.unwrap();
 
     let (status, _) = add_link(&app, &api_key, "test1", 1, "").await;
@@ -121,15 +113,13 @@ async fn link_expiry() {
     // We should be able to add it again right away
     let (status, _) = add_link(&app, &api_key, "test1", 10, "").await;
     assert!(status.is_success());
-
-    test_cleanup(test);
 }
 
 #[test]
 async fn notes_and_filtering() {
     let test = "notes-and-filtering";
     let conf = default_config(test);
-    let app = create_app(&conf, test).await;
+    let (_tempdir, app) = create_app(&conf, test).await;
     let api_key = conf.api_key.clone().unwrap();
 
     let (status, _) = add_link(&app, &api_key, "test1", 0, "note1").await;
@@ -149,6 +139,4 @@ async fn notes_and_filtering() {
     assert_eq!(reply.len(), 2);
     assert_eq!(reply[1].shortlink, "test2");
     assert_eq!(reply[0].notes, "note1");
-
-    test_cleanup(test);
 }

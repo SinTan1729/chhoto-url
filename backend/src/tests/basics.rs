@@ -9,7 +9,7 @@ use super::utils::*;
 async fn basic_site_config() {
     let test = "basic";
     let conf = default_config(test);
-    let app = create_app(&conf, test).await;
+    let (_tempdir, app) = create_app(&conf, test).await;
 
     let req = test::TestRequest::get().uri("/api/siteurl").to_request();
     let resp = test::call_service(&app, req).await;
@@ -46,15 +46,13 @@ async fn basic_site_config() {
     let conf: BackendConfig = serde_json::from_str(body.as_str()).unwrap();
     assert!(conf.version.starts_with(env!("CARGO_PKG_VERSION")));
     assert_eq!(conf.slug_length, 8);
-
-    test_cleanup(test);
 }
 
 #[test]
 async fn auth_verification() {
     let test = "auth_verification";
     let conf = default_config(test);
-    let app = create_app(&conf, test).await;
+    let (_tempdir, app) = create_app(&conf, test).await;
 
     let req = test::TestRequest::get().uri("/api/all").to_request();
     let resp = test::call_service(&app, req).await;
@@ -78,6 +76,4 @@ async fn auth_verification() {
     let req = test::TestRequest::get().uri("/api/getconfig").to_request();
     let resp = test::call_service(&app, req).await;
     assert_eq!(resp.status(), 401);
-
-    test_cleanup(test);
 }

@@ -1,11 +1,13 @@
 // SPDX-FileCopyrightText: 2023-2026 Sayantan Santra <sayantan.santra689@gmail.com>
 // SPDX-License-Identifier: MIT
 
+use std::{fmt::Display, rc::Rc};
+
 use actix_http::{Request, StatusCode};
 use actix_service::Service;
 use actix_web::{App, Error, body::to_bytes, dev::ServiceResponse, test, web::Bytes};
 use serde::Deserialize;
-use std::{fmt::Display, fs, rc::Rc};
+use tempfile::TempDir;
 
 use crate::*;
 
@@ -71,11 +73,16 @@ pub(super) fn default_config(test: &str) -> config::Config {
 pub(super) async fn create_app(
     conf: &config::Config,
     test: &str,
-) -> impl Service<Request, Response = ServiceResponse, Error = Error> + use<> {
-    let _ = fs::create_dir("/tmp/chhoto-url-test");
-    test_cleanup(test);
-    let db_file = format!("/tmp/chhoto-url-test/{test}.sqlite");
-    let writer = Arc::from(Mutex::from(database::open_db(&db_file, false)));
+) -> (
+    TempDir,
+    impl Service<Request, Response = ServiceResponse, Error = Error> + use<>,
+) {
+    let tempdir = TempDir::new().unwrap();
+    let db_file = tempdir.path().join(format!("{test}.sqlite"));
+    let writer = Arc::from(Mutex::from(database::open_db(
+        db_file.to_str().unwrap(),
+        false,
+    )));
     database::init_db(
         &mut *writer.lock().await,
         conf.use_wal_mode,
@@ -83,58 +90,54 @@ pub(super) async fn create_app(
     );
 
     let (hits_tx, mut hits_rx) = mpsc::channel::<String>(1024);
-    let writer_clone = writer.clone();
-    spawn(async move {
-        let mut pending = HashMap::new();
-        loop {
-            let Some(first) = hits_rx.recv().await else {
-                break;
-            };
-            *pending.entry(first).or_insert(0) += 1;
-            let deadline = Instant::now() + Duration::from_millis(500);
+    spawn({
+        let writer = Arc::clone(&writer);
+        async move {
+            let mut pending = HashMap::new();
+            loop {
+                let Some(first) = hits_rx.recv().await else {
+                    break;
+                };
+                *pending.entry(first).or_insert(0) += 1;
+                let deadline = Instant::now() + Duration::from_millis(500);
 
-            while pending.len() < 500 {
-                tokio::select! {
-                    Some(link) = hits_rx.recv() => *pending.entry(link).or_insert(0) += 1,
-                    _ = sleep_until(deadline) => break,
-                    else => break,
+                while pending.len() < 500 {
+                    tokio::select! {
+                        Some(link) = hits_rx.recv() => *pending.entry(link).or_insert(0) += 1,
+                        _ = sleep_until(deadline) => break,
+                        else => break,
+                    }
                 }
-            }
-            if !pending.is_empty() {
-                database::add_hits(
-                    std::mem::take(&mut pending),
-                    &mut *writer_clone.lock().await,
-                );
+                if !pending.is_empty() {
+                    database::add_hits(std::mem::take(&mut pending), &mut *writer.lock().await);
+                }
             }
         }
     });
 
-    test::init_service(
-        App::new()
-            .app_data(web::Data::new(AppState {
-                hits_tx,
-                reader: database::open_db(&db_file, false),
-                writer,
-                config: conf.clone(),
-            }))
-            .service(services::siteurl)
-            .service(services::version)
-            .service(services::getconfig)
-            .service(services::add_links)
-            .service(services::getall)
-            .service(services::link_handler)
-            .service(services::edit_link)
-            .service(services::delete_link)
-            .service(services::whoami)
-            .service(services::expand),
+    (
+        tempdir,
+        test::init_service(
+            App::new()
+                .app_data(web::Data::new(AppState {
+                    hits_tx,
+                    reader: database::open_db(db_file.to_str().unwrap(), false),
+                    writer,
+                    config: conf.clone(),
+                }))
+                .service(services::siteurl)
+                .service(services::version)
+                .service(services::getconfig)
+                .service(services::add_links)
+                .service(services::getall)
+                .service(services::link_handler)
+                .service(services::edit_link)
+                .service(services::delete_link)
+                .service(services::whoami)
+                .service(services::expand),
+        )
+        .await,
     )
-    .await
-}
-
-pub(super) fn test_cleanup(test: &str) {
-    for suffix in ["", ".bak1", ".bak2", "-shm", "-wal"] {
-        let _ = fs::remove_file(format!("/tmp/chhoto-url-test/{test}.sqlite{suffix}"));
-    }
 }
 
 pub(super) async fn add_link<

@@ -12,7 +12,7 @@ use crate::*;
 async fn adding_link_with_shortlink() {
     let test = "adding";
     let conf = default_config(test);
-    let app = create_app(&conf, test).await;
+    let (_tempdir, app) = create_app(&conf, test).await;
     let api_key = conf.api_key.unwrap();
     for shortlink in ["test1", "test2", "test3"] {
         let (status, reply) = add_link(&app, &api_key, shortlink, 10, "").await;
@@ -23,8 +23,6 @@ async fn adding_link_with_shortlink() {
     let (status, reply) = add_link(&app, &api_key, "test1", 10, "").await;
     assert!(status.is_client_error());
     assert_eq!(reply.reason, "Short URL is already in use!");
-
-    test_cleanup(test);
 }
 
 #[test]
@@ -32,7 +30,7 @@ async fn adding_link_with_shortlink_capital_letters() {
     let test = "adding-capital";
     let mut conf = default_config(test);
     conf.allow_capital_letters = true;
-    let app = create_app(&conf, test).await;
+    let (_tempdir, app) = create_app(&conf, test).await;
     let api_key = conf.api_key.unwrap();
     for shortlink in ["Test1", "Test2", "Test3"] {
         let (status, reply) = add_link(&app, &api_key, shortlink, 10, "").await;
@@ -43,22 +41,18 @@ async fn adding_link_with_shortlink_capital_letters() {
     let (status, reply) = add_link(&app, &api_key, "Test1", 10, "").await;
     assert!(status.is_client_error());
     assert_eq!(reply.reason, "Short URL is already in use!");
-
-    test_cleanup(test);
 }
 
 #[test]
 async fn adding_link_with_generated_shortlink_with_pair_slug() {
     let test = "shortlink-with-pair-slug";
     let conf = default_config(test);
-    let app = create_app(&conf, test).await;
+    let (_tempdir, app) = create_app(&conf, test).await;
     let (status, reply) = add_link(&app, &conf.api_key.unwrap(), "", 10, "").await;
 
     assert!(status.is_success());
     let re = Regex::new(r"^https://mydomain.com/[a-z]+-[a-z]+$").unwrap();
     assert!(re.is_match(reply.shortlink.as_str()));
-
-    test_cleanup(test);
 }
 
 #[test]
@@ -67,14 +61,12 @@ async fn adding_link_with_generated_shortlink_with_uid_slug() {
     let mut conf = default_config(test);
     conf.slug_style = config::SlugStyle::Uid;
     conf.slug_length = 12;
-    let app = create_app(&conf, test).await;
+    let (_tempdir, app) = create_app(&conf, test).await;
     let (status, reply) = add_link(&app, &conf.api_key.unwrap(), "", 10, "").await;
 
     assert!(status.is_success());
     let re = Regex::new(r"^https://mydomain.com/[a-z0-9]{12}$").unwrap();
     assert!(re.is_match(reply.shortlink.as_str()));
-
-    test_cleanup(test);
 }
 
 #[test]
@@ -83,7 +75,7 @@ async fn batch_insertion() {
     let mut conf = default_config(test);
     conf.slug_style = config::SlugStyle::Uid;
     conf.slug_length = 12;
-    let app = create_app(&conf, test).await;
+    let (_tempdir, app) = create_app(&conf, test).await;
     let req = test::TestRequest::post()
         .uri("/api/new")
         .insert_header(("X-API-Key", conf.api_key.unwrap()))
@@ -104,8 +96,6 @@ async fn batch_insertion() {
     assert!(urls.pop().unwrap().expiry_time > 0);
     assert_eq!(urls.pop().unwrap().shortlink, "https://mydomain.com/test2");
     assert_eq!(urls.pop().unwrap().shortlink, "https://mydomain.com/test1");
-
-    test_cleanup(test);
 }
 
 #[test]
@@ -115,14 +105,12 @@ async fn adding_link_with_generated_shortlink_with_uid_slug_capital_letters() {
     conf.slug_style = config::SlugStyle::Uid;
     conf.slug_length = 12;
     conf.allow_capital_letters = true;
-    let app = create_app(&conf, test).await;
+    let (_tempdir, app) = create_app(&conf, test).await;
     let (status, reply) = add_link(&app, &conf.api_key.unwrap(), "", 10, "").await;
 
     assert!(status.is_success());
     let re = Regex::new(r"^https://mydomain.com/[A-Za-z0-9]{12}$").unwrap();
     assert!(re.is_match(reply.shortlink.as_str()));
-
-    test_cleanup(test);
 }
 
 #[test]
@@ -133,7 +121,7 @@ async fn adding_link_with_retry_on_collision() {
     conf.slug_length = 1;
     conf.try_longer_slug = true;
 
-    let app = create_app(&conf, test).await;
+    let (_tempdir, app) = create_app(&conf, test).await;
     let api_key = &conf.api_key.unwrap();
 
     // Add every possible single-character shortlink
@@ -164,15 +152,13 @@ async fn adding_link_with_retry_on_collision() {
         let (status, _) = add_link(&app, api_key, "a", 10, "").await;
         assert!(status.is_client_error());
     }
-
-    test_cleanup(test);
 }
 
 #[test]
 async fn link_editing() {
     let test = "link-editing";
     let conf = default_config(test);
-    let app = create_app(&conf, test).await;
+    let (_tempdir, app) = create_app(&conf, test).await;
     let api_key = conf.api_key.clone().unwrap();
 
     let (status, _) = add_link(&app, &api_key, "test1", 0, "").await;
@@ -212,6 +198,4 @@ async fn link_editing() {
     sleep(one_second);
     let status = edit_link(&app, &api_key, "test2", true, None, None).await;
     assert!(status.is_client_error());
-
-    test_cleanup(test);
 }
