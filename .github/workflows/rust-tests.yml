@@ -5,10 +5,11 @@ name: Run Tests
 
 on:
   push:
-    branches: ["*"]
-    paths: ["backend/**"]
+    branches:
+      - dev
+    paths:
+      - "backend/**"
   pull_request:
-    branches: ["*"]
   workflow_dispatch:
 
 env:
