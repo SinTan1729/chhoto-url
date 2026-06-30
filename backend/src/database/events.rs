@@ -225,8 +225,13 @@ pub(crate) fn add_links(
             for (i, req) in chunk {
                 let expiry_time = req.expiry_delay.map(|delay| now + delay);
                 output.push(match statement.execute(
-                named_params! {":long": req.longlink, ":short": req.shortlink,
-                ":expiry": expiry_time, ":now": now, ":notes" : req.notes},
+                named_params! {
+                    ":long": req.longlink,
+                    ":short": req.shortlink,
+                    ":expiry": expiry_time,
+                    ":now": now,
+                    ":notes" : req.notes
+                },
             ) {
                 Ok(1) => {
                     debug!(
