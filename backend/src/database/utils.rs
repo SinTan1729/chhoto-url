@@ -339,8 +339,8 @@ pub(crate) fn open_db(path: &str, read_only: bool) -> Connection {
         let flags = OpenFlags::SQLITE_OPEN_READ_ONLY
             | OpenFlags::SQLITE_OPEN_URI
             | OpenFlags::SQLITE_OPEN_NO_MUTEX;
-        Connection::open_with_flags(path, flags).expect("Unable to open database.")
+        Connection::open_with_flags(path, flags).expect("Unable to open reader database.")
     } else {
-        Connection::open(path).expect("Unable to open database.")
+        Connection::open(path).expect("Unable to open writer database.")
     }
 }
