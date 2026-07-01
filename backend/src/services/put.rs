@@ -19,7 +19,9 @@ pub(crate) async fn edit_link(req: String, auth: Auth, data: web::Data<AppState>
     let config = &data.config;
     match auth {
         Auth::ValidAPIKey | Auth::ValidSession => {
-            match utils::edit_link_helper(&req, &*data.writer.lock().await, config) {
+            match utils::edit_link_helper(&req, &*data.writer.lock().await, &data.hits_tx, config)
+                .await
+            {
                 Ok(()) => {
                     let body = JSONResponse {
                         success: true,

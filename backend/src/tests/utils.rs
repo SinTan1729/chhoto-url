@@ -89,31 +89,8 @@ pub(super) async fn create_app(
         conf.ensure_acid,
     );
 
-    let (hits_tx, mut hits_rx) = mpsc::channel::<String>(1024);
-    spawn({
-        let writer = Arc::clone(&writer);
-        async move {
-            let mut pending = HashMap::new();
-            loop {
-                let Some(first) = hits_rx.recv().await else {
-                    break;
-                };
-                *pending.entry(first).or_insert(0) += 1;
-                let deadline = Instant::now() + Duration::from_millis(500);
-
-                while pending.len() < 500 {
-                    tokio::select! {
-                        Some(link) = hits_rx.recv() => *pending.entry(link).or_insert(0) += 1,
-                        _ = sleep_until(deadline) => break,
-                        else => break,
-                    }
-                }
-                if !pending.is_empty() {
-                    database::add_hits(std::mem::take(&mut pending), &mut *writer.lock().await);
-                }
-            }
-        }
-    });
+    let (hits_tx, hits_rx) = mpsc::channel::<(String, bool)>(1024);
+    background::spawn_hits_worker(Arc::clone(&writer), hits_rx);
 
     (
         tempdir,

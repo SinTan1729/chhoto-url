@@ -9,6 +9,7 @@ use rand::{random_range, seq::IndexedRandom};
 use rusqlite::Connection;
 use serde::Deserialize;
 use std::env;
+use tokio::sync::mpsc;
 use url::Url;
 
 use crate::{
@@ -227,9 +228,10 @@ pub(super) fn add_links_helper(
 }
 
 // Make checks and then request the DB to edit an URL entry
-pub(super) fn edit_link_helper(
+pub(super) async fn edit_link_helper(
     req: &str,
     db: &Connection,
+    hits_tx: &mpsc::Sender<(String, bool)>,
     config: &Config,
 ) -> Result<(), ChhotoError> {
     let chunks: EditURLRequest;
@@ -256,8 +258,10 @@ pub(super) fn edit_link_helper(
         chunks.reset_hits,
         chunks.expiry_time.filter(|&t| t > 0),
         chunks.notes.filter(|s| !s.is_empty()).as_deref(),
+        hits_tx,
         db,
-    );
+    )
+    .await;
     match result {
         // Zero rows returned means no updates
         Ok(0) => Err(ClientError {

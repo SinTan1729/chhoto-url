@@ -12,18 +12,14 @@ use actix_web::{
 use log::info;
 use rusqlite::Connection;
 use std::{
-    collections::HashMap,
     io::Result,
     sync::{Arc, Once},
 };
-use tokio::{
-    spawn,
-    sync::{Mutex, mpsc},
-    time::{Duration, Instant, interval, sleep_until},
-};
+use tokio::sync::{Mutex, mpsc};
 
 // Import modules
 mod auth;
+mod background;
 mod config;
 mod database;
 mod services;
@@ -36,7 +32,7 @@ mod tests;
 
 // This struct represents state
 struct AppState {
-    hits_tx: mpsc::Sender<String>,
+    hits_tx: mpsc::Sender<(String, bool)>,
     reader: Connection,
     writer: Arc<Mutex<Connection>>,
     config: config::Config,
@@ -85,52 +81,15 @@ async fn main() -> Result<()> {
     let conf = config::read();
     // ArcMutex is necessary since the writer is shared across threads
     let writer = Arc::new(Mutex::new(database::open_db(&conf.db_location, false)));
+
     // Initialize the database and perform migrations
-    database::init_db(
-        &mut *writer.lock().await,
-        conf.use_wal_mode,
-        conf.ensure_acid,
-    );
-    // Do periodic cleanup
     let use_wal_mode = conf.use_wal_mode;
-    spawn({
-        let writer = Arc::clone(&writer);
-        async move {
-            info!("Starting database cleanup service, will run once every hour.");
-            let mut interval = interval(Duration::from_secs(3600));
-            loop {
-                interval.tick().await;
-                database::cleanup(&*writer.lock().await, use_wal_mode);
-            }
-        }
-    });
-
-    // Hit counts are updated in batches of 500, or every 500ms, whichever happens first
-    let (hits_tx, mut hits_rx) = mpsc::channel::<String>(1024);
-    spawn({
-        let writer = Arc::clone(&writer);
-        async move {
-            let mut pending = HashMap::new();
-            loop {
-                let Some(first) = hits_rx.recv().await else {
-                    break;
-                };
-                *pending.entry(first).or_insert(0) += 1;
-                let deadline = Instant::now() + Duration::from_millis(500);
-
-                while pending.len() < 500 {
-                    tokio::select! {
-                        Some(link) = hits_rx.recv() => *pending.entry(link).or_insert(0) += 1,
-                        _ = sleep_until(deadline) => break,
-                        else => break,
-                    }
-                }
-                if !pending.is_empty() {
-                    database::add_hits(std::mem::take(&mut pending), &mut *writer.lock().await);
-                }
-            }
-        }
-    });
+    database::init_db(&mut *writer.lock().await, use_wal_mode, conf.ensure_acid);
+    // Do periodic cleanup
+    background::spawn_cleaner(Arc::clone(&writer), use_wal_mode);
+    // Run hit updates every 500ms or once 500 distinct links are pending.
+    let (hits_tx, hits_rx) = mpsc::channel::<(String, bool)>(1024);
+    background::spawn_hits_worker(Arc::clone(&writer), hits_rx);
 
     let port = conf.port;
     let addr = conf.listen_address.clone();
