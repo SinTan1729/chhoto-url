@@ -155,6 +155,11 @@ pub(super) fn add_links_helper(
             reason: "Invalid request!".to_string(),
         });
     };
+    if chunks.is_empty() {
+        return Err(ClientError {
+            reason: "An empty array of links was provided!".to_string(),
+        });
+    }
 
     let mut output: Vec<_> = (0..chunks.len()).map(|_| Err(ServerError)).collect();
     let (mut with_shortlinks, mut without_shortlinks) = (Vec::new(), Vec::new());
@@ -224,6 +229,9 @@ pub(super) fn add_links_helper(
         }
     }
 
+    if !single_request {
+        debug!("Processed a batch of {} requests.", output.len());
+    }
     Ok((output, single_request))
 }
 
