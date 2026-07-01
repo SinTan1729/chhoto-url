@@ -56,6 +56,7 @@ fn get_db_location() -> String {
         .map(|s| s.trim().to_owned())
         .filter(|s| !s.is_empty())
     {
+        info!("Custom database location was provided.");
         return db_url;
     }
 
@@ -251,21 +252,20 @@ pub(crate) fn read() -> Config {
         .unwrap_or(8);
     let try_longer_slug = read_config_wrapper("CHHOTO_TRY_LONGER_SLUG", "try_longer_slug")
         .is_ok_and(|s| s.trim() == "True");
-    let slug_style = match read_config_wrapper("CHHOTO_SLUG_STYLE", "slug_style")
-        .map(|s| s.trim().to_owned())
-    {
-        Ok(style) if style == "UID" => {
-            info!("Using UID slugs with length {slug_length}.");
-            if try_longer_slug {
-                info!("Will retry with a longer slug upon collision.");
+    let slug_style =
+        match read_config_wrapper("CHHOTO_SLUG_STYLE", "slug_style").map(|s| s.trim().to_owned()) {
+            Ok(style) if style == "UID" => {
+                info!("Using UID slugs with length {slug_length}.");
+                if try_longer_slug {
+                    info!("Will retry with a longer slug upon collision.");
+                }
+                SlugStyle::Uid
             }
-            SlugStyle::Uid
-        }
-        _ => {
-            info!("Using adjective-noun pair slugs.");
-            SlugStyle::Pair
-        }
-    };
+            _ => {
+                info!("Using adjective-noun pair slugs.");
+                SlugStyle::Pair
+            }
+        };
 
     let allow_capital_letters =
         read_config_wrapper("CHHOTO_ALLOW_CAPITAL_LETTERS", "allow_capital_letters")
