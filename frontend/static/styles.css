@@ -126,6 +126,9 @@ a {
   float: right;
   text-align: right;
 }
+#filterText {
+  height: 2.2em;
+}
 
 #controls,
 #optionsSection summary {
@@ -380,6 +383,9 @@ details.chhoto-input summary {
   #filter-div {
     float: none;
     text-align: inherit;
+  }
+  #filterText {
+    height: auto;
   }
 
   .chhoto-table td::before {
