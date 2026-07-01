@@ -7,6 +7,7 @@ use std::{
     env::{VarError, var},
     fmt::Display,
     fs,
+    path::Path,
 };
 
 use crate::auth;
@@ -60,37 +61,48 @@ fn get_db_location() -> String {
         return db_url;
     }
 
-    fs::create_dir_all("/data").expect("Unable to create /data directory!");
-    let old_exists = fs::exists("/urls.sqlite").unwrap_or(false);
-    let new_exists = fs::exists("/data/urls.sqlite").unwrap_or(false);
+    let (legacy_location, new_location) = ("/urls.sqlite", "/data/urls.sqlite");
+    if let Some(parent) = Path::new(new_location).parent() {
+        fs::create_dir_all(parent).expect("Unable to create database directory!");
+    }
+    let legacy_exists = fs::exists(legacy_location).unwrap_or(false);
+    let new_exists = fs::exists(new_location).unwrap_or(false);
+    let bak_location = format!("{legacy_location}.bak");
 
-    match (old_exists, new_exists) {
+    match (legacy_exists, new_exists) {
         (true, false) => {
-            fs::copy("/urls.sqlite", "/data/urls.sqlite.tmp")
+            let tmp_location = format!("{new_location}.tmp");
+            fs::copy(legacy_location, &tmp_location)
                 .expect("Unable to copy database to new location!");
-            fs::rename("/data/urls.sqlite.tmp", "/data/urls.sqlite")
-                .expect("Unable to rename the new database.");
-            info!("Migrated database from /urls.sqlite to /data/urls.sqlite.");
-            if let Err(e) = fs::rename("/urls.sqlite", "/urls.sqlite.bak") {
-                warn!("Unable to rename the old database: {e}");
+            fs::rename(&tmp_location, new_location).expect("Unable to rename the new database.");
+            info!("Migrated database from {legacy_location} to {new_location}.");
+            if let Err(e) = fs::rename(legacy_location, &bak_location) {
+                warn!("Unable to rename the legacy database: {e}");
             } else {
-                info!("Kept a backup of the old database at /urls.sqlite.bak.");
+                info!("Kept a backup of the legacy database at {bak_location}.");
             }
         }
         (true, true) => {
             warn!(
-                "Found databases at both /urls.sqlite and /data/urls.sqlite. Using /data/urls.sqlite."
+                "Found databases at both {legacy_location} and {new_location}. Using {new_location}."
             );
-            warn!("Verify that the old database is no longer needed, then remove /urls.sqlite.");
+            warn!(
+                "Verify that the legacy database is no longer needed, then remove {legacy_location}."
+            );
         }
         (false, false) => {
             info!("No existing database was found. Will create a new one.");
         }
         (false, true) => {
-            info!("Existing database found at /data/urls.sqlite.");
+            if fs::exists(&bak_location).unwrap_or(false) {
+                warn!(
+                    "A leftover backup file exists at {bak_location}. You might want to delete it."
+                );
+            }
+            info!("Existing database found at {new_location}.");
         }
     }
-    String::from("/data/urls.sqlite")
+    new_location.to_owned()
 }
 
 // Struct for storing config read form env vars that might be accessed more than once
