@@ -21,7 +21,7 @@ pub(crate) fn spawn_hits_worker(
             let mut pending = HashMap::new();
             fn update_count(link: String, reset: bool, pending: &mut HashMap<String, i64>) {
                 if reset {
-                    *pending.entry(link).or_insert(0) = 0;
+                    pending.remove(&link);
                 } else {
                     *pending.entry(link).or_insert(0) += 1;
                 }

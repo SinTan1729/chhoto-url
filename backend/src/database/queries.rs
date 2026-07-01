@@ -92,6 +92,7 @@ pub(super) const EDIT_LINK: &str = "
 UPDATE urls
   SET
     long_url = :long,
+    hits = COALESCE(:hits, hits),
     notes = COALESCE(:notes, notes),
     expiry_time = COALESCE(:expiry, expiry_time)
   WHERE short_url = :short

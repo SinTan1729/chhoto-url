@@ -159,7 +159,7 @@ pub(crate) async fn find_and_add_hit(
 
     debug!("Accessed link: {shortlink}.");
     if let Err(err) = hits_tx.send((shortlink.to_string(), false)).await {
-        error!("Failed to enqueue hit update: {err}");
+        error!("Failed to enqueue hit update after access: {err}");
     }
     Ok(long_url)
 }
@@ -288,13 +288,14 @@ pub(crate) async fn edit_link(
         return Err(());
     };
     if reset_hits && let Err(err) = hits_tx.send((shortlink.to_string(), true)).await {
-        error!("Failed to enqueue hit update: {err}");
+        error!("Failed to enqueue hit update after edit: {err}");
     }
     statement
         .execute(named_params! {
             ":long": longlink,
             ":short": shortlink,
             ":now": now,
+            ":hits": reset_hits.then_some(0),
             ":notes": notes,
             ":expiry": expiry_time,
         })
