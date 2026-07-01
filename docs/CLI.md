@@ -24,7 +24,7 @@ API key which may be used.
 
 **All responses for requests using API key are JSON encoded.**
 
-Example Linux command for generating a secure API key: `tr -dc A-Za-z0-9 </dev/urandom | head -c 128`
+Example Linux command for generating a secure API key: `tr -dc A-Za-z0-9 < /dev/urandom | head -c 128`
 
 For each response, the response code will be `200`, `401`, `400`, `500`, or `404`, depending on the context. The routes are as follows.
 
@@ -75,7 +75,31 @@ or
 }
 ```
 
-Multiple links can be created in a single request by sending an array of objects. In that case, the response is an array containing one
+Multiple links can be created in a single request by sending an array of objects like the example below.
+```bash
+curl -X POST \
+    -H "X-API-Key: <YOUR_API_KEY>" \
+    -d '[ \
+            { \
+                "shortlink":"<shortlink1>", \
+                "longlink":"<longlink1>", \
+                "expiry_delay": <expiry_delay1>, \
+                "notes": "<notes1>" \
+            }' \
+        ,
+            { \
+                "shortlink":"<shortlink2>", \
+                "longlink":"<longlink2>", \
+                "expiry_delay": <expiry_delay2>, \
+                "notes": "<notes2>" \
+          }' \
+        ...
+        ...
+        ] \
+    http://localhost:4567/api/new
+```
+
+In that case, the response is an array containing one
 result per input object (in order), each in one of the formats shown above.
 
 Except for malformed requests or internal server errors, the HTTP status code is always `200`. Clients must inspect the `success` field of
