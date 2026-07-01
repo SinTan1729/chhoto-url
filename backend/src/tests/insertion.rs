@@ -3,7 +3,7 @@
 
 use actix_web::{body::to_bytes, test};
 use regex::Regex;
-use std::time::Duration;
+use tokio::time::{Duration, sleep};
 
 use super::utils::*;
 use crate::*;
@@ -196,7 +196,7 @@ async fn link_editing() {
     let resp = test::call_service(&app, req).await;
 
     let timer = Duration::from_millis(800);
-    tokio::time::sleep(timer).await;
+    sleep(timer).await;
 
     let now = chrono::Utc::now().timestamp();
     let status = edit_link(&app, &api_key, "test2", false, Some(now + 1), None).await;
