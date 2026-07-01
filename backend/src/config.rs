@@ -6,6 +6,7 @@ use passwords::{analyzer::analyze, scorer::score};
 use std::{
     env::{VarError, var},
     fmt::Display,
+    fs,
 };
 
 use crate::auth;
@@ -34,9 +35,9 @@ pub(crate) enum HashAlgorithm {
     None,
 }
 
+// This is needed to support old variable names.
+// Might be deprecated at a later point.
 fn read_config_wrapper(new_name: &str, old_name: &str) -> Result<String, VarError> {
-    // This is needed to support old variable names.
-    // Might be deprecated at a later point.
     var(new_name).or_else(|e| match e {
         VarError::NotPresent => var(old_name).inspect(|_| {
             warn!(
@@ -46,6 +47,49 @@ fn read_config_wrapper(new_name: &str, old_name: &str) -> Result<String, VarErro
         }),
         _ => Err(e),
     })
+}
+
+// Get db location, and move from old location if needed
+fn get_db_location() -> String {
+    if let Some(db_url) = read_config_wrapper("CHHOTO_DB_URL", "db_url")
+        .ok()
+        .map(|s| s.trim().to_string())
+        .filter(|s| !s.is_empty())
+    {
+        return db_url;
+    }
+
+    fs::create_dir_all("/data").expect("Unable to create /data directory!");
+    let old_exists = fs::exists("/urls.sqlite").unwrap_or(false);
+    let new_exists = fs::exists("/data/urls.sqlite").unwrap_or(false);
+
+    match (old_exists, new_exists) {
+        (true, false) => {
+            fs::copy("/urls.sqlite", "/data/urls.sqlite.tmp")
+                .expect("Unable to copy database to new location!");
+            fs::rename("/data/urls.sqlite.tmp", "/data/urls.sqlite")
+                .expect("Unable to rename the new database.");
+            info!("Migrated database from /urls.sqlite to /data/urls.sqlite.");
+            if let Err(e) = fs::rename("/urls.sqlite", "/urls.sqlite.bak") {
+                warn!("Unable to rename the old database: {e}");
+            } else {
+                info!("Kept a backup of the old database at /urls.sqlite.bak.");
+            }
+        }
+        (true, true) => {
+            warn!(
+                "Found databases at both /urls.sqlite and /data/urls.sqlite. Using /data/urls.sqlite."
+            );
+            warn!("Verify that the old database is no longer needed, then remove /urls.sqlite.");
+        }
+        (false, false) => {
+            info!("No existing database was found. Will create a new one.");
+        }
+        (false, true) => {
+            info!("Existing database found at /data/urls.sqlite.");
+        }
+    }
+    String::from("/data/urls.sqlite")
 }
 
 // Struct for storing config read form env vars that might be accessed more than once
@@ -74,11 +118,7 @@ pub(crate) struct Config {
 }
 
 pub(crate) fn read() -> Config {
-    let db_location = read_config_wrapper("CHHOTO_DB_URL", "db_url")
-        .ok()
-        .map(|s| s.trim().to_string())
-        .filter(|s| !s.is_empty())
-        .unwrap_or(String::from("urls.sqlite"));
+    let db_location = get_db_location();
     info!("Database Location is set to: {db_location}");
 
     // Get the address environment variable
