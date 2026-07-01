@@ -34,7 +34,7 @@ pub(crate) async fn edit_link(req: String, auth: Auth, data: web::Data<AppState>
                     let body = JSONResponse {
                         success: false,
                         error: true,
-                        reason: "Something went wrong when editing the link.".to_string(),
+                        reason: "Something went wrong when editing the link.".to_owned(),
                     };
                     HttpResponse::InternalServerError().json(body)
                 }

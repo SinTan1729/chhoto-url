@@ -250,7 +250,7 @@ pub(crate) fn init_db(db: &mut Connection, use_wal_mode: bool, ensure_acid: bool
             tx.execute("DROP TABLE urls_fts", ())
                 .expect("Unable to delete old urls_fts table.");
         }
-        (tables, indices) = (HashSet::from(["urls".to_string()]), HashSet::new());
+        (tables, indices) = (HashSet::from(["urls".to_owned()]), HashSet::new());
         tx.pragma_update(None, "user_version", 3)
             .expect("Unable to set pragma: user_version.");
         tx.commit()

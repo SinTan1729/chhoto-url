@@ -53,7 +53,7 @@ pub(crate) async fn delete_link(
                     let response = JSONResponse {
                         success: false,
                         error: true,
-                        reason: "Something went wrong when deleting the link.".to_string(),
+                        reason: "Something went wrong when deleting the link.".to_owned(),
                     };
                     HttpResponse::InternalServerError().json(response)
                 }

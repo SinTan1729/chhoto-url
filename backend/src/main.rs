@@ -47,7 +47,7 @@ async fn main() -> Result<()> {
             std::env::var("RUST_LOG")
                 .ok()
                 .filter(|s| !s.is_empty())
-                .unwrap_or("warn,chhoto_url=info,actix_session::middleware=error".to_string())
+                .unwrap_or("warn,chhoto_url=info,actix_session::middleware=error".to_owned())
                 .as_str(),
         )
         .format(|buf, record| {

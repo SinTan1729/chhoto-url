@@ -28,13 +28,13 @@ fn is_api_ok(req: &HttpRequest, config: &Config) -> JSONResponse {
                 JSONResponse {
                     success: true,
                     error: false,
-                    reason: "Correct API key.".to_string(),
+                    reason: "Correct API key.".to_owned(),
                 }
             } else {
                 JSONResponse {
                     success: false,
                     error: true,
-                    reason: "API validation failed.".to_string(),
+                    reason: "API validation failed.".to_owned(),
                 }
             }
         // The header may not exist when the user logs in through the web interface, so allow a request with no header.
@@ -44,7 +44,7 @@ fn is_api_ok(req: &HttpRequest, config: &Config) -> JSONResponse {
             JSONResponse {
                 success: false,
                 error: false,
-                reason: "No valid authentication.".to_string(),
+                reason: "No valid authentication.".to_owned(),
             }
         }
     } else {
@@ -53,13 +53,13 @@ fn is_api_ok(req: &HttpRequest, config: &Config) -> JSONResponse {
             JSONResponse {
                 success: false,
                 error: true,
-                reason: "API validation failed.".to_string(),
+                reason: "API validation failed.".to_owned(),
             }
         } else {
             JSONResponse {
                 success: false,
                 error: false,
-                reason: "No valid authentication.".to_string(),
+                reason: "No valid authentication.".to_owned(),
             }
         }
     }

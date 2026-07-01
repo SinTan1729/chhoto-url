@@ -45,7 +45,7 @@ pub(crate) fn find_url(shortlink: &str, db: &Connection) -> Result<DBRow, Chhoto
             debug!("Expanded link: {shortlink}.");
         })
         .map_err(|_| ChhotoError::ClientError {
-            reason: "The shortlink does not exist on the server!".to_string(),
+            reason: "The shortlink does not exist on the server!".to_owned(),
         })
 }
 
@@ -158,7 +158,7 @@ pub(crate) async fn find_and_add_hit(
     };
 
     debug!("Accessed link: {shortlink}.");
-    if let Err(err) = hits_tx.send((shortlink.to_string(), false)).await {
+    if let Err(err) = hits_tx.send((shortlink.to_owned(), false)).await {
         error!("Failed to enqueue hit update after access: {err}");
     }
     Ok(long_url)
@@ -204,7 +204,7 @@ pub(crate) fn add_links(
     }
     let now = chrono::Utc::now().timestamp();
     let in_use_error = ClientError {
-        reason: "Short URL is already in use!".to_string(),
+        reason: "Short URL is already in use!".to_owned(),
     };
     let mut output = Vec::with_capacity(requests.len());
     let mut rejected = Vec::with_capacity(requests.len());
@@ -290,7 +290,7 @@ pub(crate) async fn edit_link(
         error!("Error preparing SQL statement for edit_link.");
         return Err(());
     };
-    if reset_hits && let Err(err) = hits_tx.send((shortlink.to_string(), true)).await {
+    if reset_hits && let Err(err) = hits_tx.send((shortlink.to_owned(), true)).await {
         error!("Failed to enqueue hit update after edit: {err}");
     }
     statement
@@ -328,7 +328,7 @@ pub(crate) fn delete_link(shortlink: &str, db: &Connection) -> Result<(), Chhoto
             Ok(())
         }
         _ => Err(ClientError {
-            reason: "The shortlink was not found, and could not be deleted.".to_string(),
+            reason: "The shortlink was not found, and could not be deleted.".to_owned(),
         }),
     }
 }

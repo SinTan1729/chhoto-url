@@ -33,7 +33,7 @@ pub(crate) async fn getall(
         _ => match utils::getall_helper(&data.reader, params.into_inner()) {
             Ok(s) => HttpResponse::Ok().body(s),
             Err(ServerError) => HttpResponse::InternalServerError()
-                .body("Something went wrong while loading the links.".to_string()),
+                .body("Something went wrong while loading the links.".to_owned()),
             Err(ClientError { reason }) => HttpResponse::BadRequest().body(reason),
         },
     }

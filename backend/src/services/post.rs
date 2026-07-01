@@ -37,7 +37,7 @@ pub(crate) async fn add_links(req: String, auth: Auth, data: web::Data<AppState>
             Ok((shorturl, _)) => HttpResponse::Created().body(shorturl),
             Err(ClientError { reason }) => HttpResponse::Conflict().body(reason),
             Err(ServerError) => {
-                HttpResponse::InternalServerError().body(SERVER_ERROR_RES.to_string())
+                HttpResponse::InternalServerError().body(SERVER_ERROR_RES.to_owned())
             }
         }
     };
@@ -81,7 +81,7 @@ pub(crate) async fn add_links(req: String, auth: Auth, data: web::Data<AppState>
                     AddLinkResponse::Error(JSONResponse {
                         success: false,
                         error: true,
-                        reason: SERVER_ERROR_RES.to_string(),
+                        reason: SERVER_ERROR_RES.to_owned(),
                     }),
                 ),
             };
@@ -141,7 +141,7 @@ pub(crate) async fn expand(req: String, auth: Auth, data: web::Data<AppState>) -
                 let body = JSONResponse {
                     success: false,
                     error: true,
-                    reason: SERVER_ERROR_RES.to_string(),
+                    reason: SERVER_ERROR_RES.to_owned(),
                 };
                 HttpResponse::BadRequest().json(body)
             }
@@ -157,7 +157,7 @@ pub(crate) async fn expand(req: String, auth: Auth, data: web::Data<AppState>) -
         Auth::ValidSession => HttpResponse::Unauthorized().json(JSONResponse {
             success: false,
             error: true,
-            reason: "This route needs API auth.".to_string(),
+            reason: "This route needs API auth.".to_owned(),
         }),
         Auth::None { result } | Auth::InvalidAPIKey { result } => {
             HttpResponse::Unauthorized().json(result)
@@ -207,7 +207,7 @@ pub(crate) async fn login(
             let response = JSONResponse {
                 success: false,
                 error: true,
-                reason: "Wrong password!".to_string(),
+                reason: "Wrong password!".to_owned(),
             };
             return HttpResponse::Unauthorized().json(response);
         }
@@ -219,7 +219,7 @@ pub(crate) async fn login(
         let response = JSONResponse {
             success: true,
             error: false,
-            reason: "Correct password!".to_string(),
+            reason: "Correct password!".to_owned(),
         };
         info!("Successful login.");
         HttpResponse::Ok().json(response)

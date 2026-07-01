@@ -53,7 +53,7 @@ fn read_config_wrapper(new_name: &str, old_name: &str) -> Result<String, VarErro
 fn get_db_location() -> String {
     if let Some(db_url) = read_config_wrapper("CHHOTO_DB_URL", "db_url")
         .ok()
-        .map(|s| s.trim().to_string())
+        .map(|s| s.trim().to_owned())
         .filter(|s| !s.is_empty())
     {
         return db_url;
@@ -124,7 +124,7 @@ pub(crate) fn read() -> Config {
     // Get the address environment variable
     let listen_address = read_config_wrapper("CHHOTO_LISTEN_ADDRESS", "listen_address")
         .ok()
-        .map(|s| s.trim().to_string())
+        .map(|s| s.trim().to_owned())
         .filter(|s| !s.is_empty())
         .unwrap_or(String::from("0.0.0.0"));
     info!("Listening address is set to {listen_address}.");
@@ -140,7 +140,7 @@ pub(crate) fn read() -> Config {
         read_config_wrapper("CHHOTO_CACHE_CONTROL_HEADER", "cache_control_header")
             .ok()
             .inspect(|h| info!("Using \"{h}\" as Cache-Control header."))
-            .map(|s| s.trim().to_string())
+            .map(|s| s.trim().to_owned())
             .filter(|s| !s.is_empty());
 
     let disable_frontend = read_config_wrapper("CHHOTO_DISABLE_FRONTEND", "disable_frontend")
@@ -197,7 +197,7 @@ pub(crate) fn read() -> Config {
     };
 
     let hash_algorithm = match read_config_wrapper("CHHOTO_HASH_ALGORITHM", "hash_algorithm")
-        .map(|h| h.trim().to_string())
+        .map(|h| h.trim().to_owned())
     {
         Ok(hash) if hash == "Argon2" => {
             info!("Will use Argon2 hashes for password verification.");
@@ -209,7 +209,7 @@ pub(crate) fn read() -> Config {
     // If the site_url env variable exists
     let site_url = if let Some(provided_url) = read_config_wrapper("CHHOTO_SITE_URL", "site_url")
         .ok()
-        .map(|s| s.trim().to_string())
+        .map(|s| s.trim().to_owned())
         .filter(|s| !s.is_empty())
     {
         // Get first and last characters of the site_url
@@ -223,7 +223,7 @@ pub(crate) fn read() -> Config {
             warn!(
                 "The CHHOTO_SITE_URL environment variable is encapsulated by quotes. Automatically adjusting to: {url}"
             );
-            Some(url.to_string())
+            Some(url.to_owned())
         } else {
             info!("Configured Site URL is: {provided_url}");
             Some(provided_url)
@@ -252,7 +252,7 @@ pub(crate) fn read() -> Config {
     let try_longer_slug = read_config_wrapper("CHHOTO_TRY_LONGER_SLUG", "try_longer_slug")
         .is_ok_and(|s| s.trim() == "True");
     let slug_style = match read_config_wrapper("CHHOTO_SLUG_STYLE", "slug_style")
-        .map(|s| s.trim().to_string())
+        .map(|s| s.trim().to_owned())
     {
         Ok(style) if style == "UID" => {
             info!("Using UID slugs with length {slug_length}.");
@@ -298,7 +298,7 @@ pub(crate) fn read() -> Config {
         "custom_landing_directory",
     )
     .ok()
-    .map(|s| s.trim().to_string())
+    .map(|s| s.trim().to_owned())
     .filter(|s| !s.is_empty())
     .inspect(|s| {
         info!("Custom landing directory is set to {s}.");

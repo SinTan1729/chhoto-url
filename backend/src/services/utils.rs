@@ -86,7 +86,7 @@ fn normalize_filter(link: &str) -> Option<String> {
     }
 
     let s = out.trim_ascii_end();
-    (s.len() > 2).then(|| s.to_string())
+    (s.len() > 2).then(|| s.to_owned())
 }
 
 // Simply get the version string
@@ -98,7 +98,7 @@ pub(crate) fn get_version() -> String {
         Some(commit) if !commit.trim().is_empty() => {
             format!("{VERSION}-dev+{commit}")
         }
-        _ => VERSION.to_string(),
+        _ => VERSION.to_owned(),
     }
 }
 
@@ -107,7 +107,7 @@ pub(super) fn getall_helper(db: &Connection, params: GetReqParams) -> Result<Str
     let page_after = match params.page_after {
         Some(s) if s.is_empty() => {
             return Err(ChhotoError::ClientError {
-                reason: "Invalid page_after was supplied!".to_string(),
+                reason: "Invalid page_after was supplied!".to_owned(),
             });
         }
         other => other,
@@ -115,7 +115,7 @@ pub(super) fn getall_helper(db: &Connection, params: GetReqParams) -> Result<Str
     let page_no = match params.page_no {
         Some(n) if n <= 0 => {
             return Err(ChhotoError::ClientError {
-                reason: "Invalid page_no was supplied!".to_string(),
+                reason: "Invalid page_no was supplied!".to_owned(),
             });
         }
         other => other,
@@ -125,7 +125,7 @@ pub(super) fn getall_helper(db: &Connection, params: GetReqParams) -> Result<Str
         .filter
         .map(|s| {
             normalize_filter(&s).ok_or(ChhotoError::ClientError {
-                reason: "Invalid filter was supplied!".to_string(),
+                reason: "Invalid filter was supplied!".to_owned(),
             })
         })
         .transpose()?;
@@ -152,12 +152,12 @@ pub(super) fn add_links_helper(
         })
     else {
         return Err(ClientError {
-            reason: "Invalid request!".to_string(),
+            reason: "Invalid request!".to_owned(),
         });
     };
     if chunks.is_empty() {
         return Err(ClientError {
-            reason: "An empty array of links was provided!".to_string(),
+            reason: "An empty array of links was provided!".to_owned(),
         });
     }
 
@@ -180,7 +180,7 @@ pub(super) fn add_links_helper(
         let req = clean_req(req);
         if !is_longlink_valid(&req.longlink) {
             output[i] = Err(ClientError {
-                reason: "Invalid longlink!".to_string(),
+                reason: "Invalid longlink!".to_owned(),
             });
         } else if req.shortlink.is_empty() {
             without_shortlinks.push((i, req));
@@ -247,17 +247,17 @@ pub(super) async fn edit_link_helper(
         chunks = json;
     } else {
         return Err(ClientError {
-            reason: "Malformed request!".to_string(),
+            reason: "Malformed request!".to_owned(),
         });
     }
     if !is_shortlink_valid(&chunks.shortlink, config.allow_capital_letters) {
         return Err(ClientError {
-            reason: "Invalid shortlink!".to_string(),
+            reason: "Invalid shortlink!".to_owned(),
         });
     }
     if !is_longlink_valid(&chunks.longlink) {
         return Err(ClientError {
-            reason: "Unsupported URL scheme.".to_string(),
+            reason: "Unsupported URL scheme.".to_owned(),
         });
     }
     let result = database::edit_link(
@@ -273,7 +273,7 @@ pub(super) async fn edit_link_helper(
     match result {
         // Zero rows returned means no updates
         Ok(0) => Err(ClientError {
-            reason: "The shortlink was not found, and could not be edited.".to_string(),
+            reason: "The shortlink was not found, and could not be edited.".to_owned(),
         }),
         Ok(_) => Ok(()),
         Err(()) => Err(ServerError),
@@ -290,7 +290,7 @@ pub(super) fn delete_link_helper(
         database::delete_link(shortlink, db)
     } else {
         Err(ClientError {
-            reason: "The shortlink is invalid.".to_string(),
+            reason: "The shortlink is invalid.".to_owned(),
         })
     }
 }
@@ -362,7 +362,7 @@ fn gen_link(
             let adj = ADJECTIVES
                 .choose(&mut rand::rng())
                 .expect("Error choosing random adjective.")
-                .to_string();
+                .to_owned();
             let name = NAMES
                 .choose(&mut rand::rng())
                 .expect("Error choosing random name.");
