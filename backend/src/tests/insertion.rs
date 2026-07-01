@@ -173,10 +173,6 @@ async fn link_editing() {
     let req = test::TestRequest::get().uri("/test1").to_request();
     let resp = test::call_service(&app, req).await;
 
-    assert!(resp.status().is_redirection());
-    let status = edit_link(&app, &api_key, "test1", true, None, None).await;
-    assert!(status.is_success());
-
     let timer = Duration::from_millis(600);
     tokio::time::sleep(timer).await;
 
@@ -189,6 +185,10 @@ async fn link_editing() {
     assert_eq!(reply.longlink, "https://edited-test2.com");
     assert_eq!(reply.hits, 1);
     assert_eq!(reply.expiry_time, now + 1);
+
+    assert!(resp.status().is_redirection());
+    let status = edit_link(&app, &api_key, "test1", true, None, None).await;
+    assert!(status.is_success());
 
     let (status, reply) = expand(&app, &api_key, "test1").await;
     assert!(status.is_success());
