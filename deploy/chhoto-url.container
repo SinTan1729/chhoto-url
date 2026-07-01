@@ -18,7 +18,7 @@ PublishPort=4567:4567
 DropCapability=ALL
 
 # Environment variables
-Environment=CHHOTO_DB_URL=/db/urls.sqlite 
+Environment=CHHOTO_DB_URL=/data/urls.sqlite 
 Environment=CHHOTO_SQLITE_USE_WAL_MODE = True 
 #Environment=CHHOTO_SQLITE_ENSURE_ACID = True
 #Environment=CHHOTO_SITE_URL=https://www.example.com 
@@ -40,7 +40,7 @@ Environment=CHHOTO_SLUG_STYLE=Pair
 #Environment=CHHOTO_FRONTEND_PAGE_SIZE=10
 
 # Volume
-Volume=db:/db
+Volume=data:/data
 
 # Health check
 # Only enable this if using the alpine images.

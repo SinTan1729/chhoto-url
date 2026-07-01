@@ -25,14 +25,14 @@ services:
       # Change if you want to mount the database somewhere else.
       # In this case, you can get rid of the db volume below
       # and instead do a mount manually by specifying the location.
-      - CHHOTO_DB_URL=/db/urls.sqlite
+      - CHHOTO_DB_URL=/data/urls.sqlite
       # Uncomment the next line to enable WAL mode. It's highly recommended.
       # Make sure that you mount a directory instead of a bare file
       # since that might have a (low, but non-zero) possibility of
       # corrupting your db since we use WAL journaling mode
       # (In fact, I'd suggest that you do that so that you can keep
       # a copy of your database.)
-      # - CHHOTO_SQLITE_USE_WAL_MODE = True
+      - CHHOTO_SQLITE_USE_WAL_MODE = True
       # If you'd like to disable ACID compliance, uncomment the next line.
       # Note that there are risks. Look at the README for more.
       # - CHHOTO_SQLITE_ENSURE_ACID = False
@@ -62,13 +62,13 @@ services:
 
       # Pass the redirect method, if needed. TEMPORARY and PERMANENT
       # are accepted values, defaults to PERMANENT.
-      # - CHHOTO_REDIRECT_METHOD=TEMPORARY
+      - CHHOTO_REDIRECT_METHOD=TEMPORARY
 
       # By default, the auto-generated pairs are adjective-name pairs.
       # If you want UIDs, please change slug_style to UID.
       # Supported values for slug_style are Pair and UID.
       # The length is 8 by default, and a minimum of 4 is allowed.
-      # - CHHOTO_SLUG_STYLE=Pair
+      - CHHOTO_SLUG_STYLE=Pair
       # - CHHOTO_SLUG_LENGTH=8
       # To retry (once) with a longer UID upon collision, change the following to True.
       # - CHHOTO_TRY_LONGER_SLUG=False
@@ -101,7 +101,7 @@ services:
 
       # You may set the TZ variable for timezone in logging, but it will only work in the alpine builds
     volumes:
-      - db:/db
+      - data:/data
     # Only enable this if using the alpine images.
     # healthcheck:
     #   test: wget --no-verbose --tries=1 --spider http://chhoto-url:4567/api/whoami || exit 1
