@@ -12,6 +12,7 @@ use tokio::{
 
 use crate::database;
 
+// Run hit updates every 500ms or once 500 distinct links are pending.
 pub(crate) fn spawn_hits_worker(
     writer: Arc<Mutex<Connection>>,
     mut hits_rx: mpsc::Receiver<(String, bool)>,
@@ -48,6 +49,7 @@ pub(crate) fn spawn_hits_worker(
     })
 }
 
+// Do database cleanup once every hour
 pub(crate) fn spawn_cleaner(
     writer: Arc<Mutex<Connection>>,
     use_wal_mode: bool,

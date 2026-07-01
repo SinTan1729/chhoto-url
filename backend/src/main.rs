@@ -85,9 +85,9 @@ async fn main() -> Result<()> {
     // Initialize the database and perform migrations
     let use_wal_mode = conf.use_wal_mode;
     database::init_db(&mut *writer.lock().await, use_wal_mode, conf.ensure_acid);
-    // Do periodic cleanup
+    // Spawn cleaner
     background::spawn_cleaner(Arc::clone(&writer), use_wal_mode);
-    // Run hit updates every 500ms or once 500 distinct links are pending.
+    // Spawn hit updater
     let (hits_tx, hits_rx) = mpsc::channel::<(String, bool)>(1024);
     background::spawn_hits_worker(Arc::clone(&writer), hits_rx);
 
