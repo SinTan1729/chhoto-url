@@ -335,9 +335,20 @@ details.chhoto-input summary {
 
   .chhoto-table {
     border-collapse: collapse;
+    border: none;
+    box-shadow: none;
+  }
+  .chhoto-table tr:first-child {
+    border-top: 0.15em dotted light-dark(black, #867d6e);
   }
   .chhoto-table tr:not(:last-child) {
     border-bottom: 0.15em dotted light-dark(black, #867d6e);
+  }
+  .chhoto-table tr:nth-child(odd) {
+    background-color: light-dark(#f2f2f2, #101213);
+  }
+  .chhoto-table tr:nth-child(even) {
+    background-color: inherit;
   }
 
   .chhoto-table thead {
