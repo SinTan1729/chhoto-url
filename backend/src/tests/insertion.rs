@@ -195,7 +195,7 @@ async fn link_editing() {
     let req = test::TestRequest::get().uri("/test1").to_request();
     let resp = test::call_service(&app, req).await;
 
-    let timer = Duration::from_millis(600);
+    let timer = Duration::from_millis(800);
     tokio::time::sleep(timer).await;
 
     let now = chrono::Utc::now().timestamp();

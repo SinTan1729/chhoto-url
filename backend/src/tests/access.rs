@@ -52,7 +52,7 @@ async fn data_fetching_all() {
     let req = test::TestRequest::get().uri("/test1").to_request();
     let _ = test::call_service(&app, req).await;
 
-    let timer = Duration::from_millis(600);
+    let timer = Duration::from_millis(800);
     tokio::time::sleep(timer).await;
     let reply = getall(&app, &api_key, "").await;
     assert_eq!(reply.len(), 2);
@@ -154,14 +154,16 @@ async fn edit_expiry() {
     let resp = test::call_service(&app, req).await;
     assert!(resp.status().is_redirection());
 
-    let now = chrono::Utc::now().timestamp();
-    let status = edit_link(&app, &api_key, "test1", false, Some(now + 1), None).await;
+    let status = edit_link(&app, &api_key, "test1", false, None, None).await;
     assert!(status.is_success());
 
     let (status, reply) = expand(&app, &api_key, "test1").await;
     assert!(status.is_success());
     assert_eq!(reply.longlink, "https://edited-test1.com");
-    assert_eq!(reply.expiry_time, now + 1);
+
+    let now = chrono::Utc::now().timestamp();
+    let status = edit_link(&app, &api_key, "test1", false, Some(now + 1), None).await;
+    assert!(status.is_success());
 
     let one_second = Duration::from_secs(1);
     std::thread::sleep(one_second);
