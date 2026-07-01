@@ -70,6 +70,27 @@ async fn adding_link_with_generated_shortlink_with_uid_slug() {
 }
 
 #[test]
+async fn empty_insertion() {
+    let test = "batch-insertion";
+    let mut conf = default_config(test);
+    conf.slug_style = config::SlugStyle::Uid;
+    conf.slug_length = 12;
+    let (_tempdir, app) = create_app(&conf, test).await;
+    let req = test::TestRequest::post()
+        .uri("/api/new")
+        .insert_header(("X-API-Key", conf.api_key.unwrap()))
+        .set_payload("[]")
+        .to_request();
+    let resp = test::call_service(&app, req).await;
+    let status = resp.status();
+    let body = to_bytes(resp.into_body()).await.unwrap();
+    let response: URLData = serde_json::from_str(body.as_str()).unwrap();
+
+    assert!(status.is_client_error());
+    assert_eq!(response.reason, "An empty array of links was provided!");
+}
+
+#[test]
 async fn batch_insertion() {
     let test = "batch-insertion";
     let mut conf = default_config(test);
@@ -89,13 +110,14 @@ async fn batch_insertion() {
     let resp = test::call_service(&app, req).await;
     let status = resp.status();
     let body = to_bytes(resp.into_body()).await.unwrap();
-    let mut urls: Vec<URLData> = serde_json::from_str(body.as_str()).unwrap();
+    let urls: Vec<URLData> = serde_json::from_str(body.as_str()).unwrap();
+    let mut urls = urls.into_iter();
 
     assert!(status.is_success());
-    assert_eq!(urls.pop().unwrap().reason, "Short URL is already in use!");
-    assert!(urls.pop().unwrap().expiry_time > 0);
-    assert_eq!(urls.pop().unwrap().shortlink, "https://mydomain.com/test2");
-    assert_eq!(urls.pop().unwrap().shortlink, "https://mydomain.com/test1");
+    assert_eq!(urls.next().unwrap().shortlink, "https://mydomain.com/test1");
+    assert_eq!(urls.next().unwrap().shortlink, "https://mydomain.com/test2");
+    assert!(urls.next().unwrap().expiry_time > 0);
+    assert_eq!(urls.next().unwrap().reason, "Short URL is already in use!");
 }
 
 #[test]
