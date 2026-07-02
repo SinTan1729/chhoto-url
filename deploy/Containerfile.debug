@@ -1,0 +1,13 @@
+# SPDX-FileCopyrightText: 2023-2026 Sayantan Santra <sayantan.santra689@gmail.com>
+# SPDX-License-Identifier: MIT
+
+FROM alpine AS builder
+COPY ./backend/target/x86_64-unknown-linux-musl/debug/chhoto-url /chhoto-url
+
+ARG TARGETARCH
+FROM builder
+RUN apk add --no-cache tzdata
+COPY ./frontend /frontend
+
+ENTRYPOINT ["/chhoto-url"]
+

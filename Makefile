@@ -3,7 +3,7 @@
 
 include .env
 
-.PHONY: clean test setup build podman-build podman-stop podman-run podman-test build-release tag upgrade-deps upgrade-deps-test merge reset db
+.PHONY: clean test setup build podman-build podman-build-release podman-stop podman-run podman-test podman-test-release build-release tag upgrade-deps-pre upgrade-deps merge reset db
 
 setup:
 	rustup target add x86_64-unknown-linux-musl
@@ -16,14 +16,18 @@ merge:
 
 short_sha := $(shell git rev-parse --short HEAD) 
 build:
+	CARGO_GIT_COMMIT=${short_sha} cargo build --locked --manifest-path=backend/Cargo.toml --target x86_64-unknown-linux-musl
+build-release:
 	CARGO_GIT_COMMIT=${short_sha} cargo build --release --locked --manifest-path=backend/Cargo.toml --target x86_64-unknown-linux-musl
 test:
 	cargo audit --file backend/Cargo.lock
-	CARGO_GIT_COMMIT=${short_sha} cargo test --release --locked --manifest-path=backend/Cargo.toml --target x86_64-unknown-linux-musl
+	CARGO_GIT_COMMIT=${short_sha} cargo test --locked --manifest-path=backend/Cargo.toml --target x86_64-unknown-linux-musl
 
 podman-clean:
 	podman image prune -f
 podman-build: build
+	podman build --tag chhoto-url --build-arg TARGETARCH=amd64 -f deploy/Containerfile.debug .
+podman-build-release: build-release
 	podman build --tag chhoto-url --build-arg TARGETARCH=amd64 -f deploy/Containerfile.alpine .
 
 podman-stop:
@@ -38,13 +42,14 @@ reset-db: podman-stop
 	rm -f testing-data/urls.sqlite-shm testing-data/urls.sqlite-wal
 	cp testing-data/urls1.sqlite testing-data/urls.sqlite
 podman-test: test podman-build podman-clean podman-run
+podman-test-release: test podman-build-release podman-clean podman-run
 
-upgrade-deps:
+upgrade-deps-pre:
 	cargo upgrade --manifest-path=backend/Cargo.toml --verbose
 	cargo update --manifest-path=backend/Cargo.toml --verbose
 	git add backend/Cargo.{toml,lock}
 	git commit -m "chore: Updated deps"
-upgrade-deps-test: upgrade-deps test
+upgrade-deps: upgrade-deps-pre test
 
 conf_tag := $(shell cat backend/Cargo.toml | sed -rn 's/^version = "(.+)"$$/\1/p')
 last_tag := $(shell git tag -l | tail -1)
