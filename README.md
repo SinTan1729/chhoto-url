@@ -3,6 +3,7 @@
 
 [![github-tests-badge](https://img.shields.io/github/actions/workflow/status/SinTan1729/chhoto-url/.github%2Fworkflows%2Frust-tests.yml?label=tests)](https://github.com/SinTan1729/chhoto-url/actions/workflows/rust-tests.yml)
 [![docker-pulls-badge](https://img.shields.io/docker/pulls/sintan1729/chhoto-url?label=pulls)](https://hub.docker.com/r/sintan1729/chhoto-url)
+[![docker-stars-badge](https://img.shields.io/github/stars/SinTan1729/chhoto-url?style=flat)](https://github.com/SinTan1729/chhoto-url)
 [![maintainer-badge](https://img.shields.io/badge/maintainer-SinTan1729-blue)](https://github.com/SinTan1729)
 [![latest-release-badge](https://img.shields.io/github/v/release/SinTan1729/chhoto-url)](https://github.com/SinTan1729/chhoto-url/releases/latest)
 [![docker-image-size-badge](https://img.shields.io/docker/image-size/sintan1729/chhoto-url?label=size)](https://hub.docker.com/r/sintan1729/chhoto-url/tags)
