@@ -14,7 +14,11 @@ repository = "https://github.com/SinTan1729/chhoto-url"
 readme = "README.md"
 keywords = [
     "docker",
+    "podman",
+    "container",
+    "quadlet",
     "rust",
+    "chhoto-url",
     "self-hosted",
     "url-shortener",
     "webapp",
