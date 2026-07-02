@@ -21,6 +21,8 @@ test:
 	cargo audit --file backend/Cargo.lock
 	CARGO_GIT_COMMIT=${short_sha} cargo test --release --locked --manifest-path=backend/Cargo.toml --target x86_64-unknown-linux-musl
 
+podman-clean:
+	podman image prune -f
 podman-build: build
 	podman build --tag chhoto-url --build-arg TARGETARCH=amd64 -f deploy/Containerfile.alpine .
 
@@ -35,7 +37,7 @@ podman-run: podman-stop
 reset-db: podman-stop
 	rm -f testing-data/urls.sqlite-shm testing-data/urls.sqlite-wal
 	cp testing-data/urls1.sqlite testing-data/urls.sqlite
-podman-test: test podman-build podman-run
+podman-test: test podman-build podman-clean podman-run
 
 upgrade-deps:
 	cargo upgrade --manifest-path=backend/Cargo.toml --verbose
