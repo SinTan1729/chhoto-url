@@ -30,7 +30,7 @@ categories = ["web-programming"]
 rust-version = "1.96"
 
 [profile.release]
-opt-level = "z"
+opt-level = 3
 lto = "fat"
 codegen-units = 1
 panic = "abort"
