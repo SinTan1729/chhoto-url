@@ -3,7 +3,9 @@
 
 include .env
 
-.PHONY: clean test setup build podman-build podman-build-release podman-stop podman-run podman-test podman-test-release build-release tag upgrade-deps-pre upgrade-deps merge reset db
+.PHONY: clean test setup merge tag reset-db upgrade-deps upgrade-deps-pre podman-stop
+.PHONY: build podman-build podman-run podman-test
+.PHONY: build-release podman-build-release podman-run-release podman-test-release
 
 setup:
 	rustup target add x86_64-unknown-linux-musl
