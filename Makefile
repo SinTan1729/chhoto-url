@@ -26,23 +26,26 @@ test:
 podman-clean:
 	podman image prune -f
 podman-build: build
-	podman build --tag chhoto-url --build-arg TARGETARCH=amd64 -f deploy/Containerfile.debug .
+	podman build --tag chhoto-url:debug -f deploy/Containerfile.debug .
 podman-build-release: build-release
-	podman build --tag chhoto-url --build-arg TARGETARCH=amd64 -f deploy/Containerfile.alpine .
+	podman build --tag chhoto-url:release --build-arg TARGETARCH=amd64 -f deploy/Containerfile.alpine .
 
 podman-stop:
 	podman ps -q --filter "name=chhoto-url" | xargs -r podman stop
 	podman ps -aq --filter "name=chhoto-url" | xargs -r podman rm
 
 podman-run: podman-stop
-	podman run -t -p ${CHHOTO_LISTEN_PORT}:${CHHOTO_LISTEN_PORT} --name chhoto-url --env-file ./.env -v "${DB_DIR}:/data" -d chhoto-url
+	podman run -t -p ${CHHOTO_LISTEN_PORT}:${CHHOTO_LISTEN_PORT} --name chhoto-url --env-file ./.env -v "${DB_DIR}:/data" -d chhoto-url:debug
+	podman logs chhoto-url -f 
+podman-run-release: podman-stop
+	podman run -t -p ${CHHOTO_LISTEN_PORT}:${CHHOTO_LISTEN_PORT} --name chhoto-url --env-file ./.env -v "${DB_DIR}:/data" -d chhoto-url:release
 	podman logs chhoto-url -f 
 
 reset-db: podman-stop
 	rm -f testing-data/urls.sqlite-shm testing-data/urls.sqlite-wal
 	cp testing-data/urls1.sqlite testing-data/urls.sqlite
 podman-test: test podman-build podman-clean podman-run
-podman-test-release: test podman-build-release podman-clean podman-run
+podman-test-release: test podman-build-release podman-clean podman-run-release
 
 upgrade-deps-pre:
 	cargo upgrade --manifest-path=backend/Cargo.toml --verbose
