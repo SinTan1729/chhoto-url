@@ -18,12 +18,15 @@ merge:
 
 short_sha := $(shell git rev-parse --short HEAD) 
 build:
-	CARGO_GIT_COMMIT=${short_sha} cargo build --locked --manifest-path=backend/Cargo.toml --target x86_64-unknown-linux-musl
+	CARGO_GIT_COMMIT=${short_sha} cargo build --locked --manifest-path=backend/Cargo.toml \
+		--target x86_64-unknown-linux-musl
 build-release:
-	CARGO_GIT_COMMIT=${short_sha} cargo build --release --locked --manifest-path=backend/Cargo.toml --target x86_64-unknown-linux-musl
+	CARGO_GIT_COMMIT=${short_sha} cargo build --release --locked --manifest-path=backend/Cargo.toml \
+		--target x86_64-unknown-linux-musl
 test:
 	cargo audit --file backend/Cargo.lock
-	CARGO_GIT_COMMIT=${short_sha} cargo test --locked --manifest-path=backend/Cargo.toml --target x86_64-unknown-linux-musl
+	CARGO_GIT_COMMIT=${short_sha} cargo test --locked --manifest-path=backend/Cargo.toml \
+		--target x86_64-unknown-linux-musl
 
 podman-clean:
 	podman image prune -f
@@ -37,10 +40,12 @@ podman-stop:
 	podman ps -aq --filter "name=chhoto-url" | xargs -r podman rm
 
 podman-run: podman-stop
-	podman run -t -p ${CHHOTO_LISTEN_PORT}:${CHHOTO_LISTEN_PORT} --name chhoto-url --env-file ./.env -v "${DB_DIR}:/data" -d chhoto-url:debug
+	podman run -t -p ${CHHOTO_LISTEN_PORT}:${CHHOTO_LISTEN_PORT} --name chhoto-url \
+		--env-file ./.env -v "${DB_DIR}:/data" -v "./frontend:/frontend" -d chhoto-url:debug
 	podman logs chhoto-url -f 
 podman-run-release: podman-stop
-	podman run -t -p ${CHHOTO_LISTEN_PORT}:${CHHOTO_LISTEN_PORT} --name chhoto-url --env-file ./.env -v "${DB_DIR}:/data" -d chhoto-url:release
+	podman run -t -p ${CHHOTO_LISTEN_PORT}:${CHHOTO_LISTEN_PORT} --name chhoto-url \
+		--env-file ./.env -v "${DB_DIR}:/data" -d chhoto-url:release
 	podman logs chhoto-url -f 
 
 reset-db: podman-stop
