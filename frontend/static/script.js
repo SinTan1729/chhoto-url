@@ -98,7 +98,7 @@ const getConfig = async () => {
 const showVersion = () => {
   const link = document.getElementById("version-number");
   if (VERSION) {
-    link.innerText = "v" + VERSION;
+    link.getElementsByTagName("span")[0].innerText = "v" + VERSION;
     if (VERSION.includes("-dev+")) {
       link.href =
         "https://github.com/SinTan1729/chhoto-url/commits/" +
@@ -142,7 +142,7 @@ const refreshData = async () => {
               time.setSeconds(time.getSeconds() + expiry);
               loading_text.innerHTML += formatRelativeTime(time) + ".";
             }
-            admin_button.innerText = "login";
+            admin_button.getElementsByTagName("span")[0].innerText = "login";
             admin_button.hidden = false;
             updateInputBox();
             break;
@@ -186,7 +186,7 @@ const refreshData = async () => {
     }
   } catch (err) {
     console.log(err);
-    if (!alert("Something went wrong! Click Ok to refresh page.")) {
+    if (!alert("Something went wrong! Click OK to refresh page.")) {
       window.location.reload();
     }
   }
@@ -270,7 +270,7 @@ const displayData = () => {
   );
   showVersion();
   const admin_button = document.getElementById("admin-button");
-  admin_button.innerText = "logout";
+  admin_button.getElementsByTagName("span")[0].innerText = "logout";
   admin_button.hidden = false;
   updateInputBox();
 
@@ -631,7 +631,7 @@ const deleteButton = (shortUrl) => {
 
   btn.onclick = (e) => {
     e.preventDefault();
-    if (confirm("Do you want to delete the entry " + shortUrl + "?")) {
+    if (confirm("Click OK to delete the entry " + shortUrl + ".")) {
       showAlert("&nbsp;", "transparent");
       fetch(prepSubdir(`/api/del/${shortUrl}`), {
         method: "DELETE",
@@ -734,7 +734,7 @@ const submitForm = () => {
         })
         .catch((err) => {
           console.log("Error:", err);
-          if (!alert("Something went wrong! Click Ok to refresh page.")) {
+          if (!alert("Something went wrong! Click OK to refresh page.")) {
             window.location.reload();
           }
         }),
@@ -757,7 +757,7 @@ const submitForm = () => {
       .then(() => cleanPageAfterSubmit(ok))
       .catch((err) => {
         console.log("Error:", err);
-        if (!alert("Something went wrong! Click Ok to refresh page.")) {
+        if (!alert("Something went wrong! Click OK to refresh page.")) {
           window.location.reload();
         }
       });
@@ -776,7 +776,7 @@ const submitEdit = () => {
   if (expiry_raw != "") {
     expiry = Math.floor(new Date(expiry_raw).getTime() / 1000);
   }
-  if (confirm("Are you sure that you want to edit " + shortUrl + "?")) {
+  if (confirm("Click OK to confirm the edit of " + shortUrl + ".")) {
     data = {
       shortlink: shortUrl,
       longlink: longUrl,
@@ -820,7 +820,7 @@ const submitEdit = () => {
       })
       .catch((err) => {
         console.log("Error:", err);
-        if (!alert("Something went wrong! Click Ok to refresh page.")) {
+        if (!alert("Something went wrong! Click OK to refresh page.")) {
           window.location.reload();
         }
       });
@@ -855,14 +855,14 @@ const submitLogin = () => {
     })
     .catch((err) => {
       console.log("Error:", err);
-      if (!alert("Something went wrong! Click Ok to refresh page.")) {
+      if (!alert("Something went wrong! Click OK to refresh page.")) {
         window.location.reload();
       }
     });
 };
 
 const logOut = async () => {
-  if (confirm("Are you sure you want to log out?")) {
+  if (confirm("Click OK to log out.")) {
     await fetch(prepSubdir("/api/logout"), {
       method: "DELETE",
       cache: "no-cache",
@@ -885,7 +885,7 @@ const logOut = async () => {
       })
       .catch((err) => {
         console.log("Error:", err);
-        if (!alert("Something went wrong! Click Ok to refresh page.")) {
+        if (!alert("Something went wrong! Click OK to refresh page.")) {
           window.location.reload();
         }
       });
@@ -983,7 +983,7 @@ refreshData()
   })
   .catch((err) => {
     console.log("Something went wrong:", err);
-    if (!alert("Something went wrong! Click Ok to refresh page.")) {
+    if (!alert("Something went wrong! Click OK to refresh page.")) {
       window.location.reload();
     }
   });

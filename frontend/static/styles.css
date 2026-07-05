@@ -20,7 +20,7 @@ body {
 }
 .container {
   max-width: 80em;
-  margin: 1em auto auto;
+  margin: 2em auto auto;
 }
 
 .chhoto-button {
@@ -56,15 +56,22 @@ body {
 
 a {
   color: light-dark(blue, #3391ff);
+  text-decoration: none;
 }
 .linkButton {
-  background: none;
-  padding: 0;
-  border: none;
-  color: light-dark(blue, #3391ff);
-  text-decoration: underline;
-  text-align: left;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.2em;
+  height: 2em;
+  padding: 0 0.5em;
+  border: 0.1em solid light-dark(black, #e8e6e3);
+  border-radius: 0.3em;
+  background: transparent;
+  color: light-dark(black, #e8e6e3);
+  text-decoration: none;
   cursor: pointer;
+  box-sizing: border-box;
+  margin-left: 0.2em;
 }
 
 .chhoto-table {
@@ -336,6 +343,9 @@ details.chhoto-input summary {
     width: 98%;
   }
 
+  #version-number {
+    margin-right: 0.3em;
+  }
   .chhoto-table {
     border-collapse: collapse;
     border: none;
