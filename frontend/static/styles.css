@@ -13,10 +13,28 @@
 :root {
   color-scheme: light dark;
   font-family: Montserrat;
+  /* Colors */
+  --text: light-dark(black, #e8e6e3);
+  --bg: light-dark(white, #181a1b);
+  --link: light-dark(blue, #3391ff);
+  --accent: light-dark(#0078e7, #0060b9);
+  --border: light-dark(#cccccc, #3e4446);
+  --shadow: light-dark(#dddddd, #2b2f31);
+  --muted: light-dark(#757575, #636061);
+  --logo: light-dark(#333333, #c8c3bc);
+  --logo-border: light-dark(#e5e5e5, #373c3e);
+  --table: light-dark(#e0e0e0, #2a2d2f);
+  --row-alt: light-dark(#f2f2f2, #080a0b);
+  --row-alt-bg: light-dark(#f2f2f2, #101213);
+  --warning: light-dark(red, #ff1a1a);
+  --warning-button: light-dark(#dd1a1a, #901010);
+  --accent-border: light-dark(black, #867d6e);
+  --tooltip: light-dark(#eeeeee, #484a4b);
+  --tooltip-bg: light-dark(white, #2b2a33);
 }
 body {
-  color: light-dark(black, #e8e6e3);
-  background-color: light-dark(white, #181a1b);
+  color: var(--text);
+  background-color: var(--bg);
 }
 .container {
   max-width: 80em;
@@ -24,30 +42,30 @@ body {
 }
 
 .chhoto-button {
-  background-color: light-dark(#0078e7, #0060b9);
+  background-color: var(--accent);
 }
 .pure-form input.chhoto-input {
   width: 65%;
-  border-color: light-dark(#cccccc, #3e4446);
-  box-shadow: light-dark(#dddddd, #2b2f31) 0 0.1em 0.2em inset;
+  border-color: var(--border);
+  box-shadow: var(--shadow) 0 0.1em 0.2em inset;
 }
 .pure-form input.chhoto-input:focus {
-  border-color: light-dark(#cccccc, #3e4446);
+  border-color: var(--border);
 }
 
 #expiryDelay {
-  background-color: light-dark(white, #2b2a33);
-  border-color: light-dark(#cccccc, #3e4446);
-  box-shadow: light-dark(#dddddd, #2b2f31) 0 0.1em 0.2em inset;
+  background-color: var(--tooltip-bg);
+  border-color: var(--border);
+  box-shadow: var(--shadow) 0 0.1em 0.2em inset;
 }
 
 ::placeholder {
-  color: light-dark(#757575, #636061);
+  color: var(--muted);
 }
 
 #logo {
-  color: light-dark(#333333, #c8c3bc);
-  border-bottom-color: light-dark(#e5e5e5, #373c3e);
+  color: var(--logo);
+  border-bottom-color: var(--logo-border);
   font-size: 2em;
 }
 #logo img {
@@ -55,7 +73,7 @@ body {
 }
 
 a {
-  color: light-dark(blue, #3391ff);
+  color: var(--link);
   text-decoration: none;
 }
 .linkButton {
@@ -64,10 +82,10 @@ a {
   gap: 0.2em;
   height: 2em;
   padding: 0 0.5em;
-  border: 0.1em solid light-dark(black, #867d6e);
+  border: 0.1em solid var(--accent-border);
   border-radius: 0.3em;
   background: transparent;
-  color: light-dark(black, #e8e6e3);
+  color: var(--text);
   text-decoration: none;
   cursor: pointer;
   box-sizing: border-box;
@@ -79,8 +97,8 @@ a {
   border-collapse: separate;
   border-spacing: 0;
   border-radius: 0.3em;
-  box-shadow: 0 0 0 0.1em light-dark(#e0e0e0, #2a2d2f);
-  border-color: light-dark(black, #867d6e);
+  box-shadow: 0 0 0 0.1em var(--table);
+  border-color: var(--accent-border);
 }
 .chhoto-table tr td div {
   max-height: 4.5em;
@@ -94,7 +112,7 @@ a {
 }
 .chhoto-table tr td[label="Long URL"] div {
   word-break: break-all;
-  color: light-dark(blue, #3391ff);
+  color: var(--link);
 }
 .chhoto-table tr td[name="numColumn"] div {
   word-break: normal;
@@ -103,10 +121,10 @@ a {
   word-break: normal;
 }
 .chhoto-table tr:nth-child(even) {
-  background-color: light-dark(#f2f2f2, #080a0b);
+  background-color: var(--row-alt);
 }
 .chhoto-table caption {
-  color: light-dark(black, #e8e6e3);
+  color: var(--text);
   text-align: left;
   font-size: 1.5em;
   font-style: normal;
@@ -114,8 +132,8 @@ a {
   padding: 0em;
 }
 .chhoto-table thead {
-  color: light-dark(black, #e8e6e3);
-  background-color: light-dark(#e0e0e0, #2a2d2f);
+  color: var(--text);
+  background-color: var(--table);
 }
 .chhoto-table th,
 .chhoto-table td {
@@ -203,7 +221,7 @@ details.chhoto-input summary {
   margin-bottom: 1em;
 }
 #wrong-pass {
-  color: light-dark(red, #ff1a1a);
+  color: var(--warning);
 }
 
 .chhoto-dialog {
@@ -234,7 +252,7 @@ details.chhoto-input summary {
   text-align: center;
 }
 #edit-cancel-button {
-  background-color: light-dark(#dd1a1a, #901010);
+  background-color: var(--warning-button);
 }
 #edit-dialog label {
   max-width: 5em;
@@ -306,8 +324,8 @@ details.chhoto-input summary {
 .tooltip .tooltiptext {
   visibility: hidden;
   width: 8em;
-  background-color: light-dark(#eeeeee, #484a4b);
-  color: light-dark(black, #e8e6e3);
+  background-color: var(--tooltip);
+  color: var(--text);
   text-align: center;
   padding: 0.3em 0;
   border-radius: 0.4em;
@@ -327,7 +345,7 @@ details.chhoto-input summary {
   margin-left: -0.3em;
   border-width: 0.3em;
   border-style: solid;
-  border-color: light-dark(#eeeeee, #484a4b) transparent transparent transparent;
+  border-color: var(--tooltip) transparent transparent transparent;
 }
 .tooltip:hover .tooltiptext {
   visibility: visible;
@@ -352,13 +370,13 @@ details.chhoto-input summary {
     box-shadow: none;
   }
   .chhoto-table tr:first-child {
-    border-top: 0.15em dotted light-dark(black, #867d6e);
+    border-top: 0.15em dotted var(--accent-border);
   }
   .chhoto-table tr:not(:last-child) {
-    border-bottom: 0.15em dotted light-dark(black, #867d6e);
+    border-bottom: 0.15em dotted var(--accent-border);
   }
   .chhoto-table tr:nth-child(odd) {
-    background-color: light-dark(#f2f2f2, #101213);
+    background-color: var(--row-alt-bg);
   }
   .chhoto-table tr:nth-child(even) {
     background-color: inherit;
