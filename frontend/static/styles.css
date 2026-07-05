@@ -64,7 +64,7 @@ a {
   gap: 0.2em;
   height: 2em;
   padding: 0 0.5em;
-  border: 0.1em solid light-dark(black, #e8e6e3);
+  border: 0.1em solid light-dark(black, #867d6e);
   border-radius: 0.3em;
   background: transparent;
   color: light-dark(black, #e8e6e3);
