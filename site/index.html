@@ -52,10 +52,50 @@
   <body>
     <header class="site-header">
       <div class="container nav">
-        <span>
-          <img src="assets/favicon.svg" alt="chhoto-url-logo" />
-          <a class="brand" href="#top">Chhoto URL</a>
-        </span>
+        <div class="brand-group">
+          <div class="brand-wrap">
+            <img src="assets/favicon.svg" alt="chhoto-url-logo" />
+            <a class="brand" href="#top">Chhoto URL</a>
+          </div>
+
+          <div class="brand-stats" aria-label="Project stats">
+            <a
+              class="brand-stat"
+              href="https://github.com/SinTan1729/chhoto-url"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              <img
+                class="badge badge-light"
+                src="https://img.shields.io/github/stars/SinTan1729/chhoto-url?style=flat&label=stars&color=f3f4f6&labelColor=e5e7eb&logo=github&logoColor=111827"
+                alt="GitHub stars"
+              />
+              <img
+                class="badge badge-dark"
+                src="https://img.shields.io/github/stars/SinTan1729/chhoto-url?style=flat&label=stars&color=1f2937&labelColor=111827&logo=github&logoColor=f9fafb"
+                alt="GitHub stars"
+              />
+            </a>
+
+            <a
+              class="brand-stat"
+              href="https://hub.docker.com/r/sintan1729/chhoto-url"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              <img
+                class="badge badge-light"
+                src="https://img.shields.io/docker/pulls/sintan1729/chhoto-url?style=flat&label=pulls&color=f3f4f6&labelColor=e5e7eb&logo=docker&logoColor=2496ed"
+                alt="Docker pulls"
+              />
+              <img
+                class="badge badge-dark"
+                src="https://img.shields.io/docker/pulls/sintan1729/chhoto-url?style=flat&label=pulls&color=1f2937&labelColor=111827&logo=docker&logoColor=7dd3fc"
+                alt="Docker pulls"
+              />
+            </a>
+          </div>
+        </div>
 
         <button
           class="nav-toggle"
@@ -71,6 +111,7 @@
         <nav class="nav-links" id="siteNav" aria-label="Primary navigation">
           <a href="#features">Features</a>
           <a href="#quickstart">Quick Start</a>
+          <a href="#about">About</a>
           <a href="#links">Links</a>
         </nav>
       </div>
@@ -117,16 +158,26 @@
             </a>
           </div>
 
-          <div class="latest-version" id="latestVersion" aria-live="polite">
-            <span class="version-label">Latest version:</span>
-            <a
-              id="latestVersionLink"
-              href="https://github.com/SinTan1729/chhoto-url/releases"
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              Loading…
-            </a>
+          <div class="latest-version">
+            <div class="latest-version">
+              <span class="version-label">Latest version:</span>
+              <a
+                href="https://github.com/SinTan1729/chhoto-url/releases"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                <img
+                  class="badge badge-light"
+                  src="https://img.shields.io/github/v/release/SinTan1729/chhoto-url?display_name=tag&sort=semver&style=flat&color=f3f4f6&labelColor=e5e7eb&logo=github&logoColor=111827"
+                  alt="Latest release version"
+                />
+                <img
+                  class="badge badge-dark"
+                  src="https://img.shields.io/github/v/release/SinTan1729/chhoto-url?display_name=tag&sort=semver&style=flat&color=1f2937&labelColor=111827&logo=github&logoColor=f9fafb"
+                  alt="Latest release version"
+                />
+              </a>
+            </div>
           </div>
 
           <div class="hero-meta hero-actions" aria-label="Demo link">
@@ -224,6 +275,25 @@
                 your own instance.
               </p>
             </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="section" id="about">
+        <div class="container narrow">
+          <div class="section-heading">
+            <p class="eyebrow">About me</p>
+            <h2>Hi, I'm Sayantan Santra (সায়ন্তন সাঁতরা)</h2>
+          </div>
+
+          <div class="panel">
+            <p>
+              I’m a Mathematics researcher and do some programming as a hobby. I
+              mostly code in Rust, Go, and Python. For my research, I work in
+              Algebraic and Computational Number Theory. You can find more
+              information about me on
+              <a href="https://about.sayantansantra.com">my website</a>.
+            </p>
           </div>
         </div>
       </section>

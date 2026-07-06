@@ -42,6 +42,25 @@ body {
   background: var(--bg);
 }
 
+.badge-dark {
+  display: none;
+}
+.badge-light,
+.badge-dark {
+  height: 1.2rem;
+  width: auto;
+}
+
+@media (prefers-color-scheme: dark) {
+  .badge-light {
+    display: none;
+  }
+
+  .badge-dark {
+    display: block;
+  }
+}
+
 img {
   height: 1.5em;
 }
@@ -92,7 +111,15 @@ a:hover {
 
 .latest-version {
   margin-top: 1rem;
-  font-size: 0.95rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.latest-version a {
+  display: inline-flex;
+  align-items: center;
+  transform: translateY(1px);
 }
 
 .version-label {
@@ -123,6 +150,34 @@ a:hover {
 
 .hero-meta-password code {
   font-size: 0.92em;
+}
+.brand-group {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.brand-wrap {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+.brand-stats {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.brand-stat {
+  display: inline-flex;
+  align-items: center;
+}
+
+.brand-stat:hover {
+  color: var(--text);
 }
 
 .brand {
@@ -228,7 +283,7 @@ a:hover {
 .hero-text {
   margin: 1.25rem 0 0;
   max-width: 60ch;
-  color: var(--muted);
+  color: var(--text);
   font-size: 1.05rem;
 }
 
