@@ -5,3 +5,5 @@ resources/assets/favicon-32.png filter=lfs diff=lfs merge=lfs -text
 resources/assets/favicon-196.png filter=lfs diff=lfs merge=lfs -text
 resources/assets/favicon.ico filter=lfs diff=lfs merge=lfs -text
 resources/assets/favicon.svg filter=lfs diff=lfs merge=lfs -text
+site/static/banner.png filter=lfs diff=lfs merge=lfs -text
+docs/banner.svgz filter=lfs diff=lfs merge=lfs -text

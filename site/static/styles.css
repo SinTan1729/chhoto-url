@@ -322,7 +322,7 @@ a:hover {
 }
 
 .section {
-  padding: 4rem 0;
+  padding: 2rem 0;
 }
 
 .section-alt {
@@ -415,6 +415,15 @@ a:hover {
     border: 1px solid var(--border);
     border-radius: 12px;
     padding: 1rem;
+  }
+
+  .section {
+    padding-top: 1rem;
+  }
+
+  .hero {
+    padding-top: 1rem;
+    padding-bottom: 1rem;
   }
 
   .badge {

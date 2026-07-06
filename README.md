@@ -41,7 +41,7 @@ for small. URL means, well... URL. So the name simply means Small URL.
 
 # Demo
 
-Link: [demo.chhoto.link](https://demo.chhoto.link)
+Link: [demo.chhoto.link](https://demo.chhoto.link)</br>
 Password: `chhoto-url-demo-pass`
 
 #### Note:
