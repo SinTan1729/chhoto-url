@@ -184,6 +184,10 @@ a:hover {
   font-size: 2em;
 }
 
+.brand-wrap img {
+  height: 2em;
+}
+
 .nav-links {
   display: flex;
   gap: 1.25rem;
