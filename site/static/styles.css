@@ -47,7 +47,20 @@ img {
 }
 
 a {
-  color: inherit;
+  color: color-mix(in srgb, var(--muted) 90%, var(--accent) 10%);
+  text-decoration: underline;
+  text-underline-offset: 0.15em;
+}
+a:hover {
+  color: color-mix(in srgb, var(--text) 88%, var(--accent) 12%);
+  text-decoration-color: currentColor;
+}
+
+.nav-links a,
+.brand,
+.btn,
+.resource-link,
+.footer-inner a {
   text-decoration: none;
 }
 

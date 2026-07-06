@@ -1,6 +1,7 @@
 # Ignore build outputs
 backend/target
 frontend-final
+minified-tmp
 target
 
 # Ignore irrelevant dotfiles
