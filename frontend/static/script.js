@@ -712,8 +712,8 @@ const submitForm = () => {
 
   let ok = false;
   if (
-    typeof ClipboardItem === typeof Function &&
-    typeof navigator.clipboard === typeof Function
+    typeof ClipboardItem === "function" &&
+    typeof navigator.clipboard === "object"
   ) {
     const copyPromise = new ClipboardItem({
       "text/plain": fetch(url, payload)
