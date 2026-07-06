@@ -117,9 +117,7 @@ a:hover {
 }
 
 .latest-version a {
-  display: inline-flex;
-  align-items: center;
-  transform: translateY(1px);
+  height: 1.2rem;
 }
 
 .version-label {
@@ -386,9 +384,8 @@ a:hover {
 
 .footer-inner {
   display: flex;
-  justify-content: space-between;
+  justify-content: right;
   gap: 1rem;
-  flex-wrap: wrap;
   border-top: 1px solid var(--border);
   padding-top: 1.25rem;
 }
@@ -414,6 +411,10 @@ a:hover {
     border: 1px solid var(--border);
     border-radius: 12px;
     padding: 1rem;
+  }
+
+  .badge {
+    margin-bottom: 0.5rem;
   }
 
   .developer-links div:not(:last-child) {
