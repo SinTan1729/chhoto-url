@@ -1,0 +1,383 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Chhoto URL</title>
+    <meta
+      name="viewport"
+      content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0"
+    />
+    <meta http-equiv="X-UA-Compatible" content="ie=edge" />
+    <meta
+      name="description"
+      content="A simple selfhosted URL shortener with no unnecessary features."
+    />
+    <meta property="og:title" content="Chhoto URL" />
+    <meta
+      property="og:description"
+      content="A simple selfhosted URL shortener with no unnecessary features."
+    />
+
+    <meta
+      name="keywords"
+      content="url shortener, link shortener, self hosted, open source"
+    />
+    <link
+      rel="icon"
+      type="image/x-icon"
+      href="assets/favicon.ico"
+      sizes="any"
+    />
+    <link rel="icon" type="image/svg+xml" href="assets/favicon.svg" />
+    <link
+      rel="icon"
+      type="image/png"
+      href="assets/favicon-32.png"
+      sizes="32x32"
+    />
+    <link
+      rel="icon"
+      type="image/png"
+      href="assets/favicon-196.png"
+      sizes="196x196"
+    />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <header class="site-header">
+      <div class="container nav">
+        <span>
+          <img src="assets/favicon.svg" alt="chhoto-url-logo" />
+          <a class="brand" href="#top">Chhoto URL</a>
+        </span>
+
+        <button
+          class="nav-toggle"
+          id="navToggle"
+          type="button"
+          aria-expanded="false"
+          aria-controls="siteNav"
+          aria-label="Toggle navigation"
+        >
+          Menu
+        </button>
+
+        <nav class="nav-links" id="siteNav" aria-label="Primary navigation">
+          <a href="#features">Features</a>
+          <a href="#quickstart">Quick Start</a>
+          <a href="#links">Links</a>
+        </nav>
+      </div>
+    </header>
+
+    <main id="top">
+      <section class="hero">
+        <div class="container hero-inner">
+          <p class="eyebrow">Blazingly fast self-hosted URL shortener</p>
+          <h1>Short links, self-hosted.</h1>
+          <p class="hero-text">
+            Chhoto (ছোট,
+            <a href="https://en.wiktionary.org/wiki/%E0%A6%9B%E0%A7%8B%E0%A6%9F"
+              >pronunciation</a
+            >) URL is a lightweight URL shortener written in Rust. It is built
+            for simple self-hosted deployment and provides the core tools needed
+            to create and manage short links on your own infrastructure.
+          </p>
+          <p>
+            It's written in async Rust, using
+            <a href="https://actix.rs/">Actix Web</a> as the backend. The
+            frontend is written in html, css, and vanilla javascript. Links are
+            stored in an <a href="https://sqlite.org">SQLite database</a>. It
+            really is as simple and as fast as it gets.
+          </p>
+          <strong>No tracking. No bullshit. Blazingly fast.</strong>
+
+          <div class="hero-actions">
+            <a
+              class="btn btn-primary"
+              href="https://github.com/SinTan1729/chhoto-url"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              View on GitHub
+            </a>
+            <a
+              class="btn btn-secondary"
+              href="https://github.com/SinTan1729/chhoto-url/blob/main/docs/INSTALLATION.md"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              Installation Guide
+            </a>
+          </div>
+
+          <div class="latest-version" id="latestVersion" aria-live="polite">
+            <span class="version-label">Latest version:</span>
+            <a
+              id="latestVersionLink"
+              href="https://github.com/SinTan1729/chhoto-url/releases"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              Loading…
+            </a>
+          </div>
+
+          <div class="hero-meta hero-actions" aria-label="Demo link">
+            <span class="hero-meta-label">Live Demo:</span>
+            <a
+              class="hero-meta-link"
+              href="https://demo.chhoto.link"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              demo.chhoto.link
+            </a>
+            <span class="hero-meta-sep">•</span>
+            <span class="hero-meta-password"
+              >Password: <code>chhoto-url-demo-pass</code></span
+            >
+          </div>
+        </div>
+      </section>
+
+      <section class="section" id="features">
+        <div class="container narrow">
+          <div class="section-heading">
+            <p class="eyebrow">Features</p>
+            <h2>Features</h2>
+          </div>
+
+          <div class="card-grid">
+            <article class="card">
+              <h3>Custom short links</h3>
+              <p>Create short URLs with generated slugs or custom aliases.</p>
+            </article>
+
+            <article class="card">
+              <h3>Link expiry</h3>
+              <p>
+                Set short links to expire automatically after a chosen duration.
+              </p>
+            </article>
+
+            <article class="card">
+              <h3>Hit counting</h3>
+              <p>Track how many times a short link has been used.</p>
+            </article>
+
+            <article class="card">
+              <h3>Edit links</h3>
+              <p>Update existing links and manage their metadata.</p>
+            </article>
+
+            <article class="card">
+              <h3>Notes and filtering</h3>
+              <p>Attach notes to links and filter them in the web UI.</p>
+            </article>
+
+            <article class="card">
+              <h3>QR codes and API support</h3>
+              <p>
+                Generate QR codes and integrate with the service
+                programmatically.
+              </p>
+            </article>
+          </div>
+        </div>
+      </section>
+
+      <section class="section section-alt" id="quickstart">
+        <div class="container narrow">
+          <div class="section-heading">
+            <p class="eyebrow">Quick Start</p>
+            <h2>Getting started</h2>
+          </div>
+
+          <div class="stack">
+            <div class="panel">
+              <h3>1. Deploy the service</h3>
+              <p>
+                Run Chhoto URL with Docker, Podman, or another OCI-compatible
+                container workflow.
+              </p>
+            </div>
+
+            <div class="panel">
+              <h3>2. Configure the application</h3>
+              <p>
+                Set the required environment variables for the site URL,
+                credentials, and storage configuration.
+              </p>
+            </div>
+
+            <div class="panel">
+              <h3>3. Start creating short links</h3>
+              <p>
+                Use the web interface to create, edit, and manage short URLs on
+                your own instance.
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="section" id="links">
+        <div class="container narrow">
+          <div class="section-heading">
+            <p class="eyebrow">Links</p>
+            <h2>Project resources</h2>
+          </div>
+
+          <div class="stack">
+            <div class="resource-links">
+              <a
+                class="resource-link"
+                href="https://github.com/SinTan1729/chhoto-url"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                <strong>GitHub</strong>
+                <span>Source code, README, releases, and updates</span>
+              </a>
+
+              <a
+                class="resource-link"
+                href="https://codeberg.org/SinTan1729/chhoto-url"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                <strong>Codeberg</strong>
+                <span>Mirror Codeberg repository</span>
+              </a>
+            </div>
+
+            <a
+              class="resource-link"
+              href="https://github.com/SinTan1729/chhoto-url/blob/main/docs/INSTALLATION.md"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              <strong>Installation and configuration guide</strong>
+              <span
+                >Setup steps, environment variables, and deployment notes</span
+              >
+            </a>
+
+            <a
+              class="resource-link"
+              href="https://github.com/SinTan1729/chhoto-url/blob/main/docs/CLI.md"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              <strong>CLI Usage</strong>
+              <span>Guide for CLI usage</span>
+            </a>
+
+            <div class="resource-links">
+              <a
+                class="resource-link"
+                href="https://hub.docker.com/r/sintan1729/chhoto-url"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                <strong>Docker Hub</strong>
+                <span>Container image from Docker Hub</span>
+              </a>
+
+              <a
+                class="resource-link"
+                href="https://ghcr.io/sintan1729/chhoto-url"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                <strong>GHCR</strong>
+                <span>Container image from GHCR</span>
+              </a>
+            </div>
+
+            <a
+              class="resource-link"
+              href="https://github.com/SinTan1729/chhoto-url/blob/main/docs/TOOLS.md"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              <strong>Third party tools</strong>
+              <span>Tools to interact with Chhoto URL</span>
+            </a>
+
+            <div class="panel developer-links">
+              <h3>Developer</h3>
+              <p>Personal links for the maintainer of Chhoto URL.</p>
+
+              <div class="resource-links">
+                <a
+                  class="resource-link"
+                  href="https://about.sayantansantra.com"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  <strong>Website</strong>
+                  <span>Personal academic website</span>
+                </a>
+
+                <a
+                  class="resource-link"
+                  href="https://github.com/Sintan1729"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  <strong>GitHub Profile</strong>
+                  <span>Other repositories and development work</span>
+                </a>
+              </div>
+
+              <div class="resource-links">
+                <a
+                  class="resource-link"
+                  href="https://mas.to/@sayantansantra"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  <strong>Mastodon</strong>
+                  <span>Random posts</span>
+                </a>
+
+                <a
+                  class="resource-link"
+                  href="mailto:mail@sayantansantra.com"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  <strong>Contact</strong>
+                  <span>mail@sayantansantra.com</span>
+                </a>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <footer class="site-footer">
+      <div class="container footer-inner">
+        <p>Chhoto URL - Blazingly fast self-hosted URL shortener.</p>
+        <a
+          href="https://github.com/SinTan1729/chhoto-url"
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          GitHub
+        </a>
+      </div>
+    </footer>
+
+    <script src="script.js"></script>
+  </body>
+</html>
