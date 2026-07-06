@@ -33,16 +33,13 @@ html {
 
 body {
   margin: 0;
-  font-family:
-    "Inter",
-    system-ui,
-    -apple-system,
-    BlinkMacSystemFont,
-    "Segoe UI",
-    sans-serif;
+  font-family: "Inter", sans-serif;
   line-height: 1.6;
   color: var(--text);
   background: var(--bg);
+}
+.bn {
+  font-family: "Noto Sans Bengali", sans-serif;
 }
 
 .badge-dark {
