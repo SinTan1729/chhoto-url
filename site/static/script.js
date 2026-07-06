@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2023-2026 Sayantan Santra <sayantan.santra689@gmail.com>
+// SPDX-License-Identifier: MIT
+
 document.addEventListener("DOMContentLoaded", () => {
   const toggle = document.getElementById("navToggle");
   const nav = document.getElementById("siteNav");

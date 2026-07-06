@@ -215,7 +215,7 @@ values are: `Argon2`. More algorithms may be added later. Unsupported values are
 
 _Note: If using a compose file, make sure to escape $ by $$._
 
-_Note: It will add some latency to some of your requests and use more resources in general._
+_Warning: It will add some latency to some of your requests and use more resources in general._
 
 Recommended command for hashing:
 
@@ -248,6 +248,9 @@ Set this to `True` to completely disable the frontend.
 If you want to serve a custom landing page, put all your site related files, along with a valid `index.html` file in a
 directory, and set this to the path of the directory. If using docker, you need to first
 mount the directory inside the container. The admin page will then be located at `/admin/manage`.
+
+_Warning: Put anything except the `index.html` file inside some directory, because naked filenames will be treated
+as shortlinks._
 
 ### `CHHOTO_CACHE_CONTROL_HEADER`
 
