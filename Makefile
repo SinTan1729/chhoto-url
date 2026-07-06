@@ -83,5 +83,20 @@ else
 endif
 
 clean: podman-stop
+	@echo "Cleaning up..."
 	cargo clean --manifest-path=backend/Cargo.toml
+	rm -rf "./minified-tmp/"
+
+minify:
+	rm -rf "./minified-tmp/"
+	@echo "Minifying resources..."
+	minify -rs "./site/" -o "./minified-tmp/"
+	find ./minified-tmp/ -type f -regextype egrep -not -regex '.+\.(html|js|css|svg|ico|png|webp)' -delete
+
+deploy: minify
+	@echo "Deploying website for public access..."
+	rsync -aAXhP --delete "./minified-tmp/" "vps-rsync:/home/admin/podman/chhoto-url/landing/"
+
+publish: deploy clean
+	@echo "Done!"
 

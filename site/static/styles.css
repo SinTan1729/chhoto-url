@@ -1,12 +1,18 @@
 :root {
-  --bg: #0f172a;
-  --bg-alt: #111827;
-  --panel: #1e293b;
-  --border: rgba(255, 255, 255, 0.08);
-  --text: #f8fafc;
-  --muted: #cbd5e1;
-  --accent: #8b5cf6;
-  --accent-dark: #7c3aed;
+  color-scheme: light dark;
+  /* Colors */
+  --bg: light-dark(#f8f8f7, #0f1115);
+  --bg-alt: light-dark(#f1f3f5, #171a21);
+  --panel: light-dark(#ffffff, #1d212b);
+  --border: light-dark(rgba(15, 23, 42, 0.08), rgba(255, 255, 255, 0.1));
+  --text: light-dark(#111827, #f3f4f6);
+  --muted: light-dark(#4b5563, #9ca3af);
+  --accent: light-dark(#2563eb, #6045fa);
+  --accent-dark: light-dark(#1d4ed8, #3b22f6);
+  --accent-soft: light-dark(#dbeafe, #172554);
+  --eyebrow: light-dark(#1d4ed8, #93c5fd);
+  --footer: light-dark(#2563eb, #93c5fd);
+  /* Geometry */
   --container: 960px;
   --radius: 14px;
 }
@@ -58,7 +64,7 @@ a {
   position: sticky;
   top: 0;
   z-index: 20;
-  background: rgba(15, 23, 42, 0.95);
+  background: rgba(midnightblue, 0.95);
   border-bottom: 1px solid var(--border);
   backdrop-filter: blur(8px);
 }
@@ -147,11 +153,11 @@ a {
   flex-direction: column;
   gap: 0.25rem;
   padding: 0.9rem 1rem;
-  border: 1px solid var(--border-color, #ddd);
+  border: 1px solid var(--border-color, gainsboro);
   border-radius: 12px;
   text-decoration: none;
   color: inherit;
-  background: var(--card-bg, #fff);
+  background: var(--card-bg, white);
   transition:
     transform 0.15s ease,
     box-shadow 0.15s ease,
@@ -160,8 +166,8 @@ a {
 
 .resource-link:hover {
   transform: translateY(-1px);
-  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.08);
-  border-color: var(--accent-color, #888);
+  box-shadow: 0 6px 18px rgba(black, 0.08);
+  border-color: var(--accent-color, gray);
 }
 
 .resource-link strong {
@@ -171,7 +177,7 @@ a {
 
 .resource-link span {
   font-size: 0.9rem;
-  color: var(--muted-color, #666);
+  color: var(--muted-color, dimgray);
   line-height: 1.4;
 }
 
@@ -189,7 +195,7 @@ a {
   font-weight: 700;
   letter-spacing: 0.12em;
   text-transform: uppercase;
-  color: #c4b5fd;
+  color: var(--eyebrow);
 }
 
 .hero h1,
@@ -230,7 +236,7 @@ a {
 
 .btn-primary {
   background: var(--accent);
-  color: #fff;
+  color: white;
 }
 
 .btn-primary:hover {
@@ -300,7 +306,7 @@ a {
 }
 
 .resource-link:hover {
-  border-color: rgba(139, 92, 246, 0.4);
+  border-color: rgba(blueviolet, 0.4);
 }
 
 .site-footer {
@@ -317,7 +323,7 @@ a {
 }
 
 .footer-inner a {
-  color: #c4b5fd;
+  color: var(--footer);
 }
 
 @media (max-width: 760px) {
