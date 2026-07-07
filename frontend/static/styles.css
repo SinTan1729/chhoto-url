@@ -151,8 +151,10 @@ a {
   float: right;
   text-align: right;
 }
-#filterText {
-  height: 2.2em;
+#filter-div fieldset {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.3em;
 }
 
 #controls,
@@ -409,11 +411,24 @@ details.chhoto-input summary {
   }
 
   #filter-div {
-    float: none;
-    text-align: inherit;
+    width: 100%;
   }
-  #filterText {
-    height: auto;
+  #filter-div fieldset {
+    display: flex;
+    align-items: center;
+    gap: 0.3em;
+  }
+  #filterText,
+  #filter-div button {
+    box-sizing: border-box;
+    min-height: 2.4em;
+    margin: 0;
+  }
+  #filter-div button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    white-space: nowrap;
   }
 
   .chhoto-table td::before {
