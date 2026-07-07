@@ -66,12 +66,12 @@ img {
 }
 
 a {
-  color: color-mix(in srgb, var(--muted) 90%, var(--accent) 10%);
+  color: color-mix(in srgb, var(--text) 80%, var(--accent) 20%);
   text-decoration: underline;
   text-underline-offset: 0.15em;
 }
 a:hover {
-  color: color-mix(in srgb, var(--text) 88%, var(--accent) 12%);
+  color: color-mix(in srgb, var(--text) 90%, var(--accent) 10%);
   text-decoration-color: currentColor;
 }
 
@@ -343,6 +343,34 @@ a:hover {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 1rem;
+}
+
+.screenshots-pair {
+  --shot-height: clamp(160px, 34vw, 420px);
+
+  display: flex;
+  gap: 1rem;
+  justify-content: center;
+  align-items: flex-start;
+  flex-wrap: nowrap;
+  overflow-x: auto;
+}
+
+.screenshot-frame {
+  margin: 0;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+  background: var(--panel);
+  line-height: 0;
+  flex: 0 0 auto;
+}
+
+.screenshot-frame img {
+  display: block;
+  height: var(--shot-height);
+  width: auto;
+  max-width: none;
 }
 
 .card,

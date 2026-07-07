@@ -10,11 +10,17 @@ document.addEventListener("DOMContentLoaded", () => {
   const closeNav = () => {
     nav.classList.remove("is-open");
     toggle.setAttribute("aria-expanded", "false");
+    document.getElementById("top").style.filter = "blur(0px)";
   };
 
   toggle.addEventListener("click", (e) => {
     e.stopPropagation();
     const isOpen = nav.classList.toggle("is-open");
+    if (isOpen) {
+      document.getElementById("top").style.filter = "blur(2px)";
+    } else {
+      document.getElementById("top").style.filter = "blur(0px)";
+    }
     toggle.setAttribute("aria-expanded", String(isOpen));
   });
 

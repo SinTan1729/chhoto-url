@@ -85,7 +85,6 @@ endif
 clean: podman-stop
 	@echo "Cleaning up..."
 	cargo clean --manifest-path=backend/Cargo.toml
-	rm -rf "./minified-tmp/"
 
 minify:
 	rm -rf "./minified-tmp/"
@@ -97,6 +96,7 @@ deploy: minify
 	@echo "Deploying website for public access..."
 	rsync -aAXhP --delete "./minified-tmp/" "vps-rsync:/home/admin/podman/chhoto-url/landing/"
 
-publish: deploy clean
+publish: deploy
+	rm -rf "./minified-tmp/"
 	@echo "Done!"
 

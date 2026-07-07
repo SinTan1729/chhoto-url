@@ -49,11 +49,12 @@
     <link
       rel="icon"
       type="image/png"
-      href="admin/manage/assets/favicon-192.png"
+      href="admin/manage/assets/favicon-196.png"
       sizes="196x196"
     />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link rel="preconnect" href="https://media.githubusercontent.com" />
     <link
       href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap"
       rel="stylesheet"
@@ -127,6 +128,7 @@
 
         <nav class="nav-links" id="siteNav" aria-label="Primary navigation">
           <a href="#features">Features</a>
+          <a href="#screenshots">Screenshots</a>
           <a href="#quickstart">Quick Start</a>
           <a href="#about">About Me</a>
           <a href="#links">Links</a>
@@ -141,7 +143,9 @@
           <h1>Short links, self-hosted.</h1>
           <p class="hero-text">
             Chhoto (<span class="bn">ছোট</span>,
-            <a href="https://en.wiktionary.org/wiki/%E0%A6%9B%E0%A7%8B%E0%A6%9F"
+            <a
+              href="https://en.wiktionary.org/wiki/%E0%A6%9B%E0%A7%8B%E0%A6%9F"
+              target="_blank"
               >pronunciation</a
             >) URL is a lightweight URL shortener written in Rust. It is built
             for simple self-hosted deployment and provides the core tools needed
@@ -149,9 +153,10 @@
           </p>
           <p class="hero-text">
             It's written in async Rust, using
-            <a href="https://actix.rs/">Actix Web</a> as the backend. The
-            frontend is written in html, css, and vanilla javascript. Links are
-            stored in an <a href="https://sqlite.org">SQLite database</a>. It
+            <a href="https://actix.rs/" target="_blank">Actix Web</a> as the
+            backend. The frontend is written in html, css, and vanilla
+            javascript. Links are stored in an
+            <a href="https://sqlite.org" target="_blank">SQLite database</a>. It
             really is as simple and as fast as it gets.
           </p>
           <p>
@@ -271,6 +276,32 @@
         </div>
       </section>
 
+      <section class="section section-alt" id="screenshots">
+        <div class="container narrow">
+          <div class="section-heading">
+            <p class="eyebrow">Screenshots</p>
+            <h2>Snappy WebUI</h2>
+          </div>
+          <div class="screenshots-pair">
+            <figure class="screenshot-frame">
+              <img
+                src="https://media.githubusercontent.com/media/SinTan1729/chhoto-url/refs/heads/main/docs/screenshot-desktop.webp"
+                alt="Chhoto URL desktop interface"
+                loading="lazy"
+              />
+            </figure>
+
+            <figure class="screenshot-frame">
+              <img
+                src="https://media.githubusercontent.com/media/SinTan1729/chhoto-url/refs/heads/main/docs/screenshot-mobile.webp"
+                alt="Chhoto URL mobile interface"
+                loading="lazy"
+              />
+            </figure>
+          </div>
+        </div>
+      </section>
+
       <section class="section section-alt" id="quickstart">
         <div class="container narrow">
           <div class="section-heading">
@@ -321,7 +352,7 @@
               mostly code in Rust, Go, and Python. For my research, I work in
               Algebraic and Computational Number Theory. You can find more
               information about me on
-              <a href="https://chhoto.link/me">my website</a>.
+              <a href="https://chhoto.link/me" target="_blank">my website</a>.
             </p>
           </div>
         </div>
