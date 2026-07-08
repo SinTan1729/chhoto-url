@@ -238,6 +238,10 @@ div[name="links-div"] {
 details.chhoto-input summary {
   cursor: pointer;
 }
+summary,
+.svg-button {
+  -webkit-tap-highlight-color: transparent;
+}
 
 #password {
   width: 100%;
@@ -379,7 +383,7 @@ details.chhoto-input summary {
 }
 
 /* Settings for mobile devices */
-@media (pointer: none), (pointer: coarse) {
+@media (max-width: 768px) {
   .container {
     max-width: 98vw;
   }

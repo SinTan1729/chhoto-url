@@ -638,7 +638,7 @@ const deleteButton = (shortUrl) => {
 
   btn.onclick = (e) => {
     e.preventDefault();
-    if (confirm("Click OK to delete the entry " + shortUrl + ".")) {
+    if (confirm("Click OK to delete the entry '" + shortUrl + "'.")) {
       showAlert("&nbsp;", "transparent");
       fetch(prepSubdir(`/api/del/${shortUrl}`), {
         method: "DELETE",
@@ -783,7 +783,7 @@ const submitEdit = () => {
   if (expiry_raw != "") {
     expiry = Math.floor(new Date(expiry_raw).getTime() / 1000);
   }
-  if (confirm("Click OK to confirm the edit of " + shortUrl + ".")) {
+  if (confirm("Click OK to confirm the edit of '" + shortUrl + "'.")) {
     data = {
       shortlink: shortUrl,
       longlink: longUrl,

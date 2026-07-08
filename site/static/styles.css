@@ -426,7 +426,7 @@ a:hover {
   color: var(--footer);
 }
 
-@media (max-width: 760px) {
+@media (max-width: 768px) {
   .nav-toggle {
     display: inline-flex;
   }
