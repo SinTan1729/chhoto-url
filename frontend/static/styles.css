@@ -58,6 +58,14 @@ body {
   border-color: var(--border);
 }
 
+#logo,
+.chhoto-table th,
+.chhoto-table td,
+span[name="label"] {
+  user-select: none;
+  -webkit-user-select: none; /* Safari */
+}
+
 #expiryDelay {
   background-color: var(--tooltip-bg);
   border-color: var(--border);
@@ -204,7 +212,8 @@ td[name="actions"] div button.svg-button svg,
   height: 1.3em;
 }
 
-.svg-button:hover svg {
+#logo img:hover,
+.svg-button:enabled:hover svg {
   transform: scale(1.2);
 }
 
@@ -335,6 +344,9 @@ details.chhoto-input summary {
 .tooltip {
   position: relative;
 }
+.tooltip span {
+  cursor: pointer;
+}
 .tooltip .tooltiptext {
   visibility: hidden;
   width: 8em;
@@ -361,7 +373,7 @@ details.chhoto-input summary {
   border-style: solid;
   border-color: var(--tooltip) transparent transparent transparent;
 }
-.tooltip:hover .tooltiptext {
+.tooltip span:hover + .tooltiptext {
   visibility: visible;
   opacity: 1;
 }

@@ -320,6 +320,10 @@ const refreshExpiryTimes = async () => {
   const tds = document.getElementsByClassName("tooltip");
   for (let i = 0; i < tds.length; i++) {
     let td = tds[i];
+    let span = td.firstChild.firstChild;
+    if (span.innerText == "expired") {
+      continue;
+    }
     let expiryTimeParsed = new Date(td.getAttribute("data-time") * 1000);
     let relativeTime = formatRelativeTime(expiryTimeParsed);
     if (relativeTime == "expired") {
@@ -327,9 +331,11 @@ const refreshExpiryTimes = async () => {
       for (const btn of td.parentElement.lastChild.querySelectorAll("button")) {
         btn.disabled = true;
       }
+      td.firstChild.lastChild.remove();
     }
-    let div = td.firstChild;
-    div.innerHTML = div.innerHTML.replace(div.innerText, relativeTime);
+    if (span.innerText != relativeTime) {
+      span.innerText = relativeTime;
+    }
   }
   if (tds.length > 0) {
     setTimeout(refreshExpiryTimes, 1000);
@@ -396,8 +402,9 @@ const TR = (i, row) => {
     const relativeExpiryTime = formatRelativeTime(expiryTimeParsed);
     const accurateExpiryTime = expiryTimeParsed.toLocaleString();
     expiryHTML =
+      "<span>" +
       relativeExpiryTime +
-      '<span class="tooltiptext">' +
+      '</span> <span class="tooltiptext">' +
       accurateExpiryTime +
       "</span>";
   }
