@@ -31,6 +31,7 @@
   --accent-border: light-dark(black, #867d6e);
   --tooltip: light-dark(#eeeeee, #484a4b);
   --tooltip-bg: light-dark(white, #2b2a33);
+  --button-hover: light-dark(#eeeeee, #2b2a33);
 }
 body {
   color: var(--text);
@@ -43,6 +44,10 @@ body {
 
 .chhoto-button {
   background-color: var(--accent);
+}
+.chhoto-button:hover,
+.linkButton:hover {
+  transform: scale(1.05);
 }
 .pure-form input.chhoto-input {
   width: 65%;
@@ -90,6 +95,9 @@ a {
   cursor: pointer;
   box-sizing: border-box;
   margin-left: 0.2em;
+}
+.linkButton:hover {
+  background: var(--button-hover);
 }
 
 .chhoto-table {
@@ -194,6 +202,10 @@ td[name="actions"] div button,
 td[name="actions"] div button.svg-button svg,
 .pure-table caption button.svg-button svg {
   height: 1.3em;
+}
+
+.svg-button:hover svg {
+  transform: scale(1.2);
 }
 
 .pure-table caption span {
