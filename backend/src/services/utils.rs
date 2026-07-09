@@ -60,6 +60,13 @@ fn is_shortlink_valid(link: &str, allow_capital_letters: bool) -> bool {
     }
 }
 
+// Only have printable ascii characters as valid characters in notes
+#[inline]
+fn is_note_valid(note: &Option<String>) -> bool {
+    note.as_ref()
+        .is_none_or(|n| n.chars().all(|c| c.is_ascii_graphic() || c == ' '))
+}
+
 // Only have a-z, 0-9, - and _ as valid characters in a shortlink
 #[inline]
 fn normalize_filter(link: &str) -> Option<String> {
@@ -161,6 +168,9 @@ pub(super) fn add_links_helper(
         });
     }
 
+    let allow_capital_letters = config.allow_capital_letters;
+    let public_mode_expiry_delay = config.public_mode_expiry_delay;
+
     let mut output: Vec<_> = (0..chunks.len()).map(|_| Err(ServerError)).collect();
     let (mut with_shortlinks, mut without_shortlinks) = (Vec::new(), Vec::new());
     let clean_req = |mut req: NewURLRequest| {
@@ -169,7 +179,7 @@ pub(super) fn add_links_helper(
             .expiry_delay
             .map(|d| d.clamp(0, 157_784_760))
             .filter(|&d| d > 0);
-        req.expiry_delay = match (using_public_mode, config.public_mode_expiry_delay) {
+        req.expiry_delay = match (using_public_mode, public_mode_expiry_delay) {
             (true, Some(delay)) => Some(exp.map_or(delay, |d| d.min(delay))),
             _ => exp,
         };
@@ -178,9 +188,17 @@ pub(super) fn add_links_helper(
     };
     for (i, req) in chunks.into_iter().enumerate() {
         let req = clean_req(req);
-        if !is_longlink_valid(&req.longlink) {
+        if !is_shortlink_valid(&req.shortlink, allow_capital_letters) {
+            output[i] = Err(ClientError {
+                reason: "Invalid shortlink!".to_owned(),
+            });
+        } else if !is_longlink_valid(&req.longlink) {
             output[i] = Err(ClientError {
                 reason: "Invalid longlink!".to_owned(),
+            });
+        } else if !is_note_valid(&req.notes) {
+            output[i] = Err(ClientError {
+                reason: "Invalid notes!".to_owned(),
             });
         } else if req.shortlink.is_empty() {
             without_shortlinks.push((i, req));
@@ -254,10 +272,13 @@ pub(super) async fn edit_link_helper(
         return Err(ClientError {
             reason: "Invalid shortlink!".to_owned(),
         });
-    }
-    if !is_longlink_valid(&chunks.longlink) {
+    } else if !is_longlink_valid(&chunks.longlink) {
         return Err(ClientError {
-            reason: "Unsupported URL scheme.".to_owned(),
+            reason: "Invalid longlink!".to_owned(),
+        });
+    } else if !is_note_valid(&chunks.notes) {
+        return Err(ClientError {
+            reason: "Invalid notes!".to_owned(),
         });
     }
     let result = database::edit_link(
