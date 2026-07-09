@@ -453,6 +453,9 @@ a:hover {
     padding-top: 1rem;
     padding-bottom: 1rem;
   }
+  .hero-meta-sep {
+    visibility: hidden;
+  }
 
   .badge {
     margin-bottom: 0.5rem;
