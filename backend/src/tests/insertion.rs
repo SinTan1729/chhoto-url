@@ -117,6 +117,38 @@ async fn bad_inserts() {
 }
 
 #[test]
+async fn bad_edits() {
+    let test = "bad-edits";
+    let conf = default_config(test);
+    let api_key = conf.api_key.clone().unwrap();
+    let (_tempdir, app) = create_app(&conf, test).await;
+
+    let (status, _) = add_link(&app, &api_key, "test1", 0, "note").await;
+    status.is_success();
+
+    for (shortlink, notes) in [
+        ("bad_&1", "note"),
+        ("*bad_)", "note"),
+        ("Bad3", "note"),
+        ("good1", "note"),
+        ("good1", "note"),
+        ("good1", "note\x00"),
+        ("good1", "note\t"),
+    ] {
+        let resp = edit_link(&app, &api_key, shortlink, false, None, Some(notes));
+        assert!(resp.await.is_client_error());
+    }
+
+    let req = test::TestRequest::put()
+        .uri("/api/edit")
+        .insert_header(("X-API-Key", api_key))
+        .set_payload(r#"[{"shortlink":"test1","longlink":"ftps://example.com/test1"}"#)
+        .to_request();
+    let resp = test::call_service(&app, req).await;
+    assert!(resp.status().is_client_error());
+}
+
+#[test]
 async fn batch_insertion() {
     let test = "batch-insertion";
     let mut conf = default_config(test);
