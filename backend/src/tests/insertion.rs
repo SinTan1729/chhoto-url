@@ -72,9 +72,7 @@ async fn adding_link_with_generated_shortlink_with_uid_slug() {
 #[test]
 async fn empty_insertion() {
     let test = "batch-insertion";
-    let mut conf = default_config(test);
-    conf.slug_style = config::SlugStyle::Uid;
-    conf.slug_length = 12;
+    let conf = default_config(test);
     let (_tempdir, app) = create_app(&conf, test).await;
     let req = test::TestRequest::post()
         .uri("/api/new")
@@ -88,6 +86,34 @@ async fn empty_insertion() {
 
     assert!(status.is_client_error());
     assert_eq!(response.reason, "An empty array of links was provided!");
+}
+
+#[test]
+async fn bad_inserts() {
+    let test = "bad-inserts";
+    let conf = default_config(test);
+    let api_key = conf.api_key.clone().unwrap();
+    let (_tempdir, app) = create_app(&conf, test).await;
+    for (shortlink, longlink, notes) in [
+        ("bad_&1", "https://example.com", "note"),
+        ("*bad_)", "https://example.com", "note"),
+        ("Bad3", "https://example.com", "note"),
+        ("good1", "file:///example.com", "note"),
+        ("good1", "ftps://example.com", "note"),
+        ("good1", "https://example.com", "note\x00"),
+        ("good1", "https://example.com", "note\t"),
+    ] {
+        let req = test::TestRequest::post()
+            .uri("/api/new")
+            .insert_header(("X-API-Key", api_key.clone()))
+            .set_payload(format!(
+                r#"{{"shortlink":"{shortlink}","longlink":"{longlink}","notes":"{notes}"}}"#
+            ))
+            .to_request();
+        let resp = test::call_service(&app, req).await;
+        let status = resp.status();
+        assert!(status.is_client_error());
+    }
 }
 
 #[test]
