@@ -336,7 +336,7 @@ code {
   padding: 2rem 0;
 }
 
-.section-alt {
+.section:nth-child(even) {
   background: var(--bg-alt);
   border-top: 1px solid var(--border);
   border-bottom: 1px solid var(--border);
