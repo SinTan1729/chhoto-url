@@ -61,8 +61,16 @@ body {
   }
 }
 
-img {
-  height: 1.5em;
+.brand-wrap img {
+  height: 2em;
+  transition: filter 0.2s ease;
+}
+
+.brand-wrap img:hover {
+  filter: drop-shadow(
+      0 0 10px color-mix(in srgb, var(--accent) 45%, transparent)
+    )
+    drop-shadow(0 0 14px color-mix(in srgb, var(--accent) 25%, transparent));
 }
 
 a {
