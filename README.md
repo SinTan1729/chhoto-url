@@ -7,7 +7,7 @@
 [![maintainer-badge](https://img.shields.io/badge/maintainer-SinTan1729-blue?logo=github)](https://github.com/SinTan1729)
 [![latest-release-badge](https://img.shields.io/github/v/release/SinTan1729/chhoto-url?logo=github)](https://github.com/SinTan1729/chhoto-url/releases/latest)
 [![docker-image-size-badge](https://img.shields.io/docker/image-size/sintan1729/chhoto-url?logo=docker&label=size)](https://hub.docker.com/r/sintan1729/chhoto-url/tags)
-[![license-badge](https://img.shields.io/badge/License-MIT-green?logo=git&label=license)](https://spdx.org/licenses/MIT.html)
+[![license-badge](https://img.shields.io/badge/License-MIT-green?logo=googledocs&label=license)](https://spdx.org/licenses/MIT.html)
 
 # ![Logo](frontend/assets/favicon-32.png) <span style="font-size:42px">Chhoto URL</span>
 
