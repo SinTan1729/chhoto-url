@@ -6,7 +6,7 @@ let VERSION = null;
 let SITE_URL = "-";
 let CONFIG = null;
 let SUBDIR = null;
-let ADMIN = false;
+let ADMIN = null;
 let LOCAL_DATA = [];
 let CUR_PAGE = 0;
 let FILTER = null;
@@ -44,6 +44,39 @@ const UNITS = {
   second: 1000,
 };
 
+const loadCachedState = () => {
+  try {
+    const cachedAdmin = sessionStorage.getItem("admin");
+    const cachedConfig = sessionStorage.getItem("config");
+
+    if (cachedAdmin !== null) {
+      ADMIN = cachedAdmin === "true";
+    }
+    if (cachedConfig !== null) {
+      CONFIG = JSON.parse(cachedConfig);
+    }
+  } catch (err) {
+    clearCachedState();
+  }
+};
+
+const clearCachedState = () => {
+  ADMIN = null;
+  CONFIG = null;
+  sessionStorage.removeItem("admin");
+  sessionStorage.removeItem("config");
+};
+
+const cacheAdmin = (admin) => {
+  ADMIN = admin;
+  sessionStorage.setItem("admin", String(admin));
+};
+
+const cacheConfig = (config) => {
+  CONFIG = config;
+  sessionStorage.setItem("config", JSON.stringify(config));
+};
+
 const prepSubdir = (link) => {
   if (!SUBDIR) {
     const thisPage = new URL(window.location.href);
@@ -62,36 +95,43 @@ const hasAllowedScheme = (url) => {
 };
 
 const getConfig = async () => {
-  if (!CONFIG) {
-    CONFIG = await fetch(prepSubdir("/api/getconfig"), { cache: "no-cache" })
-      .then((res) => res.json())
-      .catch((err) => {
-        console.log("Error while fetching config.");
-      });
-    if (CONFIG.site_url == null) {
-      SITE_URL = window.location.host;
+  if (ADMIN == null) {
+    return;
+  }
+  if (CONFIG == null) {
+    const res = await fetch(prepSubdir("/api/getconfig"));
+    if (!res.ok) {
+      console.log("Error while fetching config.");
+      clearCachedState();
+    }
+
+    const config = await res.json();
+    if (config.error == null) {
+      cacheConfig(config);
     } else {
-      SITE_URL = CONFIG.site_url.replace(/^"/, "").replace(/"$/, "");
-      const url = new URL(SITE_URL);
-      SITE_URL = SITE_URL.replace(
-        url.hostname,
-        punycode.toUnicode(url.hostname),
-      );
-      SITE_URL = SITE_URL.replace(
-        url.pathname,
-        punycode.toUnicode(url.pathname),
-      );
-      SITE_URL = SITE_URL.replace(/\/$/, "");
-    }
-
-    if (CONFIG.frontend_page_size == null) {
-      CONFIG.frontend_page_size = 10;
-    }
-
-    if (!hasAllowedScheme(SITE_URL)) {
-      SITE_URL = window.location.protocol + "//" + SITE_URL;
+      return;
     }
   }
+
+  VERSION = CONFIG.version;
+  if (CONFIG.site_url == null) {
+    SITE_URL = window.location.host;
+  } else {
+    SITE_URL = CONFIG.site_url.replace(/^"/, "").replace(/"$/, "");
+    const url = new URL(SITE_URL);
+    SITE_URL = SITE_URL.replace(url.hostname, punycode.toUnicode(url.hostname));
+    SITE_URL = SITE_URL.replace(url.pathname, punycode.toUnicode(url.pathname));
+    SITE_URL = SITE_URL.replace(/\/$/, "");
+  }
+
+  if (CONFIG.frontend_page_size == null) {
+    CONFIG.frontend_page_size = 10;
+  }
+
+  if (!hasAllowedScheme(SITE_URL)) {
+    SITE_URL = window.location.protocol + "//" + SITE_URL;
+  }
+
   VERSION = CONFIG.version;
 };
 
@@ -123,58 +163,123 @@ const refreshData = async () => {
   try {
     const loading_text = document.getElementById("loading-text");
     const admin_button = document.getElementById("admin-button");
-    if (!ADMIN) {
-      const res = await fetch(prepSubdir("/api/whoami"), { cache: "no-cache" });
-      if (res.status == 200) {
-        const role = await res.text();
-        switch (role) {
-          case "nobody":
-            showLogin();
-            break;
-          case "public":
-            await getConfig();
-            loading_text.innerHTML = "Using public mode.";
-            const expiry = parseInt(CONFIG.public_mode_expiry_delay);
-            if (expiry > 0) {
-              loading_text.innerHTML +=
-                " Unless chosen a shorter expiry time, submitted links will automatically expire ";
-              const time = new Date();
-              time.setSeconds(time.getSeconds() + expiry);
-              loading_text.innerHTML += formatRelativeTime(time) + ".";
-            }
-            admin_button.getElementsByTagName("span")[0].innerText = "login";
-            admin_button.hidden = false;
-            updateInputBox();
-            break;
-          case "admin":
-            ADMIN = true;
-            await getConfig();
-            break;
-          default:
-            throw Error("Got undefined user role.");
-        }
-      } else {
-        throw Error("There was an issue getting user role.");
-      }
-    }
-    showVersion();
-    if (ADMIN) {
+
+    const getPullParams = () => {
       const params = new URLSearchParams();
+
       if (LOCAL_DATA.length == 0) {
         params.append("page_size", 2 * CONFIG.frontend_page_size);
       } else {
         if (LOCAL_DATA.length <= CUR_PAGE * CONFIG.frontend_page_size) {
           console.log("Reached the end of URLs.");
-          return;
+          return null;
         }
-        displayData();
         params.append("page_size", CONFIG.frontend_page_size);
         params.append("page_after", LOCAL_DATA.at(-1)["shortlink"]);
       }
-      const data = await pullData(params);
-      await getConfig();
-      ADMIN = true;
+
+      return params;
+    };
+
+    if (ADMIN === null && CONFIG == null) {
+      loadCachedState();
+      getConfig();
+    }
+
+    if (ADMIN === true && CONFIG != null) {
+      try {
+        showVersion();
+        const admin_button = document.getElementById("admin-button");
+        admin_button.getElementsByTagName("span")[0].innerText = "logout";
+        admin_button.hidden = false;
+
+        const params = getPullParams();
+        if (params == null) {
+          return;
+        }
+
+        if (LOCAL_DATA.length != 0) {
+          displayData();
+        }
+
+        const data = await pullData(params);
+        LOCAL_DATA.push(...data.reverse());
+
+        if (CUR_PAGE == 0) {
+          displayData();
+        }
+        managePageControls();
+        return;
+      } catch (err) {
+        console.log("/api/all failed, clearing cache and falling back.", err);
+        clearCachedState();
+      }
+    }
+
+    if (ADMIN !== true) {
+      const res = await fetch(prepSubdir("/api/whoami"));
+      if (res.status !== 200) {
+        throw Error("There was an issue getting user role.");
+      }
+
+      const role = await res.text();
+      switch (role) {
+        case "nobody":
+          clearCachedState();
+          showLogin();
+          return;
+
+        case "public":
+          cacheAdmin(false);
+          await getConfig();
+
+          loading_text.innerHTML = "Using public mode.";
+          const expiry = parseInt(CONFIG.public_mode_expiry_delay);
+          if (expiry > 0) {
+            loading_text.innerHTML +=
+              " Unless chosen a shorter expiry time, submitted links will automatically expire ";
+            const time = new Date();
+            time.setSeconds(time.getSeconds() + expiry);
+            loading_text.innerHTML += formatRelativeTime(time) + ".";
+          }
+
+          admin_button.getElementsByTagName("span")[0].innerText = "login";
+          admin_button.hidden = false;
+          updateInputBox();
+          break;
+
+        case "admin":
+          cacheAdmin(true);
+          await getConfig();
+          break;
+
+        default:
+          throw Error("Got undefined user role.");
+      }
+    }
+
+    showVersion();
+
+    if (ADMIN === true) {
+      const params = getPullParams();
+      if (params == null) {
+        return;
+      }
+
+      if (LOCAL_DATA.length != 0) {
+        displayData();
+      }
+
+      let data;
+      try {
+        data = await pullData(params);
+      } catch (err) {
+        clearCachedState();
+        throw err;
+      }
+
       LOCAL_DATA.push(...data.reverse());
+
       if (CUR_PAGE == 0) {
         displayData();
       }
@@ -879,9 +984,12 @@ const logOut = async () => {
           document.getElementById("version-number").hidden = true;
           document.getElementById("admin-button").hidden = true;
           showAlert("&nbsp;", "transparent");
+          clearCachedState();
           ADMIN = false;
-          VERSION = null;
           LOCAL_DATA = [];
+          document.getElementById("table-box").hidden = true;
+          document.getElementById("loading-text").hidden = false;
+          document.getElementById("url-table").innerHTML = "";
           await refreshData();
         } else {
           showAlert(
