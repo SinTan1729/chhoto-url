@@ -99,7 +99,9 @@ const getConfig = async () => {
     return;
   }
   if (CONFIG == null) {
-    const res = await fetch(prepSubdir("/api/getconfig"));
+    const res = await fetch(prepSubdir("/api/getconfig"), {
+      cache: "no-cache",
+    });
     if (!res.ok) {
       console.log("Error while fetching config.");
       clearCachedState();
@@ -220,7 +222,7 @@ const refreshData = async () => {
     }
 
     if (ADMIN !== true) {
-      const res = await fetch(prepSubdir("/api/whoami"));
+      const res = await fetch(prepSubdir("/api/whoami"), { cache: "no-cache" });
       if (res.status !== 200) {
         throw Error("There was an issue getting user role.");
       }
@@ -857,7 +859,7 @@ const submitForm = () => {
     navigator.clipboard.write([copyPromise]);
   } else {
     // To maintain backwards compatibility, might be removed later
-    fetch(url, payload)
+    fetch(url, payload, { cache: "no-cache" })
       .then((res) => {
         ok = res.ok;
         return res.text();
