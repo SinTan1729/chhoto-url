@@ -5,20 +5,22 @@
 
 ## Using `docker compose` (Recommended method)
 
-There is a sample `compose.yaml` file in this repository. It contains
-everything needed for a basic install. The OCI image itself is built with
-a GitHub action (starting from version 6.2.6), and you can [check the workflow for yourself](../.github/workflows/docker-release.yml)
-and confirm that it's indeed built from source and nothing silly is going on.
+The repository includes a [sample `compose.yaml` file](../deploy/compose.yaml). It contains
+everything needed for a basic deployment.
+Starting with version 6.2.6, OCI images are built by a GitHub Actions workflow.
+You can [check the workflow for yourself](../.github/workflows/docker-release.yml) to make sure that nothing silly is going on.
 
-The container images come in two flavors. The default one is made from scratch, and is as light as possible.
-The tags with `-alpine` suffix are built on top of alpine, so are a little bit larger. But they have
-the basic UNIX tools for debugging, so might be worth using in case you want to play around with the image.
-The `dev` tags are always built on top of alpine. All of these images are available both on the Docker Hub (recommended)
-and GHCR, except the `dev` builds which are only available on GHCR. All of these images are available for `linux/amd64`,
-`linux/arm64`, `linux/arm/v7`, and `linux/riscv64` architectures on Linux. These should also work just fine with `podman`,
-or any other container engine supporting OCI images.
+The container images come in two flavors. The default image is built from [`scratch`](https://hub.docker.com/_/scratch),
+and is as light as possible. The tags with the `-alpine` suffix are built on top of [`alpine`](https://hub.docker.com/_/alpine).
+These images are slightly larger, but include basic Unix tools that can be useful for debugging or for inspecting the container
+interactively. The `dev` tags are always built on top of `alpine` and are intended for testing only; **do not use these for production
+workloads.** The tags `latest` and `scratch` are synonymous, as are `latest-alpine` and `alpine`.
 
-You can use the [provided compose file](../deploy/compose.yaml) as a base, modifying it as needed. Run it with
+All of these images are available both on the Docker Hub (recommended) and GHCR, except for `dev` builds, which are published
+only to GHCR. They are built for Linux on the `linux/amd64`, `linux/arm64`, `linux/arm/v7`, and `linux/riscv64` architectures.
+The images should also work with Podman and other OCI-compatible container engines.
+
+You can use the provided `compose` file as a base, modifying it as needed. Run it with
 
 ```
 docker compose up -d
@@ -29,8 +31,8 @@ directory instead of a folder. If this is not done, there will be a low, but non
 
 It should be possible to run Chhoto URL with pretty much anything that supports OCI images e.g. `docker`, `podman quadlets`
 (the repo contains a sample `chhoto-url.container` file for using with `quadlets`.) etc. Official
-support is only provided for `docker` and `podman`, but it should be trivial to convert the `compose.yaml` file to other formats. If you need help,
-feel free to open a discussion.
+support is only provided for `docker` and `podman`, but it should be trivial to convert the `compose.yaml` file to other formats.
+If you need help, feel free to open a discussion.
 
 ## Building and running with docker
 
