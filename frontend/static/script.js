@@ -957,7 +957,7 @@ const submitLogin = () => {
           password.value = "";
           document.getElementById("wrong-pass").hidden = true;
           ADMIN = true;
-          cacheAdmin();
+          cacheAdmin(true);
           await getConfig();
           await refreshData();
           break;
