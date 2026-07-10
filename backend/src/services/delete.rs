@@ -21,9 +21,13 @@ use crate::{
 pub(crate) async fn logout(session: Session) -> HttpResponse {
     if session.remove("chhoto-url-auth").is_some() {
         info!("Successful logout.");
-        HttpResponse::Ok().body("Logged out!")
+        HttpResponse::Ok()
+            .content_type("text/plain")
+            .body("Logged out!")
     } else {
-        HttpResponse::Unauthorized().body("You don't seem to be logged in.")
+        HttpResponse::Unauthorized()
+            .content_type("text/plain")
+            .body("You don't seem to be logged in.")
     }
 }
 
@@ -77,9 +81,13 @@ pub(crate) async fn delete_link(
             )
             .is_ok()
             {
-                HttpResponse::Ok().body(format!("Deleted {shortlink}"))
+                HttpResponse::Ok()
+                    .content_type("text/plain")
+                    .body(format!("Deleted {shortlink}"))
             } else {
-                HttpResponse::NotFound().body("Not found!")
+                HttpResponse::NotFound()
+                    .content_type("text/plain")
+                    .body("Not found!")
             }
         }
         Auth::None { result: _ } => HttpResponse::Unauthorized().body("Not logged in!"),

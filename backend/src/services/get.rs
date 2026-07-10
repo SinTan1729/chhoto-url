@@ -28,13 +28,20 @@ pub(crate) async fn getall(
     params: web::Query<GetReqParams>,
 ) -> HttpResponse {
     match auth {
-        Auth::None { result: _ } => HttpResponse::Unauthorized().body("Unauthorized"),
-        Auth::InvalidAPIKey { result } => HttpResponse::Unauthorized().body(result.reason),
+        Auth::None { result: _ } => HttpResponse::Unauthorized()
+            .content_type("text/plain")
+            .body("Unauthorized"),
+        Auth::InvalidAPIKey { result } => HttpResponse::Unauthorized()
+            .content_type("text/plain")
+            .body(result.reason),
         _ => match utils::getall_helper(&data.reader, params.into_inner()) {
-            Ok(s) => HttpResponse::Ok().body(s),
+            Ok(s) => HttpResponse::Ok().content_type("application/json").body(s),
             Err(ServerError) => HttpResponse::InternalServerError()
+                .content_type("text/plain")
                 .body("Something went wrong while loading the links.".to_owned()),
-            Err(ClientError { reason }) => HttpResponse::BadRequest().body(reason),
+            Err(ClientError { reason }) => HttpResponse::BadRequest()
+                .content_type("text/plain")
+                .body(reason),
         },
     }
 }
@@ -45,9 +52,11 @@ pub(crate) async fn getall(
 #[get("/api/siteurl")]
 pub(crate) async fn siteurl(data: web::Data<AppState>) -> HttpResponse {
     if let Some(url) = &data.config.site_url {
-        HttpResponse::Ok().body(url.clone())
+        HttpResponse::Ok()
+            .content_type("text/plain")
+            .body(url.clone())
     } else {
-        HttpResponse::Ok().body("unset")
+        HttpResponse::Ok().content_type("text/plain").body("unset")
     }
 }
 
@@ -56,7 +65,9 @@ pub(crate) async fn siteurl(data: web::Data<AppState>) -> HttpResponse {
 // Use /api/getconfig instead
 #[get("/api/version")]
 pub(crate) async fn version() -> HttpResponse {
-    HttpResponse::Ok().body(format!("Chhoto URL v{}", utils::get_version()))
+    HttpResponse::Ok()
+        .content_type("text/plain")
+        .body(format!("Chhoto URL v{}", utils::get_version()))
 }
 
 // Get the user's current role
@@ -73,7 +84,9 @@ pub(crate) async fn whoami(data: web::Data<AppState>, auth: Auth) -> HttpRespons
             }
         }
     };
-    HttpResponse::Ok().body(acting_user)
+    HttpResponse::Ok()
+        .content_type("text/plain")
+        .body(acting_user)
 }
 
 // Get some useful backend config

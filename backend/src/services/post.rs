@@ -34,11 +34,15 @@ pub(crate) async fn add_links(req: String, auth: Auth, data: web::Data<AppState>
             utils::add_links_helper(&req, &mut *data.writer.lock().await, config, public_mode)
                 .and_then(|(v, _)| v.into_iter().next().unwrap_or(Err(ServerError)));
         match result {
-            Ok((shorturl, _)) => HttpResponse::Created().body(shorturl),
-            Err(ClientError { reason }) => HttpResponse::Conflict().body(reason),
-            Err(ServerError) => {
-                HttpResponse::InternalServerError().body(SERVER_ERROR_RES.to_owned())
-            }
+            Ok((shorturl, _)) => HttpResponse::Created()
+                .content_type("text/plain")
+                .body(shorturl),
+            Err(ClientError { reason }) => HttpResponse::Conflict()
+                .content_type("text/plain")
+                .body(reason),
+            Err(ServerError) => HttpResponse::InternalServerError()
+                .content_type("text/plain")
+                .body(SERVER_ERROR_RES.to_owned()),
         }
     };
     match auth {
@@ -115,7 +119,9 @@ pub(crate) async fn add_links(req: String, auth: Auth, data: web::Data<AppState>
             if data.config.public_mode {
                 cookie_response(true).await
             } else {
-                HttpResponse::Unauthorized().body("Not logged in!")
+                HttpResponse::Unauthorized()
+                    .content_type("text/plain")
+                    .body("Not logged in!")
             }
         }
     }
@@ -229,7 +235,9 @@ pub(crate) async fn login(
             && !valid_pass
         {
             warn!("Failed login attempt!");
-            return HttpResponse::Unauthorized().body("Wrong password!");
+            return HttpResponse::Unauthorized()
+                .content_type("text/plain")
+                .body("Wrong password!");
         }
         // Return Ok if no password was set on the server side
         session
@@ -237,6 +245,8 @@ pub(crate) async fn login(
             .expect("Error inserting auth token.");
 
         info!("Successful login.");
-        HttpResponse::Ok().body("Correct password!")
+        HttpResponse::Ok()
+            .content_type("text/plain")
+            .body("Correct password!")
     }
 }
