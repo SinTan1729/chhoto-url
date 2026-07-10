@@ -154,6 +154,8 @@ const showVersion = () => {
 };
 
 const showLogin = () => {
+  document.getElementById("version-number").hidden = true;
+  document.getElementById("admin-button").hidden = true;
   document.getElementById("container").style.filter = "blur(2px)";
   document.getElementById("login-dialog").showModal();
   document.getElementById("password").focus();
@@ -954,6 +956,7 @@ const submitLogin = () => {
           password.value = "";
           document.getElementById("wrong-pass").hidden = true;
           ADMIN = true;
+          cacheAdmin();
           await getConfig();
           await refreshData();
           break;
