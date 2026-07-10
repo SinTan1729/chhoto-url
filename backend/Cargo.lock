@@ -1432,11 +1432,11 @@ dependencies = [
 
 [[package]]
 name = "passwords"
-version = "3.1.16"
+version = "3.1.17"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "11407193a7c2bd14ec6b0ec3394da6fdcf7a4d5dcbc8c3cc38dfb17802c8d59c"
+checksum = "322cf6daaa7a47e5ae1d34d4efcecf306d0c28a336f35cb22375e6e35890b155"
 dependencies = [
- "random-pick",
+ "rand 0.10.2",
 ]
 
 [[package]]
@@ -1615,15 +1615,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "63b8176103e19a2643978565ca18b50549f6101881c443590420e4dc998a3c69"
 
 [[package]]
-name = "random-pick"
-version = "1.2.18"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e961c6ea0ea17b5e6ee98eb770cdc069fcce92c1aff8ba0f3e2b7e21ed220428"
-dependencies = [
- "rand 0.9.4",
-]
-
-[[package]]
 name = "redox_syscall"
 version = "0.5.18"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1634,9 +1625,9 @@ dependencies = [
 
 [[package]]
 name = "regex"
-version = "1.12.4"
+version = "1.13.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f1292b7759ae1cb9ec195452d1390a074f0cd8541ab7a5a8c31cd6db45d4a6ba"
+checksum = "2a0e75113e14dc5acb068cd0786884f214f1312650a3d36d269f5c4f3cdee8a2"
 dependencies = [
  "aho-corasick",
  "memchr",
@@ -1646,9 +1637,9 @@ dependencies = [
 
 [[package]]
 name = "regex-automata"
-version = "0.4.14"
+version = "0.4.15"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "6e1dd4122fc1595e8162618945476892eefca7b88c52820e74af6262213cae8f"
+checksum = "1f388202e4b80542a0921078cc23b6333bcf1409c1e3f86404cae4766a6131db"
 dependencies = [
  "aho-corasick",
  "memchr",
