@@ -4,8 +4,8 @@
 services:
   chhoto-url:
     image: sintan1729/chhoto-url:latest
-    # You may want to check out the alpine images for extra features. The images can also be
-    # pulled from ghcr.io
+    # image: sintan1729/chhoto-url:alpine # for extra convenience
+    # The images can also be pulled from ghcr.io
     restart: unless-stopped
     container_name: chhoto-url
     tty: true

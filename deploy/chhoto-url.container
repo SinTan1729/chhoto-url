@@ -12,7 +12,9 @@ Description=Caddy
 
 [Container]
 ContainerName=chhoto-url
-Image=sintan1729/chhoto-url:latest
+Image=docker.io/sintan1729/chhoto-url:latest
+#Image=docker.io/sintan1729/chhoto-url:alpine # for extra convenience
+#The images can also be pulled from ghcr.io
 PodmanArgs=--tty
 PublishPort=4567:4567
 DropCapability=ALL
