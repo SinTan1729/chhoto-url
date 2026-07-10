@@ -103,6 +103,7 @@ const getConfig = async () => {
     if (!res.ok) {
       console.log("Error while fetching config.");
       clearCachedState();
+      return;
     }
 
     const config = await res.json();
@@ -185,11 +186,11 @@ const refreshData = async () => {
 
     if (ADMIN === null && CONFIG == null) {
       loadCachedState();
-      getConfig();
     }
 
     if (ADMIN === true && CONFIG != null) {
       try {
+        await getConfig();
         showVersion();
         const admin_button = document.getElementById("admin-button");
         admin_button.getElementsByTagName("span")[0].innerText = "logout";
