@@ -24,8 +24,9 @@
   --logo: light-dark(#333333, #c8c3bc);
   --logo-border: light-dark(#e5e5e5, #373c3e);
   --table: light-dark(#e0e0e0, #2a2d2f);
-  --row-alt: light-dark(#f2f2f2, #080a0b);
+  --row-bg: light-dark(#f2f2f2, #080a0b);
   --row-alt-bg: light-dark(#f2f2f2, #101213);
+  --row-hover: light-dark(rgba(96, 229, 253, 0.3), rgba(167, 23, 10, 0.1));
   --warning: light-dark(red, #ff1a1a);
   --warning-button: light-dark(#dd1a1a, #901010);
   --accent-border: light-dark(black, #867d6e);
@@ -137,7 +138,7 @@ a {
   word-break: normal;
 }
 .chhoto-table tr:nth-child(even) {
-  background-color: var(--row-alt);
+  background-color: var(--row-bg);
 }
 .chhoto-table caption {
   color: var(--text);
@@ -155,6 +156,12 @@ a {
 .chhoto-table td {
   border-left: none;
   max-width: 36em;
+}
+#table-box tr {
+  transition: background-color 0.3s ease;
+}
+#table-box tr:hover {
+  background-color: rgba(56, 139, 253, 0.1);
 }
 
 #short-url-header {
