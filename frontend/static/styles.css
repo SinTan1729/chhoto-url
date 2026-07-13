@@ -26,7 +26,7 @@
   --table: light-dark(#e0e0e0, #2a2d2f);
   --row-bg: light-dark(#f2f2f2, #080a0b);
   --row-alt-bg: light-dark(#f2f2f2, #101213);
-  --row-hover: light-dark(rgba(96, 229, 253, 0.3), rgba(167, 23, 10, 0.1));
+  --row-hover: light-dark(rgba(150, 225, 250, 0.3), rgba(35, 225, 250, 0.1));
   --warning: light-dark(red, #ff1a1a);
   --warning-button: light-dark(#dd1a1a, #901010);
   --accent-border: light-dark(black, #867d6e);
@@ -160,8 +160,8 @@ a {
 #table-box tr {
   transition: background-color 0.3s ease;
 }
-#table-box tr:hover {
-  background-color: rgba(56, 139, 253, 0.1);
+#table-box tr:hover:has(td) {
+  background-color: var(--row-hover);
 }
 
 #short-url-header {
