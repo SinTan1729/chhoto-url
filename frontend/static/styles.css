@@ -84,6 +84,13 @@ span[name="label"] {
 }
 #logo img {
   height: 0.8em;
+  transition: filter 0.1s ease;
+}
+#logo img:hover {
+  filter: drop-shadow(
+      0 0 10px color-mix(in srgb, var(--accent) 45%, transparent)
+    )
+    drop-shadow(0 0 14px color-mix(in srgb, var(--accent) 25%, transparent));
 }
 
 a {
@@ -219,7 +226,6 @@ td[name="actions"] div button.svg-button svg,
   height: 1.3em;
 }
 
-#logo img:hover,
 .svg-button:enabled:hover svg {
   transform: scale(1.2);
 }
