@@ -235,6 +235,23 @@ async fn adding_link_with_retry_on_collision() {
 }
 
 #[test]
+async fn adding_links_with_custom_protocol() {
+    let test = "custom-protocols";
+    let mut conf = default_config(test);
+    conf.allowed_protocols.push("ftps".to_string());
+    let (_tempdir, app) = create_app(&conf, test).await;
+    let api_key = conf.api_key.clone().unwrap();
+    let req = test::TestRequest::post()
+        .uri("/api/new")
+        .insert_header(("X-API-Key", api_key.clone()))
+        .set_payload(r#"{{"shortlink":"test","longlink":"ftps://example.com","notes":"note"}}"#)
+        .to_request();
+    let resp = test::call_service(&app, req).await;
+    let status = resp.status();
+    assert!(status.is_client_error());
+}
+
+#[test]
 async fn link_editing() {
     let test = "link-editing";
     let conf = default_config(test);

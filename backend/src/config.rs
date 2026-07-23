@@ -117,6 +117,7 @@ pub(crate) struct Config {
     pub(crate) public_mode: bool,
     pub(crate) public_mode_expiry_delay: Option<i64>,
     pub(crate) use_temp_redirect: bool,
+    pub(crate) allowed_protocols: Vec<String>,
     pub(crate) password: Option<String>,
     pub(crate) hash_algorithm: HashAlgorithm,
     pub(crate) api_key: Option<String>,
@@ -201,6 +202,21 @@ pub(crate) fn read() -> Config {
     } else {
         info!("Using Permanent redirection (default).")
     }
+
+    let mut allowed_protocols: Vec<String> = ["http", "https", "ftp", "magnet"]
+        .iter()
+        .map(|s| s.to_string())
+        .collect();
+    if let Ok(protocols) = var("CHHOTO_EXTRA_PROTOCOLS") {
+        for protocol in protocols.split(&[',', ' ']).filter(|p| !p.is_empty()) {
+            if protocol.chars().all(|c| c.is_alphanumeric()) {
+                allowed_protocols.push(protocol.to_owned());
+            } else {
+                warn!("Skipping malformed protocol: {protocol}.")
+            }
+        }
+    }
+    info!("Allowed protocols: {:?}", allowed_protocols);
 
     let password = read_config_wrapper("CHHOTO_PASSWORD", "password")
         .ok()
@@ -334,6 +350,7 @@ pub(crate) fn read() -> Config {
         public_mode,
         public_mode_expiry_delay,
         use_temp_redirect,
+        allowed_protocols,
         password,
         hash_algorithm,
         api_key,

@@ -43,9 +43,9 @@ struct EditURLRequest {
 
 // Only allow safe URI schemes
 #[inline]
-fn is_longlink_valid(link: &str) -> bool {
+fn is_longlink_valid(link: &str, allowed_protocols: &[String]) -> bool {
     let parts = Url::parse(link);
-    parts.is_ok_and(|u| ["http", "https", "ftp", "magnet"].contains(&u.scheme()))
+    parts.is_ok_and(|u| allowed_protocols.contains(&u.scheme().to_owned()))
 }
 
 // Only have a-z, 0-9, - and _ as valid characters in a shortlink
@@ -192,7 +192,7 @@ pub(super) fn add_links_helper(
             output[i] = Err(ClientError {
                 reason: "Invalid shortlink!".to_owned(),
             });
-        } else if !is_longlink_valid(&req.longlink) {
+        } else if !is_longlink_valid(&req.longlink, &config.allowed_protocols) {
             output[i] = Err(ClientError {
                 reason: "Invalid longlink!".to_owned(),
             });
@@ -272,7 +272,7 @@ pub(super) async fn edit_link_helper(
         return Err(ClientError {
             reason: "Invalid shortlink!".to_owned(),
         });
-    } else if !is_longlink_valid(&chunks.longlink) {
+    } else if !is_longlink_valid(&chunks.longlink, &config.allowed_protocols) {
         return Err(ClientError {
             reason: "Invalid longlink!".to_owned(),
         });

@@ -54,6 +54,7 @@ pub(super) fn default_config(test: &str) -> config::Config {
         public_mode: false,
         public_mode_expiry_delay: None,
         use_temp_redirect: false,
+        allowed_protocols: Vec::from(["http", "https", "ftp", "magnet"].map(|s| s.to_string())),
         password: Some(String::from("testpass")),
         hash_algorithm: config::HashAlgorithm::None,
         api_key: Some(String::from(
