@@ -99,6 +99,7 @@ pub(crate) async fn getconfig(auth: Auth, data: web::Data<AppState>) -> HttpResp
             allow_capital_letters: config.allow_capital_letters,
             public_mode: config.public_mode,
             public_mode_expiry_delay: config.public_mode_expiry_delay.unwrap_or_default(),
+            allowed_protocols: config.allowed_protocols.clone(),
             site_url: config.site_url.clone(),
             slug_style: config.slug_style.to_string(),
             slug_length: config.slug_length,

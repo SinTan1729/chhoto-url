@@ -86,7 +86,7 @@ const prepSubdir = (link) => {
 };
 
 const hasAllowedScheme = (url) => {
-  const allowedSchemes = ["http:", "https:", "ftp:", "magnet:"];
+  const allowedSchemes = CONFIG.allowed_protocols.map((s) => s + ":");
   try {
     return allowedSchemes.includes(new URL(url).protocol);
   } catch {
@@ -131,7 +131,7 @@ const getConfig = async () => {
     CONFIG.frontend_page_size = 10;
   }
 
-  if (!hasAllowedScheme(SITE_URL)) {
+  if (!["http", "https"].includes(new URL(SITE_URL).protocol)) {
     SITE_URL = window.location.protocol + "//" + SITE_URL;
   }
 

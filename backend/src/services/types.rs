@@ -42,6 +42,7 @@ pub(super) struct BackendConfig {
     pub(super) allow_capital_letters: bool,
     pub(super) public_mode: bool,
     pub(super) public_mode_expiry_delay: i64,
+    pub(super) allowed_protocols: Vec<String>,
     pub(super) slug_style: String,
     pub(super) slug_length: usize,
     pub(super) try_longer_slug: bool,
