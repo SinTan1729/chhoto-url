@@ -131,7 +131,7 @@ const getConfig = async () => {
     CONFIG.frontend_page_size = 10;
   }
 
-  if (!["http", "https"].includes(new URL(SITE_URL).protocol)) {
+  if (!["http:", "https:"].includes(new URL(SITE_URL).protocol)) {
     SITE_URL = window.location.protocol + "//" + SITE_URL;
   }
 
