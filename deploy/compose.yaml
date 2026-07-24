@@ -97,7 +97,10 @@ services:
       # - CHHOTO_CACHE_CONTROL_HEADER=no-cache, private
       # By default, the frontend paginates the shortlinks in pages of size 10. You can use the following to
       # customize that.
-      # CHHOTO_FRONTEND_PAGE_SIZE=10
+      # - CHHOTO_FRONTEND_PAGE_SIZE=10
+      # Use this to allow extra protocols for longlinks. By default, only `http`, `https`, `ftp`, and `magnet` links are allowed.
+      # It should be a comma separated list. Malformed protocols will be skipped.
+      # - CHHOTO_EXTRA_PROTOCOLS=ftps,obsidian
 
       # You may set the TZ variable for timezone in logging, but it will only work in the alpine builds
     volumes:

@@ -267,6 +267,11 @@ served through a proxy.
 This can be used to set the number of items shown per page in the frontend. This does not have any effect on the backend code.
 Defaults to 10.
 
+### `CHHOTO_EXTRA_PROTOCOLS`
+
+Use this to allow extra protocols for longlinks. By default, only `http`, `https`, `ftp`, and `magnet` links are allowed. It should be a comma
+separated list e.g. `ftps,obsidian`. Malformed protocols will be skipped.
+
 ### `RUST_LOG`
 
 It controls the level of logging.

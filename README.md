@@ -5,8 +5,7 @@
 [![docker-pulls-badge](https://img.shields.io/docker/pulls/sintan1729/chhoto-url?logo=docker&label=pulls)](https://hub.docker.com/r/sintan1729/chhoto-url)
 [![ghcr-pulls-badge](https://img.shields.io/badge/dynamic/json?url=https://ghcr-badge.elias.eu.org/api/SinTan1729/chhoto-url&query=downloadCount&label=pulls&style=flat&logo=github)](https://ghcr.io/SinTan1729/chhoto-url)
 [![github-stars-badge](https://img.shields.io/github/stars/SinTan1729/chhoto-url?logo=github&style=flat)](https://github.com/SinTan1729/chhoto-url)
-[![codeberg-stars-badge](https://img.shields.io/gitea/stars/SinTan1729/chhoto-url?gitea_url=https%3A%2F%2Fcodeberg.org&style=flat&logo=codeberg
-)](https://codeberg.org/SinTan1729/chhoto-url)
+[![codeberg-stars-badge](https://img.shields.io/gitea/stars/SinTan1729/chhoto-url?gitea_url=https%3A%2F%2Fcodeberg.org&style=flat&logo=codeberg)](https://codeberg.org/SinTan1729/chhoto-url)
 [![maintainer-badge](https://img.shields.io/badge/maintainer-SinTan1729-blue?logo=github)](https://github.com/SinTan1729)
 [![latest-release-badge](https://img.shields.io/github/v/release/SinTan1729/chhoto-url?logo=github)](https://github.com/SinTan1729/chhoto-url/releases/latest)
 [![docker-image-size-badge](https://img.shields.io/docker/image-size/sintan1729/chhoto-url?logo=docker&label=size)](https://hub.docker.com/r/sintan1729/chhoto-url/tags)
@@ -130,5 +129,5 @@ Password: `chhoto-url-demo-pass`
 - If you intend to have more than a few thousand short links, it's strongly recommended that you use the UID
   [`CHHOTO_SLUG_STYLE`](./docs/INSTALLATION.md#chhoto_slug_style) with a [`CHHOTO_SLUG_LENGTH`](./docs/INSTALLATION.md#chhoto_slug_length)
   of 16 or more. Otherwise, generating new links will start to fail after a while.
-- For safety, only `https`,`http`,`ftp`, and `magnet` links are allowed for long links. If you have a special case which requires some
-  specific scheme, feel free to open a feature request, and we can figure out a solution.
+- For safety, only `https`,`http`,`ftp`, and `magnet` links are allowed for long links by default. Please take a look at
+  [`CHHOTO_EXTRA_PROTOCOLS`](./docs/INSTALLATION.md#chhoto_extra_protocols) to use more protocols.
