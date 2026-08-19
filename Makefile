@@ -6,6 +6,7 @@ include .env
 .PHONY: clean test setup merge tag reset-db upgrade-deps upgrade-deps-pre podman-stop
 .PHONY: build podman-build podman-run podman-test
 .PHONY: build-release podman-build-release podman-run-release podman-test-release
+.PHONY: minify deploy purge-cache publish
 
 setup:
 	rustup target add x86_64-unknown-linux-musl
@@ -96,7 +97,31 @@ deploy: minify
 	@echo "Deploying website for public access..."
 	rsync -aAXhP --delete "./minified-tmp/" "vps-rsync:/home/admin/podman/chhoto-url/landing/"
 
-publish: deploy
+purge-cache:
+	@set -e; \
+	token="$$(cat "$$HOME/.config/cloudflare_cache_purge_token")"; \
+	zone_id="$$(curl -fsS \
+		"https://api.cloudflare.com/client/v4/zones?name=chhoto.link" \
+		-H "Authorization: Bearer $$token" \
+		| jq -r '.result[0].id')"; \
+	if [ -z "$$zone_id" ] || [ "$$zone_id" = "null" ]; then \
+		echo "Failed to find Cloudflare zone for chhoto.link" >&2; \
+		exit 1; \
+	fi; \
+	response="$$(curl -fsS \
+		-X POST \
+		"https://api.cloudflare.com/client/v4/zones/$$zone_id/purge_cache" \
+		-H "Authorization: Bearer $$token" \
+		-H "Content-Type: application/json" \
+		--data '{"hosts":["chhoto.link"]}')"; \
+	if ! printf '%s\n' "$$response" | jq -e '.success == true' >/dev/null; then \
+		echo "Cloudflare cache purge failed:" >&2; \
+		printf '%s\n' "$$response" | jq . >&2; \
+		exit 1; \
+	fi; \
+	echo "Cloudflare cache purged for chhoto.link"
+
+publish: deploy purge-cache
 	rm -rf "./minified-tmp/"
 	@echo "Done!"
 
