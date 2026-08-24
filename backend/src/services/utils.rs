@@ -398,8 +398,7 @@ fn gen_link(
 
 // 404 error page
 pub(crate) async fn error404() -> impl Responder {
-    NamedFile::open_async("./frontend/static/404.html")
-        .await
+    NamedFile::open("./frontend/static/404.html")
         .customize()
         .with_status(StatusCode::NOT_FOUND)
 }
