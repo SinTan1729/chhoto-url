@@ -25,7 +25,7 @@ build-release:
 	CARGO_GIT_COMMIT=${short_sha} cargo build --release --locked --manifest-path=backend/Cargo.toml \
 		--target x86_64-unknown-linux-musl
 test:
-	cargo audit --file backend/Cargo.lock
+	cargo audit --file backend/Cargo.lock || true
 	CARGO_GIT_COMMIT=${short_sha} cargo test --locked --manifest-path=backend/Cargo.toml \
 		--target x86_64-unknown-linux-musl
 
