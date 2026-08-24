@@ -483,6 +483,7 @@ const TR = (i, row) => {
 
   const numTD = TD(i, null);
   numTD.setAttribute("name", "numColumn");
+  numTD.setAttribute("label", "#");
 
   const longlink = row["longlink"];
   const a = document.createElement("a");
