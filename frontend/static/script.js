@@ -671,13 +671,18 @@ const infoButton = (shortUrl) => {
     document.getElementById("info-dialog").showModal();
     const row = LOCAL_DATA.filter((row) => row.shortlink == shortUrl)[0];
     document.getElementById("info-short").textContent = row.shortlink;
-    document.getElementById("info-long").textContent = row.longlink;
-    document.getElementById("info-hits").innerHTML = row.hits;
+    const infoLong = document.getElementById("info-long");
+    const longLink = document.createElement("a");
+    longLink.textContent = row.longlink;
+    longLink.href = row.longlink;
+    longLink.target = "_blank";
+    infoLong.replaceChildren(longLink);
+    document.getElementById("info-hits").textContent = row.hits;
     const accurateExpiryTime =
       row.expiry_time > 0
         ? new Date(row.expiry_time * 1000).toLocaleString()
         : "Disabled";
-    document.getElementById("info-expiry").innerHTML = accurateExpiryTime;
+    document.getElementById("info-expiry").textContent = accurateExpiryTime;
     document.getElementById("info-notes").textContent = row.notes;
   };
   return btn;
