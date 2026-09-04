@@ -502,7 +502,7 @@ dependencies = [
 
 [[package]]
 name = "chhoto-url"
-version = "7.5.1"
+version = "7.5.2"
 dependencies = [
  "actix-files",
  "actix-http",
