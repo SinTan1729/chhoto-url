@@ -47,15 +47,16 @@ actix-session = { version = "0.11.0", features = [ "cookie-session" ] }
 nanoid = "0.5.0"
 serde = { version = "1.0.229", features = [ "derive", "rc" ] }
 serde_json = "1.0.151"
-argon2 = "0.5.3"
+argon2 = "0.6.0"
 chrono = "0.4.45"
 tokio = { version = "1.53.1", features = [ "macros" ] }
 log = "0.4.34"
 env_logger = "0.11.11"
 url = "2.5.8"
+subtle = "2.6.1"
 
 [dev-dependencies]
-actix-http = "3.13.3"
+actix-http = "3.13.5"
 actix-service = "2.0.3"
 regex = "1.13.1"
 tempfile = "3.27.0"
