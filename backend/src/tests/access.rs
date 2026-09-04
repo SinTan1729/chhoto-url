@@ -140,6 +140,7 @@ async fn notes_and_filtering() {
     assert_eq!(reply[1].shortlink, "test2");
     assert_eq!(reply[0].notes, "note1");
 }
+
 #[test]
 async fn edit_expiry() {
     let test = "link-editing";
