@@ -8,7 +8,7 @@ use actix_web::{
     HttpResponse, post,
     web::{self},
 };
-use argon2::{Argon2, PasswordVerifier, password_hash::PasswordHash};
+use argon2::{Argon2, PasswordVerifier, password_hash::phc::PasswordHash};
 use log::{debug, info, warn};
 
 use crate::{
@@ -199,7 +199,7 @@ pub(crate) async fn login(
             }
             HashAlgorithm::None => {
                 // If hashing is not enabled, use the plaintext password for matching
-                Some(password == &req)
+                Some(subtle::ConstantTimeEq::ct_eq(password.as_bytes(), req.as_bytes()).into())
             }
         }
     } else {

@@ -60,6 +60,15 @@ async fn auth_verification() {
     let body = to_bytes(resp.into_body()).await.unwrap();
     assert_eq!(body.as_str(), "Unauthorized");
 
+    let req = test::TestRequest::get()
+        .uri("/api/all")
+        .insert_header(("X-API-Key", "random-stuff"))
+        .to_request();
+    let resp = test::call_service(&app, req).await;
+    assert_eq!(resp.status(), 401);
+    let body = to_bytes(resp.into_body()).await.unwrap();
+    assert_eq!(body.as_str(), "API validation failed.");
+
     let status = edit_link(&app, "a", "test2", false, None, None).await;
     assert_eq!(status, 401);
 

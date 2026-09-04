@@ -3,7 +3,7 @@
 
 use actix_session::{Session, SessionExt};
 use actix_web::{Error, FromRequest, HttpRequest, dev::Payload, web};
-use argon2::{Argon2, PasswordVerifier, password_hash::PasswordHash};
+use argon2::{Argon2, PasswordVerifier, password_hash::phc::PasswordHash};
 use log::{debug, warn};
 use passwords::PasswordGenerator;
 use std::future::{Ready, ready};
@@ -80,7 +80,7 @@ fn is_key_valid(key: &str, config: &Config) -> bool {
             }
             HashAlgorithm::None => {
                 // If hashing is not enabled, use the plaintext API key for matching
-                api_key == key
+                subtle::ConstantTimeEq::ct_eq(api_key.as_bytes(), key.as_bytes()).into()
             }
         };
         if !authorized {

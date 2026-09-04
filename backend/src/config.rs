@@ -229,10 +229,13 @@ pub(crate) fn read() -> Config {
         .map(|h| h.trim().to_owned())
     {
         Ok(hash) if hash == "Argon2" => {
-            info!("Will use Argon2 hashes for password verification.");
+            info!("Will use Argon2 hashes for password and API key verification.");
             HashAlgorithm::Argon2
         }
-        _ => HashAlgorithm::None,
+        _ => {
+            warn!("Using plaintext for password and API key verification. Argon2 is advised.");
+            HashAlgorithm::None
+        }
     };
 
     // If the site_url env variable exists
