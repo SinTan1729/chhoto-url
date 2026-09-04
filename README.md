@@ -129,5 +129,6 @@ Password: `chhoto-url-demo-pass`
 - If you intend to have more than a few thousand short links, it's strongly recommended that you use the UID
   [`CHHOTO_SLUG_STYLE`](./docs/INSTALLATION.md#chhoto_slug_style) with a [`CHHOTO_SLUG_LENGTH`](./docs/INSTALLATION.md#chhoto_slug_length)
   of 16 or more. Otherwise, generating new links will start to fail after a while.
+- It is highly recommended that you use [`Argon2` for hashing](./docs/INSTALLATION.md#chhoto_hash_algorithm) password and API key (if used).
 - For safety, only `https`,`http`,`ftp`, and `magnet` links are allowed for long links by default. Please take a look at
   [`CHHOTO_EXTRA_PROTOCOLS`](./docs/INSTALLATION.md#chhoto_extra_protocols) to use more protocols.
