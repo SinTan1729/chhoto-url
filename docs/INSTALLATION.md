@@ -215,6 +215,8 @@ This will also allow capital letters in UID slugs, if those are enabled. It has 
 If you want to provided hashed password and API Key, name a supported algorithm here. For now, the supported
 values are: `Argon2`. More algorithms may be added later. Unsupported values are ignored.
 
+It is highly recommended that you use `Argon2` hashes for security.
+
 _Note: If using a compose file, make sure to escape $ by $$._
 
 _Warning: It will add some latency to some of your requests and use more resources in general._
