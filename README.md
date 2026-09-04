@@ -122,7 +122,8 @@ Password: `chhoto-url-demo-pass`
 # Notes
 
 - The list of adjectives and names used for random short url generation is a modified
-  version of [this list used by docker](https://github.com/moby/moby/blob/master/internal/namesgenerator/names-generator.go).
+  version of
+  [this list used by docker](https://github.com/moby/moby/blob/2280567b60633e2a4ac8723961bc1f351e71e099/internal/namesgenerator/legacy/names-generator.go#L52).
 - It is highly recommended that you [enable WAL mode](./docs/INSTALLATION.md#chhoto_sqlite_use_wal_mode).
 - Although it's unlikely, it's possible that your database is mangled after some update. For mission critical use cases,
   it's recommended to keep regular versioned backups of the database, and sticking to a minor release tag e.g. 5.8.
