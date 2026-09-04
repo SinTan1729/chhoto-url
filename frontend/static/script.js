@@ -238,14 +238,14 @@ const refreshData = async () => {
           cacheAdmin(false);
           await getConfig();
 
-          loading_text.innerHTML = "Using public mode.";
+          loading_text.textContent = "Using public mode.";
           const expiry = parseInt(CONFIG.public_mode_expiry_delay);
           if (expiry > 0) {
-            loading_text.innerHTML +=
+            loading_text.textContent +=
               " Unless chosen a shorter expiry time, submitted links will automatically expire ";
             const time = new Date();
             time.setSeconds(time.getSeconds() + expiry);
-            loading_text.innerHTML += formatRelativeTime(time) + ".";
+            loading_text.textContent += formatRelativeTime(time) + ".";
           }
 
           admin_button.getElementsByTagName("span")[0].innerText = "login";
@@ -292,7 +292,7 @@ const refreshData = async () => {
     } else {
       document.getElementById("table-box").hidden = true;
       loading_text.hidden = false;
-      document.getElementById("url-table").innerHTML = "";
+      document.getElementById("url-table").replaceChildren();
     }
   } catch (err) {
     console.log(err);
@@ -390,12 +390,12 @@ const displayData = () => {
 
   if (data.length === 0 && FILTER == null) {
     table_box.hidden = true;
-    loading_text.innerHTML = "No active links.";
+    loading_text.textContent = "No active links.";
     loading_text.hidden = false;
   } else {
     loading_text.hidden = true;
     table_box.hidden = false;
-    table.innerHTML = "";
+    table.replaceChildren();
     for (const [i, row] of data.entries()) {
       table.appendChild(TR(CUR_PAGE * CONFIG.frontend_page_size + i + 1, row));
     }
@@ -419,7 +419,7 @@ const showAlert = (text, col) => {
   const alertBox = document.getElementById("alert-box");
   alertBox.style.background = col;
   alertBox.innerHTML = text;
-  if (text == "&nbsp;") {
+  if (text == "\u00A0") {
     alertBox.removeAttribute("style");
   } else {
     alertBox.style.display = "block";
@@ -755,7 +755,7 @@ const deleteButton = (shortUrl) => {
   btn.onclick = (e) => {
     e.preventDefault();
     if (confirm("Click OK to delete the entry '" + shortUrl + "'.")) {
-      showAlert("&nbsp;", "transparent");
+      showAlert("\u00A0", "transparent");
       fetch(prepSubdir(`/api/del/${shortUrl}`), {
         method: "DELETE",
         cache: "no-cache",
@@ -995,13 +995,13 @@ const logOut = async () => {
         if (res.ok) {
           document.getElementById("version-number").hidden = true;
           document.getElementById("admin-button").hidden = true;
-          showAlert("&nbsp;", "transparent");
+          showAlert("\u00A0", "transparent");
           clearCachedState();
           ADMIN = false;
           LOCAL_DATA = [];
           document.getElementById("table-box").hidden = true;
           document.getElementById("loading-text").hidden = false;
-          document.getElementById("url-table").innerHTML = "";
+          document.getElementById("url-table").replaceChildren();
           await refreshData();
         } else {
           showAlert(
@@ -1100,7 +1100,7 @@ refreshData()
     };
     qrCodeDialog.onclose = () => {
       document.getElementById("container").style.filter = "blur(0px)";
-      document.getElementById("qr-code").innerHTML = "";
+      document.getElementById("qr-code").replaceChildren();
     };
 
     document.forms.namedItem("login-form").onsubmit = (e) => {
