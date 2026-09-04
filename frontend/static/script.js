@@ -415,7 +415,9 @@ const managePageControls = () => {
   PROCESSING_PAGE_TRANSITION = false;
 };
 
+let alertTimeout;
 const showAlert = (text, col) => {
+  clearTimeout(alertTimeout);
   const alertBox = document.getElementById("alert-box");
   alertBox.style.background = col;
   alertBox.innerHTML = text;
@@ -423,6 +425,10 @@ const showAlert = (text, col) => {
     alertBox.removeAttribute("style");
   } else {
     alertBox.style.display = "block";
+    const timeout = col.includes("red") ? 5000 : 3000;
+    alertTimeout = setTimeout(() => {
+      showAlert("\u00A0", "transparent");
+    }, timeout);
   }
 };
 
