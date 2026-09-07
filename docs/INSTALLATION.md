@@ -8,7 +8,7 @@
 The repository includes a [sample `compose.yaml` file](../deploy/compose.yaml). It contains
 everything needed for a basic deployment.
 Starting with version 6.2.6, OCI images are built by a GitHub Actions workflow.
-You can [check the workflow for yourself](../.github/workflows/docker-release.yml) to make sure that nothing silly is going on.
+You can [check the workflow for yourself](../.github/workflows/test-and-release.yml) to make sure that nothing silly is going on.
 
 The container images come in two flavors. The default image is built from [`scratch`](https://hub.docker.com/_/scratch),
 and is as light as possible. The tags with the `-alpine` suffix are built on top of [`alpine`](https://hub.docker.com/_/alpine).
