@@ -2,16 +2,38 @@
 <!-- SPDX-License-Identifier: MIT -->
 
 <!doctype html>
-<html>
+<html lang="en">
   <head>
-    <title>Error 404</title>
-    <link rel="icon" href="data:;base64,iVBORw0KGgo=" />
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     <meta
       name="viewport"
       content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0"
     />
-    <link rel="stylesheet" type="text/css" target="_blank" href="styles.css" />
+
+    <title>Error 404</title>
+    <meta property="og:title" content="Error 404" />
+    <meta name="description" content="Page Not Found" />
+    <meta name="og:description" content="Page Not Found" />
+
+    <link
+      rel="icon"
+      type="image/x-icon"
+      href="assets/favicon.ico"
+      sizes="any"
+    />
+    <link rel="icon" type="image/svg+xml" href="assets/favicon.svg" />
+    <link
+      rel="icon"
+      type="image/png"
+      href="assets/favicon-32.png"
+      sizes="32x32"
+    />
+    <link
+      rel="icon"
+      type="image/png"
+      href="assets/favicon-196.png"
+      sizes="196x196"
+    />
   </head>
 
   <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -34,6 +56,10 @@
       background-color: light-dark(white, #181a1b);
       text-align: center;
     }
+    .poem {
+      display: inline-block;
+      text-align: left;
+    }
     #quote {
       text-indent: 4em;
     }
@@ -46,8 +72,8 @@
   </style>
 
   <body>
-    <h1>Error 404!</h1>
-    <div style="display: inline-block; text-align: left">
+    <h1>Error 404</h1>
+    <div class="poem">
       <p>You step in the stream,</p>
       <p>But the water has moved on.</p>
       <p>The page is not here.</p>
