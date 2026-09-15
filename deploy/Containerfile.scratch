@@ -16,6 +16,7 @@ COPY ./backend/target/riscv64gc-unknown-linux-musl/release/chhoto-url /chhoto-ur
 ARG TARGETARCH
 FROM builder-$TARGETARCH
 COPY ./frontend /frontend
+COPY ./empty-dir /frontend-final
 
 ENTRYPOINT ["/chhoto-url"]
 

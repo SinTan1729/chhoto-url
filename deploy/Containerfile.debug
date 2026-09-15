@@ -7,6 +7,7 @@ COPY ./backend/target/x86_64-unknown-linux-musl/debug/chhoto-url /chhoto-url
 ARG TARGETARCH
 FROM builder
 RUN apk add --no-cache tzdata
+RUN mkdir -p /frontend-final
 
 ENTRYPOINT ["/chhoto-url"]
 
