@@ -76,6 +76,7 @@ or
 ```
 
 Multiple links can be created in a single request by sending an array of objects like the example below.
+
 ```bash
 curl -X POST \
     -H "X-API-Key: <YOUR_API_KEY>" \
@@ -280,3 +281,8 @@ image, authentication will be disabled.
 This if not recommended in actual use however, as it will allow anyone to create new links and delete
 old ones. This might not seem like a bad idea, until you have hundreds of links pointing to illegal content.
 Since there are no logs, it's impossible to prove that those links aren't created by you.
+
+## Healthcheck
+
+There's a special unauthenticated healthcheck route listening to `127.0.0.1:1729/healthz` (so not accessible by the public).
+When accessed, it would either return `healthy` or `unhealthy`. Look at the [deployment examples](../deploy) to see how to use it for healthchecks.

@@ -46,7 +46,7 @@ Volume=data:/data
 
 # Health check
 # Only enable this if using the alpine images.
-# HealthCmd=CMD-SHELL wget --no-verbose --tries=1 --spider http://chhoto-url:4567/api/whoami || exit 1
+# HealthCmd=CMD-SHELL wget --no-verbose --tries=1 --spider http://127.0.0.1:1729/healthz | grep -o '^healthy$' || exit 1
 # HealthInterval=60s
 # HealthRetries=3
 # HealthStartPeriod=10s

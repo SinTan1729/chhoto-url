@@ -106,7 +106,7 @@ services:
       - data:/data
     # Only enable this if using the alpine images.
     # healthcheck:
-    #   test: wget --no-verbose --tries=1 --spider http://chhoto-url:4567/api/whoami || exit 1
+    #   test: wget --no-verbose --tries=1 --spider http://127.0.0.1:1729/healthz | grep -o '^healthy$' || exit 1
     #   interval: 60s
     #   start_period: 10s
     #   retries: 3
