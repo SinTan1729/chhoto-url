@@ -13,7 +13,6 @@ services:
     # user. In most cases, user: 1000:1000 should work. You might also need to mount a directory with your
     # db and not just the file itself. Make sure to adjust CHHOTO_DB_URL accordingly.
     # It does add extra security, but I don't know enough about docker to help in case it breaks something.
-    # read_only: true
     # cap_drop:
     #   - ALL
     ports:
