@@ -9,8 +9,10 @@ use tokio::sync::mpsc;
 
 use crate::{
     database::queries,
-    services::types::ChhotoError::{self, ClientError, ServerError},
-    utils::NewURLRequest,
+    services::{
+        types::ChhotoError::{self, ClientError, ServerError},
+        utils::NewURLRequest,
+    },
 };
 
 // Struct for encoding a DB row

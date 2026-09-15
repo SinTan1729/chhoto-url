@@ -9,7 +9,7 @@ use actix_web::{
     middleware,
     web::{self, Redirect},
 };
-use log::info;
+use log::{info, warn};
 use rusqlite::Connection;
 use std::{
     io::Result,
@@ -23,8 +23,7 @@ mod background;
 mod config;
 mod database;
 mod services;
-
-use services::utils;
+mod utils;
 
 // Tests
 #[cfg(test)]
@@ -42,38 +41,15 @@ static LOGGER: Once = Once::new();
 
 #[actix_web::main]
 async fn main() -> Result<()> {
-    env_logger::builder()
-        .parse_filters(
-            std::env::var("RUST_LOG")
-                .ok()
-                .filter(|s| !s.is_empty())
-                .unwrap_or("warn,chhoto_url=info,actix_session::middleware=error".to_owned())
-                .as_str(),
-        )
-        .format(|buf, record| {
-            use chrono::Local;
-            use env_logger::fmt::style::{AnsiColor, Style};
-            use std::io::Write;
-
-            let subtle = Style::new().fg_color(Some(AnsiColor::BrightBlack.into()));
-            let level_style = buf.default_level_style(record.level());
-
-            writeln!(
-                buf,
-                "{subtle}[{subtle:#}{} {level_style}{:<6}{level_style:#}{}{subtle}]{subtle:#} {}",
-                Local::now().format("%Y-%m-%d %H:%M:%S%Z"),
-                record.level(),
-                record.module_path().unwrap_or_default(),
-                record.args()
-            )
-        })
-        .init();
-
+    utils::init_logger();
     // Generate session key in runtime so that restart invalidates older logins
     let secret_key = Key::generate();
 
     eprintln!("----------------------------------------------------------------------");
-    info!("Starting Chhoto URL Server v{}", utils::get_version());
+    info!(
+        "Starting Chhoto URL Server v{}",
+        services::utils::get_version()
+    );
     info!("Source: https://github.com/SinTan1729/chhoto-url");
     eprintln!("----------------------------------------------------------------------");
 
@@ -90,6 +66,14 @@ async fn main() -> Result<()> {
     // Spawn hit updater
     let (hits_tx, hits_rx) = mpsc::channel::<(String, bool)>(1024);
     background::spawn_hits_worker(Arc::clone(&writer), hits_rx);
+    // Apply custom title if needed
+    let frontend_dir = match utils::apply_custom_title(&conf.custom_site_title) {
+        Ok(dir) => dir,
+        Err(e) => {
+            warn!("Issue while applying custom title: {}", e);
+            "/frontend/".to_string()
+        }
+    };
 
     let port = conf.port;
     let addr = conf.listen_address.clone();
@@ -140,14 +124,14 @@ async fn main() -> Result<()> {
             if let Some(dir) = &conf.custom_landing_directory {
                 app = app
                     .service(Redirect::new("/admin/manage", "/admin/manage/"))
-                    .service(Files::new("/admin/manage/", "./frontend/").index_file("index.html"))
+                    .service(Files::new("/admin/manage/", &frontend_dir).index_file("index.html"))
                     .service(Files::new("/", dir).index_file("index.html"));
             } else {
-                app = app.service(Files::new("/", "./frontend/").index_file("index.html"));
+                app = app.service(Files::new("/", &frontend_dir).index_file("index.html"));
             }
         }
 
-        app.default_service(actix_web::web::get().to(utils::error404))
+        app.default_service(actix_web::web::get().to(services::utils::error404))
     })
     // Hardcode the port the server listens to. Allows for more intuitive Docker Compose port management
     .bind((&*addr, port))

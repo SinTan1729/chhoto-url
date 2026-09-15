@@ -6,11 +6,13 @@ use actix_web::{HttpResponse, put, web};
 use crate::{
     AppState,
     auth::Auth,
-    services::types::{
-        ChhotoError::{ClientError, ServerError},
-        JSONResponse,
+    services::{
+        types::{
+            ChhotoError::{ClientError, ServerError},
+            JSONResponse,
+        },
+        utils,
     },
-    utils,
 };
 
 // Edit a shortlink

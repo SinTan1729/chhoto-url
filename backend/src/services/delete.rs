@@ -8,11 +8,13 @@ use log::info;
 use crate::{
     AppState,
     auth::Auth,
-    services::types::{
-        ChhotoError::{ClientError, ServerError},
-        JSONResponse,
+    services::{
+        types::{
+            ChhotoError::{ClientError, ServerError},
+            JSONResponse,
+        },
+        utils,
     },
-    utils,
 };
 
 // Handle logout

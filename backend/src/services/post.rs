@@ -16,12 +16,14 @@ use crate::{
     auth::{self, Auth},
     config::HashAlgorithm,
     database,
-    services::types::{
-        AddLinkResponse,
-        ChhotoError::{ClientError, ServerError},
-        CreatedURL, JSONResponse, LinkInfo,
+    services::{
+        types::{
+            AddLinkResponse,
+            ChhotoError::{ClientError, ServerError},
+            CreatedURL, JSONResponse, LinkInfo,
+        },
+        utils,
     },
-    utils,
 };
 
 const SERVER_ERROR_RES: &str = "Something went wrong when adding the link.";

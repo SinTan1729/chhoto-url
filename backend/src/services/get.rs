@@ -13,12 +13,14 @@ use crate::{
     AppState,
     auth::Auth,
     database,
-    services::types::{
-        BackendConfig,
-        ChhotoError::{ClientError, ServerError},
-        GetReqParams,
+    services::{
+        types::{
+            BackendConfig,
+            ChhotoError::{ClientError, ServerError},
+            GetReqParams,
+        },
+        utils,
     },
-    utils,
 };
 
 // Return all active links

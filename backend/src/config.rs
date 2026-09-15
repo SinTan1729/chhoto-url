@@ -113,6 +113,7 @@ pub(crate) struct Config {
     pub(crate) db_location: String,
     pub(crate) cache_control_header: Option<String>,
     pub(crate) disable_frontend: bool,
+    pub(crate) custom_site_title: Option<String>,
     pub(crate) site_url: Option<String>,
     pub(crate) public_mode: bool,
     pub(crate) public_mode_expiry_delay: Option<i64>,
@@ -276,6 +277,17 @@ pub(crate) fn read() -> Config {
         None
     };
 
+    let custom_site_title = var("CHHOTO_CUSTOM_SITE_TITLE")
+        .ok()
+        .map(|s| s.trim().to_owned())
+        .filter(|s| !s.is_empty())
+        .inspect(|t| {
+            info!(
+                r#"Using custom site title: "{} - Powered by Chhoto URL""#,
+                t
+            )
+        });
+
     let slug_length = read_config_wrapper("CHHOTO_SLUG_LENGTH", "slug_length")
         .ok()
         .and_then(|s| s.parse::<usize>().ok())
@@ -349,6 +361,7 @@ pub(crate) fn read() -> Config {
         db_location,
         cache_control_header,
         disable_frontend,
+        custom_site_title,
         site_url,
         public_mode,
         public_mode_expiry_delay,
