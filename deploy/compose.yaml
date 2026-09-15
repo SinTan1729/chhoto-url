@@ -85,6 +85,9 @@ services:
       # In case you want to completely disable the frontend, change the following
       # to True.
       # - CHHOTO_DISABLE_FRONTEND=False
+      # You can use a custom site title by using the following. "- Poweder by Chhoto URL" will
+      # automatically added in the end.
+      # - CHHOTO_CUSTOM_SITE_TITLE=Custom Title
       # If you want to serve a custom landing page, put all your site related files, along with an
       # index.html file in a directory, and set the following to the path of the directory. Remember to first
       # mount the directory inside the container. The admin page will then be located at /admin/manage.
