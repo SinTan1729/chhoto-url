@@ -56,7 +56,7 @@ url = "2.5.8"
 subtle = "2.6.1"
 
 [dev-dependencies]
-actix-http = "3.13.5"
+actix-http = "3.13.6"
 actix-service = "2.0.3"
 regex = "1.13.1"
 tempfile = "3.27.0"
