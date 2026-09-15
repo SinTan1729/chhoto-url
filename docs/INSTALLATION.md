@@ -3,7 +3,7 @@
 
 # Installation and Configuration
 
-## Using `docker compose` (Recommended method)
+## Using Docker Compose or Podman Quadlets (Recommended method)
 
 The repository includes a [sample `compose.yaml` file](../deploy/compose.yaml). It contains
 everything needed for a basic deployment.
@@ -30,11 +30,11 @@ If you're using a custom location for the [`CHHOTO_DB_URL`](#chhoto_db_url), and
 directory instead of a folder. If this is not done, there will be a low, but non-zero chance of data corruption.
 
 It should be possible to run Chhoto URL with pretty much anything that supports OCI images e.g. `docker`, `podman quadlets`
-(the repo contains a sample `chhoto-url.container` file for using with `quadlets`.) etc. Official
+(the repo contains a sample [`chhoto-url.container`](../deploy/chhoto-url.container) file for using with `quadlets`.) etc. Official
 support is only provided for `docker` and `podman`, but it should be trivial to convert the `compose.yaml` file to other formats.
 If you need help, feel free to open a discussion.
 
-## Building and running with docker
+## Building and running with Docker
 
 ### `docker run` method
 
