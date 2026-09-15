@@ -43,6 +43,10 @@ to rewrite it in Rust and add some features to it that I thought were essential 
 Chhoto (ছোট, [pronunciation](https://en.wiktionary.org/wiki/ছোট)) is the Bangla word
 for small. URL means, well... URL. So the name simply means Small URL.
 
+# Installation and configuration
+
+[See here.](./docs/INSTALLATION.md)
+
 # Demo
 
 Link: [demo.chhoto.link](https://demo.chhoto.link)</br>
@@ -106,10 +110,6 @@ Password: `chhoto-url-demo-pass`
   <img src="docs/screenshot-desktop.webp" height="250" alt="desktop screenshot" />
   <img src="docs/screenshot-mobile.webp" height="250" alt="mobile screenshot" />
 </p>
-
-# Installation and configuration
-
-[See here.](./docs/INSTALLATION.md)
 
 # Instructions for CLI usage
 
