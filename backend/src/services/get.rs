@@ -7,6 +7,7 @@ use actix_web::{
     http::StatusCode,
     web::{self, Redirect},
 };
+use rusqlite::Connection;
 
 use crate::{
     AppState,
@@ -142,5 +143,15 @@ pub(crate) async fn link_handler(
                 .customize()
                 .with_status(StatusCode::NOT_FOUND),
         )
+    }
+}
+
+// Healthcheck endpoint
+#[get("/healthz")]
+pub(crate) async fn health_handler(db: web::Data<Connection>) -> impl Responder {
+    if database::is_database_healthy(&db) {
+        HttpResponse::Ok().message_body("healthy")
+    } else {
+        HttpResponse::InternalServerError().message_body("unhealthy")
     }
 }

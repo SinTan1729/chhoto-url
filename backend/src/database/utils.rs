@@ -344,3 +344,14 @@ pub(crate) fn open_db(path: &str, read_only: bool) -> Connection {
         Connection::open(path).expect("Unable to open writer database.")
     }
 }
+
+// Perform a healthcheck
+pub(crate) fn is_database_healthy(db: &Connection) -> bool {
+    db.query_row_and_then(
+        "SELECT application_id FROM pragma_application_id",
+        (),
+        |row| row.get::<usize, i32>(0),
+    )
+    .unwrap_or_default()
+        == APPLICATION_ID
+}

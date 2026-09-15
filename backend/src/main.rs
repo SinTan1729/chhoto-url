@@ -93,8 +93,9 @@ async fn main() -> Result<()> {
 
     let port = conf.port;
     let addr = conf.listen_address.clone();
+    let db_location_for_health = conf.db_location.clone();
     // Actually start the server
-    HttpServer::new(move || {
+    let default_app = HttpServer::new(move || {
         let mut app = App::new()
             .wrap(middleware::Logger::default())
             .wrap(middleware::Compress::default())
@@ -152,12 +153,23 @@ async fn main() -> Result<()> {
     .bind((&*addr, port))
     .inspect(|_| {
         LOGGER.call_once(|| {
-            info!(
-                "Server has started listening to {} on port {}.",
-                &addr, port
-            );
+            info!("Server has started listening to {} on port {}.", addr, port);
         })
     })?
-    .run()
-    .await
+    .run();
+
+    let health_app = HttpServer::new(move || {
+        App::new()
+            .app_data(web::Data::new(database::open_db(
+                &db_location_for_health,
+                true,
+            )))
+            .service(services::health_handler)
+    })
+    .workers(1)
+    .bind(("127.0.0.1", 1729))?
+    .run();
+
+    tokio::try_join!(default_app, health_app)?;
+    Ok(())
 }

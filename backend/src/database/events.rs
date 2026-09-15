@@ -272,7 +272,7 @@ pub(crate) fn add_links(
         }
     }
 
-    (output, Some(rejected).filter(|_| return_rejected))
+    (output, return_rejected.then_some(rejected))
 }
 
 // Edit an existing link
