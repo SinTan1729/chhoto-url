@@ -23,8 +23,10 @@ COPY ./backend/src ./src
 # Build application
 RUN cargo build --release --target=$target --locked --bin chhoto-url
 RUN cp /chhoto-url/target/$target/release/chhoto-url /chhoto-url/release
+RUN mkdir -p /frontend-final
 
 FROM scratch
 COPY --from=builder /chhoto-url/release /chhoto-url
 COPY ./frontend /frontend
+COPY --from=builder /frontend-final /frontend-final
 ENTRYPOINT ["/chhoto-url"]

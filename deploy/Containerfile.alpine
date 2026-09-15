@@ -17,6 +17,7 @@ ARG TARGETARCH
 FROM builder-$TARGETARCH
 RUN apk add --no-cache tzdata
 COPY ./frontend /frontend
+RUN mkdir -p /frontend-final
 
 ENTRYPOINT ["/chhoto-url"]
 

@@ -23,6 +23,7 @@ DropCapability=ALL
 Environment=CHHOTO_DB_URL=/data/urls.sqlite 
 Environment=CHHOTO_SQLITE_USE_WAL_MODE = True 
 #Environment=CHHOTO_SQLITE_ENSURE_ACID = True
+#Environment=CHHOTO_CUSTOM_SITE_TITLE="Custom Title"
 #Environment=CHHOTO_SITE_URL=https://www.example.com 
 #Environment=CHHOTO_HASH_ALGORITHM=Argon2 
 Environment=CHHOTO_PASSWORD=TopSecretPass 
@@ -38,7 +39,7 @@ Environment=CHHOTO_SLUG_STYLE=Pair
 #Environment=CHHOTO_PUBLIC_MODE_EXPIRY_DELAY=3600 
 #Environment=CHHOTO_DISABLE_FRONTEND=False 
 #Environment=CHHOTO_CUSTOM_LANDING_DIRECTORY=/custom/dir/location 
-#Environment=CHHOTO_CACHE_CONTROL_HEADER=no-cache, private
+#Environment=CHHOTO_CACHE_CONTROL_HEADER=no-cache,private
 #Environment=CHHOTO_FRONTEND_PAGE_SIZE=10
 
 # Volume

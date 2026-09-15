@@ -50,6 +50,7 @@ pub(super) fn default_config(test: &str) -> config::Config {
         db_location: format!("/tmp/chhoto-url-test-{test}.sqlite"),
         cache_control_header: None,
         disable_frontend: true,
+        custom_site_title: None,
         site_url: Some(String::from("https://mydomain.com")),
         public_mode: false,
         public_mode_expiry_delay: None,
