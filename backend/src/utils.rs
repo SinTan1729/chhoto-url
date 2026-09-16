@@ -1,6 +1,7 @@
 // SPDX-FileCopyrightText: 2023-2026 Sayantan Santra <sayantan.santra689@gmail.com>
 // SPDX-License-Identifier: MIT
 
+use regex::Regex;
 use std::{fs, io, path::Path};
 
 fn copy_frontend() -> io::Result<()> {
@@ -45,15 +46,18 @@ fn copy_frontend() -> io::Result<()> {
 
 fn change_title(title: &str) -> io::Result<()> {
     let mut html = fs::read_to_string("/frontend/index.html")?;
-    let re1 = regex::Regex::new("<title>Chhoto URL</title>").unwrap();
-    let re2 = regex::Regex::new(r#"<meta\s+property="og:title"\s+content="[^"]*"( />|>)"#).unwrap();
-    html = re1
+    let re1 = Regex::new(r#"\sChhoto URL"#).unwrap();
+    let re2 = Regex::new("<title>Chhoto URL</title>").unwrap();
+    let re3 = Regex::new(r#"<meta\s+property="og:title"\s+content="[^"]*"( />|>)"#).unwrap();
+
+    html = re1.replace(&html, format!(" {}", title)).to_string();
+    html = re2
         .replace(
             &html,
             format!("<title>{} - Powered by Chhoto URL</title>", title),
         )
         .to_string();
-    html = re2
+    html = re3
         .replace(
             &html,
             format!(
@@ -62,6 +66,7 @@ fn change_title(title: &str) -> io::Result<()> {
             ),
         )
         .to_string();
+
     fs::write("/frontend-final/index.html", html)?;
     Ok(())
 }
