@@ -35,6 +35,8 @@ services:
       # If you'd like to disable ACID compliance, uncomment the next line.
       # Note that there are risks. Look at the README for more.
       # - CHHOTO_SQLITE_ENSURE_ACID = False
+      # Set this to True to disable all backups. Only do it if you know what you're doing.
+      # - CHHOTO_DISABLE_BACKUPS = False
 
       # Change this to your public-facing URL. This is optional, as the link will work at any URL as
       # long as Chhoto URL is accessible there. This mostly enhances the frontend experience, as copying to clipboard,

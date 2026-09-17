@@ -21,8 +21,9 @@ DropCapability=ALL
 
 # Environment variables
 Environment=CHHOTO_DB_URL=/data/urls.sqlite 
-Environment=CHHOTO_SQLITE_USE_WAL_MODE = True 
-#Environment=CHHOTO_SQLITE_ENSURE_ACID = True
+Environment=CHHOTO_SQLITE_USE_WAL_MODE=True 
+#Environment=CHHOTO_SQLITE_ENSURE_ACID=True
+#Environment=CHHOTO_DISABLE_BACKUPS=False
 #Environment=CHHOTO_CUSTOM_SITE_TITLE="Custom Title"
 #Environment=CHHOTO_SITE_URL=https://www.example.com 
 #Environment=CHHOTO_HASH_ALGORITHM=Argon2 

@@ -153,6 +153,11 @@ _Note: There might be partial data loss only in case of system failure or power 
 crashes. If you do have data loss, you should only lose the data stored after the last sync with the database file. So, under normal
 loads, you shouldn't lose any data anyway. But this is a real thing that can technically happen._
 
+## `CHHOTO_DISABLE_BACKUPS`
+
+Set this to `True` to disable the automated database backups. Only do this if you have another strategy for backups, or you truly don't
+care about your data. **You've been warned.**
+
 <!-- prettier-ignore-start -->
 <a id="chhoto_redirect_method"></a>
 ### `CHHOTO_REDIRECT_METHOD` \#
