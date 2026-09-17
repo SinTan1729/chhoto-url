@@ -60,7 +60,7 @@ mentioned above., For any other architectures, open a discussion, and I'll try t
 docker run -p 4567:4567 \
     -f build/Containerfile \
     -e CHHOTO_PASSWORD="password" \
-    -d chhoto-url:latest
+    -d chhoto-url:alpine
 ```
 
 1.a Make the database file available to host (optional)
@@ -72,7 +72,7 @@ docker run -p 4567:4567 \
     -e CHHOTO_PASSWORD="password" \
     -v ./data:/data \
     -e CHHOTO_DB_URL=/data/urls.sqlite \
-    -d chhoto-url:latest
+    -d chhoto-url:alpine
 ```
 
 _Note: All of this pretty much works exactly the same if you replace `docker` with `podman`. In fact,

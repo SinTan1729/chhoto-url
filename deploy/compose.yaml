@@ -3,7 +3,7 @@
 
 services:
   chhoto-url:
-    image: sintan1729/chhoto-url:latest
+    image: sintan1729/chhoto-url:alpine
     # image: sintan1729/chhoto-url:alpine # for extra convenience
     # The images can also be pulled from ghcr.io
     restart: unless-stopped
@@ -31,12 +31,12 @@ services:
       # corrupting your db since we use WAL journaling mode
       # (In fact, I'd suggest that you do that so that you can keep
       # a copy of your database.)
-      - CHHOTO_SQLITE_USE_WAL_MODE = True
+      - CHHOTO_SQLITE_USE_WAL_MODE=True
       # If you'd like to disable ACID compliance, uncomment the next line.
       # Note that there are risks. Look at the README for more.
-      # - CHHOTO_SQLITE_ENSURE_ACID = False
+      # - CHHOTO_SQLITE_ENSURE_ACID=False
       # Set this to True to disable all backups. Only do it if you know what you're doing.
-      # - CHHOTO_DISABLE_BACKUPS = False
+      # - CHHOTO_DISABLE_BACKUPS=False
 
       # Change this to your public-facing URL. This is optional, as the link will work at any URL as
       # long as Chhoto URL is accessible there. This mostly enhances the frontend experience, as copying to clipboard,
@@ -107,15 +107,16 @@ services:
       # - CHHOTO_EXTRA_PROTOCOLS=ftps,obsidian
 
       # You may set the TZ variable for timezone in logging, but it will only work in the alpine builds
+      # TZ=America, Chicago
     volumes:
       - data:/data
-    # Only enable this if using the alpine images.
-    # healthcheck:
-    #   test: wget -qO- http://127.0.0.1:1729/healthz || exit 1
-    #   interval: 60s
-    #   start_period: 10s
-    #   retries: 3
-    #   timeout: 10s
+    # Disable this if using the scratch images.
+    healthcheck:
+      test: wget -qO- http://127.0.0.1:1729/healthz || exit 1
+      interval: 60s
+      start_period: 10s
+      retries: 3
+      timeout: 10s
 
 volumes:
   db:

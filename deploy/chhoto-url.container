@@ -12,7 +12,7 @@ Description=Caddy
 
 [Container]
 ContainerName=chhoto-url
-Image=docker.io/sintan1729/chhoto-url:latest
+Image=docker.io/sintan1729/chhoto-url:alpine
 #Image=docker.io/sintan1729/chhoto-url:alpine # for extra convenience
 #The images can also be pulled from ghcr.io
 PodmanArgs=--tty
@@ -42,18 +42,19 @@ Environment=CHHOTO_SLUG_STYLE=Pair
 #Environment=CHHOTO_CUSTOM_LANDING_DIRECTORY=/custom/dir/location 
 #Environment=CHHOTO_CACHE_CONTROL_HEADER=no-cache,private
 #Environment=CHHOTO_FRONTEND_PAGE_SIZE=10
+#Environment=TZ=America/Chicago
 
 # Volume
 Volume=data:/data
 
 # Health check
-# Only enable this if using the alpine images.
-# HealthCmd=CMD-SHELL wget -qO- http://127.0.0.1:1729/healthz || exit 1
-# HealthInterval=60s
-# HealthRetries=3
-# HealthStartPeriod=10s
-# HealthTimeout=10s
-# HealthOnFailure=kill
+# Enable this if using the scratch images.
+HealthCmd=CMD-SHELL wget -qO- http://127.0.0.1:1729/healthz || exit 1
+HealthInterval=60s
+HealthRetries=3
+HealthStartPeriod=10s
+HealthTimeout=10s
+HealthOnFailure=kill
 
 [Service]
 Restart=on-failure
