@@ -19,13 +19,13 @@ enum BackupType {
 }
 
 // Clean expired links
-pub(crate) fn cleanup(db: &Connection, use_wal_mode: bool) {
+pub(crate) fn cleanup(db: &Connection, use_wal_mode: bool, disable_backups: bool) {
     let now = Utc::now().timestamp();
     debug!("Starting database cleanup.");
 
     if Local::now().hour() == 3 {
         info!("Doing a scheduled daily backup.");
-        manage_backups(db, BackupType::Daily);
+        manage_backups(db, disable_backups, BackupType::Daily);
     }
 
     db.prepare_cached(queries::CLEANUP)
@@ -66,7 +66,11 @@ pub(crate) fn cleanup(db: &Connection, use_wal_mode: bool) {
 }
 
 // Create backups
-fn manage_backups(db: &Connection, backup_type: BackupType) {
+fn manage_backups(db: &Connection, disable_backups: bool, backup_type: BackupType) {
+    if disable_backups {
+        return;
+    }
+
     let path = db.path().expect("The database path should exist.");
 
     let db_path = PathBuf::from(path);
@@ -133,8 +137,13 @@ fn manage_backups(db: &Connection, backup_type: BackupType) {
 }
 
 // Initialize the database
-pub(crate) fn init_db(db: &mut Connection, use_wal_mode: bool, ensure_acid: bool) {
-    manage_backups(db, BackupType::Init);
+pub(crate) fn init_db(
+    db: &mut Connection,
+    use_wal_mode: bool,
+    ensure_acid: bool,
+    disable_backups: bool,
+) {
+    manage_backups(db, disable_backups, BackupType::Init);
 
     info!("Initializing database.");
     let (mut tables, mut indices) = db

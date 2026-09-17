@@ -129,6 +129,7 @@ pub(crate) struct Config {
     pub(crate) custom_landing_directory: Option<String>,
     pub(crate) use_wal_mode: bool,
     pub(crate) ensure_acid: bool,
+    pub(crate) disable_backups: bool,
     pub(crate) frontend_page_size: u16,
 }
 
@@ -335,6 +336,10 @@ pub(crate) fn read() -> Config {
         let synchronous = if use_wal_mode { "NORMAL" } else { "FULL" };
         info!("Not ensuring ACID compliance, using synchronous pragma: {synchronous}.")
     }
+    let disable_backups = var("CHHOTO_DISABLE_BACKUPS").is_ok_and(|s| s.trim() == "True");
+    if disable_backups {
+        warn!("Disabling backups.");
+    }
 
     let custom_landing_directory = read_config_wrapper(
         "CHHOTO_CUSTOM_LANDING_DIRECTORY",
@@ -377,6 +382,7 @@ pub(crate) fn read() -> Config {
         custom_landing_directory,
         use_wal_mode,
         ensure_acid,
+        disable_backups,
         frontend_page_size,
     }
 }

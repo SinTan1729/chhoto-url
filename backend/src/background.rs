@@ -53,6 +53,7 @@ pub(crate) fn spawn_hits_worker(
 pub(crate) fn spawn_cleaner(
     writer: Arc<Mutex<Connection>>,
     use_wal_mode: bool,
+    disable_backups: bool,
 ) -> tokio::task::JoinHandle<()> {
     spawn({
         let writer = Arc::clone(&writer);
@@ -61,7 +62,7 @@ pub(crate) fn spawn_cleaner(
             let mut interval = interval(Duration::from_secs(3600));
             loop {
                 interval.tick().await;
-                database::cleanup(&*writer.lock().await, use_wal_mode);
+                database::cleanup(&*writer.lock().await, use_wal_mode, disable_backups);
             }
         }
     })

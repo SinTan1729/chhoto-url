@@ -68,6 +68,7 @@ pub(super) fn default_config(test: &str) -> config::Config {
         custom_landing_directory: None,
         use_wal_mode: true,
         ensure_acid: false,
+        disable_backups: true,
         frontend_page_size: 10,
     }
 }
@@ -89,6 +90,7 @@ pub(super) async fn create_app(
         &mut *writer.lock().await,
         conf.use_wal_mode,
         conf.ensure_acid,
+        conf.disable_backups,
     );
 
     let (hits_tx, hits_rx) = mpsc::channel::<(String, bool)>(1024);
