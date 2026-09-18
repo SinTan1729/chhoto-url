@@ -26,7 +26,9 @@ RUN cp /chhoto-url/target/$target/release/chhoto-url /chhoto-url/release
 RUN mkdir -p /frontend-final
 
 FROM scratch
-COPY --from=builder /chhoto-url/release /chhoto-url
-COPY ./frontend /frontend
-COPY --from=builder /frontend-final /frontend-final
-ENTRYPOINT ["/chhoto-url"]
+COPY --from=builder /chhoto-url/release /app/chhoto-url
+COPY ./frontend /app/frontend/base
+COPY --from=builder /frontend-final /frontend/final
+
+WORKDIR /app
+ENTRYPOINT ["/app/chhoto-url"]

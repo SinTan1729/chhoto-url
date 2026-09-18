@@ -42,7 +42,7 @@ podman-stop:
 
 podman-run: podman-stop
 	podman run -t -p ${CHHOTO_LISTEN_PORT}:${CHHOTO_LISTEN_PORT} --name chhoto-url \
-		--cap-drop=ALL --env-file ./.env -v "${DB_DIR}:/data" -v "./frontend:/frontend" -d chhoto-url:debug
+		--cap-drop=ALL --env-file ./.env -v "${DB_DIR}:/data" -v "./frontend:/app/frontend/base" -d chhoto-url:debug
 	podman logs chhoto-url -f 
 podman-run-release: podman-stop
 	podman run -t -p ${CHHOTO_LISTEN_PORT}:${CHHOTO_LISTEN_PORT} --name chhoto-url \

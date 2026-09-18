@@ -75,7 +75,7 @@ async fn main() -> Result<()> {
         Ok(dir) => dir,
         Err(e) => {
             warn!("Issue while applying custom title: {}", e);
-            "./frontend/".to_string()
+            utils::get_frontend_location().0
         }
     };
 

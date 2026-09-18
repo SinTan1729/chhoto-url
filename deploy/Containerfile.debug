@@ -2,12 +2,13 @@
 # SPDX-License-Identifier: MIT
 
 FROM alpine AS builder
-COPY ./backend/target/x86_64-unknown-linux-musl/debug/chhoto-url /chhoto-url
+COPY ./backend/target/x86_64-unknown-linux-musl/debug/chhoto-url /app/chhoto-url
 
 ARG TARGETARCH
 FROM builder
 RUN apk add --no-cache tzdata
-RUN mkdir -p /frontend-final
+RUN mkdir -p /app/frontend/final
 
-ENTRYPOINT ["/chhoto-url"]
+WORKDIR /app
+ENTRYPOINT ["/app/chhoto-url"]
 

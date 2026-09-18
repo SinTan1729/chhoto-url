@@ -256,7 +256,7 @@ Set this to `True` to completely disable the frontend.
 
 Use this to set a custom site title. If "Custom Title" is provided, the served title will be "Custom Title - Powered by Chhoto URL".
 The title used on the page will be simply "Custom Title". Using custom favicon is possible by mounting favicon files in the correct
-locations (`/frontend/assets/favicon*`). For more customization, please make use of
+locations (`/frontend/base/assets/favicon*`). For more customization, please make use of
 [`CHHOTO_CUSTOM_LANDING_DIRECTORY`](#chhoto_custom_landing_directory).
 
 ### `CHHOTO_CUSTOM_LANDING_DIRECTORY`
