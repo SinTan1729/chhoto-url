@@ -63,7 +63,7 @@ upgrade-deps-pre:
 upgrade-deps: upgrade-deps-pre test
 
 conf_tag := $(shell cat backend/Cargo.toml | sed -rn 's/^version = "(.+)"$$/\1/p')
-last_tag := $(shell git tag -l | tail -1)
+last_tag := $(shell git describe --tags --abbrev=0)
 bumped := $(shell git log -1 --pretty=%B | grep "build: Bumped version to " | wc -l)
 uncommitted := $(shell git status --porcelain=v1 2>/dev/null | wc -l)
 upgrade-version:
