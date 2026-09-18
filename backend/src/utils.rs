@@ -46,12 +46,12 @@ fn copy_frontend() -> io::Result<()> {
 
 fn change_title(title: &str) -> io::Result<()> {
     let mut html = fs::read_to_string("/frontend/index.html")?;
-    let re1 = Regex::new(r#"<span>\sChhoto URL</span>"#).unwrap();
-    let re2 = Regex::new("<title>Chhoto URL</title>").unwrap();
+    let re1 = Regex::new(r#"<span>(\s?)Chhoto URL<\/span>"#).unwrap();
+    let re2 = Regex::new(r#"<title>Chhoto URL<\/title>"#).unwrap();
     let re3 = Regex::new(r#"<meta\s+property="og:title"\s+content="[^"]*"( />|>)"#).unwrap();
 
     html = re1
-        .replace(&html, format!("<span> {title}</span>"))
+        .replace(&html, format!("<span>${{1}}{title}</span>"))
         .to_string();
     html = re2
         .replace(
