@@ -282,12 +282,7 @@ pub(crate) fn read() -> Config {
         .ok()
         .map(|s| s.trim().to_owned())
         .filter(|s| !s.is_empty())
-        .inspect(|t| {
-            info!(
-                r#"Using custom site title: "{} - Powered by Chhoto URL""#,
-                t
-            )
-        });
+        .inspect(|t| info!(r#"Found custom site title config: "{t}""#,));
 
     let slug_length = read_config_wrapper("CHHOTO_SLUG_LENGTH", "slug_length")
         .ok()
