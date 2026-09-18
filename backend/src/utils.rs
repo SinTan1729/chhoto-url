@@ -28,7 +28,7 @@ fn copy_frontend() -> io::Result<()> {
         Ok(())
     }
 
-    let (src, dst) = ("/frontend/", "/frontend-final/");
+    let (src, dst) = ("./frontend/", "./frontend-final/");
     fs::create_dir_all(dst)?;
 
     for entry in fs::read_dir(dst)? {
@@ -45,7 +45,7 @@ fn copy_frontend() -> io::Result<()> {
 }
 
 fn change_title(title: &str) -> io::Result<()> {
-    let mut html = fs::read_to_string("/frontend/index.html")?;
+    let mut html = fs::read_to_string("./frontend/index.html")?;
     let re1 = Regex::new(r#"<span>(\s?)Chhoto URL<\/span>"#).unwrap();
     let re2 = Regex::new(r#"<title>Chhoto URL<\/title>"#).unwrap();
     let re3 = Regex::new(r#"<meta\s+property="og:title"\s+content="[^"]*"( />|>)"#).unwrap();
@@ -66,7 +66,7 @@ fn change_title(title: &str) -> io::Result<()> {
         )
         .to_string();
 
-    fs::write("/frontend-final/index.html", html)?;
+    fs::write("./frontend-final/index.html", html)?;
     Ok(())
 }
 
@@ -101,11 +101,11 @@ pub(crate) fn init_logger() {
 
 pub(crate) fn apply_custom_title(title: &Option<String>) -> io::Result<String> {
     let Some(title) = title else {
-        return Ok("/frontend/".to_string());
+        return Ok("./frontend/".to_string());
     };
 
     copy_frontend()?;
     change_title(title)?;
 
-    Ok("/frontend-final/".to_string())
+    Ok("./frontend-final/".to_string())
 }
