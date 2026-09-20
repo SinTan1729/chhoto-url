@@ -153,7 +153,7 @@ _Note: There might be partial data loss only in case of system failure or power 
 crashes. If you do have data loss, you should only lose the data stored after the last sync with the database file. So, under normal
 loads, you shouldn't lose any data anyway. But this is a real thing that can technically happen._
 
-## `CHHOTO_DISABLE_BACKUPS`
+### `CHHOTO_DISABLE_BACKUPS`
 
 Set this to `True` to disable the automated database backups. Only do this if you have another strategy for backups, or you truly don't
 care about your data. **You've been warned.**
@@ -319,6 +319,17 @@ database file name, and backup type. Daily backups have `.daily1`, `.daily2` etc
 
 Backups are automatically purged, keeping up to 3 init backups, and 7 daily backups at any time. It's still recommended to keep your own
 backups on top of these.
+
+## Container Security Hardening
+
+Due to its design, Chhoto URL can work with basically no permissions. You can use the `scratch` image with the following Docker options for
+maximum security. Similar options are available for Podman and other container engines.
+
+- [Run rootless](https://docs.docker.com/engine/security/rootless)
+- [Drop all capabilities](https://docs.docker.com/reference/compose-file/services/#cap_drop): `cap_drop: ALL`
+- [Read only mode](https://docs.docker.com/reference/compose-file/services/#read_only): Make sure to mount a named volume, or create a bind
+  mount at `/data`. Also, mount a [`tmpfs`](https://docs.docker.com/reference/compose-file/services/#tmpfs) at `/app/frontend/final`.
+- [Deny privileges to processes](https://docs.docker.com/reference/compose-file/services/#security_opt)
 
 ## Deploying in your Kubernetes cluster with Helm
 
