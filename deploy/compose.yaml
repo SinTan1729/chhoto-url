@@ -9,6 +9,7 @@ services:
     restart: unless-stopped
     container_name: chhoto-url
     tty: true
+    # mem_limit: "50m"
     # You may enable the next two options if you want. Make sure that you run the container as the proper
     # user. In most cases, user: 1000:1000 should work. You might also need to mount a directory with your
     # db and not just the file itself. Make sure to adjust CHHOTO_DB_URL accordingly.

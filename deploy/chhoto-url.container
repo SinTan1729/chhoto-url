@@ -18,6 +18,7 @@ Image=docker.io/sintan1729/chhoto-url:alpine
 PodmanArgs=--tty
 PublishPort=4567:4567
 DropCapability=ALL
+#Memory=50m # Note: This might not work with older versions of podman quadlets
 
 # Environment variables
 Environment=CHHOTO_DB_URL=/data/urls.sqlite 
