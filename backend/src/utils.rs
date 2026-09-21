@@ -44,7 +44,7 @@ fn copy_frontend(src: &str, dst: &str) -> io::Result<()> {
 }
 
 fn change_title(title: &str, src: &str, dst: &str) -> io::Result<()> {
-    let mut html = fs::read_to_string(format!("{src}/index.html"))?;
+    let mut html = fs::read_to_string([src, "/index.html"].concat())?;
     let re1 = Regex::new(r#"<span>(\s?)Chhoto URL<\/span>"#).unwrap();
     let re2 = Regex::new(r#"<title>Chhoto URL<\/title>"#).unwrap();
     let re3 = Regex::new(r#"<meta\s+property="og:title"\s+content="[^"]*"( />|>)"#).unwrap();
@@ -65,8 +65,11 @@ fn change_title(title: &str, src: &str, dst: &str) -> io::Result<()> {
         )
         .to_string();
 
-    fs::write(format!("{dst}/index.html.tmp"), html)?;
-    fs::rename(format!("{dst}/index.html.tmp"), format!("{dst}/index.html"))?;
+    fs::write([dst, "/index.html.tmp"].concat(), html)?;
+    fs::rename(
+        [dst, "/index.html.tmp"].concat(),
+        [dst, "/index.html"].concat(),
+    )?;
     Ok(())
 }
 
