@@ -88,14 +88,14 @@ clean: podman-stop
 	cargo clean --manifest-path=backend/Cargo.toml
 
 minify:
-	rm -rf "./minified-tmp/"
+	rm -rf "/tmp/chhoto-url-site/"
 	@echo "Minifying resources..."
-	minify -rs "./site/" -o "./minified-tmp/"
-	find ./minified-tmp/ -type f -regextype egrep -not -regex '.+\.(html|js|css|svg|ico|png|webp)' -delete
+	minify -rs "./site/" -o "/tmp/chhoto-url-site/"
+	find /tmp/chhoto-url-site/ -type f -regextype egrep -not -regex '.+\.(html|js|css|svg|ico|png|webp)' -delete
 
 deploy: minify
 	@echo "Deploying website for public access..."
-	rsync -aAXhP --delete "./minified-tmp/" "vps-rsync:/home/admin/podman/chhoto-url/landing/"
+	rsync -aAXhP --delete "/tmp/chhoto-url-site/" "vps-rsync:/home/admin/podman/chhoto-url/landing/"
 
 purge-cache:
 	@set -e; \
@@ -122,6 +122,6 @@ purge-cache:
 	echo "Cloudflare cache purged for chhoto.link"
 
 publish: deploy purge-cache
-	rm -rf "./minified-tmp/"
+	rm -rf "/tmp/chhoto-url-site/"
 	@echo "Done!"
 
