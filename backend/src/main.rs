@@ -35,6 +35,7 @@ struct AppState {
     reader: Connection,
     writer: Arc<Mutex<Connection>>,
     config: config::Config,
+    frontend_dir: String,
 }
 
 static LOGGER: Once = Once::new();
@@ -105,6 +106,7 @@ async fn main() -> Result<()> {
                 reader: database::open_db(&conf.db_location, true),
                 writer: Arc::clone(&writer),
                 config: conf.clone(),
+                frontend_dir: frontend_dir.clone(),
             }))
             .wrap(if let Some(header) = &conf.cache_control_header {
                 middleware::DefaultHeaders::new().add(("Cache-Control", header.to_owned()))

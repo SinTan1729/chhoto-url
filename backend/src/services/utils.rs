@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: MIT
 
 use actix_files::NamedFile;
-use actix_web::{Responder, http::StatusCode};
+use actix_web::{Responder, http::StatusCode, web};
 use log::{debug, error};
 use nanoid::nanoid;
 use rand::{random_range, seq::IndexedRandom};
@@ -13,6 +13,7 @@ use tokio::sync::mpsc;
 use url::Url;
 
 use crate::{
+    AppState,
     config::{Config, SlugStyle},
     database::{self, add_links},
     services::types::{
@@ -397,8 +398,8 @@ fn gen_link(
 }
 
 // 404 error page
-pub(crate) async fn error404() -> impl Responder {
-    NamedFile::open("./frontend/static/404.html")
+pub(crate) async fn error404(data: web::Data<AppState>) -> impl Responder {
+    NamedFile::open([&data.frontend_dir, "/static/404.html"].concat())
         .customize()
         .with_status(StatusCode::NOT_FOUND)
 }

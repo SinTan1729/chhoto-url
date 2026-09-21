@@ -105,6 +105,7 @@ pub(super) async fn create_app(
                     reader: database::open_db(db_file.to_str().unwrap(), false),
                     writer,
                     config: conf.clone(),
+                    frontend_dir: String::new(),
                 }))
                 .service(services::siteurl)
                 .service(services::version)

@@ -1,10 +1,8 @@
 // SPDX-FileCopyrightText: 2023-2026 Sayantan Santra <sayantan.santra689@gmail.com>
 // SPDX-License-Identifier: MIT
 
-use actix_files::NamedFile;
 use actix_web::{
     Either, HttpResponse, Responder, get,
-    http::StatusCode,
     web::{self, Redirect},
 };
 use rusqlite::Connection;
@@ -140,11 +138,7 @@ pub(crate) async fn link_handler(
             Either::Left(Redirect::to(longlink).permanent())
         }
     } else {
-        Either::Right(
-            NamedFile::open("./frontend/static/404.html")
-                .customize()
-                .with_status(StatusCode::NOT_FOUND),
-        )
+        Either::Right(utils::error404(data).await)
     }
 }
 
