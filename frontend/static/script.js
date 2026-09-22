@@ -7,6 +7,7 @@ let SITE_URL = "-";
 let CONFIG = null;
 let SUBDIR = null;
 let ADMIN = null;
+let NO_PASS = null;
 let LOCAL_DATA = [];
 let CUR_PAGE = 0;
 let FILTER = null;
@@ -157,11 +158,17 @@ const showVersion = () => {
 };
 
 const showLogin = () => {
-  document.getElementById("version-number").hidden = true;
-  document.getElementById("admin-button").hidden = true;
-  document.getElementById("container").style.filter = "blur(2px)";
-  document.getElementById("login-dialog").showModal();
-  document.getElementById("password").focus();
+  if (NO_PASS) {
+    document.getElementById("password").value = "";
+    document.getElementById("login-checkbox").checked = false;
+    submitLogin();
+  } else {
+    document.getElementById("version-number").hidden = true;
+    document.getElementById("admin-button").hidden = true;
+    document.getElementById("container").style.filter = "blur(2px)";
+    document.getElementById("login-dialog").showModal();
+    document.getElementById("password").focus();
+  }
 };
 
 const refreshData = async () => {
@@ -222,12 +229,14 @@ const refreshData = async () => {
     }
 
     if (ADMIN !== true) {
+      NO_PASS = false;
       const res = await fetch(prepSubdir("/api/whoami"), { cache: "no-cache" });
       if (res.status !== 200) {
         throw Error("There was an issue getting user role.");
       }
 
       const role = await res.text();
+      console.log(role);
       switch (role) {
         case "nobody":
           clearCachedState();
@@ -235,9 +244,13 @@ const refreshData = async () => {
           return;
 
         case "public":
+        case "public-nopass":
           cacheAdmin(false);
           await getConfig();
 
+          if (role == "public-nopass") {
+            NO_PASS = true;
+          }
           loading_text.textContent = "Using public mode.";
           const expiry = parseInt(CONFIG.public_mode_expiry_delay);
           if (expiry > 0) {

@@ -75,7 +75,7 @@ pub(crate) async fn delete_link(
         }
         Auth::InvalidAPIKey { result } => HttpResponse::Unauthorized().json(result),
         // If using password - keeps backwards compatibility
-        Auth::ValidSession => {
+        Auth::ValidSession | Auth::NoPass => {
             if utils::delete_link_helper(
                 &shortlink,
                 &*data.writer.lock().await,

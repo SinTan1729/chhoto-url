@@ -149,6 +149,7 @@ fn is_token_valid(token: Option<&str>) -> bool {
 pub(crate) enum Auth {
     ValidAPIKey,
     ValidSession,
+    NoPass,
     None { result: JSONResponse },
     InvalidAPIKey { result: JSONResponse },
 }
@@ -172,6 +173,9 @@ impl FromRequest for Auth {
         }
 
         // Session auth
+        if config.password.is_none() {
+            return ready(Ok(Auth::NoPass));
+        }
         let session = req.get_session();
         if is_session_valid(session, config) {
             return ready(Ok(Auth::ValidSession));

@@ -20,7 +20,7 @@ use crate::{
 pub(crate) async fn edit_link(req: String, auth: Auth, data: web::Data<AppState>) -> HttpResponse {
     let config = &data.config;
     match auth {
-        Auth::ValidAPIKey | Auth::ValidSession => {
+        Auth::ValidAPIKey | Auth::ValidSession | Auth::NoPass => {
             match utils::edit_link_helper(&req, &*data.writer.lock().await, &data.hits_tx, config)
                 .await
             {
