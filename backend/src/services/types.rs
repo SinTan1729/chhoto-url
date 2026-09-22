@@ -85,3 +85,10 @@ pub(crate) struct GetReqParams {
     pub(crate) page_size: Option<i64>,
     pub(crate) filter: Option<String>,
 }
+
+// JSON struct for login request
+#[derive(Deserialize)]
+pub(super) struct LoginReq {
+    pub(super) password: String,
+    pub(super) remember: bool,
+}

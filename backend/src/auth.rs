@@ -139,7 +139,6 @@ fn is_token_valid(token: Option<&str>) -> bool {
                 .expect("Time went backwards!")
                 .as_secs();
             token_text == "chhoto-url-auth" && time_now < token_expiry_time
-            // 7 days
         }
     } else {
         false
@@ -183,12 +182,17 @@ impl FromRequest for Auth {
 }
 
 // Generate a new token for usage in cookie
-pub(crate) fn gen_token_text() -> String {
+pub(crate) fn gen_token_text(remember: bool) -> String {
     let token_text = String::from("chhoto-url-auth");
+    let remember_sec = if remember {
+        604800 // 7 days
+    } else {
+        900 // 15 minutes
+    };
     let time = SystemTime::now()
         .duration_since(SystemTime::UNIX_EPOCH)
         .expect("Time went backwards!")
         .as_secs()
-        + 604800; // Valid for 7 days
+        + remember_sec; // Valid for 7 days
     format!("{token_text};{time}")
 }

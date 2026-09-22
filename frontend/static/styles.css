@@ -276,6 +276,9 @@ summary,
 #login-dialog div {
   position: relative;
 }
+#login-dialog .pure-button {
+  margin-top: 0.5em;
+}
 #password-eye-button {
   position: absolute;
   right: 0.1em;

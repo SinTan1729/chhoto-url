@@ -5,7 +5,7 @@ use std::rc::Rc;
 
 use actix_session::Session;
 use actix_web::{
-    HttpResponse, post,
+    HttpMessage, HttpRequest, HttpResponse, post,
     web::{self},
 };
 use argon2::{Argon2, PasswordVerifier, password_hash::phc::PasswordHash};
@@ -20,7 +20,7 @@ use crate::{
         types::{
             AddLinkResponse,
             ChhotoError::{ClientError, ServerError},
-            CreatedURL, JSONResponse, LinkInfo,
+            CreatedURL, JSONResponse, LinkInfo, LoginReq,
         },
         utils,
     },
@@ -177,7 +177,8 @@ pub(crate) async fn expand(req: String, auth: Auth, data: web::Data<AppState>) -
 #[post("/api/login")]
 pub(crate) async fn login(
     auth: Auth,
-    req: String,
+    req: HttpRequest,
+    body: String,
     session: Session,
     data: web::Data<AppState>,
 ) -> HttpResponse {
@@ -185,6 +186,20 @@ pub(crate) async fn login(
     if matches!(auth, Auth::ValidSession) {
         return HttpResponse::Ok().body("Already authorized.");
     }
+
+    let data = match req.content_type() {
+        "text/plain" => LoginReq {
+            password: body,
+            remember: true,
+        },
+        "application/json" => {
+            let Ok(req): Result<LoginReq, _> = serde_json::from_str(&body) else {
+                return HttpResponse::BadRequest().body("Bad payload.");
+            };
+            req
+        }
+        _ => return HttpResponse::BadRequest().body("Bad content type."),
+    };
 
     // Check if password is hashed using Argon2. More algorithms maybe added later.
     let authorized = if let Some(password) = &config.password {
@@ -195,13 +210,16 @@ pub(crate) async fn login(
                     PasswordHash::new(password).expect("The provided password hash is invalid.");
                 Some(
                     Argon2::default()
-                        .verify_password(req.as_bytes(), &hash)
+                        .verify_password(data.password.as_bytes(), &hash)
                         .is_ok(),
                 )
             }
             HashAlgorithm::None => {
                 // If hashing is not enabled, use the plaintext password for matching
-                Some(subtle::ConstantTimeEq::ct_eq(password.as_bytes(), req.as_bytes()).into())
+                Some(
+                    subtle::ConstantTimeEq::ct_eq(password.as_bytes(), data.password.as_bytes())
+                        .into(),
+                )
             }
         }
     } else {
@@ -221,7 +239,7 @@ pub(crate) async fn login(
         }
         // Return Ok if no password was set on the server side
         session
-            .insert("chhoto-url-auth", auth::gen_token_text())
+            .insert("chhoto-url-auth", auth::gen_token_text(data.remember))
             .expect("Error inserting auth token.");
 
         let response = JSONResponse {
@@ -229,7 +247,7 @@ pub(crate) async fn login(
             error: false,
             reason: "Correct password!".to_owned(),
         };
-        info!("Successful login.");
+        info!("Successful login. Remember: {}", data.remember);
         HttpResponse::Ok().json(response)
     } else {
         // Keep this function backwards compatible
@@ -243,10 +261,10 @@ pub(crate) async fn login(
         }
         // Return Ok if no password was set on the server side
         session
-            .insert("chhoto-url-auth", auth::gen_token_text())
+            .insert("chhoto-url-auth", auth::gen_token_text(data.remember))
             .expect("Error inserting auth token.");
 
-        info!("Successful login.");
+        info!("Successful login. Remember: {}", data.remember);
         HttpResponse::Ok()
             .content_type("text/plain")
             .body("Correct password!")

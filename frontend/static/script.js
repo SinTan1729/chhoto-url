@@ -906,7 +906,7 @@ const submitEdit = () => {
     expiry = Math.floor(new Date(expiry_raw).getTime() / 1000);
   }
   if (confirm("Click OK to confirm the edit of '" + shortUrl + "'.")) {
-    data = {
+    const data = {
       shortlink: shortUrl,
       longlink: longUrl,
       reset_hits: checkBox.checked,
@@ -958,10 +958,18 @@ const submitEdit = () => {
 
 const submitLogin = () => {
   const password = document.getElementById("password");
+  const checkBox = document.getElementById("login-checkbox");
+  const data = {
+    password: password.value,
+    remember: checkBox.checked,
+  };
   fetch(prepSubdir("/api/login"), {
     method: "POST",
     cache: "no-cache",
-    body: password.value,
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(data),
   })
     .then(async (res) => {
       switch (res.status) {

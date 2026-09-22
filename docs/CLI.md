@@ -201,7 +201,7 @@ The server will reply in the following format.
 }
 ```
 
-or
+Or,
 
 ```json
 {
@@ -267,11 +267,27 @@ The server will output when the instance is accessed over API, when an incorrect
 If you have set up a password, first do the following to get an authentication cookie and store it in a file.
 
 ```bash
+curl -X POST -H "Content-Type: application/json" -d '{"password":"<your-password>","remember": true}' \
+-c cookie.txt http://localhost:4567/api/login
+```
+
+Or,
+
+```bash
 curl -X POST -d "<your-password>" -c cookie.txt http://localhost:4567/api/login
 ```
 
-You should receive "Correct password!" if the provided password was correct. For any subsequent
-request, please add `-b cookie.txt` to provide authentication. Unless specified, all API methods should work with cookies.
+You should receive "Correct password!" if the provided password was correct. This will be remembered for 7 days.
+
+For a temporary login session (15 minutes), use the following.
+
+```bash
+curl -X POST -H "Content-Type: application/json" -d '{"password":"<your-password>","remember": false}' \
+-c cookie.txt http://localhost:4567/api/login
+```
+
+For any subsequent request, please add `-b cookie.txt` to provide authentication. Unless specified, all API methods should work
+with cookies.
 
 ## Disable authentication
 
