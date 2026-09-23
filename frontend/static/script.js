@@ -65,6 +65,7 @@ const loadCachedState = () => {
   } catch (err) {
     clearCachedState();
   }
+  showVersion();
 };
 
 const clearCachedState = () => {
@@ -147,7 +148,6 @@ const getConfig = async () => {
   }
 
   VERSION = CONFIG.version;
-  showVersion();
 };
 
 const showVersion = () => {
