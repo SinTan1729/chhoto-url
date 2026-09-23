@@ -7,6 +7,7 @@ let SITE_URL = "-";
 let CONFIG = null;
 let SUBDIR = null;
 let ADMIN = null;
+let NO_PASS = null;
 let LOCAL_DATA = [];
 let CUR_PAGE = 0;
 let FILTER = null;
@@ -48,6 +49,7 @@ const loadCachedState = () => {
   try {
     const cachedAdmin = sessionStorage.getItem("admin");
     const cachedConfig = sessionStorage.getItem("config");
+    const cachedNoPass = sessionStorage.getItem("no_pass");
 
     if (cachedAdmin !== null) {
       ADMIN = cachedAdmin === "true";
@@ -55,9 +57,15 @@ const loadCachedState = () => {
     if (cachedConfig !== null) {
       CONFIG = JSON.parse(cachedConfig);
     }
+    if (cachedNoPass !== null) {
+      NO_PASS = cachedNoPass === "true";
+    } else {
+      NO_PASS = false;
+    }
   } catch (err) {
     clearCachedState();
   }
+  showVersion();
 };
 
 const clearCachedState = () => {
@@ -65,16 +73,20 @@ const clearCachedState = () => {
   CONFIG = null;
   sessionStorage.removeItem("admin");
   sessionStorage.removeItem("config");
+  sessionStorage.removeItem("no_pass");
 };
 
 const cacheAdmin = (admin) => {
   ADMIN = admin;
   sessionStorage.setItem("admin", String(admin));
 };
-
 const cacheConfig = (config) => {
   CONFIG = config;
   sessionStorage.setItem("config", JSON.stringify(config));
+};
+const cacheNoPass = (no_pass) => {
+  NO_PASS = no_pass;
+  sessionStorage.setItem("no_pass", no_pass);
 };
 
 const prepSubdir = (link) => {
@@ -95,10 +107,10 @@ const hasAllowedScheme = (url) => {
 };
 
 const getConfig = async () => {
-  if (ADMIN == null) {
+  if (ADMIN == null && NO_PASS == false) {
     return;
   }
-  if (CONFIG == null) {
+  if (CONFIG == null || NO_PASS) {
     const res = await fetch(prepSubdir("/api/getconfig"), {
       cache: "no-cache",
     });
@@ -136,6 +148,7 @@ const getConfig = async () => {
   }
 
   VERSION = CONFIG.version;
+  showVersion();
 };
 
 const showVersion = () => {
@@ -157,11 +170,17 @@ const showVersion = () => {
 };
 
 const showLogin = () => {
-  document.getElementById("version-number").hidden = true;
-  document.getElementById("admin-button").hidden = true;
-  document.getElementById("container").style.filter = "blur(2px)";
-  document.getElementById("login-dialog").showModal();
-  document.getElementById("password").focus();
+  if (NO_PASS) {
+    document.getElementById("password").value = "";
+    document.getElementById("login-checkbox").checked = false;
+    submitLogin();
+  } else {
+    document.getElementById("version-number").hidden = true;
+    document.getElementById("admin-button").hidden = true;
+    document.getElementById("container").style.filter = "blur(2px)";
+    document.getElementById("login-dialog").showModal();
+    document.getElementById("password").focus();
+  }
 };
 
 const refreshData = async () => {
@@ -186,17 +205,24 @@ const refreshData = async () => {
       return params;
     };
 
-    if (ADMIN === null && CONFIG == null) {
+    if (ADMIN === null && CONFIG === null) {
       loadCachedState();
     }
+    if (NO_PASS === true) {
+      await getConfig();
+    }
+    if (CONFIG === null) {
+      await getConfig();
+    }
 
-    if (ADMIN === true && CONFIG != null) {
+    if (ADMIN === true && CONFIG !== null) {
       try {
-        await getConfig();
         showVersion();
         const admin_button = document.getElementById("admin-button");
         admin_button.getElementsByTagName("span")[0].innerText = "logout";
-        admin_button.hidden = false;
+        if (NO_PASS === false || CONFIG.public_mode == true) {
+          admin_button.hidden = false;
+        }
 
         const params = getPullParams();
         if (params == null) {
@@ -214,6 +240,8 @@ const refreshData = async () => {
           displayData();
         }
         managePageControls();
+        sessionStorage.removeItem("config");
+        await getConfig();
         return;
       } catch (err) {
         console.log("/api/all failed, clearing cache and falling back.", err);
@@ -231,10 +259,13 @@ const refreshData = async () => {
       switch (role) {
         case "nobody":
           clearCachedState();
+          cacheNoPass(false);
           showLogin();
           return;
 
         case "public":
+        case "public-nopass":
+          cacheNoPass(role == "public-nopass");
           cacheAdmin(false);
           await getConfig();
 
@@ -253,12 +284,19 @@ const refreshData = async () => {
           updateInputBox();
           break;
 
+        case "nopass":
+          cacheNoPass(true);
+          document.getElementById("admin-button").hidden = true;
+          showLogin();
+          return;
+
         case "admin":
           cacheAdmin(true);
           await getConfig();
           break;
 
         default:
+          clearCachedState();
           throw Error("Got undefined user role.");
       }
     }
@@ -296,6 +334,7 @@ const refreshData = async () => {
     }
   } catch (err) {
     console.log(err);
+    clearCachedState();
     if (!alert("Something went wrong! Click OK to refresh page.")) {
       window.location.reload();
     }
@@ -381,7 +420,9 @@ const displayData = () => {
   showVersion();
   const admin_button = document.getElementById("admin-button");
   admin_button.getElementsByTagName("span")[0].innerText = "logout";
-  admin_button.hidden = false;
+  if (NO_PASS === false || CONFIG.public_mode == true) {
+    admin_button.hidden = false;
+  }
   updateInputBox();
 
   const table_box = document.getElementById("table-box");
@@ -581,6 +622,7 @@ const copyShortUrl = (shortLink, doCopy) => {
     )
     .catch((err) => {
       console.log(err);
+      clearCachedState();
       showAlert(
         `Could not copy short URL to clipboard, please do it manually: ${linkElt}`,
         "light-dark(red, #a01e1e)",
@@ -785,6 +827,7 @@ const deleteButton = (shortUrl) => {
         })
         .catch((err) => {
           console.log("Error:", err);
+          clearCachedState();
           showAlert(
             "Unable to delete " + shortUrl + ". Please try again!",
             "light-dark(red, #a01e1e)",
@@ -863,6 +906,7 @@ const submitForm = () => {
         })
         .catch((err) => {
           console.log("Error:", err);
+          clearCachedState();
           if (!alert("Something went wrong! Click OK to refresh page.")) {
             window.location.reload();
           }
@@ -886,6 +930,7 @@ const submitForm = () => {
       .then(() => cleanPageAfterSubmit(ok))
       .catch((err) => {
         console.log("Error:", err);
+        clearCachedState();
         if (!alert("Something went wrong! Click OK to refresh page.")) {
           window.location.reload();
         }
@@ -949,6 +994,7 @@ const submitEdit = () => {
       })
       .catch((err) => {
         console.log("Error:", err);
+        clearCachedState();
         if (!alert("Something went wrong! Click OK to refresh page.")) {
           window.location.reload();
         }
@@ -993,6 +1039,7 @@ const submitLogin = () => {
     })
     .catch((err) => {
       console.log("Error:", err);
+      clearCachedState();
       if (!alert("Something went wrong! Click OK to refresh page.")) {
         window.location.reload();
       }
@@ -1018,14 +1065,23 @@ const logOut = async () => {
           document.getElementById("url-table").replaceChildren();
           await refreshData();
         } else {
-          showAlert(
-            `Logout failed. Please try again!`,
-            "light-dark(red, #a01e1e)",
-          );
+          if (!NO_PASS) {
+            showAlert(`Logout failed.`, "light-dark(red, #a01e1e)");
+            clearCachedState();
+            refreshData();
+          } else {
+            ADMIN = false;
+            LOCAL_DATA = [];
+            document.getElementById("table-box").hidden = true;
+            document.getElementById("loading-text").hidden = false;
+            document.getElementById("url-table").replaceChildren();
+            await refreshData();
+          }
         }
       })
       .catch((err) => {
         console.log("Error:", err);
+        clearCachedState();
         if (!alert("Something went wrong! Click OK to refresh page.")) {
           window.location.reload();
         }
@@ -1151,6 +1207,7 @@ refreshData()
   })
   .catch((err) => {
     console.log("Something went wrong:", err);
+    clearCachedState();
     if (!alert("Something went wrong! Click OK to refresh page.")) {
       window.location.reload();
     }

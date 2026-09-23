@@ -77,6 +77,13 @@ pub(crate) async fn whoami(data: web::Data<AppState>, auth: Auth) -> HttpRespons
     let config = &data.config;
     let acting_user = match auth {
         Auth::ValidAPIKey | Auth::ValidSession => "admin",
+        Auth::NoPass => {
+            if config.public_mode {
+                "public-nopass"
+            } else {
+                "nopass"
+            }
+        }
         _ => {
             if config.public_mode {
                 "public"
@@ -110,7 +117,7 @@ pub(crate) async fn getconfig(auth: Auth, data: web::Data<AppState>) -> HttpResp
         HttpResponse::Ok().json(backend_config)
     };
     match auth {
-        Auth::ValidSession | Auth::ValidAPIKey => ok_response(),
+        Auth::ValidSession | Auth::ValidAPIKey | Auth::NoPass => ok_response(),
         Auth::None { result } | Auth::InvalidAPIKey { result } => {
             if data.config.public_mode {
                 ok_response()

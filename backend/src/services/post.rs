@@ -116,7 +116,7 @@ pub(crate) async fn add_links(req: String, auth: Auth, data: web::Data<AppState>
         }
         Auth::InvalidAPIKey { result } => HttpResponse::Unauthorized().json(result),
         // If password authentication or public mode is used - keeps backwards compatibility
-        Auth::ValidSession => cookie_response(false).await,
+        Auth::ValidSession | Auth::NoPass => cookie_response(false).await,
         Auth::None { result: _ } => {
             if data.config.public_mode {
                 cookie_response(true).await
@@ -162,7 +162,7 @@ pub(crate) async fn expand(req: String, auth: Auth, data: web::Data<AppState>) -
                 HttpResponse::BadRequest().json(body)
             }
         },
-        Auth::ValidSession => HttpResponse::Unauthorized().json(JSONResponse {
+        Auth::ValidSession | Auth::NoPass => HttpResponse::Unauthorized().json(JSONResponse {
             success: false,
             error: true,
             reason: "This route needs API auth.".to_owned(),
