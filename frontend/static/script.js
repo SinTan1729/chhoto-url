@@ -147,6 +147,7 @@ const getConfig = async () => {
   }
 
   VERSION = CONFIG.version;
+  showVersion();
 };
 
 const showVersion = () => {
