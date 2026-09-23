@@ -148,6 +148,7 @@ const getConfig = async () => {
   }
 
   VERSION = CONFIG.version;
+  showVersion();
 };
 
 const showVersion = () => {
@@ -333,6 +334,7 @@ const refreshData = async () => {
     }
   } catch (err) {
     console.log(err);
+    clearCachedState();
     if (!alert("Something went wrong! Click OK to refresh page.")) {
       window.location.reload();
     }
@@ -620,6 +622,7 @@ const copyShortUrl = (shortLink, doCopy) => {
     )
     .catch((err) => {
       console.log(err);
+      clearCachedState();
       showAlert(
         `Could not copy short URL to clipboard, please do it manually: ${linkElt}`,
         "light-dark(red, #a01e1e)",
@@ -824,6 +827,7 @@ const deleteButton = (shortUrl) => {
         })
         .catch((err) => {
           console.log("Error:", err);
+          clearCachedState();
           showAlert(
             "Unable to delete " + shortUrl + ". Please try again!",
             "light-dark(red, #a01e1e)",
@@ -902,6 +906,7 @@ const submitForm = () => {
         })
         .catch((err) => {
           console.log("Error:", err);
+          clearCachedState();
           if (!alert("Something went wrong! Click OK to refresh page.")) {
             window.location.reload();
           }
@@ -925,6 +930,7 @@ const submitForm = () => {
       .then(() => cleanPageAfterSubmit(ok))
       .catch((err) => {
         console.log("Error:", err);
+        clearCachedState();
         if (!alert("Something went wrong! Click OK to refresh page.")) {
           window.location.reload();
         }
@@ -988,6 +994,7 @@ const submitEdit = () => {
       })
       .catch((err) => {
         console.log("Error:", err);
+        clearCachedState();
         if (!alert("Something went wrong! Click OK to refresh page.")) {
           window.location.reload();
         }
@@ -1032,6 +1039,7 @@ const submitLogin = () => {
     })
     .catch((err) => {
       console.log("Error:", err);
+      clearCachedState();
       if (!alert("Something went wrong! Click OK to refresh page.")) {
         window.location.reload();
       }
@@ -1073,6 +1081,7 @@ const logOut = async () => {
       })
       .catch((err) => {
         console.log("Error:", err);
+        clearCachedState();
         if (!alert("Something went wrong! Click OK to refresh page.")) {
           window.location.reload();
         }
@@ -1198,6 +1207,7 @@ refreshData()
   })
   .catch((err) => {
     console.log("Something went wrong:", err);
+    clearCachedState();
     if (!alert("Something went wrong! Click OK to refresh page.")) {
       window.location.reload();
     }
