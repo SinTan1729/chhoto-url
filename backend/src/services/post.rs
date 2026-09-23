@@ -188,9 +188,10 @@ pub(crate) async fn login(
     }
 
     let data = match req.content_type() {
+        // Legacy path, might be removed in a future release
         "text/plain" => LoginReq {
             password: body,
-            remember: true,
+            remember: false,
         },
         "application/json" => {
             let Ok(req): Result<LoginReq, _> = serde_json::from_str(&body) else {
