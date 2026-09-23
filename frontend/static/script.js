@@ -49,12 +49,18 @@ const loadCachedState = () => {
   try {
     const cachedAdmin = sessionStorage.getItem("admin");
     const cachedConfig = sessionStorage.getItem("config");
+    const cachedNoPass = sessionStorage.getItem("no_pass");
 
     if (cachedAdmin !== null) {
       ADMIN = cachedAdmin === "true";
     }
     if (cachedConfig !== null) {
       CONFIG = JSON.parse(cachedConfig);
+    }
+    if (cachedNoPass !== null) {
+      NO_PASS = cachedNoPass === "true";
+    } else {
+      NO_PASS = false;
     }
   } catch (err) {
     clearCachedState();
@@ -66,16 +72,20 @@ const clearCachedState = () => {
   CONFIG = null;
   sessionStorage.removeItem("admin");
   sessionStorage.removeItem("config");
+  sessionStorage.removeItem("no_pass");
 };
 
 const cacheAdmin = (admin) => {
   ADMIN = admin;
   sessionStorage.setItem("admin", String(admin));
 };
-
 const cacheConfig = (config) => {
   CONFIG = config;
   sessionStorage.setItem("config", JSON.stringify(config));
+};
+const cacheNoPass = (no_pass) => {
+  NO_PASS = no_pass;
+  sessionStorage.setItem("no_pass", no_pass);
 };
 
 const prepSubdir = (link) => {
@@ -96,10 +106,10 @@ const hasAllowedScheme = (url) => {
 };
 
 const getConfig = async () => {
-  if (ADMIN == null) {
+  if (ADMIN == null && NO_PASS == false) {
     return;
   }
-  if (CONFIG == null) {
+  if (CONFIG == null || NO_PASS) {
     const res = await fetch(prepSubdir("/api/getconfig"), {
       cache: "no-cache",
     });
@@ -193,17 +203,24 @@ const refreshData = async () => {
       return params;
     };
 
-    if (ADMIN === null && CONFIG == null) {
+    if (ADMIN === null && CONFIG === null) {
       loadCachedState();
     }
+    if (NO_PASS === true) {
+      await getConfig();
+    }
+    if (CONFIG === null) {
+      await getConfig();
+    }
 
-    if (ADMIN === true && CONFIG != null) {
+    if (ADMIN === true && CONFIG !== null) {
       try {
-        await getConfig();
         showVersion();
         const admin_button = document.getElementById("admin-button");
         admin_button.getElementsByTagName("span")[0].innerText = "logout";
-        admin_button.hidden = false;
+        if (NO_PASS === false || CONFIG.public_mode == true) {
+          admin_button.hidden = false;
+        }
 
         const params = getPullParams();
         if (params == null) {
@@ -221,6 +238,8 @@ const refreshData = async () => {
           displayData();
         }
         managePageControls();
+        sessionStorage.removeItem("config");
+        await getConfig();
         return;
       } catch (err) {
         console.log("/api/all failed, clearing cache and falling back.", err);
@@ -229,28 +248,25 @@ const refreshData = async () => {
     }
 
     if (ADMIN !== true) {
-      NO_PASS = false;
       const res = await fetch(prepSubdir("/api/whoami"), { cache: "no-cache" });
       if (res.status !== 200) {
         throw Error("There was an issue getting user role.");
       }
 
       const role = await res.text();
-      console.log(role);
       switch (role) {
         case "nobody":
           clearCachedState();
+          cacheNoPass(false);
           showLogin();
           return;
 
         case "public":
         case "public-nopass":
+          cacheNoPass(role == "public-nopass");
           cacheAdmin(false);
           await getConfig();
 
-          if (role == "public-nopass") {
-            NO_PASS = true;
-          }
           loading_text.textContent = "Using public mode.";
           const expiry = parseInt(CONFIG.public_mode_expiry_delay);
           if (expiry > 0) {
@@ -266,12 +282,19 @@ const refreshData = async () => {
           updateInputBox();
           break;
 
+        case "nopass":
+          cacheNoPass(true);
+          document.getElementById("admin-button").hidden = true;
+          showLogin();
+          return;
+
         case "admin":
           cacheAdmin(true);
           await getConfig();
           break;
 
         default:
+          clearCachedState();
           throw Error("Got undefined user role.");
       }
     }
@@ -394,7 +417,9 @@ const displayData = () => {
   showVersion();
   const admin_button = document.getElementById("admin-button");
   admin_button.getElementsByTagName("span")[0].innerText = "logout";
-  admin_button.hidden = false;
+  if (NO_PASS === false || CONFIG.public_mode == true) {
+    admin_button.hidden = false;
+  }
   updateInputBox();
 
   const table_box = document.getElementById("table-box");
@@ -1031,10 +1056,18 @@ const logOut = async () => {
           document.getElementById("url-table").replaceChildren();
           await refreshData();
         } else {
-          showAlert(
-            `Logout failed. Please try again!`,
-            "light-dark(red, #a01e1e)",
-          );
+          if (!NO_PASS) {
+            showAlert(`Logout failed.`, "light-dark(red, #a01e1e)");
+            clearCachedState();
+            refreshData();
+          } else {
+            ADMIN = false;
+            LOCAL_DATA = [];
+            document.getElementById("table-box").hidden = true;
+            document.getElementById("loading-text").hidden = false;
+            document.getElementById("url-table").replaceChildren();
+            await refreshData();
+          }
         }
       })
       .catch((err) => {
