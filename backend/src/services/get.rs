@@ -81,7 +81,7 @@ pub(crate) async fn whoami(data: web::Data<AppState>, auth: Auth) -> HttpRespons
             if config.public_mode {
                 "public-nopass"
             } else {
-                "nopass"
+                "nobody-nopass"
             }
         }
         _ => {

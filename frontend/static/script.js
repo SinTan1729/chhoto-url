@@ -284,7 +284,7 @@ const refreshData = async () => {
           updateInputBox();
           break;
 
-        case "nopass":
+        case "nobody-nopass":
           cacheNoPass(true);
           document.getElementById("admin-button").hidden = true;
           showLogin();

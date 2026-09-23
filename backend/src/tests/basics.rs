@@ -60,7 +60,7 @@ async fn no_pass_config() {
     let req = test::TestRequest::get().uri("/api/whoami").to_request();
     let resp = test::call_service(&app1, req).await;
     let body = to_bytes(resp.into_body()).await.unwrap();
-    assert_eq!(body.as_str(), "nopass");
+    assert_eq!(body.as_str(), "nobody-nopass");
 
     let req = test::TestRequest::get().uri("/api/whoami").to_request();
     let resp = test::call_service(&app2, req).await;
