@@ -49,6 +49,26 @@ async fn basic_site_config() {
 }
 
 #[test]
+async fn no_pass_config() {
+    let test = "basic";
+    let mut conf = default_config(test);
+    conf.password = None;
+    let (_tempdir, app1) = create_app(&conf, test).await;
+    conf.public_mode = true;
+    let (_tempdir, app2) = create_app(&conf, test).await;
+
+    let req = test::TestRequest::get().uri("/api/whoami").to_request();
+    let resp = test::call_service(&app1, req).await;
+    let body = to_bytes(resp.into_body()).await.unwrap();
+    assert_eq!(body.as_str(), "nopass");
+
+    let req = test::TestRequest::get().uri("/api/whoami").to_request();
+    let resp = test::call_service(&app2, req).await;
+    let body = to_bytes(resp.into_body()).await.unwrap();
+    assert_eq!(body.as_str(), "public-nopass");
+}
+
+#[test]
 async fn auth_verification() {
     let test = "auth_verification";
     let conf = default_config(test);
