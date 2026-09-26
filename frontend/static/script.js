@@ -91,8 +91,7 @@ const cacheNoPass = (no_pass) => {
 
 const prepSubdir = (link) => {
   if (!SUBDIR) {
-    const thisPage = new URL(window.location.href);
-    SUBDIR = thisPage.pathname.replace(/\/admin\/manage\/$/, "/");
+    SUBDIR = window.location.pathname.replace(/\/admin\/manage\/$/, "/");
   }
   return (SUBDIR + link).replace("//", "/");
 };
