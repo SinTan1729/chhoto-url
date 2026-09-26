@@ -1,7 +1,7 @@
 // SPDX-FileCopyrightText: 2023-2026 Sayantan Santra <sayantan.santra689@gmail.com>
 // SPDX-License-Identifier: MIT
 
-use log::{info, warn};
+use log::{error, info, warn};
 use passwords::{analyzer::analyze, scorer::score};
 use std::{
     env::{VarError, var},
@@ -9,6 +9,7 @@ use std::{
     fs,
     path::Path,
 };
+use url::Url;
 
 use crate::auth;
 
@@ -250,17 +251,45 @@ pub(crate) fn read() -> Config {
         let mut chars = provided_url.chars();
         let first = chars.next();
         let last = chars.next_back();
-        let url = chars.as_str();
+        let url = chars.as_str(); // Stripped from front and back
         // If the site_url is encapsulated by quotes (i.e. invalid)
-        if first == Option::from('"') || first == Option::from('\'') && first == last {
+        let out = if first == Option::from('"') || first == Option::from('\'') && first == last {
             // Set the site_url without the quotes
             warn!(
                 "The CHHOTO_SITE_URL environment variable is encapsulated by quotes. Automatically adjusting to: {url}"
             );
-            Some(url.to_owned())
+            url.to_owned()
         } else {
-            info!("Configured Site URL is: {provided_url}");
-            Some(provided_url)
+            info!("Provided Site URL is: {provided_url}");
+            provided_url
+        };
+
+        match Url::parse(&out) {
+            Ok(u) => {
+                if ["http", "https"].contains(&u.scheme()) {
+                    Some(out.to_string())
+                } else {
+                    error!(
+                        "Bad scheme {} supplied for site url. Ignoring the config.",
+                        u.scheme()
+                    );
+                    None
+                }
+            }
+            Err(url::ParseError::RelativeUrlWithoutBase) => {
+                warn!("No scheme supplied for site url. Defaulting to https.");
+                let u = format!("https://{}", out);
+                if Url::parse(&u).is_ok() {
+                    Some(u)
+                } else {
+                    println!("Bad URL even after adding HTTPS. Ignoring the config.");
+                    None
+                }
+            }
+            Err(e) => {
+                error!("Error while processing the site url: {e}");
+                None
+            }
         }
     } else {
         // Site URL is not configured
@@ -277,6 +306,9 @@ pub(crate) fn read() -> Config {
         info!("Public URL is: {protocol}://localhost{port_text}.");
         None
     };
+    if let Some(u) = &site_url {
+        info!("Configured Site URL: {}", u);
+    }
 
     let custom_site_title = var("CHHOTO_CUSTOM_SITE_TITLE")
         .ok()

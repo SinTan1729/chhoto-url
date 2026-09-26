@@ -130,7 +130,7 @@ const getConfig = async () => {
 
   VERSION = CONFIG.version;
   if (CONFIG.site_url == null) {
-    SITE_URL = window.location.host;
+    SITE_URL = window.location.origin;
   } else {
     SITE_URL = CONFIG.site_url.replace(/^"/, "").replace(/"$/, "");
     const url = new URL(SITE_URL);
@@ -141,10 +141,6 @@ const getConfig = async () => {
 
   if (CONFIG.frontend_page_size == null) {
     CONFIG.frontend_page_size = 10;
-  }
-
-  if (!["http:", "https:"].includes(new URL(SITE_URL).protocol)) {
-    SITE_URL = window.location.protocol + "//" + SITE_URL;
   }
 
   VERSION = CONFIG.version;
