@@ -253,7 +253,7 @@ pub(crate) fn read() -> Config {
         let last = chars.next_back();
         let url = chars.as_str(); // Stripped from front and back
         // If the site_url is encapsulated by quotes (i.e. invalid)
-        let out = if first == Option::from('"') || first == Option::from('\'') && first == last {
+        let out = if first == Some('"') || first == Some('\'') && first == last {
             // Set the site_url without the quotes
             warn!(
                 "The CHHOTO_SITE_URL environment variable is encapsulated by quotes. Automatically adjusting to: {url}"
