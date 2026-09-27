@@ -33,3 +33,8 @@ Feel free to discuss any issues or suggestions in [#56](https://github.com/SinTa
 
 There's an unoffical NixOS package maintained by [@Defelo](https://github.com/Defelo) for Chhoto URL.
 [You can take a look at it here.](https://search.nixos.org/packages?query=chhoto-url)
+
+## Home Assistant App
+
+There's an unofficial Home Assistant App maintained by [@YaannnTech](https://github.com/YaannnTech) for Chhoto URL.
+[You can take a look at it here.](https://github.com/YaannnTech/HA-Apps/tree/main/chhoto_url)
