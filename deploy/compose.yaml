@@ -55,7 +55,7 @@ services:
       # - CHHOTO_LISTEN_PORT=4567
       # - CHHOTO_LISTEN_ADDRESS=0.0.0.0
 
-      - password=TopSecretPass
+      - CHHOTO_PASSWORD=TopSecretPass
 
       # This needs to be set in order to use programs that use the JSON interface of Chhoto URL.
       # You will get a warning if this is insecure, and a generated value will be output
