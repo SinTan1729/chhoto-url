@@ -544,7 +544,7 @@ const TR = (i, row) => {
   const shortTD = TD(A_SHORT(shortlink), "Short URL");
   shortTD.setAttribute("name", "shortColumn");
 
-  const hitsTD = TD(row["hits"], null);
+  const hitsTD = TD(row["hits"].toLocaleString(), null);
   hitsTD.setAttribute("label", "Hits");
   hitsTD.setAttribute("name", "hitsColumn");
 
@@ -720,7 +720,8 @@ const infoButton = (shortUrl) => {
     longLink.href = row.longlink;
     longLink.target = "_blank";
     infoLong.replaceChildren(longLink);
-    document.getElementById("info-hits").textContent = row.hits;
+    document.getElementById("info-hits").textContent =
+      row.hits.toLocaleString();
     const accurateExpiryTime =
       row.expiry_time > 0
         ? new Date(row.expiry_time * 1000).toLocaleString()
