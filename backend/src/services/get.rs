@@ -5,7 +5,7 @@ use actix_web::{
     Either, HttpResponse, Responder, get,
     web::{self, Redirect},
 };
-use log::{debug, error, info};
+use log::{debug, info, warn};
 use openidconnect::{CsrfToken, Nonce, PkceCodeChallenge, Scope, core::CoreAuthenticationFlow};
 use rusqlite::Connection;
 
@@ -209,7 +209,7 @@ pub(crate) async fn oidc_callback(
 
     let Some(oidc_data) = data.oidc_data.clone() else {
         info!("Failed OIDC login.");
-        return Either::Left(HttpResponse::InternalServerError().body("OIDC failed."));
+        return Either::Left(HttpResponse::InternalServerError().body("OIDC login failed."));
     };
 
     if let Err(e) = utils::oidc_verify(
@@ -219,9 +219,9 @@ pub(crate) async fn oidc_callback(
     )
     .await
     {
-        error!("OIDC error: {e}");
+        warn!("OIDC error: {e}");
         info!("Failed OIDC login.");
-        return Either::Left(HttpResponse::Forbidden().body("OIDC failed."));
+        return Either::Left(HttpResponse::Forbidden().body("OIDC login failed."));
     }
 
     if session
@@ -229,7 +229,7 @@ pub(crate) async fn oidc_callback(
         .is_err()
     {
         info!("Failed OIDC login.");
-        return Either::Left(HttpResponse::Forbidden().body("OIDC failed."));
+        return Either::Left(HttpResponse::Forbidden().body("OIDC login failed."));
     };
 
     info!("Successful OIDC login.");
