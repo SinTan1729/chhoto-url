@@ -116,6 +116,10 @@ pub(crate) struct Config {
     pub(crate) disable_frontend: bool,
     pub(crate) custom_site_title: Option<String>,
     pub(crate) site_url: Option<String>,
+    pub(crate) oidc_issuer_url: Option<String>,
+    pub(crate) oidc_client_id: Option<String>,
+    pub(crate) oidc_client_secret: Option<String>,
+    pub(crate) oidc_custom_claim: Option<(String, String)>,
     pub(crate) public_mode: bool,
     pub(crate) public_mode_expiry_delay: Option<i64>,
     pub(crate) use_temp_redirect: bool,
@@ -310,6 +314,50 @@ pub(crate) fn read() -> Config {
         info!("Configured Site URL: {}", u);
     }
 
+    let oidc_issuer_url = var("CHHOTO_OIDC_ISSUER_URL")
+        .ok()
+        .map(|s| s.trim().to_owned())
+        .filter(|s| !s.is_empty())
+        .filter(|_| {
+            if site_url.is_none() {
+                warn!("Site URL must be non empty for OIDC to work.");
+            }
+            site_url.is_some()
+        })
+        .filter(|u| match Url::parse(u) {
+            Ok(u) => {
+                if u.scheme() == "https" {
+                    true
+                } else {
+                    warn!("OIDC Issuer URL must be HTTPS.");
+                    false
+                }
+            }
+            Err(_) => {
+                warn!("Invalid OIDC Issuer URL was provided.");
+                false
+            }
+        })
+        .inspect(|u| info!("Enabling OIDC with issuer url: {u}"));
+    let oidc_client_id = var("CHHOTO_OIDC_CLIENT_ID")
+        .ok()
+        .map(|s| s.trim().to_owned())
+        .filter(|s| !s.is_empty() && oidc_issuer_url.is_some());
+    let oidc_client_secret = var("CHHOTO_OIDC_CLIENT_SECRET")
+        .ok()
+        .map(|s| s.trim().to_owned())
+        .filter(|s| !s.is_empty() && oidc_issuer_url.is_some());
+    let oidc_custom_claim = var("CHHOTO_OIDC_CUSTOM_CLAIM")
+        .ok()
+        .map(|s| s.trim().to_owned())
+        .filter(|s| !s.is_empty() && oidc_issuer_url.is_some())
+        .and_then(|s| {
+            s.split_once("=")
+                .filter(|(f, l)| !f.is_empty() && !l.is_empty())
+                .map(|(f, l)| (f.to_string(), l.to_string()))
+        })
+        .inspect(|(f, l)| info!("OIDC custom claim was configured as: {f}={l}"));
+
     let custom_site_title = var("CHHOTO_CUSTOM_SITE_TITLE")
         .ok()
         .map(|s| s.trim().to_owned())
@@ -395,6 +443,10 @@ pub(crate) fn read() -> Config {
         disable_frontend,
         custom_site_title,
         site_url,
+        oidc_issuer_url,
+        oidc_client_id,
+        oidc_client_secret,
+        oidc_custom_claim,
         public_mode,
         public_mode_expiry_delay,
         use_temp_redirect,

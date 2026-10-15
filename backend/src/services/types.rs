@@ -92,3 +92,10 @@ pub(super) struct LoginReq {
     pub(super) password: String,
     pub(super) remember: bool,
 }
+
+// Struct for query params in /oidc/callback
+#[derive(Deserialize, Clone)]
+pub(crate) struct OidcParams {
+    pub(crate) state: Option<String>,
+    pub(crate) code: Option<String>,
+}

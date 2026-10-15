@@ -5,6 +5,8 @@ use actix_web::{
     Either, HttpResponse, Responder, get,
     web::{self, Redirect},
 };
+use log::{debug, error, info};
+use openidconnect::{CsrfToken, Nonce, PkceCodeChallenge, Scope, core::CoreAuthenticationFlow};
 use rusqlite::Connection;
 
 use crate::{
@@ -15,7 +17,7 @@ use crate::{
         types::{
             BackendConfig,
             ChhotoError::{ClientError, ServerError},
-            GetReqParams,
+            GetReqParams, OidcParams,
         },
         utils,
     },
@@ -147,6 +149,91 @@ pub(crate) async fn link_handler(
     } else {
         Either::Right(utils::error404(data).await)
     }
+}
+
+// OIDC redirect
+#[get("/oidc/redirect")]
+pub(crate) async fn oidc_redirect(auth: Auth, data: web::Data<AppState>) -> impl Responder {
+    let Some(oidc) = data.oidc_data.clone() else {
+        return Either::Left(HttpResponse::BadRequest().body("OIDC is disabled."));
+    };
+    let Some(url) = data.config.site_url.clone() else {
+        return Either::Left(HttpResponse::BadRequest().body("OIDC is disabled."));
+    };
+    if matches!(auth, Auth::ValidSession) {
+        return Either::Right(Redirect::to(url));
+    }
+
+    // Generate a PKCE challenge.
+    let (pkce_challenge, pkce_verifier) = PkceCodeChallenge::new_random_sha256();
+
+    let mut client = oidc
+        .oidc_client
+        .authorize_url(
+            CoreAuthenticationFlow::AuthorizationCode,
+            CsrfToken::new_random,
+            Nonce::new_random,
+        )
+        .add_scope(Scope::new("read".to_string()));
+
+    if let Some((k, _)) = data.config.oidc_custom_claim.as_ref() {
+        client = client.add_scope(Scope::new(k.clone()));
+    }
+
+    // Generate the full authorization URL.
+    let (auth_url, csrf_token, nonce) = client.set_pkce_challenge(pkce_challenge).url();
+    let state = csrf_token.into_secret();
+
+    let secrets = &mut *oidc.states.lock().await;
+    secrets.insert(state, (pkce_verifier, nonce));
+
+    debug!("Attempting OIDC login.");
+    Either::Right(Redirect::to(auth_url.to_string()))
+}
+
+//OIDC callback
+#[get("/oidc/callback")]
+pub(crate) async fn oidc_callback(
+    auth: Auth,
+    data: web::Data<AppState>,
+    params: web::Query<OidcParams>,
+    session: actix_session::Session,
+) -> impl Responder {
+    let Some(url) = data.config.site_url.clone() else {
+        return Either::Left(HttpResponse::BadRequest().body("OIDC is disabled."));
+    };
+    if matches!(auth, Auth::ValidSession) {
+        info!("Successful OIDC login. (Already had valid session.)");
+        return Either::Right(Redirect::to(url));
+    }
+
+    let Some(oidc_data) = data.oidc_data.clone() else {
+        info!("Failed OIDC login.");
+        return Either::Left(HttpResponse::InternalServerError().body("OIDC failed."));
+    };
+
+    if let Err(e) = utils::oidc_verify(
+        params.into_inner(),
+        oidc_data,
+        data.config.oidc_custom_claim.clone(),
+    )
+    .await
+    {
+        error!("OIDC error: {e}");
+        info!("Failed OIDC login.");
+        return Either::Left(HttpResponse::Forbidden().body("OIDC failed."));
+    }
+
+    if session
+        .insert("chhoto-url-auth", crate::auth::gen_token_text(true))
+        .is_err()
+    {
+        info!("Failed OIDC login.");
+        return Either::Left(HttpResponse::Forbidden().body("OIDC failed."));
+    };
+
+    info!("Successful OIDC login.");
+    Either::Right(Redirect::to(url))
 }
 
 // Healthcheck endpoint
