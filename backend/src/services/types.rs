@@ -95,7 +95,7 @@ pub(super) struct LoginReq {
 
 // Struct for query params in /oidc/callback
 #[derive(Deserialize, Clone)]
-pub(crate) struct OidcParams {
+pub(crate) struct OidcCallbackParams {
     pub(crate) state: Option<String>,
     pub(crate) code: Option<String>,
 }

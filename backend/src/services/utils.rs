@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: MIT
 
 use actix_files::NamedFile;
-use actix_web::{Responder, http::StatusCode, web};
+use actix_web::{Responder, dev::ConnectionInfo, http::StatusCode, web};
 use log::{debug, error};
 use nanoid::nanoid;
 use openidconnect::{AccessTokenHash, AuthorizationCode, OAuth2TokenResponse, TokenResponse};
@@ -18,9 +18,10 @@ use crate::{
     AppState, OidcData,
     config::{Config, SlugStyle},
     database::{self, add_links},
+    oidc::OidcClient,
     services::types::{
         ChhotoError::{self, ClientError, ServerError},
-        GetReqParams, OidcParams, OneOrMany,
+        GetReqParams, OidcCallbackParams, OneOrMany,
     },
 };
 
@@ -304,11 +305,20 @@ pub(super) async fn edit_link_helper(
     }
 }
 
+// Derive origin info for OIDC
+pub(super) fn derive_origin_info(connection: ConnectionInfo) -> (String, String) {
+    let origin = format!("{}://{}", connection.scheme(), connection.host());
+    let mut callback = origin.clone();
+    callback.push_str("/oidc/callback");
+    (origin, callback)
+}
+
 // Verify OIDC callback data
 pub(super) async fn oidc_verify(
-    params: OidcParams,
-    oidc: OidcData,
-    custom_claim: Option<(String, String)>,
+    client: OidcClient,
+    params: OidcCallbackParams,
+    oidc: &OidcData,
+    custom_claim: &Option<(String, String)>,
 ) -> Result<(), String> {
     let Some(state) = &params.state else {
         return Err("State check failed.".to_string());
@@ -317,7 +327,6 @@ pub(super) async fn oidc_verify(
         return Err("State mismatch.".to_string());
     };
 
-    let client = oidc.oidc_client;
     let code = params
         .code
         .expect("Authorization code should be available when state it valid.");
@@ -371,8 +380,8 @@ pub(super) async fn oidc_verify(
         && !claims
             .additional_claims()
             .claims
-            .get(&k)
-            .is_some_and(|val| matches_claim(val, &v))
+            .get(k)
+            .is_some_and(|val| matches_claim(val, v))
     {
         return Err("Custom claim mismatch.".to_string());
     }

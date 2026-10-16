@@ -6,7 +6,7 @@ use std::collections::HashMap;
 use log::{error, warn};
 use openidconnect::{
     AdditionalClaims, Client, ClientId, ClientSecret, EmptyExtraTokenFields, EndpointMaybeSet,
-    EndpointNotSet, EndpointSet, IdTokenFields, IssuerUrl, RedirectUrl, StandardErrorResponse,
+    EndpointNotSet, EndpointSet, IdTokenFields, IssuerUrl, StandardErrorResponse,
     StandardTokenResponse,
     core::{
         CoreAuthDisplay, CoreAuthPrompt, CoreErrorResponseType, CoreGenderClaim, CoreJsonWebKey,
@@ -79,36 +79,29 @@ pub async fn create_oidc_client(config: &Config) -> Option<(reqwest::Client, Oid
         return None;
     };
 
-    match RedirectUrl::new(config.site_url.clone()? + "/oidc/callback") {
-        Ok(redirect_url) => match IssuerUrl::new(issuer_url) {
-            Ok(issuer_url) => {
-                let async_http_client = reqwest::ClientBuilder::new()
-                    .redirect(reqwest::redirect::Policy::none())
-                    .build()
-                    .unwrap();
-                match CoreProviderMetadata::discover_async(issuer_url, &async_http_client).await {
-                    Ok(provider_metadata) => {
-                        let core_client = OidcClient::from_provider_metadata(
-                            provider_metadata,
-                            ClientId::new(client_id),
-                            Some(ClientSecret::new(client_secret)),
-                        )
-                        .set_redirect_uri(redirect_url);
-                        Some((async_http_client, core_client))
-                    }
-                    Err(e) => {
-                        error!("Error while creating OIDC client: {:?}", e);
-                        None
-                    }
+    match IssuerUrl::new(issuer_url) {
+        Ok(issuer_url) => {
+            let async_http_client = reqwest::ClientBuilder::new()
+                .redirect(reqwest::redirect::Policy::none())
+                .build()
+                .unwrap();
+            match CoreProviderMetadata::discover_async(issuer_url, &async_http_client).await {
+                Ok(provider_metadata) => {
+                    let core_client = OidcClient::from_provider_metadata(
+                        provider_metadata,
+                        ClientId::new(client_id),
+                        Some(ClientSecret::new(client_secret)),
+                    );
+                    Some((async_http_client, core_client))
+                }
+                Err(e) => {
+                    error!("Error while creating OIDC client: {:?}", e);
+                    None
                 }
             }
-            Err(e) => {
-                error!("Error while processing OIDC issuer url: {:?}", e);
-                None
-            }
-        },
+        }
         Err(e) => {
-            error!("Error while processing OIDC redirect url: {:?}", e);
+            error!("Error while processing OIDC issuer url: {:?}", e);
             None
         }
     }

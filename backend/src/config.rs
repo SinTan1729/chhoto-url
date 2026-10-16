@@ -318,12 +318,6 @@ pub(crate) fn read() -> Config {
         .ok()
         .map(|s| remove_surrounding_quotes(s.trim()))
         .filter(|s| !s.is_empty())
-        .filter(|_| {
-            if site_url.is_none() {
-                warn!("Site URL must be non empty for OIDC to work.");
-            }
-            site_url.is_some()
-        })
         .filter(|u| match Url::parse(u) {
             Ok(u) => {
                 if u.scheme() == "https" {
