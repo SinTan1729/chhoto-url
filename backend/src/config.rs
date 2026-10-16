@@ -37,6 +37,20 @@ pub(crate) enum HashAlgorithm {
     None,
 }
 
+// Helper to remove surrounding quotes
+fn remove_surrounding_quotes(s: &str) -> String {
+    match s.as_bytes().first() {
+        Some(b'\'') | Some(b'"') | Some(b'`') if s.len() >= 2 => {
+            let q = s.as_bytes()[0];
+            if s.as_bytes().last() == Some(&q) {
+                return s[1..s.len() - 1].to_owned();
+            }
+        }
+        _ => {}
+    }
+    s.to_string()
+}
+
 // This is needed to support old variable names.
 // Might be deprecated at a later point.
 fn read_config_wrapper(new_name: &str, old_name: &str) -> Result<String, VarError> {
@@ -251,27 +265,13 @@ pub(crate) fn read() -> Config {
         .map(|s| s.trim().to_owned())
         .filter(|s| !s.is_empty())
     {
-        // Get first and last characters of the site_url
-        let mut chars = provided_url.chars();
-        let first = chars.next();
-        let last = chars.next_back();
-        let url = chars.as_str(); // Stripped from front and back
-        // If the site_url is encapsulated by quotes (i.e. invalid)
-        let out = if first == Some('"') || first == Some('\'') && first == last {
-            // Set the site_url without the quotes
-            warn!(
-                "The CHHOTO_SITE_URL environment variable is encapsulated by quotes. Automatically adjusting to: {url}"
-            );
-            url.to_owned()
-        } else {
-            info!("Provided Site URL is: {provided_url}");
-            provided_url
-        };
+        let url = remove_surrounding_quotes(&provided_url);
+        info!("Provided Site URL is: {url}");
 
-        match Url::parse(&out) {
+        match Url::parse(&url) {
             Ok(u) => {
                 if ["http", "https"].contains(&u.scheme()) {
-                    Some(out.to_string())
+                    Some(url)
                 } else {
                     error!(
                         "Bad scheme {} supplied for site url. Ignoring the config.",
@@ -282,11 +282,11 @@ pub(crate) fn read() -> Config {
             }
             Err(url::ParseError::RelativeUrlWithoutBase) => {
                 warn!("No scheme supplied for site url. Defaulting to https.");
-                let u = format!("https://{}", out);
+                let u = format!("https://{url}");
                 if Url::parse(&u).is_ok() {
                     Some(u)
                 } else {
-                    println!("Bad URL even after adding HTTPS. Ignoring the config.");
+                    error!("Bad URL even after adding HTTPS. Ignoring the config.");
                     None
                 }
             }
@@ -316,7 +316,7 @@ pub(crate) fn read() -> Config {
 
     let oidc_issuer_url = var("CHHOTO_OIDC_ISSUER_URL")
         .ok()
-        .map(|s| s.trim().to_owned())
+        .map(|s| remove_surrounding_quotes(s.trim()))
         .filter(|s| !s.is_empty())
         .filter(|_| {
             if site_url.is_none() {
@@ -341,15 +341,16 @@ pub(crate) fn read() -> Config {
         .inspect(|u| info!("Enabling OIDC with issuer url: {u}"));
     let oidc_client_id = var("CHHOTO_OIDC_CLIENT_ID")
         .ok()
-        .map(|s| s.trim().to_owned())
+        .map(|s| remove_surrounding_quotes(s.trim()))
+        .map(|s| remove_surrounding_quotes(&s))
         .filter(|s| !s.is_empty() && oidc_issuer_url.is_some());
     let oidc_client_secret = var("CHHOTO_OIDC_CLIENT_SECRET")
         .ok()
-        .map(|s| s.trim().to_owned())
+        .map(|s| remove_surrounding_quotes(s.trim()))
         .filter(|s| !s.is_empty() && oidc_issuer_url.is_some());
     let oidc_custom_claim = var("CHHOTO_OIDC_CUSTOM_CLAIM")
         .ok()
-        .map(|s| s.trim().to_owned())
+        .map(|s| remove_surrounding_quotes(s.trim()))
         .filter(|s| !s.is_empty() && oidc_issuer_url.is_some())
         .and_then(|s| {
             s.split_once("=")
@@ -360,7 +361,7 @@ pub(crate) fn read() -> Config {
 
     let custom_site_title = var("CHHOTO_CUSTOM_SITE_TITLE")
         .ok()
-        .map(|s| s.trim().to_owned())
+        .map(|s| remove_surrounding_quotes(s.trim()))
         .filter(|s| !s.is_empty())
         .inspect(|t| info!(r#"Found custom site title config: "{t}""#,));
 
