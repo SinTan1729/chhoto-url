@@ -37,7 +37,7 @@ panic = "abort"
 strip = "symbols"
 
 [dependencies]
-actix-web = "4.16.0"
+actix-web = "4.17.0"
 actix-files = "0.7.0"
 rusqlite = { version = "0.40.2", features = [ "backup", "bundled" ] }
 regex = "1.13.1"
@@ -57,7 +57,7 @@ subtle = "2.6.1"
 openidconnect = "4.0.1"
 
 [dev-dependencies]
-actix-http = "3.18.13"
+actix-http = "3.19.0"
 actix-service = "2.0.3"
 regex = "1.13.1"
 tempfile = "3.27.0"
