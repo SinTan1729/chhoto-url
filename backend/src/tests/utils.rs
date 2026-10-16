@@ -56,6 +56,7 @@ pub(super) fn default_config(test: &str) -> config::Config {
         oidc_client_id: None,
         oidc_client_secret: None,
         oidc_custom_claim: None,
+        oidc_allowed_origins: vec![String::from("https://mydomain.com")],
         public_mode: false,
         public_mode_expiry_delay: None,
         use_temp_redirect: false,

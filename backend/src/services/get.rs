@@ -164,8 +164,11 @@ pub(crate) async fn oidc_redirect(
         return Either::Left(HttpResponse::BadRequest().body("OIDC is disabled."));
     };
     let (origin, callback) = derive_origin_info(req.connection_info().to_owned());
-    let Ok(url) = RedirectUrl::new(callback) else {
-        warn!("Bad OIDC origin URL.");
+    let Some(url) = RedirectUrl::new(callback)
+        .ok()
+        .filter(|_| data.config.oidc_allowed_origins.contains(&origin))
+    else {
+        warn!("Bad OIDC origin URL: {origin}");
         return Either::Left(HttpResponse::BadRequest().body("Bad OIDC origin URL."));
     };
 
@@ -225,10 +228,14 @@ pub(crate) async fn oidc_callback(
         return Either::Left(HttpResponse::InternalServerError().body("OIDC login failed."));
     };
 
-    let Ok(url) = RedirectUrl::new(callback) else {
-        warn!("Bad OIDC origin URL.");
+    let Some(url) = RedirectUrl::new(callback)
+        .ok()
+        .filter(|_| data.config.oidc_allowed_origins.contains(&origin))
+    else {
+        warn!("Bad OIDC origin URL: {origin}");
         return Either::Left(HttpResponse::BadRequest().body("Bad OIDC origin URL."));
     };
+
     if let Err(e) = utils::oidc_verify(
         oidc_data.oidc_client.clone().set_redirect_uri(url),
         params.into_inner(),
