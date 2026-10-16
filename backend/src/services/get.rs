@@ -152,7 +152,7 @@ pub(crate) async fn link_handler(
 }
 
 // OIDC redirect
-#[get("/oidc/redirect")]
+#[get("/oidc/login")]
 pub(crate) async fn oidc_redirect(auth: Auth, data: web::Data<AppState>) -> impl Responder {
     let Some(oidc) = data.oidc_data.clone() else {
         return Either::Left(HttpResponse::BadRequest().body("OIDC is disabled."));
