@@ -177,7 +177,9 @@ pub(crate) async fn oidc_redirect(auth: Auth, data: web::Data<AppState>) -> impl
         .add_scope(Scope::new("read".to_string()));
 
     if let Some((k, _)) = data.config.oidc_custom_claim.as_ref() {
-        client = client.add_scope(Scope::new(k.clone()));
+        client = client
+            .add_scope(Scope::new("profile".to_string()))
+            .add_scope(Scope::new(k.clone()));
     }
 
     // Generate the full authorization URL.

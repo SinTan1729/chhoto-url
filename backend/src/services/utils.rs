@@ -363,10 +363,13 @@ pub(super) async fn oidc_verify(
             .additional_claims()
             .claims
             .get(&k)
-            .and_then(Value::as_array)
-            .is_some_and(|groups| groups.iter().any(|val| val.as_str() == Some(&v)))
+            .is_some_and(|val| match val {
+                Value::Array(values) => values.iter().any(|val| val.as_str() == Some(&v)),
+                Value::String(value) => value == &v,
+                _ => false,
+            })
     {
-        return Err("Custom claim was rejected".to_string());
+        return Err("Custom claim mismatch.".to_string());
     }
 
     Ok(())
