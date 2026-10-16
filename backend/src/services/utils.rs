@@ -358,16 +358,21 @@ pub(super) async fn oidc_verify(
         }
     }
 
+    fn matches_claim(value: &Value, expected: &str) -> bool {
+        match value {
+            Value::String(s) => s == expected,
+            Value::Bool(b) => b.to_string() == expected,
+            Value::Number(n) => n.to_string() == expected,
+            Value::Array(values) => values.iter().any(|v| matches_claim(v, expected)),
+            _ => false,
+        }
+    }
     if let Some((k, v)) = custom_claim
         && !claims
             .additional_claims()
             .claims
             .get(&k)
-            .is_some_and(|val| match val {
-                Value::Array(values) => values.iter().any(|val| val.as_str() == Some(&v)),
-                Value::String(value) => value == &v,
-                _ => false,
-            })
+            .is_some_and(|val| matches_claim(val, &v))
     {
         return Err("Custom claim mismatch.".to_string());
     }
