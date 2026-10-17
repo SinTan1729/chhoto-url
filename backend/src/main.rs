@@ -10,8 +10,10 @@ use actix_web::{
     web::{self, Redirect},
 };
 use log::{info, warn};
+use openidconnect::{Nonce, PkceCodeVerifier, reqwest};
 use rusqlite::Connection;
 use std::{
+    collections::HashMap,
     io::Result,
     sync::{Arc, Once},
 };
@@ -22,12 +24,20 @@ mod auth;
 mod background;
 mod config;
 mod database;
+mod oidc;
 mod services;
 mod utils;
 
 // Tests
 #[cfg(test)]
 mod tests;
+
+#[derive(Clone)]
+struct OidcData {
+    http_client: reqwest::Client,
+    oidc_client: oidc::OidcClient,
+    states: Arc<Mutex<HashMap<String, (PkceCodeVerifier, Nonce)>>>,
+}
 
 // This struct represents state
 struct AppState {
@@ -36,6 +46,7 @@ struct AppState {
     writer: Arc<Mutex<Connection>>,
     config: config::Config,
     frontend_dir: String,
+    oidc_data: Option<OidcData>,
 }
 
 static LOGGER: Once = Once::new();
@@ -80,6 +91,17 @@ async fn main() -> Result<()> {
         }
     };
 
+    let oidc_client = oidc::create_oidc_client(&conf).await;
+    let oidc_data = if let Some(c) = oidc_client {
+        Some(OidcData {
+            http_client: c.0,
+            oidc_client: c.1,
+            states: Arc::new(Mutex::new(HashMap::new())),
+        })
+    } else {
+        None
+    };
+
     let port = conf.port;
     let addr = conf.listen_address.clone();
     let db_location_for_health = conf.db_location.clone();
@@ -107,6 +129,7 @@ async fn main() -> Result<()> {
                 writer: Arc::clone(&writer),
                 config: conf.clone(),
                 frontend_dir: frontend_dir.clone(),
+                oidc_data: oidc_data.clone(),
             }))
             .wrap(if let Some(header) = &conf.cache_control_header {
                 middleware::DefaultHeaders::new().add(("Cache-Control", header.to_owned()))
@@ -124,6 +147,8 @@ async fn main() -> Result<()> {
             .service(services::login)
             .service(services::logout)
             .service(services::expand)
+            .service(services::oidc_redirect)
+            .service(services::oidc_callback)
             .service(services::whoami);
 
         if !conf.disable_frontend {

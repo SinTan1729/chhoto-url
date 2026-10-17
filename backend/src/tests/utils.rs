@@ -52,6 +52,11 @@ pub(super) fn default_config(test: &str) -> config::Config {
         disable_frontend: true,
         custom_site_title: None,
         site_url: Some(String::from("https://mydomain.com")),
+        oidc_issuer_url: None,
+        oidc_client_id: None,
+        oidc_client_secret: None,
+        oidc_custom_claim: None,
+        oidc_allowed_origins: vec![String::from("https://mydomain.com")],
         public_mode: false,
         public_mode_expiry_delay: None,
         use_temp_redirect: false,
@@ -106,6 +111,7 @@ pub(super) async fn create_app(
                     writer,
                     config: conf.clone(),
                     frontend_dir: String::new(),
+                    oidc_data: None,
                 }))
                 .service(services::siteurl)
                 .service(services::version)
