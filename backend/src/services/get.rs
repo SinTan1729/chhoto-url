@@ -180,13 +180,11 @@ pub(crate) async fn oidc_redirect(
     // Generate a PKCE challenge.
     let (pkce_challenge, pkce_verifier) = PkceCodeChallenge::new_random_sha256();
 
-    let mut client = client
-        .authorize_url(
-            CoreAuthenticationFlow::AuthorizationCode,
-            CsrfToken::new_random,
-            Nonce::new_random,
-        )
-        .add_scope(Scope::new("read".to_string()));
+    let mut client = client.authorize_url(
+        CoreAuthenticationFlow::AuthorizationCode,
+        CsrfToken::new_random,
+        Nonce::new_random,
+    );
 
     if let Some((k, _)) = data.config.oidc_custom_claim.as_ref() {
         client = client
