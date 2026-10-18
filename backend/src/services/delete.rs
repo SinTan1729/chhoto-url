@@ -21,7 +21,7 @@ use crate::{
 // There's no reason to be calling this route with an API key
 #[delete("/api/logout")]
 pub(crate) async fn logout(session: Session) -> HttpResponse {
-    if session.remove("chhoto-url-auth").is_some() || session.remove("chhoto-url-oidc").is_some() {
+    if session.remove("chhoto-url-auth").is_some() {
         info!("Successful logout.");
         HttpResponse::Ok()
             .content_type("text/plain")

@@ -120,8 +120,6 @@ fn is_session_valid(session: Session, config: &Config) -> bool {
 
     if let Ok(token) = session.get::<String>("chhoto-url-auth") {
         is_token_valid(token.as_deref())
-    } else if let Ok(token) = session.get::<String>("chhoto-url-oidc") {
-        is_token_valid(token.as_deref())
     } else {
         false
     }
@@ -140,7 +138,8 @@ fn is_token_valid(token: Option<&str>) -> bool {
                 .duration_since(SystemTime::UNIX_EPOCH)
                 .expect("Time went backwards!")
                 .as_secs();
-            token_text == "chhoto-url-auth" && time_now < token_expiry_time
+            ["chhoto-url-auth", "chhoto-url-oidc"].contains(&token_text)
+                && time_now < token_expiry_time
         }
     } else {
         false
@@ -188,8 +187,13 @@ impl FromRequest for Auth {
 }
 
 // Generate a new token for usage in cookie
-pub(crate) fn gen_token_text(remember: bool) -> String {
-    let token_text = String::from("chhoto-url-auth");
+pub(crate) fn gen_token_text(remember: bool, oidc: bool) -> String {
+    let token_text = if oidc {
+        "chhoto-url-oidc"
+    } else {
+        "chhoto-url-password"
+    };
+
     let remember_sec = if remember {
         604800 // 7 days
     } else {

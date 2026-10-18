@@ -240,7 +240,10 @@ pub(crate) async fn login(
         }
         // Return Ok if no password was set on the server side
         session
-            .insert("chhoto-url-auth", auth::gen_token_text(data.remember))
+            .insert(
+                "chhoto-url-auth",
+                auth::gen_token_text(data.remember, false),
+            )
             .expect("Error inserting auth token.");
 
         let response = JSONResponse {
@@ -262,7 +265,10 @@ pub(crate) async fn login(
         }
         // Return Ok if no password was set on the server side
         session
-            .insert("chhoto-url-auth", auth::gen_token_text(data.remember))
+            .insert(
+                "chhoto-url-auth",
+                auth::gen_token_text(data.remember, false),
+            )
             .expect("Error inserting auth token.");
 
         info!("Successful login. Remember: {}", data.remember);
