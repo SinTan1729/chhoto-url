@@ -244,11 +244,17 @@ pub(crate) async fn oidc_callback(
     {
         warn!("OIDC error: {e}");
         info!("Failed OIDC login.");
-        return Either::Left(HttpResponse::Forbidden().body("OIDC login failed."));
+        return Either::Left(HttpResponse::Forbidden().body(
+            if e.as_str() == "Custom claim mismatch" {
+                "You don't have enough permissions."
+            } else {
+                "OIDC login failed."
+            },
+        ));
     }
 
     if session
-        .insert("chhoto-url-auth", crate::auth::gen_token_text(true))
+        .insert("chhoto-url-oidc", crate::auth::gen_token_text(true))
         .is_err()
     {
         info!("Failed OIDC login.");

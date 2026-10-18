@@ -120,6 +120,8 @@ fn is_session_valid(session: Session, config: &Config) -> bool {
 
     if let Ok(token) = session.get::<String>("chhoto-url-auth") {
         is_token_valid(token.as_deref())
+    } else if let Ok(token) = session.get::<String>("chhoto-url-oidc") {
+        is_token_valid(token.as_deref())
     } else {
         false
     }
