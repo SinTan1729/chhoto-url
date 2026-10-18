@@ -252,6 +252,7 @@
           height="24"
           viewBox="0 0 24 24"
         >
+          <title>GitHub SVG Icon</title>
           <path
             fill-rule="evenodd"
             clip-rule="evenodd"
@@ -293,10 +294,51 @@
         <button
           class="chhoto-button pure-button pure-button-primary"
           value="default"
+          id="password-login-button"
         >
+          <!-- https://svgicons.com/icon/14727/log-in-circle -->
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            width="24"
+            height="24"
+            viewBox="0 0 24 24"
+          >
+            <title>Login SVG Icon</title>
+            <path fill="currentColor" d="m10.998 16l5-4l-5-4v3h-9v2h9z" />
+            <path
+              fill="currentColor"
+              d="M12.999 2.999a8.938 8.938 0 0 0-6.364 2.637L8.049 7.05c1.322-1.322 3.08-2.051 4.95-2.051s3.628.729
+              4.95 2.051S20 10.13 20 12s-.729 3.628-2.051 4.95s-3.08 2.051-4.95 2.051s-3.628-.729-4.95-2.051l-1.414
+              1.414c1.699 1.7 3.959 2.637 6.364 2.637s4.665-.937 6.364-2.637C21.063 16.665 22 14.405 22
+              12s-.937-4.665-2.637-6.364a8.938 8.938 0 0 0-6.364-2.637"
+            />
+          </svg>
           Log in
         </button>
+        <br />
         <p id="wrong-pass" hidden>Wrong password!</p>
+        <button
+          id="oidc-login-button"
+          class="chhoto-button pure-button pure-button-primary"
+          type="button"
+        >
+          <!-- https://svgicons.com/icon/148737/openid -->
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            width="24"
+            height="24"
+            viewBox="0 0 24 24"
+          >
+            <title>OIDC Login Icon</title>
+            <path
+              fill="currentColor"
+              d="m14 2l-3 1.5v16.44C7 19.5 4 17.46 4 15c0-2.25 2.5-4.15 6-4.78V8.19c-5.14.69-9 3.47-9 6.81c0 3.56
+              4.36 6.5 10 6.94h.09L14 20.5zm1 6.19v2.03c1.15.21 2.18.55 3.06 1L16.5 12l6.5 1.5l-.5-4.5l-2 1C19
+              9.12 17.12 8.47 15 8.19"
+            />
+          </svg>
+          Log in with OIDC
+        </button>
       </form>
     </dialog>
 

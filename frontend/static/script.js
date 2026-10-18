@@ -1200,6 +1200,9 @@ refreshData()
       e.preventDefault();
       submitLogin();
     };
+    document.getElementById("oidc-login-button").onclick = () => {
+      window.location.href = "/oidc/login";
+    };
   })
   .catch((err) => {
     console.log("Something went wrong:", err);

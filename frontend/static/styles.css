@@ -278,6 +278,9 @@ summary,
 }
 #login-dialog .pure-button {
   margin-top: 0.5em;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
 }
 #password-eye-button {
   position: absolute;
