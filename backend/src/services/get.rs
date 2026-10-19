@@ -88,7 +88,7 @@ pub(crate) async fn whoami(
             let res = WhoamiRes {
                 admin: matches!(auth, Auth::ValidSession | Auth::ValidAPIKey),
                 public_mode_enabled: config.public_mode,
-                password_enabled: !matches!(auth, Auth::NoAuthNeeded),
+                password_enabled: config.password.is_some(),
                 oidc_enabled: data.oidc_data.is_some(),
             };
             HttpResponse::Ok().json(res)

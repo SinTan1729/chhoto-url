@@ -133,7 +133,7 @@ fn is_token_valid(token: Option<&str>) -> bool {
                 .duration_since(SystemTime::UNIX_EPOCH)
                 .expect("Time went backwards!")
                 .as_secs();
-            ["chhoto-url-auth", "chhoto-url-oidc"].contains(&token_text)
+            ["chhoto-url-password", "chhoto-url-oidc"].contains(&token_text)
                 && time_now < token_expiry_time
         }
     } else {
