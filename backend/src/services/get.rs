@@ -88,7 +88,7 @@ pub(crate) async fn whoami(
             let res = WhoamiRes {
                 admin: matches!(auth, Auth::ValidSession | Auth::ValidAPIKey),
                 public_mode_enabled: config.public_mode,
-                password_enabled: !matches!(auth, Auth::NoPass),
+                password_enabled: !matches!(auth, Auth::NoAuthNeeded),
                 oidc_enabled: data.oidc_data.is_some(),
             };
             HttpResponse::Ok().json(res)
@@ -127,7 +127,7 @@ pub(crate) async fn getconfig(auth: Auth, data: web::Data<AppState>) -> HttpResp
         HttpResponse::Ok().json(backend_config)
     };
     match auth {
-        Auth::ValidSession | Auth::ValidAPIKey | Auth::NoPass => ok_response(),
+        Auth::ValidSession | Auth::ValidAPIKey | Auth::NoAuthNeeded => ok_response(),
         Auth::None { result } | Auth::InvalidAPIKey { result } => {
             if data.config.public_mode {
                 ok_response()

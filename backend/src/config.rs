@@ -8,6 +8,7 @@ use std::{
     fmt::Display,
     fs,
     path::Path,
+    process::exit,
 };
 use url::Url;
 
@@ -244,18 +245,22 @@ pub(crate) fn read() -> Config {
         .ok()
         .filter(|s| !s.trim().is_empty());
     if password.is_none() {
-        warn!("No password was provided. The API will be accessible to the public.")
+        warn!("No password was provided.")
     };
 
     let hash_algorithm = match read_config_wrapper("CHHOTO_HASH_ALGORITHM", "hash_algorithm")
         .map(|h| h.trim().to_owned())
     {
         Ok(hash) if hash == "Argon2" => {
-            info!("Will use Argon2 hashes for password and API key verification.");
+            if password.is_some() {
+                info!("Will use Argon2 hashes for password and API key verification.");
+            }
             HashAlgorithm::Argon2
         }
         _ => {
-            warn!("Using plaintext for password and API key verification. Argon2 is advised.");
+            if password.is_some() {
+                warn!("Using plaintext for password and API key verification. Argon2 is advised.");
+            }
             HashAlgorithm::None
         }
     };
@@ -382,6 +387,15 @@ pub(crate) fn read() -> Config {
     };
     if oidc_issuer_url.is_some() {
         info!("OIDC allowed origins: {:?}", oidc_allowed_origins);
+    }
+
+    let exit_on_no_auth = var("CHHOTO_EXIT_ON_NO_AUTH").is_ok_and(|s| s.trim() == "True");
+    if password.is_none() && oidc_issuer_url.is_none() {
+        warn!("No auth is set up. Chhoto URL will be exposed to the public.");
+        if exit_on_no_auth {
+            error!("Exiting Chhoto URL.");
+            exit(1);
+        }
     }
 
     let custom_site_title = var("CHHOTO_CUSTOM_SITE_TITLE")

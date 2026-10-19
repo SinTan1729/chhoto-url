@@ -112,12 +112,7 @@ pub(crate) fn gen_key() -> String {
 }
 
 // Validate a session
-fn is_session_valid(session: Session, config: &Config) -> bool {
-    // If there's no password provided, just return true
-    if config.password.is_none() {
-        return true;
-    }
-
+fn is_session_valid(session: &Session) -> bool {
     if let Ok(token) = session.get::<String>("chhoto-url-auth") {
         is_token_valid(token.as_deref())
     } else {
@@ -150,7 +145,7 @@ fn is_token_valid(token: Option<&str>) -> bool {
 pub(crate) enum Auth {
     ValidAPIKey,
     ValidSession,
-    NoPass,
+    NoAuthNeeded,
     None { result: JSONResponse },
     InvalidAPIKey { result: JSONResponse },
 }
@@ -174,11 +169,11 @@ impl FromRequest for Auth {
         }
 
         // Session auth
-        if config.password.is_none() {
-            return ready(Ok(Auth::NoPass));
+        if config.password.is_none() && config.oidc_issuer_url.is_none() {
+            return ready(Ok(Auth::NoAuthNeeded));
         }
         let session = req.get_session();
-        if is_session_valid(session, config) {
+        if is_session_valid(&session) {
             return ready(Ok(Auth::ValidSession));
         }
 
