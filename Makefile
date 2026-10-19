@@ -57,8 +57,8 @@ podman-run-github: podman-stop
 reset-db: podman-stop
 	rm -f testing-data/urls.sqlite-shm testing-data/urls.sqlite-wal
 	cp testing-data/urls1.sqlite testing-data/urls.sqlite
-podman-test: test podman-build podman-clean podman-run
-podman-test-release: test podman-build-release podman-clean podman-run-release
+podman-test: test podman-build podman-run
+podman-test-release: test podman-build-release podman-run-release
 
 upgrade-deps-pre:
 	cargo upgrade --manifest-path=backend/Cargo.toml --verbose
