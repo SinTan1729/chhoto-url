@@ -294,6 +294,10 @@ summary,
 }
 
 #edit-dialog form,
+#login-dialog {
+  min-height: 8em;
+  min-width: 20em;
+}
 #login-dialog form {
   text-align: center;
 }
