@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: MIT
 
 use actix_files::NamedFile;
-use actix_web::{Responder, dev::ConnectionInfo, http::StatusCode, web};
+use actix_web::{HttpResponse, Responder, dev::ConnectionInfo, http::StatusCode, web};
 use log::{debug, error};
 use nanoid::nanoid;
 use openidconnect::{AccessTokenHash, AuthorizationCode, OAuth2TokenResponse, TokenResponse};
@@ -482,6 +482,14 @@ fn gen_link(
             }
         }
     }
+}
+
+// Redirect with no cache
+pub(super) fn oidc_redirect_once(url: &str) -> HttpResponse {
+    HttpResponse::Found()
+        .insert_header(("Location", url))
+        .insert_header(("Cache-Control", "no-store, no-cache, must-revalidate"))
+        .finish()
 }
 
 // 404 error page

@@ -21,7 +21,7 @@ use crate::{
             ChhotoError::{ClientError, ServerError},
             GetReqParams, OidcCallbackParams, WhoamiRes,
         },
-        utils::{self, derive_origin_info},
+        utils::{self, derive_origin_info, oidc_redirect_once},
     },
 };
 
@@ -180,7 +180,7 @@ pub(crate) async fn oidc_redirect(
 
     let client = oidc.oidc_client.clone().set_redirect_uri(url);
     if matches!(auth, Auth::ValidSession) {
-        return Either::Right(Redirect::to(origin));
+        return Either::Right(oidc_redirect_once(&origin));
     }
 
     // Generate a PKCE challenge.
@@ -206,7 +206,7 @@ pub(crate) async fn oidc_redirect(
     secrets.insert(state, (pkce_verifier, nonce));
 
     debug!("Attempting OIDC login.");
-    Either::Right(Redirect::to(auth_url.to_string()))
+    Either::Left(oidc_redirect_once(auth_url.as_str()))
 }
 
 //OIDC callback
@@ -224,7 +224,7 @@ pub(crate) async fn oidc_callback(
     };
     if matches!(auth, Auth::ValidSession) {
         info!("Successful OIDC login. (Already had valid session.)");
-        return Either::Right(Redirect::to(origin));
+        return Either::Right(oidc_redirect_once(&origin));
     }
 
     let Some(oidc_data) = data.oidc_data.as_ref() else {
@@ -268,7 +268,7 @@ pub(crate) async fn oidc_callback(
     };
 
     info!("Successful OIDC login.");
-    Either::Right(Redirect::to(origin))
+    Either::Right(oidc_redirect_once(&origin))
 }
 
 // Healthcheck endpoint
