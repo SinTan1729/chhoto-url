@@ -9,12 +9,13 @@ use actix_web::{
     middleware,
     web::{self, Redirect},
 };
-use log::{info, warn};
-use openidconnect::{Nonce, PkceCodeVerifier, reqwest};
+use log::{error, info, warn};
 use rusqlite::Connection;
 use std::{
     collections::HashMap,
+    env::var,
     io::Result,
+    process::exit,
     sync::{Arc, Once},
 };
 use tokio::sync::{Mutex, mpsc};
@@ -32,13 +33,6 @@ mod utils;
 #[cfg(test)]
 mod tests;
 
-#[derive(Clone)]
-struct OidcData {
-    http_client: reqwest::Client,
-    oidc_client: oidc::OidcClient,
-    states: Arc<Mutex<HashMap<String, (PkceCodeVerifier, Nonce)>>>,
-}
-
 // This struct represents state
 struct AppState {
     hits_tx: mpsc::Sender<(String, bool)>,
@@ -46,7 +40,7 @@ struct AppState {
     writer: Arc<Mutex<Connection>>,
     config: config::Config,
     frontend_dir: String,
-    oidc_data: Option<OidcData>,
+    oidc_data: Option<oidc::OidcData>,
 }
 
 static LOGGER: Once = Once::new();
@@ -93,12 +87,20 @@ async fn main() -> Result<()> {
 
     let oidc_client = oidc::create_oidc_client(&conf).await;
     let oidc_data = if let Some(c) = oidc_client {
-        Some(OidcData {
+        Some(oidc::OidcData {
             http_client: c.0,
             oidc_client: c.1,
             states: Arc::new(Mutex::new(HashMap::new())),
         })
     } else {
+        let exit_on_no_auth = var("CHHOTO_EXIT_ON_NO_AUTH").is_ok_and(|s| s.trim() == "True");
+        if conf.password.is_none() {
+            warn!("No auth is set up. Chhoto URL will be exposed to the public.");
+            if exit_on_no_auth {
+                error!("Exiting Chhoto URL.");
+                exit(1);
+            }
+        }
         None
     };
 

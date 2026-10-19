@@ -15,10 +15,11 @@ use tokio::sync::mpsc;
 use url::Url;
 
 use crate::{
-    AppState, OidcData,
+    AppState,
     config::{Config, SlugStyle},
     database::{self, add_links},
     oidc::OidcClient,
+    oidc::OidcData,
     services::types::{
         ChhotoError::{self, ClientError, ServerError},
         GetReqParams, OidcCallbackParams, OneOrMany,

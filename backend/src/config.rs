@@ -8,7 +8,6 @@ use std::{
     fmt::Display,
     fs,
     path::Path,
-    process::exit,
 };
 use url::Url;
 
@@ -387,15 +386,6 @@ pub(crate) fn read() -> Config {
     };
     if oidc_issuer_url.is_some() {
         info!("OIDC allowed origins: {:?}", oidc_allowed_origins);
-    }
-
-    let exit_on_no_auth = var("CHHOTO_EXIT_ON_NO_AUTH").is_ok_and(|s| s.trim() == "True");
-    if password.is_none() && oidc_issuer_url.is_none() {
-        warn!("No auth is set up. Chhoto URL will be exposed to the public.");
-        if exit_on_no_auth {
-            error!("Exiting Chhoto URL.");
-            exit(1);
-        }
     }
 
     let custom_site_title = var("CHHOTO_CUSTOM_SITE_TITLE")
