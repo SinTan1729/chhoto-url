@@ -86,6 +86,15 @@ pub(crate) struct GetReqParams {
     pub(crate) filter: Option<String>,
 }
 
+// Struct for /api/whoami
+#[derive(Serialize)]
+pub(super) struct WhoamiRes {
+    pub(super) admin: bool,
+    pub(super) public_mode_enabled: bool,
+    pub(super) password_enabled: bool,
+    pub(super) oidc_enabled: bool,
+}
+
 // JSON struct for login request
 #[derive(Deserialize)]
 pub(super) struct LoginReq {

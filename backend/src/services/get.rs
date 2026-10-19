@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: MIT
 
 use actix_web::{
-    Either, HttpRequest, HttpResponse, Responder, get,
+    Either, HttpMessage, HttpRequest, HttpResponse, Responder, get,
     web::{self, Redirect},
 };
 use log::{debug, info, warn};
@@ -19,7 +19,7 @@ use crate::{
         types::{
             BackendConfig,
             ChhotoError::{ClientError, ServerError},
-            GetReqParams, OidcCallbackParams,
+            GetReqParams, OidcCallbackParams, WhoamiRes,
         },
         utils::{self, derive_origin_info},
     },
@@ -77,28 +77,34 @@ pub(crate) async fn version() -> HttpResponse {
 
 // Get the user's current role
 #[get("/api/whoami")]
-pub(crate) async fn whoami(data: web::Data<AppState>, auth: Auth) -> HttpResponse {
+pub(crate) async fn whoami(
+    data: web::Data<AppState>,
+    req: HttpRequest,
+    auth: Auth,
+) -> HttpResponse {
     let config = &data.config;
-    let acting_user = match auth {
-        Auth::ValidAPIKey | Auth::ValidSession => "admin",
-        Auth::NoPass => {
-            if config.public_mode {
-                "public-nopass"
-            } else {
-                "nobody-nopass"
-            }
+    match req.content_type() {
+        "application/json" => {
+            let res = WhoamiRes {
+                admin: matches!(auth, Auth::ValidSession | Auth::ValidAPIKey),
+                public_mode_enabled: config.public_mode,
+                password_enabled: !matches!(auth, Auth::NoPass),
+                oidc_enabled: data.oidc_data.is_some(),
+            };
+            HttpResponse::Ok().json(res)
         }
+        // Deprecated: Compatibility mode for older versions, might be removed in a later major release
         _ => {
-            if config.public_mode {
+            let res = if matches!(auth, Auth::ValidSession | Auth::ValidAPIKey) {
+                "admin"
+            } else if config.public_mode {
                 "public"
             } else {
                 "nobody"
-            }
+            };
+            HttpResponse::Ok().content_type("text/plain").body(res)
         }
-    };
-    HttpResponse::Ok()
-        .content_type("text/plain")
-        .body(acting_user)
+    }
 }
 
 // Get some useful backend config

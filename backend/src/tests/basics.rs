@@ -22,6 +22,16 @@ async fn basic_site_config() {
     assert_eq!(body.as_str(), "nobody");
     let req = test::TestRequest::get()
         .uri("/api/whoami")
+        .insert_header(("Content-Type", "application/json"))
+        .to_request();
+    let resp = test::call_service(&app, req).await;
+    let body = to_bytes(resp.into_body()).await.unwrap();
+    assert_eq!(
+        body.as_str(),
+        r#"{"admin":false,"public_mode_enabled":false,"password_enabled":true,"oidc_enabled":false}"#
+    );
+    let req = test::TestRequest::get()
+        .uri("/api/whoami")
         .insert_header(("X-API-Key", conf.api_key.clone().unwrap()))
         .to_request();
     let resp = test::call_service(&app, req).await;
@@ -46,26 +56,6 @@ async fn basic_site_config() {
     let conf: BackendConfig = serde_json::from_str(body.as_str()).unwrap();
     assert!(conf.version.starts_with(env!("CARGO_PKG_VERSION")));
     assert_eq!(conf.slug_length, 8);
-}
-
-#[test]
-async fn no_pass_config() {
-    let test = "basic";
-    let mut conf = default_config(test);
-    conf.password = None;
-    let (_tempdir, app1) = create_app(&conf, test).await;
-    conf.public_mode = true;
-    let (_tempdir, app2) = create_app(&conf, test).await;
-
-    let req = test::TestRequest::get().uri("/api/whoami").to_request();
-    let resp = test::call_service(&app1, req).await;
-    let body = to_bytes(resp.into_body()).await.unwrap();
-    assert_eq!(body.as_str(), "nobody-nopass");
-
-    let req = test::TestRequest::get().uri("/api/whoami").to_request();
-    let resp = test::call_service(&app2, req).await;
-    let body = to_bytes(resp.into_body()).await.unwrap();
-    assert_eq!(body.as_str(), "public-nopass");
 }
 
 #[test]
