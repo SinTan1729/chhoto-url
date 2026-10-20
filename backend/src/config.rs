@@ -37,16 +37,21 @@ pub(crate) enum HashAlgorithm {
     None,
 }
 
-// Helper to remove surrounding quotes
 fn remove_surrounding_quotes(s: &str) -> String {
     match s.as_bytes().first() {
         Some(b'\'') | Some(b'"') | Some(b'`') if s.len() >= 2 => {
             let q = s.as_bytes()[0];
             if s.as_bytes().last() == Some(&q) {
-                return s[1..s.len() - 1].to_owned();
+                return s[1..s.len() - 1].to_string();
             }
         }
         _ => {}
+    }
+    s.to_string()
+}
+fn remove_trailing_slash(s: &str) -> String {
+    if s.as_bytes().last() == Some(&b'/') {
+        return (s[0..s.len() - 1]).to_string();
     }
     s.to_string()
 }
@@ -271,6 +276,7 @@ pub(crate) fn read() -> Config {
         .filter(|s| !s.is_empty())
     {
         let url = remove_surrounding_quotes(&provided_url);
+        let url = remove_trailing_slash(&url);
         info!("Provided Site URL is: {url}");
 
         match Url::parse(&url) {
@@ -313,6 +319,7 @@ pub(crate) fn read() -> Config {
     let oidc_issuer_url = var("CHHOTO_OIDC_ISSUER_URL")
         .ok()
         .map(|s| remove_surrounding_quotes(s.trim()))
+        .map(|s| remove_trailing_slash(&s))
         .filter(|s| !s.is_empty())
         .filter(|_| {
             if site_url.is_none() {
@@ -364,6 +371,7 @@ pub(crate) fn read() -> Config {
     if let Some(urls) = var("CHHOTO_OIDC_EXTRA_ORIGINS")
         .ok()
         .map(|s| remove_surrounding_quotes(s.trim()))
+        .map(|s| remove_trailing_slash(&s))
         .filter(|s| !s.is_empty() && oidc_issuer_url.is_some())
     {
         for url in urls.split(&[',', ' ']).filter(|p| !p.is_empty()) {
