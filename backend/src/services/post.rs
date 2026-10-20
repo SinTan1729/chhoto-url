@@ -29,12 +29,21 @@ use crate::{
 const SERVER_ERROR_RES: &str = "Something went wrong when adding the link.";
 // Add new links
 #[post("/api/new")]
-pub(crate) async fn add_links(req: String, auth: Auth, data: web::Data<AppState>) -> HttpResponse {
+pub(crate) async fn add_links(
+    req: HttpRequest,
+    payload: String,
+    auth: Auth,
+    data: web::Data<AppState>,
+) -> HttpResponse {
     let config = &data.config;
     let cookie_response = async |public_mode| {
-        let result =
-            utils::add_links_helper(&req, &mut *data.writer.lock().await, config, public_mode)
-                .and_then(|(v, _)| v.into_iter().next().unwrap_or(Err(ServerError)));
+        let result = utils::add_links_helper(
+            &payload,
+            &mut *data.writer.lock().await,
+            config,
+            public_mode,
+        )
+        .and_then(|(v, _)| v.into_iter().next().unwrap_or(Err(ServerError)));
         match result {
             Ok((shorturl, _)) => HttpResponse::Created()
                 .content_type("text/plain")
@@ -51,17 +60,11 @@ pub(crate) async fn add_links(req: String, auth: Auth, data: web::Data<AppState>
         Auth::ValidAPIKey => {
             let to_response = |res| match res {
                 Ok((shortlink, expiry_time)) => {
-                    let site_url = config.site_url.to_owned();
-                    let shorturl = if let Some(url) = &site_url {
+                    let shorturl = if let Some(url) = &config.site_url {
                         format!("{url}/{shortlink}")
                     } else {
-                        let protocol = if config.port == 443 { "https" } else { "http" };
-                        let port_text = if [80, 443].contains(&config.port) {
-                            String::new()
-                        } else {
-                            format!(":{}", config.port)
-                        };
-                        format!("{protocol}://localhost{port_text}/{shortlink}")
+                        let info = req.connection_info();
+                        format!("{}://{}/{shortlink}", info.scheme(), info.host())
                     };
 
                     (
@@ -92,7 +95,7 @@ pub(crate) async fn add_links(req: String, auth: Auth, data: web::Data<AppState>
                 ),
             };
 
-            match utils::add_links_helper(&req, &mut *data.writer.lock().await, config, false) {
+            match utils::add_links_helper(&payload, &mut *data.writer.lock().await, config, false) {
                 Ok((reply, single_request)) => {
                     if single_request {
                         let (status, response) = to_response(

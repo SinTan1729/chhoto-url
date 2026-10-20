@@ -7,7 +7,7 @@ use argon2::{Argon2, PasswordVerifier, password_hash::phc::PasswordHash};
 use log::{debug, warn};
 use passwords::PasswordGenerator;
 use std::future::{Ready, ready};
-use std::{rc::Rc, time::SystemTime};
+use std::time::SystemTime;
 
 use crate::{
     AppState,
@@ -123,18 +123,16 @@ fn is_session_valid(session: &Session) -> bool {
 // Check a token cryptographically
 fn is_token_valid(token: Option<&str>) -> bool {
     if let Some(token_body) = token {
-        let token_parts: Rc<[&str]> = token_body.split(';').collect();
-        if token_parts.len() < 2 {
-            false
-        } else {
-            let token_text = token_parts[0];
-            let token_expiry_time = token_parts[1].parse::<u64>().unwrap_or(0);
+        let token_parts = token_body.split_once(';');
+        if let Some((marker, expiry)) = token_parts {
             let time_now = SystemTime::now()
                 .duration_since(SystemTime::UNIX_EPOCH)
                 .expect("Time went backwards!")
                 .as_secs();
-            ["chhoto-url-password", "chhoto-url-oidc"].contains(&token_text)
-                && time_now < token_expiry_time
+            (marker == "chhoto-url-password" || marker == "chhoto-url-oidc")
+                && time_now < expiry.parse::<u64>().unwrap_or(0)
+        } else {
+            false
         }
     } else {
         false
