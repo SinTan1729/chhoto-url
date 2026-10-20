@@ -216,8 +216,8 @@ pub(crate) async fn login(
             (matches!(auth, Auth::NoAuthNeeded), false)
         }
     }
-    let failed_text = |password_needed| {
-        if password_needed {
+    let failure_text = |pass_needed| {
+        if pass_needed {
             warn!("Failed login attempt: Wrong password.");
             "Wrong password!"
         } else {
@@ -248,7 +248,7 @@ pub(crate) async fn login(
                 let response = JSONResponse {
                     success: false,
                     error: true,
-                    reason: failed_text(password_needed).to_owned(),
+                    reason: failure_text(password_needed).to_owned(),
                 };
                 HttpResponse::Unauthorized().json(response)
             }
@@ -268,7 +268,7 @@ pub(crate) async fn login(
             } else {
                 HttpResponse::Unauthorized()
                     .content_type("text/plain")
-                    .body(failed_text(password_needed))
+                    .body(failure_text(password_needed))
             }
         }
         _ => HttpResponse::BadRequest().body("Bad content type."),
