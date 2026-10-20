@@ -169,7 +169,10 @@ pub(crate) async fn oidc_redirect(
     let Some(oidc) = data.oidc_data.as_ref() else {
         return Either::Left(HttpResponse::BadRequest().body("OIDC is disabled."));
     };
-    let (origin, callback) = derive_origin_info(req.connection_info().to_owned());
+    let (origin, callback) = derive_origin_info(
+        &req.connection_info(),
+        data.config.custom_landing_directory.is_some(),
+    );
     let Some(url) = RedirectUrl::new(callback)
         .ok()
         .filter(|_| data.config.oidc_allowed_origins.contains(&origin))
@@ -218,7 +221,10 @@ pub(crate) async fn oidc_callback(
     req: HttpRequest,
     session: actix_session::Session,
 ) -> impl Responder {
-    let (origin, callback) = derive_origin_info(req.connection_info().to_owned());
+    let (origin, callback) = derive_origin_info(
+        &req.connection_info(),
+        data.config.custom_landing_directory.is_some(),
+    );
     if data.config.oidc_issuer_url.is_none() {
         return Either::Left(HttpResponse::BadRequest().body("OIDC is disabled."));
     };

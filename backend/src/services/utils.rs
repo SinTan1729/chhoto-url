@@ -307,8 +307,19 @@ pub(super) async fn edit_link_helper(
 }
 
 // Derive origin info for OIDC
-pub(super) fn derive_origin_info(connection: ConnectionInfo) -> (String, String) {
-    let origin = format!("{}://{}", connection.scheme(), connection.host());
+pub(super) fn derive_origin_info(
+    connection: &ConnectionInfo,
+    using_custom_landing_dir: bool,
+) -> (String, String) {
+    let origin = if using_custom_landing_dir {
+        format!(
+            "{}://{}/admin/manage",
+            connection.scheme(),
+            connection.host()
+        )
+    } else {
+        format!("{}://{}", connection.scheme(), connection.host())
+    };
     let mut callback = origin.clone();
     callback.push_str("/oidc/callback");
     (origin, callback)
