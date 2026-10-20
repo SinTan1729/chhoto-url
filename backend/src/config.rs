@@ -302,17 +302,7 @@ pub(crate) fn read() -> Config {
         }
     } else {
         // Site URL is not configured
-        warn!(
-            "The CHHOTO_SITE_URL environment variable is not configured. Using http://localhost by default."
-        );
-        let protocol = if port == 443 { "https" } else { "http" };
-        let port_text = if [80, 443].contains(&port) {
-            String::new()
-        } else {
-            format!(":{port}")
-        };
-        // No issues
-        info!("Public URL is: {protocol}://localhost{port_text}.");
+        warn!("The CHHOTO_SITE_URL environment variable is not configured.");
         None
     };
     if let Some(u) = &site_url {
