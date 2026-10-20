@@ -7,10 +7,12 @@ let SITE_URL = "-";
 let CONFIG = null;
 let SUBDIR = null;
 let ADMIN = null;
-let NO_PASS = null;
+let NO_AUTH_NEEDED = null;
 let LOCAL_DATA = [];
 let CUR_PAGE = 0;
 let FILTER = null;
+let PASSWORD_ENABLED = null;
+let OIDC_ENABLED = null;
 
 // Flags
 let PROCESSING_PAGE_TRANSITION = true;
@@ -58,9 +60,9 @@ const loadCachedState = () => {
       CONFIG = JSON.parse(cachedConfig);
     }
     if (cachedNoPass !== null) {
-      NO_PASS = cachedNoPass === "true";
+      NO_AUTH_NEEDED = cachedNoPass === "true";
     } else {
-      NO_PASS = false;
+      NO_AUTH_NEEDED = false;
     }
   } catch (err) {
     clearCachedState();
@@ -85,7 +87,7 @@ const cacheConfig = (config) => {
   sessionStorage.setItem("config", JSON.stringify(config));
 };
 const cacheNoPass = (no_pass) => {
-  NO_PASS = no_pass;
+  NO_AUTH_NEEDED = no_pass;
   sessionStorage.setItem("no_pass", no_pass);
 };
 
@@ -106,10 +108,10 @@ const hasAllowedScheme = (url) => {
 };
 
 const getConfig = async () => {
-  if (ADMIN == null && NO_PASS == false) {
+  if (ADMIN == null && NO_AUTH_NEEDED == false) {
     return;
   }
-  if (CONFIG == null || NO_PASS) {
+  if (CONFIG == null || NO_AUTH_NEEDED) {
     const res = await fetch(prepSubdir("/api/getconfig"), {
       cache: "no-cache",
     });
@@ -165,7 +167,7 @@ const showVersion = () => {
 };
 
 const showLogin = () => {
-  if (NO_PASS) {
+  if (NO_AUTH_NEEDED) {
     document.getElementById("password").value = "";
     document.getElementById("login-checkbox").checked = false;
     submitLogin();
@@ -173,8 +175,16 @@ const showLogin = () => {
     document.getElementById("version-number").hidden = true;
     document.getElementById("admin-button").hidden = true;
     document.getElementById("container").style.filter = "blur(2px)";
+    if (!PASSWORD_ENABLED) {
+      document.getElementById("password-div").hidden = true;
+    }
+    if (!OIDC_ENABLED) {
+      document.getElementById("oidc-login-button").hidden = true;
+    }
     document.getElementById("login-dialog").showModal();
-    document.getElementById("password").focus();
+    if (PASSWORD_ENABLED) {
+      document.getElementById("password").focus();
+    }
   }
 };
 
@@ -203,7 +213,7 @@ const refreshData = async () => {
     if (ADMIN === null && CONFIG === null) {
       loadCachedState();
     }
-    if (NO_PASS === true) {
+    if (NO_AUTH_NEEDED === true) {
       await getConfig();
     }
     if (CONFIG === null) {
@@ -215,7 +225,7 @@ const refreshData = async () => {
         showVersion();
         const admin_button = document.getElementById("admin-button");
         admin_button.getElementsByTagName("span")[0].innerText = "logout";
-        if (NO_PASS === false || CONFIG.public_mode == true) {
+        if (NO_AUTH_NEEDED === false || CONFIG.public_mode == true) {
           admin_button.hidden = false;
         }
 
@@ -245,12 +255,25 @@ const refreshData = async () => {
     }
 
     if (ADMIN !== true) {
-      const res = await fetch(prepSubdir("/api/whoami"), { cache: "no-cache" });
+      const res = await fetch(prepSubdir("/api/whoami"), {
+        headers: new Headers({ "content-type": "application/json" }),
+        cache: "no-cache",
+      });
       if (res.status !== 200) {
-        throw Error("There was an issue getting user role.");
+        throw Error("There was an issue getting user whoami info.");
       }
 
-      const role = await res.text();
+      const data = await res.json();
+      let role = "nobody";
+      PASSWORD_ENABLED = data["password_enabled"];
+      OIDC_ENABLED = data["oidc_enabled"];
+      if (data["admin"]) {
+        role = "admin";
+      } else if (data["public_mode_enabled"]) {
+        role = "public";
+      } else if (!data["password_enabled"] && !data["oidc_enabled"]) {
+        role = "nopass";
+      }
       switch (role) {
         case "nobody":
           clearCachedState();
@@ -259,7 +282,6 @@ const refreshData = async () => {
           return;
 
         case "public":
-        case "public-nopass":
           cacheNoPass(role == "public-nopass");
           cacheAdmin(false);
           await getConfig();
@@ -279,7 +301,7 @@ const refreshData = async () => {
           updateInputBox();
           break;
 
-        case "nobody-nopass":
+        case "nopass":
           cacheNoPass(true);
           document.getElementById("admin-button").hidden = true;
           showLogin();
@@ -415,7 +437,7 @@ const displayData = () => {
   showVersion();
   const admin_button = document.getElementById("admin-button");
   admin_button.getElementsByTagName("span")[0].innerText = "logout";
-  if (NO_PASS === false || CONFIG.public_mode == true) {
+  if (NO_AUTH_NEEDED === false || CONFIG.public_mode == true) {
     admin_button.hidden = false;
   }
   updateInputBox();
@@ -1061,7 +1083,7 @@ const logOut = async () => {
           document.getElementById("url-table").replaceChildren();
           await refreshData();
         } else {
-          if (!NO_PASS) {
+          if (!NO_AUTH_NEEDED) {
             showAlert(`Logout failed.`, "light-dark(red, #a01e1e)");
             clearCachedState();
             refreshData();
@@ -1199,6 +1221,9 @@ refreshData()
     document.forms.namedItem("login-form").onsubmit = (e) => {
       e.preventDefault();
       submitLogin();
+    };
+    document.getElementById("oidc-login-button").onclick = () => {
+      window.location.href = "/oidc/login";
     };
   })
   .catch((err) => {
