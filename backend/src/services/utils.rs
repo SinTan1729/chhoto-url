@@ -108,7 +108,11 @@ pub(crate) fn get_version() -> String {
 
     match GIT_COMMIT {
         Some(commit) if !commit.trim().is_empty() => {
-            format!("{VERSION}-dev+{commit}")
+            let mut out = String::with_capacity(VERSION.len() + commit.len() + 5);
+            out.push_str(VERSION);
+            out.push_str("-dev+");
+            out.push_str(commit);
+            out
         }
         _ => VERSION.to_owned(),
     }
@@ -311,15 +315,14 @@ pub(super) fn derive_origin_info(
     connection: &ConnectionInfo,
     using_custom_landing_dir: bool,
 ) -> (String, String) {
-    let origin = if using_custom_landing_dir {
-        format!(
-            "{}://{}/admin/manage",
-            connection.scheme(),
-            connection.host()
-        )
-    } else {
-        format!("{}://{}", connection.scheme(), connection.host())
-    };
+    let (scheme, host) = (connection.scheme(), connection.host());
+    let mut origin = String::with_capacity(scheme.len() + host.len() + 16);
+    origin.push_str(scheme);
+    origin.push_str("://");
+    origin.push_str(host);
+    if using_custom_landing_dir {
+        origin.push_str("/admin/manage");
+    }
     let mut callback = origin.clone();
     callback.push_str("/oidc/callback");
     (origin, callback)
@@ -487,11 +490,22 @@ fn gen_link(
             let name = NAMES
                 .choose(&mut rand::rng())
                 .expect("Error choosing random name.");
+            let mut out = String::with_capacity(adj.len() + name.len() + 4);
+            out.push_str(name);
+            out.push('-');
+            out.push_str(adj);
             if try_longer_slug {
-                format!("{adj}-{name}-{:04}", random_range(0..=9999))
-            } else {
-                format!("{adj}-{name}")
+                let four_digits = |n| {
+                    let mut out = String::with_capacity(4);
+                    out.push((b'0' + (n / 1000) as u8) as char);
+                    out.push((b'0' + ((n / 100) % 10) as u8) as char);
+                    out.push((b'0' + ((n / 10) % 10) as u8) as char);
+                    out.push((b'0' + (n % 10) as u8) as char);
+                    out
+                };
+                out.push_str(&four_digits(random_range(0..=9999)));
             }
+            out
         }
     }
 }

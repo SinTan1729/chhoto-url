@@ -70,9 +70,11 @@ pub(crate) async fn siteurl(data: web::Data<AppState>) -> HttpResponse {
 // Use /api/getconfig instead
 #[get("/api/version")]
 pub(crate) async fn version() -> HttpResponse {
-    HttpResponse::Ok()
-        .content_type("text/plain")
-        .body(format!("Chhoto URL v{}", utils::get_version()))
+    let version = utils::get_version();
+    let mut out = String::with_capacity(12 + version.len());
+    out.push_str("Chhoto URL v");
+    out.push_str(&version);
+    HttpResponse::Ok().content_type("text/plain").body(out)
 }
 
 // Get the user's current role

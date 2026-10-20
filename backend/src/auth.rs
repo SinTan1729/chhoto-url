@@ -192,10 +192,15 @@ pub(crate) fn gen_token_text(remember: bool, oidc: bool) -> String {
     } else {
         900 // 15 minutes
     };
-    let time = SystemTime::now()
+    let time = (SystemTime::now()
         .duration_since(SystemTime::UNIX_EPOCH)
         .expect("Time went backwards!")
         .as_secs()
-        + remember_sec; // Valid for 7 days
-    format!("{token_text};{time}")
+        + remember_sec)
+        .to_string(); // Valid for 7 days
+    let mut out = String::with_capacity(token_text.len() + time.len() + 1);
+    out.push_str(token_text);
+    out.push(';');
+    out.push_str(&time);
+    out
 }

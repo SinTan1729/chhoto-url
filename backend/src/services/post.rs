@@ -19,7 +19,7 @@ use crate::{
     services::{
         types::{
             AddLinkResponse,
-            ChhotoError::{ClientError, ServerError},
+            ChhotoError::{self, ClientError, ServerError},
             CreatedURL, JSONResponse, LinkInfo, LoginReq,
         },
         utils,
@@ -58,14 +58,24 @@ pub(crate) async fn add_links(
     };
     match auth {
         Auth::ValidAPIKey => {
-            let to_response = |res| match res {
+            let to_response = |res: Result<(String, i64), ChhotoError>| match res {
                 Ok((shortlink, expiry_time)) => {
-                    let shorturl = if let Some(url) = &config.site_url {
-                        format!("{url}/{shortlink}")
+                    let origin = if let Some(url) = &config.site_url {
+                        url.to_owned()
                     } else {
                         let info = req.connection_info();
-                        format!("{}://{}/{shortlink}", info.scheme(), info.host())
+                        let scheme = info.scheme();
+                        let host = info.host();
+                        let mut out = String::with_capacity(scheme.len() + host.len() + 3);
+                        out.push_str(scheme);
+                        out.push_str("://");
+                        out.push_str(host);
+                        out
                     };
+                    let mut shorturl = String::with_capacity(origin.len() + shortlink.len() + 1);
+                    shorturl.push_str(&origin);
+                    shorturl.push('/');
+                    shorturl.push_str(&shortlink);
 
                     (
                         actix_web::http::StatusCode::OK,
