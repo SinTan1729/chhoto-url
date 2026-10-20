@@ -252,7 +252,7 @@ pub(crate) fn read() -> Config {
     {
         Ok(hash) if hash == "Argon2" => {
             if password.is_some() {
-                info!("Will use Argon2 hashes for password and API key verification.");
+                info!("Using Argon2 hashes for password and API key verification.");
             }
             HashAlgorithm::Argon2
         }

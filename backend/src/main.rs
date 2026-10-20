@@ -87,6 +87,7 @@ async fn main() -> Result<()> {
 
     let oidc_client = oidc::create_oidc_client(&conf).await;
     let oidc_data = if let Some(c) = oidc_client {
+        info!("OIDC was successfully enabled.");
         Some(oidc::OidcData {
             http_client: c.0,
             oidc_client: c.1,

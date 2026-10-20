@@ -14,7 +14,7 @@ use log::{debug, info, warn};
 use crate::{
     AppState,
     auth::{self, Auth},
-    config::HashAlgorithm,
+    config::{Config, HashAlgorithm},
     database,
     services::{
         types::{
@@ -189,93 +189,85 @@ pub(crate) async fn login(
         return HttpResponse::Ok().body("Already authorized.");
     }
 
-    let data = match req.content_type() {
-        // Legacy path, might be removed in a future release
-        "text/plain" => LoginReq {
-            password: body,
-            remember: false,
-        },
+    fn is_authorized(provided_pass: &str, config: &Config, auth: Auth) -> (bool, bool) {
+        if let Some(password) = &config.password {
+            (
+                match config.hash_algorithm {
+                    HashAlgorithm::Argon2 => {
+                        debug!("Using Argon2 hash for password validation.");
+                        let hash = PasswordHash::new(password)
+                            .expect("The provided password hash is invalid.");
+                        Argon2::default()
+                            .verify_password(provided_pass.as_bytes(), &hash)
+                            .is_ok()
+                    }
+                    HashAlgorithm::None => {
+                        // If hashing is not enabled, use the plaintext password for matching
+                        subtle::ConstantTimeEq::ct_eq(password.as_bytes(), provided_pass.as_bytes())
+                            .into()
+                    }
+                },
+                true,
+            )
+        } else {
+            (matches!(auth, Auth::NoAuthNeeded), false)
+        }
+    }
+    let failed_text = |password_needed| {
+        if password_needed {
+            warn!("Failed login attempt: Wrong password.");
+            "Wrong password!"
+        } else {
+            warn!("Failed login attempt: Password login disabled.");
+            "Password login disabled."
+        }
+    };
+
+    match req.content_type() {
         "application/json" => {
             let Ok(req): Result<LoginReq, _> = serde_json::from_str(&body) else {
                 return HttpResponse::BadRequest().body("Bad payload.");
             };
-            req
-        }
-        _ => return HttpResponse::BadRequest().body("Bad content type."),
-    };
+            let (authorized, password_needed) = is_authorized(&req.password, config, auth);
+            if authorized {
+                session
+                    .insert("chhoto-url-auth", auth::gen_token_text(req.remember, false))
+                    .expect("Error inserting auth token.");
 
-    // Check if password is hashed using Argon2. More algorithms maybe added later.
-    let authorized = if let Some(password) = &config.password {
-        match config.hash_algorithm {
-            HashAlgorithm::Argon2 => {
-                debug!("Using Argon2 hash for password validation.");
-                let hash =
-                    PasswordHash::new(password).expect("The provided password hash is invalid.");
-                Some(
-                    Argon2::default()
-                        .verify_password(data.password.as_bytes(), &hash)
-                        .is_ok(),
-                )
-            }
-            HashAlgorithm::None => {
-                // If hashing is not enabled, use the plaintext password for matching
-                Some(
-                    subtle::ConstantTimeEq::ct_eq(password.as_bytes(), data.password.as_bytes())
-                        .into(),
-                )
+                let response = JSONResponse {
+                    success: true,
+                    error: false,
+                    reason: "Correct password!".to_owned(),
+                };
+                info!("Successful login. Remember: {}", req.remember);
+                HttpResponse::Ok().json(response)
+            } else {
+                let response = JSONResponse {
+                    success: false,
+                    error: true,
+                    reason: failed_text(password_needed).to_owned(),
+                };
+                HttpResponse::Unauthorized().json(response)
             }
         }
-    } else {
-        None
-    };
-    if config.api_key.is_some() {
-        if let Some(valid_pass) = authorized
-            && !valid_pass
-        {
-            warn!("Failed login attempt!");
-            let response = JSONResponse {
-                success: false,
-                error: true,
-                reason: "Wrong password!".to_owned(),
-            };
-            return HttpResponse::Unauthorized().json(response);
-        }
-        // Return Ok if no password was set on the server side
-        session
-            .insert(
-                "chhoto-url-auth",
-                auth::gen_token_text(data.remember, false),
-            )
-            .expect("Error inserting auth token.");
+        // Legacy path, might be removed in a future release
+        "text/plain" => {
+            let (authorized, password_needed) = is_authorized(&body, config, auth);
+            if authorized {
+                session
+                    .insert("chhoto-url-auth", auth::gen_token_text(false, false))
+                    .expect("Error inserting auth token.");
 
-        let response = JSONResponse {
-            success: true,
-            error: false,
-            reason: "Correct password!".to_owned(),
-        };
-        info!("Successful login. Remember: {}", data.remember);
-        HttpResponse::Ok().json(response)
-    } else {
-        // Keep this function backwards compatible
-        if let Some(valid_pass) = authorized
-            && !valid_pass
-        {
-            warn!("Failed login attempt!");
-            return HttpResponse::Unauthorized()
-                .content_type("text/plain")
-                .body("Wrong password!");
+                info!("Successful login. Remember: {}", false);
+                HttpResponse::Ok()
+                    .content_type("text/plain")
+                    .body("Correct password!")
+            } else {
+                HttpResponse::Unauthorized()
+                    .content_type("text/plain")
+                    .body(failed_text(password_needed))
+            }
         }
-        // Return Ok if no password was set on the server side
-        session
-            .insert(
-                "chhoto-url-auth",
-                auth::gen_token_text(data.remember, false),
-            )
-            .expect("Error inserting auth token.");
-
-        info!("Successful login. Remember: {}", data.remember);
-        HttpResponse::Ok()
-            .content_type("text/plain")
-            .body("Correct password!")
+        _ => HttpResponse::BadRequest().body("Bad content type."),
     }
 }
