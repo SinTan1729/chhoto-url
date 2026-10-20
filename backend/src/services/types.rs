@@ -86,9 +86,25 @@ pub(crate) struct GetReqParams {
     pub(crate) filter: Option<String>,
 }
 
+// Struct for /api/whoami
+#[derive(Serialize)]
+pub(super) struct WhoamiRes {
+    pub(super) admin: bool,
+    pub(super) public_mode_enabled: bool,
+    pub(super) password_enabled: bool,
+    pub(super) oidc_enabled: bool,
+}
+
 // JSON struct for login request
 #[derive(Deserialize)]
 pub(super) struct LoginReq {
     pub(super) password: String,
     pub(super) remember: bool,
+}
+
+// Struct for query params in /oidc/callback
+#[derive(Deserialize, Clone)]
+pub(crate) struct OidcCallbackParams {
+    pub(crate) state: Option<String>,
+    pub(crate) code: Option<String>,
 }

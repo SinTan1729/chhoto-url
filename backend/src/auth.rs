@@ -7,7 +7,7 @@ use argon2::{Argon2, PasswordVerifier, password_hash::phc::PasswordHash};
 use log::{debug, warn};
 use passwords::PasswordGenerator;
 use std::future::{Ready, ready};
-use std::{rc::Rc, time::SystemTime};
+use std::time::SystemTime;
 
 use crate::{
     AppState,
@@ -112,12 +112,7 @@ pub(crate) fn gen_key() -> String {
 }
 
 // Validate a session
-fn is_session_valid(session: Session, config: &Config) -> bool {
-    // If there's no password provided, just return true
-    if config.password.is_none() {
-        return true;
-    }
-
+fn is_session_valid(session: &Session) -> bool {
     if let Ok(token) = session.get::<String>("chhoto-url-auth") {
         is_token_valid(token.as_deref())
     } else {
@@ -128,17 +123,16 @@ fn is_session_valid(session: Session, config: &Config) -> bool {
 // Check a token cryptographically
 fn is_token_valid(token: Option<&str>) -> bool {
     if let Some(token_body) = token {
-        let token_parts: Rc<[&str]> = token_body.split(';').collect();
-        if token_parts.len() < 2 {
-            false
-        } else {
-            let token_text = token_parts[0];
-            let token_expiry_time = token_parts[1].parse::<u64>().unwrap_or(0);
+        let token_parts = token_body.split_once(';');
+        if let Some((marker, expiry)) = token_parts {
             let time_now = SystemTime::now()
                 .duration_since(SystemTime::UNIX_EPOCH)
                 .expect("Time went backwards!")
                 .as_secs();
-            token_text == "chhoto-url-auth" && time_now < token_expiry_time
+            (marker == "chhoto-url-password" || marker == "chhoto-url-oidc")
+                && time_now < expiry.parse::<u64>().unwrap_or(0)
+        } else {
+            false
         }
     } else {
         false
@@ -149,7 +143,7 @@ fn is_token_valid(token: Option<&str>) -> bool {
 pub(crate) enum Auth {
     ValidAPIKey,
     ValidSession,
-    NoPass,
+    NoAuthNeeded,
     None { result: JSONResponse },
     InvalidAPIKey { result: JSONResponse },
 }
@@ -173,11 +167,11 @@ impl FromRequest for Auth {
         }
 
         // Session auth
-        if config.password.is_none() {
-            return ready(Ok(Auth::NoPass));
+        if config.password.is_none() && config.oidc_issuer_url.is_none() {
+            return ready(Ok(Auth::NoAuthNeeded));
         }
         let session = req.get_session();
-        if is_session_valid(session, config) {
+        if is_session_valid(&session) {
             return ready(Ok(Auth::ValidSession));
         }
 
@@ -186,17 +180,27 @@ impl FromRequest for Auth {
 }
 
 // Generate a new token for usage in cookie
-pub(crate) fn gen_token_text(remember: bool) -> String {
-    let token_text = String::from("chhoto-url-auth");
+pub(crate) fn gen_token_text(remember: bool, oidc: bool) -> String {
+    let token_text = if oidc {
+        "chhoto-url-oidc"
+    } else {
+        "chhoto-url-password"
+    };
+
     let remember_sec = if remember {
         604800 // 7 days
     } else {
         900 // 15 minutes
     };
-    let time = SystemTime::now()
+    let time = (SystemTime::now()
         .duration_since(SystemTime::UNIX_EPOCH)
         .expect("Time went backwards!")
         .as_secs()
-        + remember_sec; // Valid for 7 days
-    format!("{token_text};{time}")
+        + remember_sec)
+        .to_string(); // Valid for 7 days
+    let mut out = String::with_capacity(token_text.len() + time.len() + 1);
+    out.push_str(token_text);
+    out.push(';');
+    out.push_str(&time);
+    out
 }

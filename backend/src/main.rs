@@ -9,10 +9,13 @@ use actix_web::{
     middleware,
     web::{self, Redirect},
 };
-use log::{info, warn};
+use log::{error, info, warn};
 use rusqlite::Connection;
 use std::{
+    collections::HashMap,
+    env::var,
     io::Result,
+    process::exit,
     sync::{Arc, Once},
 };
 use tokio::sync::{Mutex, mpsc};
@@ -22,6 +25,7 @@ mod auth;
 mod background;
 mod config;
 mod database;
+mod oidc;
 mod services;
 mod utils;
 
@@ -36,6 +40,7 @@ struct AppState {
     writer: Arc<Mutex<Connection>>,
     config: config::Config,
     frontend_dir: String,
+    oidc_data: Option<oidc::OidcData>,
 }
 
 static LOGGER: Once = Once::new();
@@ -80,6 +85,26 @@ async fn main() -> Result<()> {
         }
     };
 
+    let oidc_client = oidc::create_oidc_client(&conf).await;
+    let oidc_data = if let Some((http_client, oidc_client)) = oidc_client {
+        info!("OIDC was successfully enabled.");
+        Some(oidc::OidcData {
+            http_client,
+            oidc_client,
+            states: Arc::new(Mutex::new(HashMap::new())),
+        })
+    } else {
+        let exit_on_no_auth = var("CHHOTO_EXIT_ON_NO_AUTH").is_ok_and(|s| s.trim() == "True");
+        if conf.password.is_none() {
+            warn!("No auth is set up. Chhoto URL will be exposed to the public.");
+            if exit_on_no_auth {
+                error!("Exiting Chhoto URL.");
+                exit(1);
+            }
+        }
+        None
+    };
+
     let port = conf.port;
     let addr = conf.listen_address.clone();
     let db_location_for_health = conf.db_location.clone();
@@ -107,6 +132,7 @@ async fn main() -> Result<()> {
                 writer: Arc::clone(&writer),
                 config: conf.clone(),
                 frontend_dir: frontend_dir.clone(),
+                oidc_data: oidc_data.clone(),
             }))
             .wrap(if let Some(header) = &conf.cache_control_header {
                 middleware::DefaultHeaders::new().add(("Cache-Control", header.to_owned()))
@@ -124,6 +150,8 @@ async fn main() -> Result<()> {
             .service(services::login)
             .service(services::logout)
             .service(services::expand)
+            .service(services::oidc_redirect)
+            .service(services::oidc_callback)
             .service(services::whoami);
 
         if !conf.disable_frontend {

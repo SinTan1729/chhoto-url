@@ -40,6 +40,12 @@ pub(crate) async fn delete_link(
     auth: Auth,
     data: web::Data<AppState>,
 ) -> HttpResponse {
+    let deleted_text = |link: String| {
+        let mut out = String::with_capacity(link.len() + 8);
+        out.push_str("Deleted ");
+        out.push_str(&link);
+        out
+    };
     match auth {
         Auth::ValidAPIKey => {
             match utils::delete_link_helper(
@@ -51,7 +57,7 @@ pub(crate) async fn delete_link(
                     let response = JSONResponse {
                         success: true,
                         error: false,
-                        reason: format!("Deleted {shortlink}"),
+                        reason: deleted_text(shortlink.to_string()),
                     };
                     HttpResponse::Ok().json(response)
                 }
@@ -75,7 +81,7 @@ pub(crate) async fn delete_link(
         }
         Auth::InvalidAPIKey { result } => HttpResponse::Unauthorized().json(result),
         // If using password - keeps backwards compatibility
-        Auth::ValidSession | Auth::NoPass => {
+        Auth::ValidSession | Auth::NoAuthNeeded => {
             if utils::delete_link_helper(
                 &shortlink,
                 &*data.writer.lock().await,
@@ -85,7 +91,7 @@ pub(crate) async fn delete_link(
             {
                 HttpResponse::Ok()
                     .content_type("text/plain")
-                    .body(format!("Deleted {shortlink}"))
+                    .body(deleted_text(shortlink.to_string()))
             } else {
                 HttpResponse::NotFound()
                     .content_type("text/plain")

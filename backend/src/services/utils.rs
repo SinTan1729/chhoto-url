@@ -2,12 +2,14 @@
 // SPDX-License-Identifier: MIT
 
 use actix_files::NamedFile;
-use actix_web::{Responder, http::StatusCode, web};
+use actix_web::{HttpResponse, Responder, dev::ConnectionInfo, http::StatusCode, web};
 use log::{debug, error};
 use nanoid::nanoid;
+use openidconnect::{AccessTokenHash, AuthorizationCode, OAuth2TokenResponse, TokenResponse};
 use rand::{random_range, seq::IndexedRandom};
 use rusqlite::Connection;
 use serde::Deserialize;
+use serde_json::Value;
 use std::env;
 use tokio::sync::mpsc;
 use url::Url;
@@ -16,9 +18,11 @@ use crate::{
     AppState,
     config::{Config, SlugStyle},
     database::{self, add_links},
+    oidc::OidcClient,
+    oidc::OidcData,
     services::types::{
         ChhotoError::{self, ClientError, ServerError},
-        GetReqParams, OneOrMany,
+        GetReqParams, OidcCallbackParams, OneOrMany,
     },
 };
 
@@ -104,7 +108,11 @@ pub(crate) fn get_version() -> String {
 
     match GIT_COMMIT {
         Some(commit) if !commit.trim().is_empty() => {
-            format!("{VERSION}-dev+{commit}")
+            let mut out = String::with_capacity(VERSION.len() + commit.len() + 5);
+            out.push_str(VERSION);
+            out.push_str("-dev+");
+            out.push_str(commit);
+            out
         }
         _ => VERSION.to_owned(),
     }
@@ -302,6 +310,100 @@ pub(super) async fn edit_link_helper(
     }
 }
 
+// Derive origin info for OIDC
+pub(super) fn derive_origin_info(
+    connection: &ConnectionInfo,
+    using_custom_landing_dir: bool,
+) -> (String, String) {
+    let (scheme, host) = (connection.scheme(), connection.host());
+    let mut origin = String::with_capacity(scheme.len() + host.len() + 16);
+    origin.push_str(scheme);
+    origin.push_str("://");
+    origin.push_str(host);
+    if using_custom_landing_dir {
+        origin.push_str("/admin/manage");
+    }
+    let mut callback = origin.clone();
+    callback.push_str("/oidc/callback");
+    (origin, callback)
+}
+
+// Verify OIDC callback data
+pub(super) async fn oidc_verify(
+    client: OidcClient,
+    params: OidcCallbackParams,
+    oidc: &OidcData,
+    custom_claim: &Option<(String, String)>,
+) -> Result<(), String> {
+    let Some(state) = &params.state else {
+        return Err("State check failed.".to_string());
+    };
+    let Some((verifier, nonce)) = (*oidc.states.lock().await).remove(state) else {
+        return Err("State mismatch.".to_string());
+    };
+
+    let code = params
+        .code
+        .expect("Authorization code should be available when state it valid.");
+
+    let token_response = client
+        .exchange_code(AuthorizationCode::new(code))
+        .map_err(|_| "Auth request failed: code")?
+        // Set the PKCE code verifier.
+        .set_pkce_verifier(verifier)
+        .request_async(&oidc.http_client)
+        .await
+        .map_err(|e| {
+            eprintln!("OIDC token exchange failed: {e:?}");
+            "Auth request failed: PKCE"
+        })?;
+
+    let id_token = token_response
+        .id_token()
+        .ok_or("Server did not return an ID token")?;
+    let id_token_verifier = client.id_token_verifier();
+    let claims = id_token
+        .claims(&id_token_verifier, &nonce)
+        .map_err(|_| "Server did not return any claims".to_string())?;
+    if let Some(expected_access_token_hash) = claims.access_token_hash() {
+        let actual_access_token_hash = (|| -> Result<_, String> {
+            let alg = id_token.signing_alg().map_err(|e| e.to_string())?;
+            let key = id_token
+                .signing_key(&id_token_verifier)
+                .map_err(|e| e.to_string())?;
+
+            AccessTokenHash::from_token(token_response.access_token(), alg, key)
+                .map_err(|e| e.to_string())
+        })()
+        .map_err(|_| "Mismatched token".to_string())?;
+
+        if actual_access_token_hash != *expected_access_token_hash {
+            return Err("Invalid access token".to_string());
+        }
+    }
+
+    fn matches_claim(value: &Value, expected: &str) -> bool {
+        match value {
+            Value::String(s) => s == expected,
+            Value::Bool(b) => b.to_string() == expected,
+            Value::Number(n) => n.to_string() == expected,
+            Value::Array(values) => values.iter().any(|v| matches_claim(v, expected)),
+            _ => false,
+        }
+    }
+    if let Some((k, v)) = custom_claim
+        && !claims
+            .additional_claims()
+            .claims
+            .get(k)
+            .is_some_and(|val| matches_claim(val, v))
+    {
+        return Err("Custom claim mismatch.".to_string());
+    }
+
+    Ok(())
+}
+
 // Check if link, and request DB to delete it if exists
 pub(super) fn delete_link_helper(
     shortlink: &str,
@@ -388,13 +490,32 @@ fn gen_link(
             let name = NAMES
                 .choose(&mut rand::rng())
                 .expect("Error choosing random name.");
+            let mut out = String::with_capacity(adj.len() + name.len() + 4);
+            out.push_str(name);
+            out.push('-');
+            out.push_str(adj);
             if try_longer_slug {
-                format!("{adj}-{name}-{:04}", random_range(0..=9999))
-            } else {
-                format!("{adj}-{name}")
+                let four_digits = |n| {
+                    let mut out = String::with_capacity(4);
+                    out.push((b'0' + (n / 1000) as u8) as char);
+                    out.push((b'0' + ((n / 100) % 10) as u8) as char);
+                    out.push((b'0' + ((n / 10) % 10) as u8) as char);
+                    out.push((b'0' + (n % 10) as u8) as char);
+                    out
+                };
+                out.push_str(&four_digits(random_range(0..=9999)));
             }
+            out
         }
     }
+}
+
+// Redirect with no cache
+pub(super) fn oidc_redirect_once(url: &str) -> HttpResponse {
+    HttpResponse::Found()
+        .insert_header(("Location", url))
+        .insert_header(("Cache-Control", "no-store, no-cache, must-revalidate"))
+        .finish()
 }
 
 // 404 error page

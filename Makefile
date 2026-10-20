@@ -5,7 +5,7 @@ include .env
 
 .PHONY: clean test setup merge tag reset-db upgrade-deps upgrade-deps-pre podman-stop
 .PHONY: build podman-build podman-run podman-test
-.PHONY: build-release podman-build-release podman-run-release podman-test-release
+.PHONY: build-release podman-build-release podman-run-release podman-test-release podman-run-github
 .PHONY: minify deploy purge-cache publish
 
 setup:
@@ -48,12 +48,17 @@ podman-run-release: podman-stop
 	podman run -t -p ${CHHOTO_LISTEN_PORT}:${CHHOTO_LISTEN_PORT} --name chhoto-url \
 		--cap-drop=ALL --env-file ./.env -v "${DB_DIR}:/data" -d chhoto-url:release
 	podman logs chhoto-url -f 
+podman-run-github: podman-stop
+	podman pull ghcr.io/sintan1729/chhoto-url:dev
+	podman run -t -p ${CHHOTO_LISTEN_PORT}:${CHHOTO_LISTEN_PORT} --name chhoto-url \
+		--cap-drop=ALL --env-file ./.env -v "${DB_DIR}:/data" -d ghcr.io/sintan1729/chhoto-url:dev
+	podman logs chhoto-url -f 
 
 reset-db: podman-stop
 	rm -f testing-data/urls.sqlite-shm testing-data/urls.sqlite-wal
 	cp testing-data/urls1.sqlite testing-data/urls.sqlite
-podman-test: test podman-build podman-clean podman-run
-podman-test-release: test podman-build-release podman-clean podman-run-release
+podman-test: test podman-build podman-run
+podman-test-release: test podman-build-release podman-run-release
 
 upgrade-deps-pre:
 	cargo upgrade --manifest-path=backend/Cargo.toml --verbose

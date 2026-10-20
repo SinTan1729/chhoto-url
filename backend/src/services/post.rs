@@ -14,12 +14,12 @@ use log::{debug, info, warn};
 use crate::{
     AppState,
     auth::{self, Auth},
-    config::HashAlgorithm,
+    config::{Config, HashAlgorithm},
     database,
     services::{
         types::{
             AddLinkResponse,
-            ChhotoError::{ClientError, ServerError},
+            ChhotoError::{self, ClientError, ServerError},
             CreatedURL, JSONResponse, LinkInfo, LoginReq,
         },
         utils,
@@ -29,12 +29,21 @@ use crate::{
 const SERVER_ERROR_RES: &str = "Something went wrong when adding the link.";
 // Add new links
 #[post("/api/new")]
-pub(crate) async fn add_links(req: String, auth: Auth, data: web::Data<AppState>) -> HttpResponse {
+pub(crate) async fn add_links(
+    req: HttpRequest,
+    payload: String,
+    auth: Auth,
+    data: web::Data<AppState>,
+) -> HttpResponse {
     let config = &data.config;
     let cookie_response = async |public_mode| {
-        let result =
-            utils::add_links_helper(&req, &mut *data.writer.lock().await, config, public_mode)
-                .and_then(|(v, _)| v.into_iter().next().unwrap_or(Err(ServerError)));
+        let result = utils::add_links_helper(
+            &payload,
+            &mut *data.writer.lock().await,
+            config,
+            public_mode,
+        )
+        .and_then(|(v, _)| v.into_iter().next().unwrap_or(Err(ServerError)));
         match result {
             Ok((shorturl, _)) => HttpResponse::Created()
                 .content_type("text/plain")
@@ -49,20 +58,24 @@ pub(crate) async fn add_links(req: String, auth: Auth, data: web::Data<AppState>
     };
     match auth {
         Auth::ValidAPIKey => {
-            let to_response = |res| match res {
+            let to_response = |res: Result<(String, i64), ChhotoError>| match res {
                 Ok((shortlink, expiry_time)) => {
-                    let site_url = config.site_url.to_owned();
-                    let shorturl = if let Some(url) = &site_url {
-                        format!("{url}/{shortlink}")
+                    let origin = if let Some(url) = &config.site_url {
+                        url.to_owned()
                     } else {
-                        let protocol = if config.port == 443 { "https" } else { "http" };
-                        let port_text = if [80, 443].contains(&config.port) {
-                            String::new()
-                        } else {
-                            format!(":{}", config.port)
-                        };
-                        format!("{protocol}://localhost{port_text}/{shortlink}")
+                        let info = req.connection_info();
+                        let scheme = info.scheme();
+                        let host = info.host();
+                        let mut out = String::with_capacity(scheme.len() + host.len() + 3);
+                        out.push_str(scheme);
+                        out.push_str("://");
+                        out.push_str(host);
+                        out
                     };
+                    let mut shorturl = String::with_capacity(origin.len() + shortlink.len() + 1);
+                    shorturl.push_str(&origin);
+                    shorturl.push('/');
+                    shorturl.push_str(&shortlink);
 
                     (
                         actix_web::http::StatusCode::OK,
@@ -92,7 +105,7 @@ pub(crate) async fn add_links(req: String, auth: Auth, data: web::Data<AppState>
                 ),
             };
 
-            match utils::add_links_helper(&req, &mut *data.writer.lock().await, config, false) {
+            match utils::add_links_helper(&payload, &mut *data.writer.lock().await, config, false) {
                 Ok((reply, single_request)) => {
                     if single_request {
                         let (status, response) = to_response(
@@ -116,7 +129,7 @@ pub(crate) async fn add_links(req: String, auth: Auth, data: web::Data<AppState>
         }
         Auth::InvalidAPIKey { result } => HttpResponse::Unauthorized().json(result),
         // If password authentication or public mode is used - keeps backwards compatibility
-        Auth::ValidSession | Auth::NoPass => cookie_response(false).await,
+        Auth::ValidSession | Auth::NoAuthNeeded => cookie_response(false).await,
         Auth::None { result: _ } => {
             if data.config.public_mode {
                 cookie_response(true).await
@@ -162,11 +175,13 @@ pub(crate) async fn expand(req: String, auth: Auth, data: web::Data<AppState>) -
                 HttpResponse::BadRequest().json(body)
             }
         },
-        Auth::ValidSession | Auth::NoPass => HttpResponse::Unauthorized().json(JSONResponse {
-            success: false,
-            error: true,
-            reason: "This route needs API auth.".to_owned(),
-        }),
+        Auth::ValidSession | Auth::NoAuthNeeded => {
+            HttpResponse::Unauthorized().json(JSONResponse {
+                success: false,
+                error: true,
+                reason: "This route needs API auth.".to_owned(),
+            })
+        }
         Auth::None { result } | Auth::InvalidAPIKey { result } => {
             HttpResponse::Unauthorized().json(result)
         }
@@ -187,87 +202,85 @@ pub(crate) async fn login(
         return HttpResponse::Ok().body("Already authorized.");
     }
 
-    let data = match req.content_type() {
-        // Legacy path, might be removed in a future release
-        "text/plain" => LoginReq {
-            password: body,
-            remember: false,
-        },
+    fn is_authorized(provided_pass: &str, config: &Config, auth: Auth) -> (bool, bool) {
+        if let Some(password) = &config.password {
+            (
+                match config.hash_algorithm {
+                    HashAlgorithm::Argon2 => {
+                        debug!("Using Argon2 hash for password validation.");
+                        let hash = PasswordHash::new(password)
+                            .expect("The provided password hash is invalid.");
+                        Argon2::default()
+                            .verify_password(provided_pass.as_bytes(), &hash)
+                            .is_ok()
+                    }
+                    HashAlgorithm::None => {
+                        // If hashing is not enabled, use the plaintext password for matching
+                        subtle::ConstantTimeEq::ct_eq(password.as_bytes(), provided_pass.as_bytes())
+                            .into()
+                    }
+                },
+                true,
+            )
+        } else {
+            (matches!(auth, Auth::NoAuthNeeded), false)
+        }
+    }
+    let failure_text = |pass_needed| {
+        if pass_needed {
+            warn!("Failed login attempt: Wrong password.");
+            "Wrong password!"
+        } else {
+            warn!("Failed login attempt: Password login disabled.");
+            "Password login disabled."
+        }
+    };
+
+    match req.content_type() {
         "application/json" => {
             let Ok(req): Result<LoginReq, _> = serde_json::from_str(&body) else {
                 return HttpResponse::BadRequest().body("Bad payload.");
             };
-            req
-        }
-        _ => return HttpResponse::BadRequest().body("Bad content type."),
-    };
+            let (authorized, password_needed) = is_authorized(&req.password, config, auth);
+            if authorized {
+                session
+                    .insert("chhoto-url-auth", auth::gen_token_text(req.remember, false))
+                    .expect("Error inserting auth token.");
 
-    // Check if password is hashed using Argon2. More algorithms maybe added later.
-    let authorized = if let Some(password) = &config.password {
-        match config.hash_algorithm {
-            HashAlgorithm::Argon2 => {
-                debug!("Using Argon2 hash for password validation.");
-                let hash =
-                    PasswordHash::new(password).expect("The provided password hash is invalid.");
-                Some(
-                    Argon2::default()
-                        .verify_password(data.password.as_bytes(), &hash)
-                        .is_ok(),
-                )
-            }
-            HashAlgorithm::None => {
-                // If hashing is not enabled, use the plaintext password for matching
-                Some(
-                    subtle::ConstantTimeEq::ct_eq(password.as_bytes(), data.password.as_bytes())
-                        .into(),
-                )
+                let response = JSONResponse {
+                    success: true,
+                    error: false,
+                    reason: "Correct password!".to_owned(),
+                };
+                info!("Successful login. Remember: {}", req.remember);
+                HttpResponse::Ok().json(response)
+            } else {
+                let response = JSONResponse {
+                    success: false,
+                    error: true,
+                    reason: failure_text(password_needed).to_owned(),
+                };
+                HttpResponse::Unauthorized().json(response)
             }
         }
-    } else {
-        None
-    };
-    if config.api_key.is_some() {
-        if let Some(valid_pass) = authorized
-            && !valid_pass
-        {
-            warn!("Failed login attempt!");
-            let response = JSONResponse {
-                success: false,
-                error: true,
-                reason: "Wrong password!".to_owned(),
-            };
-            return HttpResponse::Unauthorized().json(response);
-        }
-        // Return Ok if no password was set on the server side
-        session
-            .insert("chhoto-url-auth", auth::gen_token_text(data.remember))
-            .expect("Error inserting auth token.");
+        // Legacy path, might be removed in a future release
+        "text/plain" => {
+            let (authorized, password_needed) = is_authorized(&body, config, auth);
+            if authorized {
+                session
+                    .insert("chhoto-url-auth", auth::gen_token_text(false, false))
+                    .expect("Error inserting auth token.");
 
-        let response = JSONResponse {
-            success: true,
-            error: false,
-            reason: "Correct password!".to_owned(),
-        };
-        info!("Successful login. Remember: {}", data.remember);
-        HttpResponse::Ok().json(response)
-    } else {
-        // Keep this function backwards compatible
-        if let Some(valid_pass) = authorized
-            && !valid_pass
-        {
-            warn!("Failed login attempt!");
-            return HttpResponse::Unauthorized()
-                .content_type("text/plain")
-                .body("Wrong password!");
+                info!("Successful login. Remember: {}", false);
+                HttpResponse::Ok()
+                    .content_type("text/plain")
+                    .body("Correct password!")
+            } else {
+                HttpResponse::Unauthorized()
+                    .content_type("text/plain")
+                    .body(failure_text(password_needed))
+            }
         }
-        // Return Ok if no password was set on the server side
-        session
-            .insert("chhoto-url-auth", auth::gen_token_text(data.remember))
-            .expect("Error inserting auth token.");
-
-        info!("Successful login. Remember: {}", data.remember);
-        HttpResponse::Ok()
-            .content_type("text/plain")
-            .body("Correct password!")
+        _ => HttpResponse::BadRequest().body("Bad content type."),
     }
 }
