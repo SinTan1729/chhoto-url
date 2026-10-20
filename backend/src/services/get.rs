@@ -169,15 +169,20 @@ pub(crate) async fn oidc_redirect(
     req: HttpRequest,
 ) -> impl Responder {
     let Some(oidc) = data.oidc_data.as_ref() else {
-        return Either::Left(HttpResponse::BadRequest().body("OIDC is disabled."));
+        return Either::Left(HttpResponse::Forbidden().body("OIDC is disabled."));
     };
+    let config = &data.config;
+    if config.disable_frontend {
+        return Either::Left(HttpResponse::Forbidden().body("Frontend is disabled."));
+    }
+
     let (origin, callback) = derive_origin_info(
         &req.connection_info(),
-        data.config.custom_landing_directory.is_some(),
+        config.custom_landing_directory.is_some(),
     );
     let Some(url) = RedirectUrl::new(callback)
         .ok()
-        .filter(|_| data.config.oidc_allowed_origins.contains(&origin))
+        .filter(|_| config.oidc_allowed_origins.contains(&origin))
     else {
         warn!("Bad OIDC origin URL: {origin}");
         return Either::Left(HttpResponse::BadRequest().body("Bad OIDC origin URL."));
@@ -197,7 +202,7 @@ pub(crate) async fn oidc_redirect(
         Nonce::new_random,
     );
 
-    if let Some((k, _)) = data.config.oidc_custom_claim.as_ref() {
+    if let Some((k, _)) = config.oidc_custom_claim.as_ref() {
         client = client
             .add_scope(Scope::new("profile".to_string()))
             .add_scope(Scope::new(k.clone()));
@@ -223,13 +228,17 @@ pub(crate) async fn oidc_callback(
     req: HttpRequest,
     session: actix_session::Session,
 ) -> impl Responder {
+    let config = &data.config;
     let (origin, callback) = derive_origin_info(
         &req.connection_info(),
-        data.config.custom_landing_directory.is_some(),
+        config.custom_landing_directory.is_some(),
     );
-    if data.config.oidc_issuer_url.is_none() {
-        return Either::Left(HttpResponse::BadRequest().body("OIDC is disabled."));
+    if config.oidc_issuer_url.is_none() {
+        return Either::Left(HttpResponse::Forbidden().body("OIDC is disabled."));
     };
+    if config.disable_frontend {
+        return Either::Left(HttpResponse::Forbidden().body("Frontend is disabled."));
+    }
     if matches!(auth, Auth::ValidSession) {
         info!("Successful OIDC login. (Already had valid session.)");
         return Either::Right(oidc_redirect_once(&origin));
@@ -242,7 +251,7 @@ pub(crate) async fn oidc_callback(
 
     let Some(url) = RedirectUrl::new(callback)
         .ok()
-        .filter(|_| data.config.oidc_allowed_origins.contains(&origin))
+        .filter(|_| config.oidc_allowed_origins.contains(&origin))
     else {
         warn!("Bad OIDC origin URL: {origin}");
         return Either::Left(HttpResponse::BadRequest().body("Bad OIDC origin URL."));
@@ -252,7 +261,7 @@ pub(crate) async fn oidc_callback(
         oidc_data.oidc_client.clone().set_redirect_uri(url),
         params.into_inner(),
         oidc_data,
-        &data.config.oidc_custom_claim,
+        &config.oidc_custom_claim,
     )
     .await
     {

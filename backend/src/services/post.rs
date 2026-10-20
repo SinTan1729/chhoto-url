@@ -201,6 +201,9 @@ pub(crate) async fn login(
     if matches!(auth, Auth::ValidSession) {
         return HttpResponse::Ok().body("Already authorized.");
     }
+    if config.disable_frontend {
+        return HttpResponse::Forbidden().body("Frontend is disabled.");
+    }
 
     fn is_authorized(provided_pass: &str, config: &Config, auth: Auth) -> (bool, bool) {
         if let Some(password) = &config.password {
@@ -260,7 +263,11 @@ pub(crate) async fn login(
                     error: true,
                     reason: failure_text(password_needed).to_owned(),
                 };
-                HttpResponse::Unauthorized().json(response)
+                if password_needed {
+                    HttpResponse::Unauthorized().json(response)
+                } else {
+                    HttpResponse::Forbidden().json(response)
+                }
             }
         }
         // Legacy path, might be removed in a future release
@@ -276,8 +283,12 @@ pub(crate) async fn login(
                     .content_type("text/plain")
                     .body("Correct password!")
             } else {
-                HttpResponse::Unauthorized()
-                    .content_type("text/plain")
+                let mut res = if password_needed {
+                    HttpResponse::Unauthorized()
+                } else {
+                    HttpResponse::Forbidden()
+                };
+                res.content_type("text/plain")
                     .body(failure_text(password_needed))
             }
         }
