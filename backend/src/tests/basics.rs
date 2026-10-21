@@ -106,3 +106,16 @@ async fn auth_verification() {
     let resp = test::call_service(&app, req).await;
     assert_eq!(resp.status(), 401);
 }
+
+#[test]
+async fn auth_states() {
+    let test = "auth_verification";
+    let conf = default_config(test);
+    let (_tempdir, app) = create_app(&conf, test).await;
+
+    let req = test::TestRequest::get().uri("/oidc/login").to_request();
+    let resp = test::call_service(&app, req).await;
+    assert_eq!(resp.status(), 403);
+    let body = to_bytes(resp.into_body()).await.unwrap();
+    assert_eq!(body.as_str(), "OIDC is disabled.");
+}
