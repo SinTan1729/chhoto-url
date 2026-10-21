@@ -169,11 +169,19 @@ pub(crate) async fn oidc_redirect(
     req: HttpRequest,
 ) -> impl Responder {
     let Some(oidc) = data.oidc_data.as_ref() else {
-        return Either::Left(HttpResponse::Forbidden().body("OIDC is disabled."));
+        return Either::Left(
+            HttpResponse::Forbidden()
+                .content_type("text/plain")
+                .body("OIDC is disabled."),
+        );
     };
     let config = &data.config;
     if config.disable_frontend {
-        return Either::Left(HttpResponse::Forbidden().body("Frontend is disabled."));
+        return Either::Left(
+            HttpResponse::Forbidden()
+                .content_type("text/plain")
+                .body("Frontend is disabled."),
+        );
     }
 
     let (origin, callback) = derive_origin_info(
@@ -185,7 +193,11 @@ pub(crate) async fn oidc_redirect(
         .filter(|_| config.oidc_allowed_origins.contains(&origin))
     else {
         warn!("Bad OIDC origin URL: {origin}");
-        return Either::Left(HttpResponse::BadRequest().body("Bad OIDC origin URL."));
+        return Either::Left(
+            HttpResponse::BadRequest()
+                .content_type("text/plain")
+                .body("Bad OIDC origin URL."),
+        );
     };
 
     let client = oidc.oidc_client.clone().set_redirect_uri(url);
@@ -234,10 +246,18 @@ pub(crate) async fn oidc_callback(
         config.custom_landing_directory.is_some(),
     );
     if config.oidc_issuer_url.is_none() {
-        return Either::Left(HttpResponse::Forbidden().body("OIDC is disabled."));
+        return Either::Left(
+            HttpResponse::Forbidden()
+                .content_type("text/plain")
+                .body("OIDC is disabled."),
+        );
     };
     if config.disable_frontend {
-        return Either::Left(HttpResponse::Forbidden().body("Frontend is disabled."));
+        return Either::Left(
+            HttpResponse::Forbidden()
+                .content_type("text/plain")
+                .body("Frontend is disabled."),
+        );
     }
     if matches!(auth, Auth::ValidSession) {
         info!("Successful OIDC login. (Already had valid session.)");
@@ -246,7 +266,11 @@ pub(crate) async fn oidc_callback(
 
     let Some(oidc_data) = data.oidc_data.as_ref() else {
         info!("Failed OIDC login.");
-        return Either::Left(HttpResponse::InternalServerError().body("OIDC login failed."));
+        return Either::Left(
+            HttpResponse::InternalServerError()
+                .content_type("text/plain")
+                .body("OIDC login failed."),
+        );
     };
 
     let Some(url) = RedirectUrl::new(callback)
@@ -254,7 +278,11 @@ pub(crate) async fn oidc_callback(
         .filter(|_| config.oidc_allowed_origins.contains(&origin))
     else {
         warn!("Bad OIDC origin URL: {origin}");
-        return Either::Left(HttpResponse::BadRequest().body("Bad OIDC origin URL."));
+        return Either::Left(
+            HttpResponse::BadRequest()
+                .content_type("text/plain")
+                .body("Bad OIDC origin URL."),
+        );
     };
 
     if let Err(e) = utils::oidc_verify(
@@ -280,7 +308,11 @@ pub(crate) async fn oidc_callback(
         .is_err()
     {
         info!("Failed OIDC login.");
-        return Either::Left(HttpResponse::Forbidden().body("OIDC login failed."));
+        return Either::Left(
+            HttpResponse::Forbidden()
+                .content_type("text/plain")
+                .body("OIDC login failed."),
+        );
     };
 
     info!("Successful OIDC login.");
@@ -291,8 +323,12 @@ pub(crate) async fn oidc_callback(
 #[get("/healthz")]
 pub(crate) async fn health_handler(db: web::Data<Connection>) -> impl Responder {
     if database::is_database_healthy(&db) {
-        HttpResponse::Ok().message_body("healthy")
+        HttpResponse::Ok()
+            .content_type("text/plain")
+            .body("healthy")
     } else {
-        HttpResponse::InternalServerError().message_body("unhealthy")
+        HttpResponse::InternalServerError()
+            .content_type("text/plain")
+            .body("unhealthy")
     }
 }
