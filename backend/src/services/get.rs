@@ -265,8 +265,7 @@ pub(crate) async fn oidc_callback(
     )
     .await
     {
-        warn!("OIDC error: {e}");
-        info!("Failed OIDC login.");
+        warn!("Failed OIDC login: {e}");
         return Either::Left(HttpResponse::Forbidden().body(
             if e.as_str() == "Custom claim mismatch." {
                 "You don't have enough permissions."

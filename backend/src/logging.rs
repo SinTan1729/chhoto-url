@@ -113,11 +113,11 @@ fn level_ansi(level: Level) -> &'static str {
     }
 }
 
-fn run_writer(rx: Receiver<String>, dropped: Arc<AtomicU64>) {
+fn run_writer(rx: Receiver<String>, dropped: Arc<AtomicU64>, color: bool) {
     let stderr = std::io::stderr();
     let mut out = BufWriter::with_capacity(AVG_LOG_LINE_BYTES * QUEUE_CAPACITY, stderr.lock());
     let mut reported = 0_u64;
-    let max_batch_size: usize = (QUEUE_CAPACITY / 8).max(1);
+    let max_batch_size: usize = (QUEUE_CAPACITY / 8).max(32);
 
     loop {
         let mut wrote = false;
@@ -148,14 +148,20 @@ fn run_writer(rx: Receiver<String>, dropped: Arc<AtomicU64>) {
 
         let current = dropped.load(Ordering::Relaxed);
         if current > reported {
-            if writeln!(
-                out,
-                "[{} WARN  chhoto_url::logging] {} log lines dropped (stderr writer behind)",
-                Local::now().format("%Y-%m-%d %H:%M:%S%Z"),
+            let message = format!(
+                "{} log lines dropped (stderr writer behind)",
                 current - reported
-            )
-            .is_err()
-            {
+            );
+            let args = format_args!("{}", message);
+            let record = Record::builder()
+                .args(args)
+                .level(Level::Warn)
+                .target("chhoto_url::logging")
+                .build();
+
+            let mut line = String::with_capacity(AVG_LOG_LINE_BYTES);
+            format_line(&mut line, &record, color);
+            if out.write_all(line.as_bytes()).is_err() || out.write_all(b"\n").is_err() {
                 break;
             }
 
@@ -183,7 +189,8 @@ pub fn init() -> std::thread::JoinHandle<()> {
     let max_level = filter.filter();
     let (logger, rx, dropped) = AsyncStderrLogger::with_filter(filter);
 
+    let color = logger.color;
     log::set_boxed_logger(Box::new(logger)).expect("Install logger once");
     log::set_max_level(max_level);
-    spawn(move || run_writer(rx, dropped))
+    spawn(move || run_writer(rx, dropped, color))
 }

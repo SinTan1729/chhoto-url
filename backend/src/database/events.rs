@@ -325,10 +325,7 @@ pub(crate) fn delete_link(shortlink: &str, db: &Connection) -> Result<(), Chhoto
         return Err(ServerError);
     };
     match statement.execute(named_params! {":short" : shortlink}) {
-        Ok(delta) if delta > 0 => {
-            debug!("Deleted link {shortlink}.");
-            Ok(())
-        }
+        Ok(delta) if delta > 0 => Ok(()),
         _ => Err(ClientError {
             reason: "The shortlink was not found, and could not be deleted.".to_owned(),
         }),

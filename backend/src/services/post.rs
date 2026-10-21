@@ -8,7 +8,7 @@ use actix_web::{
     HttpMessage, HttpRequest, HttpResponse, post,
     web::{self},
 };
-use log::{error, info, warn};
+use log::{debug, error, info, warn};
 
 use crate::{
     AppState,
@@ -154,6 +154,7 @@ pub(crate) async fn expand(req: String, auth: Auth, data: web::Data<AppState>) -
                     expiry_time: chunks.expiry_time,
                     notes: chunks.notes,
                 };
+                debug!("Expanded link {}", req);
                 HttpResponse::Ok().json(body)
             }
             Err(ServerError) => {

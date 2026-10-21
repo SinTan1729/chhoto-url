@@ -3,7 +3,7 @@
 
 use actix_session::Session;
 use actix_web::{HttpResponse, delete, web};
-use log::info;
+use log::{debug, info};
 
 use crate::{
     AppState,
@@ -44,6 +44,7 @@ pub(crate) async fn delete_link(
         let mut out = String::with_capacity(link.len() + 8);
         out.push_str("Deleted ");
         out.push_str(&link);
+        debug!("{}", out);
         out
     };
     match auth {
