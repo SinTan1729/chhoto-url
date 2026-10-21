@@ -70,34 +70,34 @@ fn change_title(title: &str, src: &str, dst: &str) -> io::Result<()> {
     Ok(())
 }
 
-pub(crate) fn init_logger() {
-    env_logger::builder()
-        .parse_filters(
-            std::env::var("RUST_LOG")
-                .ok()
-                .filter(|s| !s.is_empty())
-                .unwrap_or("warn,chhoto_url=info,actix_session::middleware=error".to_owned())
-                .as_str(),
-        )
-        .format(|buf, record| {
-            use chrono::Local;
-            use env_logger::fmt::style::{AnsiColor, Style};
-            use std::io::Write;
-
-            let subtle = Style::new().fg_color(Some(AnsiColor::BrightBlack.into()));
-            let level_style = buf.default_level_style(record.level());
-
-            writeln!(
-                buf,
-                "{subtle}[{subtle:#}{} {level_style}{:<6}{level_style:#}{}{subtle}]{subtle:#} {}",
-                Local::now().format("%Y-%m-%d %H:%M:%S%Z"),
-                record.level(),
-                record.module_path().unwrap_or_default(),
-                record.args()
-            )
-        })
-        .init();
-}
+// pub(crate) fn init_logger() {
+//     env_logger::builder()
+//         .parse_filters(
+//             std::env::var("RUST_LOG")
+//                 .ok()
+//                 .filter(|s| !s.is_empty())
+//                 .unwrap_or("warn,chhoto_url=info,actix_session::middleware=error".to_owned())
+//                 .as_str(),
+//         )
+//         .format(|buf, record| {
+//             use chrono::Local;
+//             use env_logger::fmt::style::{AnsiColor, Style};
+//             use std::io::Write;
+//
+//             let subtle = Style::new().fg_color(Some(AnsiColor::BrightBlack.into()));
+//             let level_style = buf.default_level_style(record.level());
+//
+//             writeln!(
+//                 buf,
+//                 "{subtle}[{subtle:#}{} {level_style}{:<6}{level_style:#}{}{subtle}]{subtle:#} {}",
+//                 Local::now().format("%Y-%m-%d %H:%M:%S%Z"),
+//                 record.level(),
+//                 record.module_path().unwrap_or_default(),
+//                 record.args()
+//             )
+//         })
+//         .init();
+// }
 
 pub(crate) fn get_frontend_location() -> (String, String) {
     let (src, dst) = if Path::new("./frontend/base/index.html").is_file() {

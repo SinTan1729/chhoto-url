@@ -51,10 +51,10 @@ argon2 = "0.6.0"
 chrono = "0.4.45"
 tokio = { version = "1.54.0", features = [ "macros" ] }
 log = "0.4.34"
-env_logger = "0.11.11"
 url = "2.5.8"
 subtle = "2.6.1"
 openidconnect = "4.0.1"
+env_filter = "2.0.0"
 
 [dev-dependencies]
 actix-http = "3.19.0"

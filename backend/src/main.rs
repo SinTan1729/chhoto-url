@@ -25,6 +25,7 @@ mod auth;
 mod background;
 mod config;
 mod database;
+mod logging;
 mod oidc;
 mod services;
 mod utils;
@@ -47,17 +48,17 @@ static LOGGER: Once = Once::new();
 
 #[actix_web::main]
 async fn main() -> Result<()> {
-    utils::init_logger();
     // Generate session key in runtime so that restart invalidates older logins
     let secret_key = Key::generate();
+    logging::init();
 
-    eprintln!("----------------------------------------------------------------------");
-    info!(
+    println!("----------------------------------------------------------------------");
+    println!(
         "Starting Chhoto URL Server v{}",
         services::utils::get_version()
     );
-    info!("Source: https://github.com/SinTan1729/chhoto-url");
-    eprintln!("----------------------------------------------------------------------");
+    println!("Source: https://github.com/SinTan1729/chhoto-url");
+    println!("----------------------------------------------------------------------");
 
     // Read config from env vars
     let conf = config::read();
