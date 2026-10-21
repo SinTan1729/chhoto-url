@@ -3,6 +3,8 @@
 
 use actix_web::{body::to_bytes, test};
 
+use crate::config::Credential;
+
 use super::utils::*;
 
 #[test]
@@ -77,14 +79,22 @@ async fn auth_verification() {
     let resp = test::call_service(&app, req).await;
     assert_eq!(resp.status(), 401);
     let body = to_bytes(resp.into_body()).await.unwrap();
-    assert_eq!(body.as_str(), "API validation failed.");
+    assert_eq!(body.as_str(), "Wrong API key.");
 
-    let status = edit_link(&app, "a", "test2", false, None, None).await;
+    let status = edit_link(
+        &app,
+        &Credential::Plain("a".to_string()),
+        "test2",
+        false,
+        None,
+        None,
+    )
+    .await;
     assert_eq!(status, 401);
 
-    let (status, reply) = add_link(&app, "a", "test1", 0, "").await;
+    let (status, reply) = add_link(&app, &Credential::Plain("a".to_string()), "test1", 0, "").await;
     assert_eq!(status, 401);
-    assert_eq!(reply.reason, "API validation failed.");
+    assert_eq!(reply.reason, "Wrong API key.");
 
     let req = test::TestRequest::delete()
         .uri("/api/del/link")

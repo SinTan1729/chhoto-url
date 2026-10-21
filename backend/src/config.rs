@@ -8,6 +8,7 @@ use std::{
     fmt::Display,
     fs,
     path::Path,
+    sync::Arc,
 };
 use url::Url;
 
@@ -29,12 +30,6 @@ impl Display for SlugStyle {
             }
         )
     }
-}
-
-#[derive(Clone)]
-pub(crate) enum HashAlgorithm {
-    Argon2,
-    None,
 }
 
 fn remove_surrounding_quotes(s: &str) -> String {
@@ -125,6 +120,27 @@ fn get_db_location() -> String {
     new_location.to_owned()
 }
 
+#[derive(Clone)]
+pub(crate) enum Credential {
+    Plain(String),
+    Argon2(Arc<argon2::PasswordHash>),
+}
+impl Credential {
+    fn parse(val: String, hash_algorithm: &Option<String>) -> Option<Self> {
+        if hash_algorithm.as_deref() == Some("Argon2") {
+            match argon2::PasswordHash::new(&val) {
+                Ok(hash) => Some(Credential::Argon2(Arc::new(hash))),
+                Err(e) => {
+                    warn!("Invalid Argon2 hash was provided: {e}");
+                    None
+                }
+            }
+        } else {
+            Some(Credential::Plain(val))
+        }
+    }
+}
+
 // Struct for storing config read form env vars that might be accessed more than once
 #[derive(Clone)]
 pub(crate) struct Config {
@@ -144,9 +160,8 @@ pub(crate) struct Config {
     pub(crate) public_mode_expiry_delay: Option<i64>,
     pub(crate) use_temp_redirect: bool,
     pub(crate) allowed_protocols: Vec<String>,
-    pub(crate) password: Option<String>,
-    pub(crate) hash_algorithm: HashAlgorithm,
-    pub(crate) api_key: Option<String>,
+    pub(crate) password: Option<Credential>,
+    pub(crate) api_key: Option<Credential>,
     pub(crate) slug_style: SlugStyle,
     pub(crate) slug_length: usize,
     pub(crate) try_longer_slug: bool,
@@ -190,20 +205,28 @@ pub(crate) fn read() -> Config {
         info!("Frontend is disabled.")
     };
 
-    // If an API key is set, check the security
-    let api_key = read_config_wrapper("CHHOTO_API_KEY", "api_key").ok();
-    if let Some(key) = &api_key {
-        // Determine whether the inputted API key is sufficiently secure
-        if score(&analyze(key)) < 90.0 {
-            warn!(
-                "API key is insecure! Please change it. Current key is: {}. Generated secure key which you may use: {}",
-                key,
-                auth::gen_key()
-            );
-        } else {
-            info!("Secure API key was provided.");
-        }
+    let hash_algorithm = read_config_wrapper("CHHOTO_HASH_ALGORITHM", "hash_algorithm")
+        .ok()
+        .map(|h| h.trim().to_owned());
+    if hash_algorithm.as_deref() == Some("Argon2") {
+        info!("Using Argon2 hashes for password and API key verification.");
+    } else {
+        warn!("Using plaintext for password and API key verification. Argon2 is advised.");
     }
+    // If an API key is set, check the security
+    let api_key = read_config_wrapper("CHHOTO_API_KEY", "api_key")
+        .ok()
+        .inspect(|key| {
+            if score(&analyze(key)) < 90.0 {
+            } else {
+                warn!(
+                    "API key is insecure! Generated secure key which you may use: {}",
+                    auth::gen_key()
+                );
+                info!("Secure API key was provided.");
+            }
+        })
+        .and_then(|s| Credential::parse(s, &hash_algorithm));
 
     let public_mode =
         read_config_wrapper("CHHOTO_PUBLIC_MODE", "public_mode") == Ok(String::from("Enable"));
@@ -247,27 +270,14 @@ pub(crate) fn read() -> Config {
 
     let password = read_config_wrapper("CHHOTO_PASSWORD", "password")
         .ok()
-        .filter(|s| !s.trim().is_empty());
-    if password.is_none() {
-        warn!("No password was provided.")
-    };
-
-    let hash_algorithm = match read_config_wrapper("CHHOTO_HASH_ALGORITHM", "hash_algorithm")
-        .map(|h| h.trim().to_owned())
-    {
-        Ok(hash) if hash == "Argon2" => {
-            if password.is_some() {
-                info!("Using Argon2 hashes for password and API key verification.");
-            }
-            HashAlgorithm::Argon2
-        }
-        _ => {
-            if password.is_some() {
-                warn!("Using plaintext for password and API key verification. Argon2 is advised.");
-            }
-            HashAlgorithm::None
-        }
-    };
+        .filter(|s| !s.trim().is_empty())
+        .map_or_else(
+            || {
+                warn!("No password was provided.");
+                None
+            },
+            |s| Credential::parse(s, &hash_algorithm),
+        );
 
     // If the site_url env variable exists
     let site_url = if let Some(provided_url) = read_config_wrapper("CHHOTO_SITE_URL", "site_url")
@@ -481,7 +491,6 @@ pub(crate) fn read() -> Config {
         use_temp_redirect,
         allowed_protocols,
         password,
-        hash_algorithm,
         api_key,
         slug_style,
         slug_length,

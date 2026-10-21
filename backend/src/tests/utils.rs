@@ -3,13 +3,16 @@
 
 use std::{fmt::Display, rc::Rc};
 
-use actix_http::{Request, StatusCode};
+use actix_http::{
+    Request, StatusCode,
+    header::{HeaderValue, InvalidHeaderValue, TryIntoHeaderValue},
+};
 use actix_service::Service;
 use actix_web::{App, Error, body::to_bytes, dev::ServiceResponse, test, web::Bytes};
 use serde::Deserialize;
 use tempfile::TempDir;
 
-use crate::*;
+use crate::{config::Credential, *};
 
 pub(super) trait BodyTest {
     fn as_str(&self) -> &str;
@@ -18,6 +21,22 @@ pub(super) trait BodyTest {
 impl BodyTest for Bytes {
     fn as_str(&self) -> &str {
         std::str::from_utf8(self).unwrap()
+    }
+}
+
+impl TryIntoHeaderValue for Credential {
+    type Error = InvalidHeaderValue;
+    fn try_into_value(self) -> std::prelude::v1::Result<HeaderValue, Self::Error> {
+        match self {
+            Credential::Plain(s) => HeaderValue::from_str(&s),
+            Credential::Argon2(_) => HeaderValue::from_str("Argon2 cannot be converted to header."),
+        }
+    }
+}
+impl TryIntoHeaderValue for &Credential {
+    type Error = InvalidHeaderValue;
+    fn try_into_value(self) -> std::prelude::v1::Result<HeaderValue, Self::Error> {
+        Credential::try_into_value((*self).clone())
     }
 }
 
@@ -61,11 +80,10 @@ pub(super) fn default_config(test: &str) -> config::Config {
         public_mode_expiry_delay: None,
         use_temp_redirect: false,
         allowed_protocols: Vec::from(["http", "https", "ftp", "magnet"].map(|s| s.to_string())),
-        password: Some(String::from("testpass")),
-        hash_algorithm: config::HashAlgorithm::None,
-        api_key: Some(String::from(
+        password: Some(Credential::Plain(String::from("testpass"))),
+        api_key: Some(Credential::Plain(String::from(
             "Z8FNjh2J2v3yfb0xPDIVA58Pj4D0e2jSERVdoqM5pJCbU2w5tmg3PNioD6GUhaQwHHaDLBNZj0EQE8MS4TLKcUyusa05",
-        )),
+        ))),
         slug_style: config::SlugStyle::Pair,
         slug_length: 8,
         try_longer_slug: false,
@@ -133,7 +151,7 @@ pub(super) async fn add_link<
     S: Display,
 >(
     app: T,
-    api_key: &str,
+    api_key: &Credential,
     shortlink: S,
     expiry_delay: i64,
     notes: &str,
@@ -158,7 +176,7 @@ pub(super) async fn expand<
     S: Display,
 >(
     app: T,
-    api_key: &str,
+    api_key: &Credential,
     shortlink: S,
 ) -> (StatusCode, URLData) {
     let req = test::TestRequest::post()
@@ -176,7 +194,7 @@ pub(super) async fn expand<
 
 pub(super) async fn getall<T: Service<Request, Response = ServiceResponse, Error = Error>>(
     app: T,
-    api_key: &str,
+    api_key: &Credential,
     params: &str,
 ) -> Rc<[URLData]> {
     let req = test::TestRequest::get()
@@ -194,7 +212,7 @@ pub(super) async fn getall<T: Service<Request, Response = ServiceResponse, Error
 
 pub(super) async fn edit_link<T: Service<Request, Response = ServiceResponse, Error = Error>>(
     app: T,
-    api_key: &str,
+    api_key: &Credential,
     shortlink: &str,
     reset_hits: bool,
     expiry_time: Option<i64>,

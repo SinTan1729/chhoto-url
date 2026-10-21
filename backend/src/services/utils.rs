@@ -3,6 +3,7 @@
 
 use actix_files::NamedFile;
 use actix_web::{HttpResponse, Responder, dev::ConnectionInfo, http::StatusCode, web};
+use argon2::{Argon2, PasswordVerifier};
 use log::{debug, error};
 use nanoid::nanoid;
 use openidconnect::{AccessTokenHash, AuthorizationCode, OAuth2TokenResponse, TokenResponse};
@@ -16,10 +17,10 @@ use url::Url;
 
 use crate::{
     AppState,
-    config::{Config, SlugStyle},
+    auth::Auth,
+    config::{Config, Credential, SlugStyle},
     database::{self, add_links},
-    oidc::OidcClient,
-    oidc::OidcData,
+    oidc::{OidcClient, OidcData},
     services::types::{
         ChhotoError::{self, ClientError, ServerError},
         GetReqParams, OidcCallbackParams, OneOrMany,
@@ -523,4 +524,33 @@ pub(crate) async fn error404(data: web::Data<AppState>) -> impl Responder {
     NamedFile::open([&data.frontend_dir, "/static/404.html"].concat())
         .customize()
         .with_status(StatusCode::NOT_FOUND)
+}
+
+// Verify login details
+pub(super) async fn verify_login(
+    password: String,
+    config: Config,
+    auth: Auth,
+) -> Result<(bool, bool), actix_web::Error> {
+    actix_web::web::block(move || {
+        is_authorized(&password, &config, matches!(auth, Auth::NoAuthNeeded))
+    })
+    .await
+    .map_err(actix_web::error::ErrorInternalServerError)
+}
+fn is_authorized(provided_pass: &str, config: &Config, no_auth_needed: bool) -> (bool, bool) {
+    if let Some(password) = &config.password {
+        let authorized = match password {
+            Credential::Argon2(hash) => Argon2::default()
+                .verify_password(provided_pass.as_bytes(), hash.as_ref())
+                .is_ok(),
+            Credential::Plain(pass) => {
+                subtle::ConstantTimeEq::ct_eq(pass.as_bytes(), provided_pass.as_bytes()).into()
+            }
+        };
+
+        (authorized, true)
+    } else {
+        (no_auth_needed, false)
+    }
 }
