@@ -147,9 +147,20 @@ To get the current user role:
 curl -H "X-API-Key: <YOUR_API_KEY>" http://localhost:4567/api/whoami
 ```
 
-The server will reply with `admin` if admin access is granted, `public` if admin access is not granted but public mode is enabled,
-`public-nopass` if public mode is enabled but no password is configured, `nobody-nopass` if no password is configured, and `nobody`
-if no access is granted.
+By default, the server will reply with `text/plain`; `admin` if admin access is granted, `public` if admin access is not granted but
+public mode is enabled, and `nobody` if no access is granted.
+
+If content type `application/json` is requested, the response will look like the following.
+
+```json
+{
+   "admin": true/false,
+   "public_mode_enabled": true/false,
+   "password_enabled": true/false,
+   "oidc_enabled": true/false
+}
+
+```
 
 #### `/api/edit`
 

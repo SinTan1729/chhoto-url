@@ -3,7 +3,8 @@
 #
 # compose.yaml
 # To be used with Docker Compose.
-# Take a look at README for the explanation of the configs.
+# For explanation of the config options, go to:
+#     https://github.com/SinTan1729/chhoto-url/blob/main/docs/INSTALLATION.md
 # The commented out configs are optional.
 
 services:
