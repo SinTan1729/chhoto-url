@@ -19,8 +19,8 @@ use log::{Level, Log, Metadata, Record};
 
 // Constants
 const POLL_INTERVAL: Duration = Duration::from_millis(500);
-const QUEUE_CAPACITY: usize = 4096;
-const AVG_LOG_LINE_BYTES: usize = 128;
+const QUEUE_CAPACITY: usize = 4 * 1024;
+const AVG_LOG_LINE_BYTES: usize = 256;
 
 pub struct AsyncStderrLogger {
     filter: Filter,

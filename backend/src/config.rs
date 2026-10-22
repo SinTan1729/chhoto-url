@@ -183,14 +183,14 @@ pub(crate) fn read() -> Config {
         .map(|s| s.trim().to_owned())
         .filter(|s| !s.is_empty())
         .unwrap_or(String::from("0.0.0.0"));
-    info!("Listening address is set to {listen_address}.");
+    info!("Listening address is set to: {listen_address}");
 
     // Get the port environment variable
     let port = read_config_wrapper("CHHOTO_LISTEN_PORT", "port")
         .unwrap_or(String::from("4567"))
         .parse::<u16>()
         .expect("Supplied port is not an integer");
-    info!("Listening port is set to {port}.");
+    info!("Listening port is set to: {port}");
 
     let cache_control_header =
         read_config_wrapper("CHHOTO_CACHE_CONTROL_HEADER", "cache_control_header")
@@ -217,12 +217,12 @@ pub(crate) fn read() -> Config {
     let api_key = read_config_wrapper("CHHOTO_API_KEY", "api_key")
         .ok()
         .inspect(|key| {
-            if score(&analyze(key)) < 90.0 {
-            } else {
+            if hash_algorithm.is_none() && score(&analyze(key)) < 90.0 {
                 warn!(
                     "API key is insecure! Generated secure key which you may use: {}",
                     auth::gen_key()
                 );
+            } else {
                 info!("Secure API key was provided.");
             }
         })
