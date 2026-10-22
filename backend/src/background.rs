@@ -1,7 +1,8 @@
 // SPDX-FileCopyrightText: 2023-2026 Sayantan Santra <sayantan.santra689@gmail.com>
 // SPDX-License-Identifier: MIT
 
-use log::info;
+use chrono::{Local, Timelike};
+use log::{info, warn};
 use rusqlite::Connection;
 use std::{collections::HashMap, sync::Arc};
 use tokio::{
@@ -60,9 +61,27 @@ pub(crate) fn spawn_cleaner(
         async move {
             info!("Starting database cleanup service, will run once every hour.");
             let mut interval = interval(Duration::from_secs(3600));
+            let mut first_run = true;
             loop {
                 interval.tick().await;
-                database::cleanup(&*writer.lock().await, use_wal_mode, disable_backups);
+                let hour = Local::now().hour();
+                let db = writer.lock().await;
+                database::cleanup(&db, use_wal_mode, first_run);
+                first_run = false;
+                let path = db.path().map(str::to_owned);
+                drop(db);
+                if hour == 3 {
+                    info!("Doing a scheduled daily backup.");
+                    if let Some(db_path) = path {
+                        database::manage_backups(
+                            &db_path,
+                            disable_backups,
+                            database::BackupType::Daily,
+                        );
+                    } else {
+                        warn!("Failed to do daily database backup.");
+                    }
+                }
             }
         }
     })

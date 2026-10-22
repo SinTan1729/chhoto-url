@@ -29,7 +29,7 @@ INSERT INTO urls
 ON CONFLICT(short_url) DO UPDATE 
   SET long_url = :long, hits = 0, expiry_time = :expiry, notes = :notes
   WHERE short_url = :short 
-    AND expiry_time <= :now
+    AND :now >= expiry_time
     AND expiry_time IS NOT NULL";
 
 pub(super) const DELETE_LINK: &str = "DELETE FROM urls WHERE short_url = :short";
@@ -44,8 +44,23 @@ CREATE TABLE urls (
   notes TEXT
 )";
 
-pub(super) const CLEANUP: &str =
-    "DELETE FROM urls WHERE :now >= expiry_time AND expiry_time IS NOT NULL";
+pub(super) const CLEANUP_BATCH: &str = "
+  DELETE FROM urls
+  WHERE id IN (
+    SELECT id
+    FROM urls
+    WHERE :now >= expiry_time
+      AND expiry_time IS NOT NULL
+    LIMIT 500
+)
+";
+pub(super) const CLEANUP_LEFTOVERS: &str = "
+SELECT EXISTS(
+  SELECT 1 FROM urls
+  WHERE :now >= expiry_time
+    AND expiry_time IS NOT NULL
+)
+";
 
 pub(super) const TABLE_LIST: &str = "
 SELECT type, name FROM sqlite_master

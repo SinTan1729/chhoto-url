@@ -1,42 +1,65 @@
 // SPDX-FileCopyrightText: 2023-2026 Sayantan Santra <sayantan.santra689@gmail.com>
 // SPDX-License-Identifier: MIT
 
-use chrono::{Local, Timelike, Utc};
+use chrono::Utc;
 use log::{debug, error, info, warn};
 use rusqlite::{Connection, OpenFlags, named_params};
-use std::{collections::HashSet, fs, path::PathBuf};
+use std::time::Instant;
+use std::{collections::HashSet, fs, path::PathBuf, time::Duration};
 
-use crate::database::queries;
+use crate::database::{self, queries};
 
 // Some constants
 const APPLICATION_ID: i32 = i32::from_be_bytes(*b"chht"); // MUST NEVER BE CHANGED
 const USER_VERSION: u32 = 4; // Should be incremented on change of schema
 
 // Enum for backup types
-enum BackupType {
+pub(crate) enum BackupType {
     Daily,
     Init,
 }
 
 // Clean expired links
-pub(crate) fn cleanup(db: &Connection, use_wal_mode: bool, disable_backups: bool) {
+pub(crate) fn cleanup(db: &Connection, use_wal_mode: bool, no_time_budget: bool) {
     let now = Utc::now().timestamp();
-    debug!("Starting database cleanup.");
 
-    if Local::now().hour() == 3 {
-        info!("Doing a scheduled daily backup.");
-        manage_backups(db, disable_backups, BackupType::Daily);
+    debug!("Starting database cleanup.");
+    let deadline = Instant::now() + Duration::from_millis(500);
+    let mut total_deleted = 0;
+    {
+        let mut statement = db
+            .prepare_cached(queries::CLEANUP_BATCH)
+            .expect("Error preparing SQL statement for cleanup.");
+        while Instant::now() < deadline || no_time_budget {
+            let deleted = statement
+                .execute(named_params! { ":now": now })
+                .expect("Error cleaning expired links.");
+
+            total_deleted += deleted;
+
+            if deleted < 500 {
+                break;
+            }
+        }
     }
 
-    db.prepare_cached(queries::CLEANUP)
-        .expect("Error preparing SQL statement for cleanup.")
-        .execute(named_params! {":now" : now})
-        .inspect(|&u| match u {
-            0 => (),
-            1 => info!("1 expired link was deleted."),
-            _ => info!("{u} expired links were deleted."),
-        })
-        .expect("Error cleaning expired links.");
+    match total_deleted {
+        0 => info!("No expired links were found."),
+        1 => info!("1 expired link was deleted."),
+        n => info!("{n} expired links were deleted."),
+    }
+
+    let leftovers: bool = db
+        .query_row(
+            queries::CLEANUP_LEFTOVERS,
+            named_params! { ":now": now },
+            |row| row.get(0),
+        )
+        .expect("Error checking for expired links.");
+
+    if leftovers {
+        info!("Expired links remain; they will be tried again during a later cleanup.");
+    }
 
     if use_wal_mode {
         db.query_one("PRAGMA wal_checkpoint(RESTART)", (), |row| {
@@ -66,19 +89,15 @@ pub(crate) fn cleanup(db: &Connection, use_wal_mode: bool, disable_backups: bool
 }
 
 // Create backups
-fn manage_backups(db: &Connection, disable_backups: bool, backup_type: BackupType) {
+pub(crate) fn manage_backups(db_link: &str, disable_backups: bool, backup_type: BackupType) {
     if disable_backups {
         return;
     }
 
-    let path = db.path().expect("The database path should exist.");
-
-    let db_path = PathBuf::from(path);
-
+    let db_path = PathBuf::from(db_link);
     let parent = db_path
         .parent()
         .expect("Database should have a parent directory.");
-
     let db_name = db_path
         .file_name()
         .expect("Database should have a file name.")
@@ -104,6 +123,7 @@ fn manage_backups(db: &Connection, disable_backups: bool, backup_type: BackupTyp
 
     let backup_path = |idx: usize| backup_dir.join(format!("{db_name}.{suffix}{idx}"));
 
+    let db = database::open_db(db_link, true);
     if let Err(e) = db.backup("main", backup_path(0).to_string_lossy().as_ref(), None) {
         error!("There was an error while creating the backup: {e}");
         return;
@@ -143,7 +163,11 @@ pub(crate) fn init_db(
     ensure_acid: bool,
     disable_backups: bool,
 ) {
-    manage_backups(db, disable_backups, BackupType::Init);
+    if let Some(db_path) = db.path() {
+        manage_backups(db_path, disable_backups, BackupType::Init);
+    } else {
+        warn!("Failed to do init database backup.");
+    }
 
     info!("Initializing database.");
     let (mut tables, mut indices) = db
