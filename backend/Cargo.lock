@@ -503,6 +503,7 @@ dependencies = [
  "argon2",
  "chrono",
  "env_filter",
+ "hex",
  "log",
  "nanoid",
  "openidconnect",

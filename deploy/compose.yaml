@@ -51,6 +51,7 @@ services:
       # - CHHOTO_CUSTOM_LANDING_DIRECTORY=/custom/dir/location
       # - CHHOTO_CACHE_CONTROL_HEADER=no-cache, private
       # - CHHOTO_FRONTEND_PAGE_SIZE=10
+      # - CHHOTO_SESSION_MASTER_KEY=SECURE_MASTER_KEY
       # - CHHOTO_EXTRA_PROTOCOLS=ftps,obsidian
       # - TZ=America, Chicago
     volumes:

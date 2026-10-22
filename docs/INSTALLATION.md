@@ -123,7 +123,7 @@ for production use.
 Provide a secure API key. It'll be checked at start for security. If the API key is considered weak, a strong API
 key will be generated and printed in the logs, but the weak one will be used for the time being.
 
-Example Linux command for generating a secure API key: `tr -dc A-Za-z0-9 </dev/urandom | head -c 128`.
+Example Linux command for generating a secure API key: `openssl -rand hex 64`.
 
 If no API key is provided, the website will still work, but it'll be a significantly worse experience if you try
 to use Chhoto URL from the CLI.
@@ -291,6 +291,14 @@ mount the directory inside the container. The admin page will then be located at
 
 _Warning: Put anything except the `index.html` file inside some directory, because naked filenames will be treated
 as shortlinks. Also do not use `api`, `admin`, and `oidc` for directory names, since those are reserved paths._
+
+### `CHHOTO_SESSION_MASTER_KEY`
+
+By default, the session key for cookies validation is regenerated at start-up, thus requiring all users to reauthenticate.
+A master key can be provided here to persist those sessions. It must be at least 64 bytes, hex encoded, and cryptographically
+secure.
+
+Example Linux command for generating a secure session master key: `openssl -rand hex 64`.
 
 ### `CHHOTO_CACHE_CONTROL_HEADER`
 

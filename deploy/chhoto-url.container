@@ -47,6 +47,7 @@ Environment=CHHOTO_SLUG_STYLE=Pair
 #Environment=CHHOTO_PUBLIC_MODE=Disable 
 #Environment=CHHOTO_PUBLIC_MODE_EXPIRY_DELAY=3600 
 #Environment=CHHOTO_EXTRA_PROTOCOLS=ftps,obsidian
+#Environment=CHHOTO_SESSION_MASTER_KEY=SECURE_MASTER_KEY
 #Environment=CHHOTO_DISABLE_FRONTEND=False 
 #Environment=CHHOTO_CUSTOM_LANDING_DIRECTORY=/custom/dir/location 
 #Environment=CHHOTO_CACHE_CONTROL_HEADER=no-cache,private
