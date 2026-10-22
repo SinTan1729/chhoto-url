@@ -99,7 +99,7 @@ pub(crate) fn is_custom_landing_directory_valid(loc: &str) -> bool {
             let path = entry.ok()?.path();
             let name = path.file_name()?.to_str()?;
 
-            if path.is_dir() && ["oidc", "api"].contains(&name) {
+            if path.is_dir() && ["oidc", "api", "admin"].contains(&name) {
                 warn!("Forbidden directory: {}", name);
                 return Some(false);
             }

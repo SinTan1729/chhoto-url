@@ -290,7 +290,7 @@ directory, and set this to the path of the directory. If using docker, you need 
 mount the directory inside the container. The admin page will then be located at `/admin/manage`.
 
 _Warning: Put anything except the `index.html` file inside some directory, because naked filenames will be treated
-as shortlinks. Also do not use `api` and `oidc` for directory names, since those are reserved paths._
+as shortlinks. Also do not use `api`, `admin`, and `oidc` for directory names, since those are reserved paths._
 
 ### `CHHOTO_CACHE_CONTROL_HEADER`
 
