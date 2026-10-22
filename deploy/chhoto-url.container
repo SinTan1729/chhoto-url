@@ -28,7 +28,13 @@ Environment=CHHOTO_SQLITE_USE_WAL_MODE=True
 #Environment=CHHOTO_CUSTOM_SITE_TITLE="Custom Title"
 #Environment=CHHOTO_SITE_URL=https://www.example.com 
 #Environment=CHHOTO_HASH_ALGORITHM=Argon2 
+#Change the password before you run the container
 Environment=CHHOTO_PASSWORD=TopSecretPass 
+Environment=CHHOTO_EXIT_ON_NO_AUTH=True
+# Environment=CHHOTO_OIDC_ISSUER_URL=https://sso.example.com
+# Environment=CHHOTO_OIDC_CLIENT_ID=some-random-client-id
+# Environment=CHHOTO_OIDC_CUSTOM_CLAIM=claim=value
+# Environment=CHHOTO_OIDC_EXTRA_ORIGINS=https://example1.com,https://example2.com
 Environment=CHHOTO_LISTEN_PORT=4567
 #Environment=CHHOTO_LISTEN_ADDRESS=4567
 #Environment=CHHOTO_API_KEY=SECURE_API_KEY 
@@ -39,6 +45,7 @@ Environment=CHHOTO_SLUG_STYLE=Pair
 #Environment=CHHOTO_ALLOW_CAPITAL_LETTERS=False 
 #Environment=CHHOTO_PUBLIC_MODE=Disable 
 #Environment=CHHOTO_PUBLIC_MODE_EXPIRY_DELAY=3600 
+#Environment=CHHOTO_EXTRA_PROTOCOLS=ftps,obsidian
 #Environment=CHHOTO_DISABLE_FRONTEND=False 
 #Environment=CHHOTO_CUSTOM_LANDING_DIRECTORY=/custom/dir/location 
 #Environment=CHHOTO_CACHE_CONTROL_HEADER=no-cache,private
@@ -49,7 +56,7 @@ Environment=CHHOTO_SLUG_STYLE=Pair
 Volume=data:/data
 
 # Health check
-# Enable this if using the scratch images.
+# Disable this if using the scratch images.
 HealthCmd=CMD-SHELL wget -qO- http://127.0.0.1:1729/healthz || exit 1
 HealthInterval=60s
 HealthRetries=3

@@ -1,5 +1,10 @@
 # SPDX-FileCopyrightText: 2023-2026 Sayantan Santra <sayantan.santra689@gmail.com>
 # SPDX-License-Identifier: MIT
+#
+# compose.yaml
+# To be used with Docker Compose.
+# Take a look at README for the explanation of the configs.
+# The commented out configs are optional.
 
 services:
   chhoto-url:
@@ -17,98 +22,36 @@ services:
     # cap_drop:
     #   - ALL
     ports:
-      # If you changed the "CHHOTO_LISTEN_PORT" environment variable, adjust accordingly
-      # The number AFTER the colon should match the "CHHOTO_LISTEN_PORT" variable and the number
-      # before the colon is the port where you would access the container from outside.
       - 4567:4567
     environment:
-      # Change if you want to mount the database somewhere else.
-      # In this case, you can get rid of the db volume below
-      # and instead do a mount manually by specifying the location.
       - CHHOTO_DB_URL=/data/urls.sqlite
-      # Uncomment the next line to enable WAL mode. It's highly recommended.
-      # Make sure that you mount a directory instead of a bare file
-      # since that might have a (low, but non-zero) possibility of
-      # corrupting your db since we use WAL journaling mode
-      # (In fact, I'd suggest that you do that so that you can keep
-      # a copy of your database.)
       - CHHOTO_SQLITE_USE_WAL_MODE=True
-      # If you'd like to disable ACID compliance, uncomment the next line.
-      # Note that there are risks. Look at the README for more.
-      # - CHHOTO_SQLITE_ENSURE_ACID=False
-      # Set this to True to disable all backups. Only do it if you know what you're doing.
       # - CHHOTO_DISABLE_BACKUPS=False
-
-      # Change this to your public-facing URL. This is optional, as the link will work at any URL as
-      # long as Chhoto URL is accessible there. This mostly enhances the frontend experience, as copying to clipboard,
-      # QR code generation will use it if available.
-      # Do not surround it using quotes. If you have any unicode characters, please use the punycode. It'll be
-      # automatically converted to the correct unicode in the frontend.
       # - CHHOTO_SITE_URL=https://www.example.com
-
-      # If you want to provided hashed password and API Key, uncomment the next line. Read the README
-      # for instructions for the hashing. Make sure to escape $ by $$.
       # - CHHOTO_HASH_ALGORITHM=Argon2
-
-      # Change this if you are want to run Chhoto URL on a port which is not 4567, bind to something other
-      # than 0.0.0.0 for the backend. Do not change this unless you know what you're doing.
       # - CHHOTO_LISTEN_PORT=4567
       # - CHHOTO_LISTEN_ADDRESS=0.0.0.0
-
-      - CHHOTO_PASSWORD=TopSecretPass
-
-      # This needs to be set in order to use programs that use the JSON interface of Chhoto URL.
-      # You will get a warning if this is insecure, and a generated value will be output
-      # You may use that value if you can't think of a secure key
+      - CHHOTO_PASSWORD=TopSecretPass # Change it before you run the container
+      - CHHOTO_EXIT_ON_NO_AUTH=True
+      # - CHHOTO_OIDC_ISSUER_URL=https://sso.example.com
+      # - CHHOTO_OIDC_CLIENT_ID=some-random-client-id
+      # - CHHOTO_OIDC_CUSTOM_CLAIM=claim=value
+      # - CHHOTO_OIDC_EXTRA_ORIGINS=https://example1.com,https://example2.com
       # - CHHOTO_API_KEY=SECURE_API_KEY
-
-      # Pass the redirect method, if needed. TEMPORARY and PERMANENT
-      # are accepted values, defaults to PERMANENT.
       - CHHOTO_REDIRECT_METHOD=TEMPORARY
-
-      # By default, the auto-generated pairs are adjective-name pairs.
-      # If you want UIDs, please change slug_style to UID.
-      # Supported values for slug_style are Pair and UID.
-      # The length is 8 by default, and a minimum of 4 is allowed.
       - CHHOTO_SLUG_STYLE=Pair
       # - CHHOTO_SLUG_LENGTH=8
-      # To retry (once) with a longer UID upon collision, change the following to True.
       # - CHHOTO_TRY_LONGER_SLUG=False
-      # If you want to use capital letters in the shortlink, change the following to
-      # True. This will also allow capital letters in UID slugs, if it is enabled.
       # - CHHOTO_ALLOW_CAPITAL_LETTERS=False
-
-      # In case you want to provide public access to adding links (and not
-      # delete, or listing), change the following option to Enable.
       # - CHHOTO_PUBLIC_MODE=Disable
-      # Additionally, it's possible to force an expiry delay in public mode.
-      # The user can still choose a shorter expiry delay. The input must be in seconds.
-      # It defaults to 0 i.e. no expiry.
       # - CHHOTO_PUBLIC_MODE_EXPIRY_DELAY=3600
-      # In case you want to completely disable the frontend, change the following
-      # to True.
       # - CHHOTO_DISABLE_FRONTEND=False
-      # You can use a custom site title by using the following. "- Poweder by Chhoto URL" will
-      # automatically added in the end.
       # - CHHOTO_CUSTOM_SITE_TITLE=Custom Title
-      # If you want to serve a custom landing page, put all your site related files, along with an
-      # index.html file in a directory, and set the following to the path of the directory. Remember to first
-      # mount the directory inside the container. The admin page will then be located at /admin/manage.
       # - CHHOTO_CUSTOM_LANDING_DIRECTORY=/custom/dir/location
-
-      # By default, the server sends no Cache-Control headers. You can supply a
-      # comma separated list of valid header as per RFC 7234 §5.2 to send those
-      # headers instead.
       # - CHHOTO_CACHE_CONTROL_HEADER=no-cache, private
-      # By default, the frontend paginates the shortlinks in pages of size 10. You can use the following to
-      # customize that.
       # - CHHOTO_FRONTEND_PAGE_SIZE=10
-      # Use this to allow extra protocols for longlinks. By default, only `http`, `https`, `ftp`, and `magnet` links are allowed.
-      # It should be a comma separated list. Malformed protocols will be skipped.
       # - CHHOTO_EXTRA_PROTOCOLS=ftps,obsidian
-
-      # You may set the TZ variable for timezone in logging, but it will only work in the alpine builds
-      # TZ=America, Chicago
+      # - TZ=America, Chicago
     volumes:
       - data:/data
     # Disable this if using the scratch images.

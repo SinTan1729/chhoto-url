@@ -26,7 +26,7 @@ API key which may be used.
 
 Example Linux command for generating a secure API key: `tr -dc A-Za-z0-9 < /dev/urandom | head -c 128`
 
-For each response, the response code will be `200`, `401`, `400`, `500`, or `404`, depending on the context. The routes are as follows.
+For each response, the response code will be `200`, `401`, `400`, `403`, `404`, or `500`, depending on the context. The routes are as follows.
 
 ## Note
 
@@ -263,7 +263,7 @@ Where `<shortlink>` is name of the shortened link you would like to delete. For 
 
 The server will output when the instance is accessed over API, when an incorrect API key is received, etc.
 
-### Cookie validation
+### Cookie validation `/api/login`
 
 If you have set up a password, first do the following to get an authentication cookie and store it in a file.
 
@@ -290,16 +290,22 @@ curl -X POST -H "Content-Type: application/json" -d '{"password":"<your-password
 For any subsequent request, please add `-b cookie.txt` to provide authentication. Unless specified, all API methods should work
 with cookies.
 
+### OIDC validation `/api/oidc`
+
+If you have OIDC set up, going to this path will initiate OIDC login. This is only meant for interactive browser usage.
+It might be possible to use it from CLI using some tooling, but no support will be provided.
+
 ## Disable authentication
 
-If you do not define a [`CHHOTO_PASSWORD`](./INSTALLATION.md#chhoto_password) environment variable when starting the docker
+If you do not define neither a password, nor an OIDC authentication endpoint when starting the docker
 image, authentication will be disabled.
 
-This if not recommended in actual use however, as it will allow anyone to create new links and delete
+This if not recommended in real-world usage, as it will allow anyone to create new links and delete
 old ones. This might not seem like a bad idea, until you have hundreds of links pointing to illegal content.
 Since there are no logs, it's impossible to prove that those links aren't created by you.
 
-## Healthcheck
+## Healthcheck `/api/healthz`
 
 There's a special unauthenticated healthcheck route listening to `127.0.0.1:1729/healthz` (so not accessible by the public).
-When accessed, it would either return `healthy` or `unhealthy`. Look at the [deployment examples](../deploy) to see how to use it for healthchecks.
+When accessed, it would either return `healthy` or `unhealthy`. Look at the [deployment examples](../deploy) to see
+how to use it for healthchecks.

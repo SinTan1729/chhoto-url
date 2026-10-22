@@ -113,6 +113,11 @@ use it if available.
 Do not surround it using quotes. If you have any unicode characters, please use the punycode. It'll be automatically
 converted to the correct unicode in the frontend.
 
+### `CHHOTO_EXIT_ON_NO_AUTH`
+
+Change this to `True` to exit Chhoto URL when both password and OIDC authentication are disabled. It's recommended
+for production use.
+
 ### `CHHOTO_API_KEY`
 
 Provide a secure API key. It'll be checked at start for security. If the API key is considered weak, a strong API
@@ -122,6 +127,25 @@ Example Linux command for generating a secure API key: `tr -dc A-Za-z0-9 </dev/u
 
 If no API key is provided, the website will still work, but it'll be a significantly worse experience if you try
 to use Chhoto URL from the CLI.
+
+### `CHHOTO_OIDC_ISSUER_URL`
+
+Provide the Issuer URL for OIDC authentication provider (e.g. Authelia, Authentik, Pocket ID etc.) to enable OIDC
+authentication. A Client ID and also needs to be provided. A [Site URL](#chhoto_site_url) also needs to be provided for this
+to work.
+
+### `CHHOTO_OIDC_CLIENT_ID`
+
+Provide the Client ID for OIDC authentication.
+
+### `CHHOTO_OIDC_CUSTOM_CLAIM`
+
+An optional custom claim to verify with the OIDC provider. It must look like `"claim=value` e.g. `role=admin` or `groups=shortener.`
+
+### `CHHOTO_OIDC_EXTRA_ORIGINS`
+
+If you need origins other than the one defined as the Site URL to work with OIDC, add a `comma` or `space` separated list of
+them here.
 
 <!-- prettier-ignore-start -->
 <a id="chhoto_sqlite_use_wal_mode"></a>
@@ -250,7 +274,7 @@ It will have no effect for a logged in user i.e. the admin.
 
 ### `CHHOTO_DISABLE_FRONTEND`
 
-Set this to `True` to completely disable the frontend.
+Set this to `True` to completely disable the frontend. This will also disable password and OIDC based login.
 
 ### `CHHOTO_CUSTOM_SITE_TITLE`
 
@@ -266,7 +290,7 @@ directory, and set this to the path of the directory. If using docker, you need 
 mount the directory inside the container. The admin page will then be located at `/admin/manage`.
 
 _Warning: Put anything except the `index.html` file inside some directory, because naked filenames will be treated
-as shortlinks._
+as shortlinks. Also do not use `api` and `oidc` for directory names, since those are reserved paths._
 
 ### `CHHOTO_CACHE_CONTROL_HEADER`
 
