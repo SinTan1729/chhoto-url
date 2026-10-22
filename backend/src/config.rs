@@ -12,7 +12,7 @@ use std::{
 };
 use url::Url;
 
-use crate::auth;
+use crate::{auth, utils};
 
 #[derive(Clone)]
 pub(crate) enum SlugStyle {
@@ -461,6 +461,7 @@ pub(crate) fn read() -> Config {
     .ok()
     .map(|s| s.trim().to_owned())
     .filter(|s| !s.is_empty())
+    .filter(|s| utils::is_custom_landing_directory_valid(s))
     .inspect(|s| {
         info!("Custom landing directory is set to {s}.");
         info!("The dashboard will be available at /admin/manage/");

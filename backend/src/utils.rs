@@ -1,6 +1,7 @@
 // SPDX-FileCopyrightText: 2023-2026 Sayantan Santra <sayantan.santra689@gmail.com>
 // SPDX-License-Identifier: MIT
 
+use log::warn;
 use regex::Regex;
 use std::{fs, io, path::Path};
 
@@ -70,35 +71,6 @@ fn change_title(title: &str, src: &str, dst: &str) -> io::Result<()> {
     Ok(())
 }
 
-// pub(crate) fn init_logger() {
-//     env_logger::builder()
-//         .parse_filters(
-//             std::env::var("RUST_LOG")
-//                 .ok()
-//                 .filter(|s| !s.is_empty())
-//                 .unwrap_or("warn,chhoto_url=info,actix_session::middleware=error".to_owned())
-//                 .as_str(),
-//         )
-//         .format(|buf, record| {
-//             use chrono::Local;
-//             use env_logger::fmt::style::{AnsiColor, Style};
-//             use std::io::Write;
-//
-//             let subtle = Style::new().fg_color(Some(AnsiColor::BrightBlack.into()));
-//             let level_style = buf.default_level_style(record.level());
-//
-//             writeln!(
-//                 buf,
-//                 "{subtle}[{subtle:#}{} {level_style}{:<6}{level_style:#}{}{subtle}]{subtle:#} {}",
-//                 Local::now().format("%Y-%m-%d %H:%M:%S%Z"),
-//                 record.level(),
-//                 record.module_path().unwrap_or_default(),
-//                 record.args()
-//             )
-//         })
-//         .init();
-// }
-
 pub(crate) fn get_frontend_location() -> (String, String) {
     let (src, dst) = if Path::new("./frontend/base/index.html").is_file() {
         ("./frontend/base", "./frontend/final")
@@ -119,4 +91,25 @@ pub(crate) fn apply_custom_title(title: &Option<String>) -> io::Result<String> {
     change_title(title, &src, &dst)?;
 
     Ok(dst.to_string())
+}
+
+pub(crate) fn is_custom_landing_directory_valid(loc: &str) -> bool {
+    let result: Option<bool> = (|| {
+        fs::read_dir(loc).ok()?.try_fold(true, |_, entry| {
+            let path = entry.ok()?.path();
+            let name = path.file_name()?.to_str()?;
+
+            if path.is_dir() && ["oidc", "api"].contains(&name) {
+                warn!("Forbidden directory: {}", name);
+                return Some(false);
+            }
+            if path.is_file() && name != "index.html" {
+                warn!("Forbidden file: {}", name);
+                return Some(false);
+            }
+            Some(true)
+        })
+    })();
+
+    result.unwrap_or(false)
 }
