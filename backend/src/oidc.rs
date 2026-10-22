@@ -67,10 +67,7 @@ pub(crate) type OidcClient<
 >;
 
 pub async fn create_oidc_client(config: &Config) -> Option<(reqwest::Client, OidcClient)> {
-    let Some(issuer_url) = config.oidc_issuer_url.clone() else {
-        warn!("OIDC Issuer URL must be non empty.");
-        return None;
-    };
+    let issuer_url = config.oidc_issuer_url.clone()?;
     let Some(client_id) = config.oidc_client_id.clone() else {
         warn!("OIDC Client ID must be non empty.");
         return None;

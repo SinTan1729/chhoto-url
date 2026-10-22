@@ -48,17 +48,16 @@ static LOGGER: Once = Once::new();
 
 #[actix_web::main]
 async fn main() -> Result<()> {
-    // Generate session key in runtime so that restart invalidates older logins
-    let secret_key = Key::generate();
-    logging::init();
-
-    println!("----------------------------------------------------------------------");
-    println!(
+    eprintln!("----------------------------------------------------------------------");
+    eprintln!(
         "Starting Chhoto URL Server v{}",
         services::utils::get_version()
     );
-    println!("Source: https://github.com/SinTan1729/chhoto-url");
-    println!("----------------------------------------------------------------------");
+    eprintln!("Source: https://github.com/SinTan1729/chhoto-url");
+    eprintln!("----------------------------------------------------------------------");
+
+    // Generate session key in runtime so that restart invalidates older logins
+    logging::init();
 
     // Read config from env vars
     let conf = config::read();
@@ -106,6 +105,7 @@ async fn main() -> Result<()> {
         None
     };
 
+    let secret_key = Key::generate();
     let port = conf.port;
     let addr = conf.listen_address.clone();
     let db_location_for_health = conf.db_location.clone();
