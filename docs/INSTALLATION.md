@@ -314,9 +314,9 @@ separated list e.g. `ftps,obsidian`. Malformed protocols will be skipped.
 
 It controls the level of logging.
 
-Logging is done using the `env_logger` crate. No personal information of the end user is ever logged, nor will it ever supported. The
-logging level can be controlled using the [`RUST_LOG`](https://docs.rs/env_logger/latest/env_logger/#enabling-logging) variable. By default,
-the value is set to the following.
+Logging is done using a bespoke async logger. No personal information of the end user is ever logged, nor will it ever supported. The
+logging level can be controlled using the [`RUST_LOG`](https://docs.rs/env_logger/latest/env_logger/#enabling-logging) variable. It uses
+the same specification as `env_logger`. By default, the value is set to the following.
 
 ```
 warn,chhoto_url=info,actix_session::middleware=error
