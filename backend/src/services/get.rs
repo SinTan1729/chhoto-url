@@ -184,10 +184,7 @@ pub(crate) async fn oidc_redirect(
         );
     }
 
-    let (origin, callback) = derive_origin_info(
-        &req.connection_info(),
-        config.custom_landing_directory.is_some(),
-    );
+    let (origin, callback) = derive_origin_info(&req.connection_info());
     let Some(url) = RedirectUrl::new(callback)
         .ok()
         .filter(|_| config.oidc_allowed_origins.contains(&origin))
@@ -241,10 +238,7 @@ pub(crate) async fn oidc_callback(
     session: actix_session::Session,
 ) -> impl Responder {
     let config = &data.config;
-    let (origin, callback) = derive_origin_info(
-        &req.connection_info(),
-        config.custom_landing_directory.is_some(),
-    );
+    let (mut origin, callback) = derive_origin_info(&req.connection_info());
     if config.oidc_issuer_url.is_none() {
         return Either::Left(
             HttpResponse::Forbidden()
@@ -316,6 +310,9 @@ pub(crate) async fn oidc_callback(
     };
 
     info!("Successful OIDC login.");
+    if config.custom_landing_directory.is_some() {
+        origin.push_str("/admin/manage");
+    }
     Either::Right(oidc_redirect_once(&origin))
 }
 
