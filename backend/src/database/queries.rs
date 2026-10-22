@@ -52,15 +52,13 @@ pub(super) const CLEANUP_BATCH: &str = "
     WHERE :now >= expiry_time
       AND expiry_time IS NOT NULL
     LIMIT 500
-)
-";
+)";
 pub(super) const CLEANUP_LEFTOVERS: &str = "
 SELECT EXISTS(
   SELECT 1 FROM urls
   WHERE :now >= expiry_time
     AND expiry_time IS NOT NULL
-)
-";
+)";
 
 pub(super) const TABLE_LIST: &str = "
 SELECT type, name FROM sqlite_master

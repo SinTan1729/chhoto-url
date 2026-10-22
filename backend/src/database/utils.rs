@@ -20,16 +20,21 @@ pub(crate) enum BackupType {
 }
 
 // Clean expired links
-pub(crate) fn cleanup(db: &Connection, use_wal_mode: bool, no_time_budget: bool) {
+pub(crate) fn cleanup(db: &mut Connection, use_wal_mode: bool, no_time_budget: bool) {
     let now = Utc::now().timestamp();
 
     debug!("Starting database cleanup.");
     let deadline = Instant::now() + Duration::from_millis(500);
     let mut total_deleted = 0;
+    let Ok(tx) = db.transaction() else {
+        warn!("Error opening SQL transaction");
+        return;
+    };
     {
-        let mut statement = db
-            .prepare_cached(queries::CLEANUP_BATCH)
-            .expect("Error preparing SQL statement for cleanup.");
+        let Ok(mut statement) = tx.prepare_cached(queries::CLEANUP_BATCH) else {
+            warn!("Error preparing SQL statement for cleanup.");
+            return;
+        };
         while Instant::now() < deadline || no_time_budget {
             let deleted = statement
                 .execute(named_params! { ":now": now })
@@ -42,6 +47,10 @@ pub(crate) fn cleanup(db: &Connection, use_wal_mode: bool, no_time_budget: bool)
             }
         }
     }
+    if tx.commit().is_err() {
+        warn!("Error committinng transaction for cleanup");
+        return;
+    };
 
     match total_deleted {
         0 => info!("No expired links were found."),
@@ -49,41 +58,49 @@ pub(crate) fn cleanup(db: &Connection, use_wal_mode: bool, no_time_budget: bool)
         n => info!("{n} expired links were deleted."),
     }
 
-    let leftovers: bool = db
-        .query_row(
-            queries::CLEANUP_LEFTOVERS,
-            named_params! { ":now": now },
-            |row| row.get(0),
-        )
-        .expect("Error checking for expired links.");
+    let Ok(leftovers) = db.query_row(
+        queries::CLEANUP_LEFTOVERS,
+        named_params! { ":now": now },
+        |row| row.get(0),
+    ) else {
+        warn!("Error checking for expired links.");
+        return;
+    };
 
     if leftovers {
         info!("Expired links remain; they will be tried again during a later cleanup.");
     }
 
-    if use_wal_mode {
-        db.query_one("PRAGMA wal_checkpoint(RESTART)", (), |row| {
-            row.get::<usize, isize>(1)
-        })
-        .inspect_err(|e| warn!("Error while creating checkpoint: {e}"))
-        .ok()
-        .filter(|&v| v != -1)
-        .expect("Unable to create WAL checkpoint.");
+    if use_wal_mode
+        && db
+            .query_one("PRAGMA wal_checkpoint(RESTART)", (), |row| {
+                row.get::<usize, isize>(1)
+            })
+            .inspect_err(|e| warn!("Error while creating checkpoint: {e}"))
+            .ok()
+            .filter(|&v| v != -1)
+            .is_none()
+    {
+        warn!("Unable to create WAL checkpoint.");
+        return;
     }
-    let freelist_count: i64 = db
-        .query_one("PRAGMA freelist_count", (), |r| r.get(0))
-        .expect("failed to get freelist_count");
+    let Ok(freelist_count) = db.query_one("PRAGMA freelist_count", (), |r| r.get::<usize, i64>(0))
+    else {
+        warn!("Failed to get freelist_count");
+        return;
+    };
 
     // Roughly 20 MB with 4 KiB pages
-    if freelist_count > 5000 {
-        db.execute("VACUUM", ()).expect("failed to vacuum database");
+    if freelist_count > 5000 && db.execute("VACUUM", ()).is_err() {
+        warn!("failed to vacuum database");
+        return;
     }
     let link_count: i64 = db
         .query_one("SELECT COUNT(id) FROM urls", (), |row| row.get(0))
         .unwrap_or_default();
-    if link_count > 2000 {
-        db.execute("PRAGMA optimize", ())
-            .expect("Unable to optimize database.");
+    if link_count > 2000 && db.execute("PRAGMA optimize", ()).is_err() {
+        warn!("Unable to optimize database.");
+    } else {
         debug!("Optimized database.");
     }
 }

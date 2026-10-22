@@ -65,8 +65,8 @@ pub(crate) fn spawn_cleaner(
             loop {
                 interval.tick().await;
                 let hour = Local::now().hour();
-                let db = writer.lock().await;
-                database::cleanup(&db, use_wal_mode, first_run);
+                let mut db = writer.lock().await;
+                database::cleanup(&mut db, use_wal_mode, first_run);
                 first_run = false;
                 let path = db.path().map(str::to_owned);
                 drop(db);
