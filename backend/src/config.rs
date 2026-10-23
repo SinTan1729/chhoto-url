@@ -208,11 +208,6 @@ pub(crate) fn read() -> Config {
     let hash_algorithm = read_config_wrapper("CHHOTO_HASH_ALGORITHM", "hash_algorithm")
         .ok()
         .map(|h| h.trim().to_owned());
-    if hash_algorithm.as_deref() == Some("Argon2") {
-        info!("Using Argon2 hashes for password and API key verification.");
-    } else {
-        warn!("Using plaintext for password and API key verification. Argon2 is advised.");
-    }
     // If an API key is set, check the security
     let api_key = read_config_wrapper("CHHOTO_API_KEY", "api_key")
         .ok()
@@ -279,6 +274,13 @@ pub(crate) fn read() -> Config {
             |s| Credential::parse(s, &hash_algorithm),
         );
 
+    if password.is_some() || api_key.is_some() {
+        if hash_algorithm.as_deref() == Some("Argon2") {
+            info!("Using Argon2 hashes for password and API key verification.");
+        } else {
+            warn!("Using plaintext for password and API key verification. Argon2 is advised.");
+        }
+    }
     // If the site_url env variable exists
     let site_url = if let Some(provided_url) = read_config_wrapper("CHHOTO_SITE_URL", "site_url")
         .ok()
