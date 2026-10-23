@@ -140,7 +140,7 @@ pub(super) async fn create_app(
                 .service(services::edit_link)
                 .service(services::delete_link)
                 .service(services::whoami)
-                .service(services::expand)
+                .service(services::expand_legacy)
                 .service(services::oidc_redirect),
         )
         .await,

@@ -4,27 +4,22 @@
 use std::rc::Rc;
 
 use actix_session::Session;
-use actix_web::{
-    HttpMessage, HttpRequest, HttpResponse, post,
-    web::{self},
-};
-use log::{debug, error, info, warn};
+use actix_web::{HttpMessage, HttpRequest, HttpResponse, post, web};
+use log::{error, info, warn};
 
 use crate::{
     AppState,
     auth::{self, Auth},
-    database,
     services::{
         types::{
             AddLinkResponse,
             ChhotoError::{self, ClientError, ServerError},
-            CreatedURL, JSONResponse, LinkInfo, LoginReq,
+            CreatedURL, JSONResponse, LoginReq,
         },
         utils,
     },
 };
 
-const SERVER_ERROR_RES: &str = "Something went wrong when adding the link.";
 // Add new links
 #[post("/api/new")]
 pub(crate) async fn add_links(
@@ -33,6 +28,7 @@ pub(crate) async fn add_links(
     auth: Auth,
     data: web::Data<AppState>,
 ) -> HttpResponse {
+    const SERVER_ERROR_RES: &str = "Something went wrong when adding the link.";
     let config = &data.config;
     let cookie_response = async |public_mode| {
         let result = utils::add_links_helper(
@@ -140,51 +136,14 @@ pub(crate) async fn add_links(
     }
 }
 
-// Get information about a single shortlink
+// Deprecated POST method for /api/expand, will be removed in a future release
 #[post("/api/expand")]
-pub(crate) async fn expand(req: String, auth: Auth, data: web::Data<AppState>) -> HttpResponse {
-    match auth {
-        Auth::ValidAPIKey => match database::find_url(&req, &data.reader) {
-            Ok(chunks) => {
-                let body = LinkInfo {
-                    success: true,
-                    error: false,
-                    longurl: chunks.longlink,
-                    hits: chunks.hits,
-                    expiry_time: chunks.expiry_time,
-                    notes: chunks.notes,
-                };
-                debug!("Expanded link {}", req);
-                HttpResponse::Ok().json(body)
-            }
-            Err(ServerError) => {
-                let body = JSONResponse {
-                    success: false,
-                    error: true,
-                    reason: SERVER_ERROR_RES.to_owned(),
-                };
-                HttpResponse::BadRequest().json(body)
-            }
-            Err(ClientError { reason }) => {
-                let body = JSONResponse {
-                    success: false,
-                    error: true,
-                    reason,
-                };
-                HttpResponse::BadRequest().json(body)
-            }
-        },
-        Auth::ValidSession | Auth::NoAuthNeeded => {
-            HttpResponse::Unauthorized().json(JSONResponse {
-                success: false,
-                error: true,
-                reason: "This route needs API auth.".to_owned(),
-            })
-        }
-        Auth::None { result } | Auth::InvalidAPIKey { result } => {
-            HttpResponse::Unauthorized().json(result)
-        }
-    }
+pub(crate) async fn expand_legacy(
+    req: String,
+    auth: Auth,
+    data: web::Data<AppState>,
+) -> HttpResponse {
+    crate::services::expand_helper(req, auth, data).await
 }
 
 // Handle login

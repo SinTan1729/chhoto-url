@@ -180,6 +180,7 @@ async fn main() -> Result<()> {
             .service(services::login)
             .service(services::logout)
             .service(services::expand)
+            .service(services::expand_legacy)
             .service(services::oidc_redirect)
             .service(services::oidc_callback)
             .service(services::whoami);
