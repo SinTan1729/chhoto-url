@@ -34,7 +34,7 @@ Some of the requests/responses use `shorturl` and `longurl`, while some use `sho
 foresight while developing the initial API. I don't want to change it since it might break compatibility, and the issue isn't big enough to
 make that worth it. So please be careful if you use the API.
 
-#### `/api/new`
+#### `POST /api/new`
 
 To add a link:
 
@@ -106,7 +106,7 @@ result per input object (in order), each in one of the formats shown above.
 Except for malformed requests or internal server errors, the HTTP status code is always `200`. Clients must inspect the `success` field of
 each response object to determine whether the operation succeeded.
 
-#### `/api/getconfig`
+#### `GET /api/getconfig`
 
 To get the config for the backend:
 
@@ -139,7 +139,7 @@ The server will reply in the following format.
 }
 ```
 
-#### `/api/whoami`
+#### `GET /api/whoami`
 
 To get the current user role:
 
@@ -162,7 +162,7 @@ If content type `application/json` is requested, the response will look like the
 
 ```
 
-#### `/api/edit`
+#### `PUT /api/edit`
 
 To edit an existing short link:
 
@@ -191,12 +191,12 @@ The server will reply in the following format.
 }
 ```
 
-#### `/api/expand`
+#### `QUERY /api/expand`
 
 To get information about a single short link:
 
 ```bash
-curl -H "X-API-Key: <YOUR_API_KEY>" \
+curl -X QUERY -H "X-API-Key: <YOUR_API_KEY>" \
 -d '<shortlink>' http://localhost:4567/api/expand
 ```
 
@@ -225,7 +225,7 @@ Or,
 
 (This route is not accessible using cookie validation.)
 
-#### `/api/all?{params}`
+#### `GET /api/all?{params}`
 
 To get a list of all the currently available links:
 
@@ -261,7 +261,7 @@ A successful reply would be an array and look like the following.
 ]
 ```
 
-#### `/api/del/{shortlink}`
+#### `DELETE /api/del/{shortlink}`
 
 To delete a link:
 
@@ -274,7 +274,7 @@ Where `<shortlink>` is name of the shortened link you would like to delete. For 
 
 The server will output when the instance is accessed over API, when an incorrect API key is received, etc.
 
-### Cookie validation `/api/login`
+### Cookie validation `POST /api/login`
 
 If you have set up a password, first do the following to get an authentication cookie and store it in a file.
 
@@ -301,7 +301,7 @@ curl -X POST -H "Content-Type: application/json" -d '{"password":"<your-password
 For any subsequent request, please add `-b cookie.txt` to provide authentication. Unless specified, all API methods should work
 with cookies.
 
-### OIDC validation `/api/oidc`
+### OIDC validation `GET /api/oidc`
 
 If you have OIDC set up, going to this path will initiate OIDC login. This is only meant for interactive browser usage.
 It might be possible to use it from CLI using some tooling, but no support will be provided.
@@ -315,7 +315,7 @@ This if not recommended in real-world usage, as it will allow anyone to create n
 old ones. This might not seem like a bad idea, until you have hundreds of links pointing to illegal content.
 Since there are no logs, it's impossible to prove that those links aren't created by you.
 
-## Healthcheck `/api/healthz`
+## Healthcheck `GET /api/healthz`
 
 There's a special unauthenticated healthcheck route listening to `127.0.0.1:1729/healthz` (so not accessible by the public).
 When accessed, it would either return `healthy` or `unhealthy`. Look at the [deployment examples](../deploy) to see
