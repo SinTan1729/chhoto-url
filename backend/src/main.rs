@@ -18,6 +18,7 @@ use std::{
     io::Result,
     process::exit,
     sync::{Arc, Once},
+    time::Duration,
 };
 use tokio::sync::{Mutex, mpsc};
 
@@ -58,7 +59,7 @@ async fn main() -> Result<()> {
     eprintln!("----------------------------------------------------------------------");
 
     // Generate session key in runtime so that restart invalidates older logins
-    logging::init();
+    logging::init_async(Duration::from_secs(1), 8 * 1024, 512);
 
     // Read config from env vars
     let conf = config::read();

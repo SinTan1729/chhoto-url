@@ -17,28 +17,30 @@ use chrono::Local;
 use env_filter::Filter;
 use log::{Level, Log, Metadata, Record};
 
-// Constants
-const POLL_INTERVAL: Duration = Duration::from_millis(500);
-const QUEUE_CAPACITY: usize = 4 * 1024;
-const AVG_LOG_LINE_BYTES: usize = 256;
-
-pub struct AsyncStderrLogger {
+#[derive(Clone)]
+struct AsyncLoggerParams {
+    poll_interval: Duration,
+    queue_capacity: usize,
+    avg_log_line_bytes: usize,
     filter: Filter,
-    tx: Mutex<SyncSender<String>>,
-    dropped: Arc<AtomicU64>,
     color: bool,
 }
 
+pub(crate) struct AsyncStderrLogger {
+    params: AsyncLoggerParams,
+    tx: Mutex<SyncSender<String>>,
+    dropped: Arc<AtomicU64>,
+}
+
 impl AsyncStderrLogger {
-    fn with_filter(filter: Filter) -> (Self, Receiver<String>, Arc<AtomicU64>) {
-        let (tx, rx) = sync_channel(QUEUE_CAPACITY);
+    fn with_filter(params: AsyncLoggerParams) -> (Self, Receiver<String>, Arc<AtomicU64>) {
+        let (tx, rx) = sync_channel(params.queue_capacity);
         let dropped = Arc::new(AtomicU64::new(0));
         (
             Self {
-                filter,
+                params,
                 tx: Mutex::new(tx),
                 dropped: Arc::clone(&dropped),
-                color: std::io::stderr().is_terminal(),
             },
             rx,
             dropped,
@@ -48,15 +50,15 @@ impl AsyncStderrLogger {
 
 impl Log for AsyncStderrLogger {
     fn enabled(&self, metadata: &Metadata) -> bool {
-        self.filter.enabled(metadata)
+        self.params.filter.enabled(metadata)
     }
 
     fn log(&self, record: &Record) {
-        if !self.filter.matches(record) {
+        if !self.params.filter.matches(record) {
             return;
         }
-        let mut line = String::with_capacity(AVG_LOG_LINE_BYTES);
-        format_line(&mut line, record, self.color);
+        let mut line = String::with_capacity(self.params.avg_log_line_bytes);
+        format_line(&mut line, record, self.params.color);
         let tx = self
             .tx
             .lock()
@@ -113,15 +115,18 @@ fn level_ansi(level: Level) -> &'static str {
     }
 }
 
-fn run_writer(rx: Receiver<String>, dropped: Arc<AtomicU64>, color: bool) {
+fn run_writer(rx: Receiver<String>, dropped: Arc<AtomicU64>, params: AsyncLoggerParams) {
     let stderr = std::io::stderr();
-    let mut out = BufWriter::with_capacity(AVG_LOG_LINE_BYTES * QUEUE_CAPACITY, stderr.lock());
+    let mut out = BufWriter::with_capacity(
+        params.avg_log_line_bytes * params.queue_capacity,
+        stderr.lock(),
+    );
     let mut reported = 0_u64;
-    let max_batch_size: usize = (QUEUE_CAPACITY / 8).max(32);
+    let max_batch_size: usize = (params.queue_capacity / 8).max(32);
 
     loop {
         let mut wrote = false;
-        match rx.recv_timeout(POLL_INTERVAL) {
+        match rx.recv_timeout(params.poll_interval) {
             Ok(line) => {
                 if out.write_all(line.as_bytes()).is_err() || out.write_all(b"\n").is_err() {
                     break;
@@ -159,8 +164,8 @@ fn run_writer(rx: Receiver<String>, dropped: Arc<AtomicU64>, color: bool) {
                 .target("chhoto_url::logging")
                 .build();
 
-            let mut line = String::with_capacity(AVG_LOG_LINE_BYTES);
-            format_line(&mut line, &record, color);
+            let mut line = String::with_capacity(params.avg_log_line_bytes);
+            format_line(&mut line, &record, params.color);
             if out.write_all(line.as_bytes()).is_err() || out.write_all(b"\n").is_err() {
                 break;
             }
@@ -175,7 +180,11 @@ fn run_writer(rx: Receiver<String>, dropped: Arc<AtomicU64>, color: bool) {
     let _ = out.flush();
 }
 
-pub fn init() -> std::thread::JoinHandle<()> {
+pub fn init_async(
+    poll_interval: Duration,
+    queue_capacity: usize,
+    avg_log_line_bytes: usize,
+) -> std::thread::JoinHandle<()> {
     let mut builder = env_filter::Builder::new();
     builder.parse(
         std::env::var("RUST_LOG")
@@ -187,10 +196,18 @@ pub fn init() -> std::thread::JoinHandle<()> {
 
     let filter = builder.build();
     let max_level = filter.filter();
-    let (logger, rx, dropped) = AsyncStderrLogger::with_filter(filter);
+    let color = std::io::stderr().is_terminal();
+    let params = AsyncLoggerParams {
+        poll_interval,
+        queue_capacity,
+        avg_log_line_bytes,
+        filter,
+        color,
+    };
+    let (logger, rx, dropped) = AsyncStderrLogger::with_filter(params.clone());
 
-    let color = logger.color;
     log::set_boxed_logger(Box::new(logger)).expect("Install logger once");
     log::set_max_level(max_level);
-    spawn(move || run_writer(rx, dropped, color))
+
+    spawn(move || run_writer(rx, dropped, params))
 }

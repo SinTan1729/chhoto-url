@@ -60,7 +60,7 @@ pub(crate) fn spawn_cleaner(
         let writer = Arc::clone(&writer);
         async move {
             info!("Starting database cleanup service, will run once every hour.");
-            let mut interval = interval(Duration::from_secs(3600));
+            let mut interval = interval(Duration::from_hours(1));
             let mut first_run = true;
             loop {
                 interval.tick().await;
