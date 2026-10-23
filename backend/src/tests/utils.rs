@@ -140,7 +140,7 @@ pub(super) async fn create_app(
                 .service(services::edit_link)
                 .service(services::delete_link)
                 .service(services::whoami)
-                .service(services::expand_legacy)
+                .service(services::expand)
                 .service(services::oidc_redirect),
         )
         .await,
@@ -180,7 +180,7 @@ pub(super) async fn expand<
     api_key: &Credential,
     shortlink: S,
 ) -> (StatusCode, URLData) {
-    let req = test::TestRequest::post()
+    let req = test::TestRequest::query()
         .uri("/api/expand")
         .insert_header(("X-API-Key", api_key))
         .set_payload(shortlink.to_string())
