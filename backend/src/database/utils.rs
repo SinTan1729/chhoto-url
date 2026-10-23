@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: MIT
 
 use chrono::Utc;
-use log::{debug, error, info, warn};
+use log::{debug, info, warn};
 use rusqlite::{Connection, OpenFlags, named_params};
 use std::time::Instant;
 use std::{collections::HashSet, fs, path::PathBuf, time::Duration};
@@ -20,25 +20,27 @@ pub(crate) enum BackupType {
 }
 
 // Clean expired links
-pub(crate) fn cleanup(db: &mut Connection, use_wal_mode: bool, no_time_budget: bool) {
+pub(crate) fn cleanup(
+    db: &mut Connection,
+    use_wal_mode: bool,
+    no_time_budget: bool,
+) -> Result<(), String> {
     let now = Utc::now().timestamp();
 
     debug!("Starting database cleanup.");
     let deadline = Instant::now() + Duration::from_millis(500);
     let mut total_deleted = 0;
-    let Ok(tx) = db.transaction() else {
-        warn!("Error opening SQL transaction");
-        return;
-    };
+    let tx = db
+        .transaction()
+        .map_err(|_| "Error opening SQL transaction".to_string())?;
     {
-        let Ok(mut statement) = tx.prepare_cached(queries::CLEANUP_BATCH) else {
-            warn!("Error preparing SQL statement for cleanup.");
-            return;
-        };
+        let mut statement = tx
+            .prepare_cached(queries::CLEANUP_BATCH)
+            .map_err(|_| "Error preparing SQL statement.".to_string())?;
         while Instant::now() < deadline || no_time_budget {
             let deleted = statement
                 .execute(named_params! { ":now": now })
-                .expect("Error cleaning expired links.");
+                .map_err(|_| "Error cleaning expired links.".to_string())?;
 
             total_deleted += deleted;
 
@@ -47,10 +49,8 @@ pub(crate) fn cleanup(db: &mut Connection, use_wal_mode: bool, no_time_budget: b
             }
         }
     }
-    if tx.commit().is_err() {
-        warn!("Error committinng transaction for cleanup");
-        return;
-    };
+    tx.commit()
+        .map_err(|_| "Error committinng transaction.".to_string())?;
 
     match total_deleted {
         0 => info!("No expired links were found."),
@@ -58,57 +58,55 @@ pub(crate) fn cleanup(db: &mut Connection, use_wal_mode: bool, no_time_budget: b
         n => info!("{n} expired links were deleted."),
     }
 
-    let Ok(leftovers) = db.query_row(
-        queries::CLEANUP_LEFTOVERS,
-        named_params! { ":now": now },
-        |row| row.get(0),
-    ) else {
-        warn!("Error checking for expired links.");
-        return;
-    };
+    let leftovers = db
+        .query_row(
+            queries::CLEANUP_LEFTOVERS,
+            named_params! { ":now": now },
+            |row| row.get(0),
+        )
+        .map_err(|_| "Error checking for expired links.".to_string())?;
 
     if leftovers {
         info!("Expired links remain; they will be tried again during a later cleanup.");
     }
 
     if use_wal_mode
-        && db
-            .query_one("PRAGMA wal_checkpoint(RESTART)", (), |row| {
+        && matches!(
+            db.query_one("PRAGMA wal_checkpoint(RESTART)", (), |row| {
                 row.get::<usize, isize>(1)
-            })
-            .inspect_err(|e| warn!("Error while creating checkpoint: {e}"))
-            .ok()
-            .filter(|&v| v != -1)
-            .is_none()
+            }),
+            Err(_) | Ok(-1)
+        )
     {
-        warn!("Unable to create WAL checkpoint.");
-        return;
+        return Err("Unable to create WAL checkpoint.".to_string());
     }
-    let Ok(freelist_count) = db.query_one("PRAGMA freelist_count", (), |r| r.get::<usize, i64>(0))
-    else {
-        warn!("Failed to get freelist_count");
-        return;
-    };
+    let freelist_count = db
+        .query_one("PRAGMA freelist_count", (), |r| r.get::<usize, i64>(0))
+        .map_err(|_| "Failed to get freelist_count.".to_string())?;
 
     // Roughly 20 MB with 4 KiB pages
     if freelist_count > 5000 && db.execute("VACUUM", ()).is_err() {
-        warn!("failed to vacuum database");
-        return;
+        return Err("failed to vacuum database".to_string());
     }
     let link_count: i64 = db
         .query_one("SELECT COUNT(id) FROM urls", (), |row| row.get(0))
         .unwrap_or_default();
     if link_count > 2000 && db.execute("PRAGMA optimize", ()).is_err() {
-        warn!("Unable to optimize database.");
+        Err("Unable to optimize database.".to_string())
     } else {
         debug!("Optimized database.");
+        Ok(())
     }
 }
 
 // Create backups
-pub(crate) fn manage_backups(db_link: &str, disable_backups: bool, backup_type: BackupType) {
+pub(crate) fn manage_backups(
+    db_link: &str,
+    disable_backups: bool,
+    backup_type: BackupType,
+) -> Result<(), String> {
     if disable_backups {
-        return;
+        return Ok(());
     }
 
     let db_path = PathBuf::from(db_link);
@@ -122,10 +120,8 @@ pub(crate) fn manage_backups(db_link: &str, disable_backups: bool, backup_type: 
 
     let backup_dir = parent.join("backups");
 
-    if let Err(e) = fs::create_dir_all(&backup_dir) {
-        error!("Failed to create backup directory: {e}");
-        return;
-    }
+    fs::create_dir_all(&backup_dir)
+        .map_err(|_| "Failed to create backup directory.".to_string())?;
 
     let (suffix, retain) = match backup_type {
         BackupType::Init => {
@@ -141,10 +137,8 @@ pub(crate) fn manage_backups(db_link: &str, disable_backups: bool, backup_type: 
     let backup_path = |idx: usize| backup_dir.join(format!("{db_name}.{suffix}{idx}"));
 
     let db = database::open_db(db_link, true);
-    if let Err(e) = db.backup("main", backup_path(0).to_string_lossy().as_ref(), None) {
-        error!("There was an error while creating the backup: {e}");
-        return;
-    }
+    db.backup("main", backup_path(0).to_string_lossy().as_ref(), None)
+        .map_err(|_| "There was an error while creating the backup.".to_string())?;
 
     // Migrate legacy backups
     if matches!(backup_type, BackupType::Daily) {
@@ -157,9 +151,8 @@ pub(crate) fn manage_backups(db_link: &str, disable_backups: bool, backup_type: 
             {
                 let filename = path.file_name().unwrap().to_string_lossy();
                 let daily_name = filename.replacen(".bak", ".daily", 1);
-                if let Err(e) = fs::rename(&path, backup_dir.join(daily_name)) {
-                    error!("There was an error migrating legacy backup: {e}");
-                }
+                fs::rename(&path, backup_dir.join(daily_name))
+                    .map_err(|_| "There was an error migrating legacy backup.".to_string())?;
             }
         }
     }
@@ -168,9 +161,11 @@ pub(crate) fn manage_backups(db_link: &str, disable_backups: bool, backup_type: 
         if let Err(e) = fs::rename(backup_path(i), backup_path(i + 1))
             && e.kind() != std::io::ErrorKind::NotFound
         {
-            error!("Failed to rotate backup {i}: {e}");
+            return Err(format!("Failed to rotate backup {i}: {e}"));
         }
     }
+
+    Ok(())
 }
 
 // Initialize the database
@@ -181,7 +176,9 @@ pub(crate) fn init_db(
     disable_backups: bool,
 ) {
     if let Some(db_path) = db.path() {
-        manage_backups(db_path, disable_backups, BackupType::Init);
+        if let Err(e) = manage_backups(db_path, disable_backups, BackupType::Init) {
+            warn!("Init backup error: {e}")
+        };
     } else {
         warn!("Failed to do init database backup.");
     }

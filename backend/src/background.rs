@@ -66,18 +66,22 @@ pub(crate) fn spawn_cleaner(
                 interval.tick().await;
                 let hour = Local::now().hour();
                 let mut db = writer.lock().await;
-                database::cleanup(&mut db, use_wal_mode, first_run);
+                if let Err(e) = database::cleanup(&mut db, use_wal_mode, first_run) {
+                    warn!("Cleanup: {e}");
+                }
                 first_run = false;
                 let path = db.path().map(str::to_owned);
                 drop(db);
                 if hour == 3 {
                     info!("Doing a scheduled daily backup.");
                     if let Some(db_path) = path {
-                        database::manage_backups(
+                        if let Err(e) = database::manage_backups(
                             &db_path,
                             disable_backups,
                             database::BackupType::Daily,
-                        );
+                        ) {
+                            warn!("Scheduled backup error: {e}");
+                        }
                     } else {
                         warn!("Failed to do daily database backup.");
                     }
