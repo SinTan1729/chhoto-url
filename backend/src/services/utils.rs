@@ -11,7 +11,7 @@ use rand::{random_range, seq::IndexedRandom};
 use rusqlite::Connection;
 use serde::Deserialize;
 use serde_json::Value;
-use std::env;
+use std::{collections::HashSet, env};
 use tokio::sync::mpsc;
 use url::Url;
 
@@ -49,7 +49,7 @@ struct EditURLRequest {
 
 // Only allow safe URI schemes
 #[inline]
-fn is_longlink_valid(link: &str, allowed_protocols: &[String]) -> bool {
+fn is_longlink_valid(link: &str, allowed_protocols: &HashSet<String>) -> bool {
     let parts = Url::parse(link);
     parts.is_ok_and(|u| allowed_protocols.contains(&u.scheme().to_owned()))
 }

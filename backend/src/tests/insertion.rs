@@ -238,7 +238,7 @@ async fn adding_link_with_retry_on_collision() {
 async fn adding_links_with_custom_protocol() {
     let test = "custom-protocols";
     let mut conf = default_config(test);
-    conf.allowed_protocols.push("ftps".to_string());
+    conf.allowed_protocols.insert("ftps".to_string());
     let (_tempdir, app) = create_app(&conf, test).await;
     let api_key = conf.api_key.clone().unwrap();
     let req = test::TestRequest::post()

@@ -4,6 +4,7 @@
 use log::{error, info, warn};
 use passwords::{analyzer::analyze, scorer::score};
 use std::{
+    collections::HashSet,
     env::{VarError, var},
     fmt::Display,
     fs,
@@ -155,11 +156,11 @@ pub(crate) struct Config {
     pub(crate) oidc_client_id: Option<String>,
     pub(crate) oidc_client_secret: Option<String>,
     pub(crate) oidc_custom_claim: Option<(String, String)>,
-    pub(crate) oidc_allowed_origins: Vec<String>,
+    pub(crate) oidc_allowed_origins: HashSet<String>,
     pub(crate) public_mode: bool,
     pub(crate) public_mode_expiry_delay: Option<i64>,
     pub(crate) use_temp_redirect: bool,
-    pub(crate) allowed_protocols: Vec<String>,
+    pub(crate) allowed_protocols: HashSet<String>,
     pub(crate) password: Option<Credential>,
     pub(crate) api_key: Option<Credential>,
     pub(crate) slug_style: SlugStyle,
@@ -248,14 +249,14 @@ pub(crate) fn read() -> Config {
         info!("Using Permanent redirection (default).")
     }
 
-    let mut allowed_protocols: Vec<String> = ["http", "https", "ftp", "magnet"]
+    let mut allowed_protocols: HashSet<String> = ["http", "https", "ftp", "magnet"]
         .iter()
         .map(|s| s.to_string())
         .collect();
     if let Ok(protocols) = var("CHHOTO_EXTRA_PROTOCOLS") {
         for protocol in protocols.split(&[',', ' ']).filter(|p| !p.is_empty()) {
             if protocol.chars().all(|c| c.is_alphanumeric()) {
-                allowed_protocols.push(protocol.to_owned());
+                allowed_protocols.insert(protocol.to_owned());
             } else {
                 warn!("Skipping malformed protocol: {protocol}.")
             }
@@ -327,7 +328,7 @@ pub(crate) fn read() -> Config {
         info!("Configured Site URL: {}", u);
     }
 
-    let mut oidc_allowed_origins = Vec::new();
+    let mut oidc_allowed_origins = HashSet::new();
     let oidc_issuer_url = var("CHHOTO_OIDC_ISSUER_URL")
         .ok()
         .map(|s| remove_surrounding_quotes(s.trim()))
@@ -355,7 +356,7 @@ pub(crate) fn read() -> Config {
         })
         .inspect(|u| {
             info!("Enabling OIDC with issuer url: {u}");
-            oidc_allowed_origins.push(
+            oidc_allowed_origins.insert(
                 site_url
                     .clone()
                     .expect("Site URL must be non empty at this point."),
@@ -388,7 +389,7 @@ pub(crate) fn read() -> Config {
     {
         for url in urls.split(&[',', ' ']).filter(|p| !p.is_empty()) {
             if Url::parse(url).is_ok_and(|u| ["http", "https"].contains(&u.scheme())) {
-                oidc_allowed_origins.push(url.to_owned());
+                oidc_allowed_origins.insert(url.to_owned());
             } else {
                 warn!("Skipping malformed protocol: {url}.")
             }

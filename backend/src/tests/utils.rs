@@ -1,7 +1,7 @@
 // SPDX-FileCopyrightText: 2023-2026 Sayantan Santra <sayantan.santra689@gmail.com>
 // SPDX-License-Identifier: MIT
 
-use std::{fmt::Display, rc::Rc};
+use std::{collections::HashSet, fmt::Display, rc::Rc};
 
 use actix_http::{
     Request, StatusCode,
@@ -75,11 +75,11 @@ pub(super) fn default_config(test: &str) -> config::Config {
         oidc_client_id: None,
         oidc_client_secret: None,
         oidc_custom_claim: None,
-        oidc_allowed_origins: vec![String::from("https://mydomain.com")],
+        oidc_allowed_origins: HashSet::from([String::from("https://mydomain.com")]),
         public_mode: false,
         public_mode_expiry_delay: None,
         use_temp_redirect: false,
-        allowed_protocols: Vec::from(["http", "https", "ftp", "magnet"].map(|s| s.to_string())),
+        allowed_protocols: HashSet::from(["http", "https", "ftp", "magnet"].map(|s| s.to_string())),
         password: Some(Credential::Plain(String::from("testpass"))),
         api_key: Some(Credential::Plain(String::from(
             "Z8FNjh2J2v3yfb0xPDIVA58Pj4D0e2jSERVdoqM5pJCbU2w5tmg3PNioD6GUhaQwHHaDLBNZj0EQE8MS4TLKcUyusa05",
