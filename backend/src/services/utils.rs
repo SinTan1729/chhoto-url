@@ -327,13 +327,14 @@ pub(super) fn derive_origin_info(connection: &ConnectionInfo) -> (String, String
 pub(super) async fn oidc_verify(
     client: OidcClient,
     params: OidcCallbackParams,
-    oidc: &OidcData,
+    oidc: &mut OidcData,
     custom_claim: &Option<(String, String)>,
 ) -> Result<(), String> {
     let Some(state) = &params.state else {
         return Err("State check failed.".to_string());
     };
-    let Some((verifier, nonce)) = (*oidc.states.lock().await).remove(state) else {
+
+    let Some((verifier, nonce)) = (oidc.states).remove(state) else {
         return Err("State mismatch.".to_string());
     };
 

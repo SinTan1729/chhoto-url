@@ -43,7 +43,7 @@ struct AppState {
     writer: Arc<Mutex<Connection>>,
     config: config::Config,
     frontend_dir: String,
-    oidc_data: Option<oidc::OidcData>,
+    oidc_data: Option<Arc<Mutex<oidc::OidcData>>>,
 }
 
 static LOGGER: Once = Once::new();
@@ -90,11 +90,11 @@ async fn main() -> Result<()> {
     let oidc_client = oidc::create_oidc_client(&conf).await;
     let oidc_data = if let Some((http_client, oidc_client)) = oidc_client {
         info!("OIDC was successfully enabled.");
-        Some(oidc::OidcData {
+        Some(Arc::new(Mutex::new(oidc::OidcData {
             http_client,
             oidc_client,
-            states: Arc::new(Mutex::new(HashMap::new())),
-        })
+            states: HashMap::new(),
+        })))
     } else {
         let exit_on_no_auth = var("CHHOTO_EXIT_ON_NO_AUTH").is_ok_and(|s| s.trim() == "True");
         if conf.password.is_none() {

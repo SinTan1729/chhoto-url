@@ -197,6 +197,7 @@ pub(crate) async fn oidc_redirect(
         );
     };
 
+    let oidc = &mut *oidc.lock().await;
     let client = oidc.oidc_client.clone().set_redirect_uri(url);
     if matches!(auth, Auth::ValidSession) {
         return Either::Right(oidc_redirect_once(&origin));
@@ -221,7 +222,7 @@ pub(crate) async fn oidc_redirect(
     let (auth_url, csrf_token, nonce) = client.set_pkce_challenge(pkce_challenge).url();
     let state = csrf_token.into_secret();
 
-    let secrets = &mut *oidc.states.lock().await;
+    let secrets = &mut oidc.states;
     secrets.insert(state, (pkce_verifier, nonce));
 
     debug!("Attempting OIDC login.");
@@ -258,7 +259,7 @@ pub(crate) async fn oidc_callback(
         return Either::Right(oidc_redirect_once(&origin));
     }
 
-    let Some(oidc_data) = data.oidc_data.as_ref() else {
+    let Some(oidc_data) = &data.oidc_data else {
         info!("Failed OIDC login.");
         return Either::Left(
             HttpResponse::InternalServerError()
@@ -279,6 +280,7 @@ pub(crate) async fn oidc_callback(
         );
     };
 
+    let oidc_data = &mut *oidc_data.lock().await;
     if let Err(e) = utils::oidc_verify(
         oidc_data.oidc_client.clone().set_redirect_uri(url),
         params.into_inner(),

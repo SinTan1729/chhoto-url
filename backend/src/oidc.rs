@@ -1,7 +1,7 @@
 // SPDX-FileCopyrightText: 2023-2026 Sayantan Santra <sayantan.santra689@gmail.com>
 // SPDX-License-Identifier: MIT
 
-use std::{collections::HashMap, sync::Arc};
+use std::collections::HashMap;
 
 use log::{error, warn};
 use openidconnect::{
@@ -17,7 +17,6 @@ use openidconnect::{
     reqwest,
 };
 use serde::{Deserialize, Serialize};
-use tokio::sync::Mutex;
 
 use crate::config::Config;
 
@@ -105,9 +104,8 @@ pub async fn create_oidc_client(config: &Config) -> Option<(reqwest::Client, Oid
     }
 }
 
-#[derive(Clone)]
 pub(crate) struct OidcData {
     pub(crate) http_client: reqwest::Client,
     pub(crate) oidc_client: OidcClient,
-    pub(crate) states: Arc<Mutex<HashMap<String, (PkceCodeVerifier, Nonce)>>>,
+    pub(crate) states: HashMap<String, (PkceCodeVerifier, Nonce)>,
 }
