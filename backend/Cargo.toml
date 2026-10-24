@@ -42,7 +42,6 @@ actix-files = "0.7.2"
 rusqlite = { version = "0.40.2", features = [ "backup", "bundled" ] }
 regex = "1.13.1"
 rand = "0.10.3"
-passwords = "3.1.19"
 actix-session = { version = "0.11.0", features = [ "cookie-session" ] }
 nanoid = "0.5.0"
 serde = { version = "1.0.229", features = [ "derive", "rc" ] }
@@ -55,7 +54,7 @@ url = "2.5.8"
 subtle = "2.6.1"
 openidconnect = "4.0.1"
 env_filter = "2.0.0"
-hex = "0.4.3"
+base64-url = "4.0.1"
 
 [dev-dependencies]
 actix-http = "3.19.0"

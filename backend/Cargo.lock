@@ -361,6 +361,15 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "ac07cdecf99051d9a5238b80f35af32cdeba5b336e55d957b318b50137e18da5"
 
 [[package]]
+name = "base64-url"
+version = "4.0.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "0a6a82ff9a62f6b4e0861e854659134d674904326c126a2b64b45893f5ad3fc0"
+dependencies = [
+ "base64 0.23.1",
+]
+
+[[package]]
 name = "base64ct"
 version = "1.8.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -501,13 +510,12 @@ dependencies = [
  "actix-session",
  "actix-web",
  "argon2",
+ "base64-url",
  "chrono",
  "env_filter",
- "hex",
  "log",
  "nanoid",
  "openidconnect",
- "passwords",
  "rand 0.10.3",
  "regex",
  "rusqlite",
@@ -1939,15 +1947,6 @@ checksum = "aab41826031698d6ffcd9cff78ef56ef998e39dc7e5067cdfebe373842d4723b"
 dependencies = [
  "getrandom 0.4.3",
  "phc",
-]
-
-[[package]]
-name = "passwords"
-version = "3.1.19"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "bc8d389fea00a0e01b65c2b628e3f608fc817ee7aa52ef184be81249442f9a9e"
-dependencies = [
- "rand 0.10.3",
 ]
 
 [[package]]

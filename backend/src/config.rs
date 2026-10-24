@@ -2,7 +2,6 @@
 // SPDX-License-Identifier: MIT
 
 use log::{error, info, warn};
-use passwords::{analyzer::analyze, scorer::score};
 use std::{
     collections::HashSet,
     env::{VarError, var},
@@ -213,9 +212,15 @@ pub(crate) fn read() -> Config {
     let api_key = read_config_wrapper("CHHOTO_API_KEY", "api_key")
         .ok()
         .inspect(|key| {
-            if hash_algorithm.is_none() && score(&analyze(key)) < 90.0 {
+            if hash_algorithm.is_none()
+                && base64_url::decode(key.as_bytes())
+                    .ok()
+                    .filter(|b| b.len() >= 64)
+                    .is_none()
+            {
                 warn!(
-                    "API key is insecure! Generated secure key which you may use: {}",
+                    "Provided API key is insecure! \
+                    Generated secure key which you may use: {}",
                     auth::gen_key()
                 );
             } else {

@@ -2,10 +2,10 @@
 // SPDX-License-Identifier: MIT
 
 use actix_session::{Session, SessionExt};
+use actix_web::cookie::Key;
 use actix_web::{Error, FromRequest, HttpRequest, dev::Payload, web};
 use argon2::PasswordVerifier;
 use log::{debug, warn};
-use passwords::PasswordGenerator;
 use std::pin::Pin;
 use std::time::SystemTime;
 
@@ -86,17 +86,7 @@ async fn is_key_valid(key: String, api_key: Credential) -> Result<(), String> {
 
 // Generate an API key if the user doesn't specify a secure key
 pub(crate) fn gen_key() -> String {
-    let key = PasswordGenerator {
-        length: 128,
-        numbers: true,
-        lowercase_letters: true,
-        uppercase_letters: true,
-        symbols: false,
-        spaces: false,
-        exclude_similar_characters: false,
-        strict: true,
-    };
-    key.generate_one().unwrap()
+    base64_url::encode(Key::generate().master())
 }
 
 // Validate a session

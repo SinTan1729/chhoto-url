@@ -8,7 +8,7 @@ use actix_http::{
     header::{HeaderValue, InvalidHeaderValue, TryIntoHeaderValue},
 };
 use actix_service::Service;
-use actix_web::{App, Error, body::to_bytes, dev::ServiceResponse, test, web::Bytes};
+use actix_web::{App, Error, body::to_bytes, cookie::Key, dev::ServiceResponse, test, web::Bytes};
 use serde::Deserialize;
 use tempfile::TempDir;
 
@@ -81,8 +81,8 @@ pub(super) fn default_config(test: &str) -> config::Config {
         use_temp_redirect: false,
         allowed_protocols: HashSet::from(["http", "https", "ftp", "magnet"].map(|s| s.to_string())),
         password: Some(Credential::Plain(String::from("testpass"))),
-        api_key: Some(Credential::Plain(String::from(
-            "Z8FNjh2J2v3yfb0xPDIVA58Pj4D0e2jSERVdoqM5pJCbU2w5tmg3PNioD6GUhaQwHHaDLBNZj0EQE8MS4TLKcUyusa05",
+        api_key: Some(Credential::Plain(base64_url::encode(
+            Key::generate().master(),
         ))),
         slug_style: config::SlugStyle::Pair,
         slug_length: 8,

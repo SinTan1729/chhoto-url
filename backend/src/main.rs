@@ -4,17 +4,14 @@
 use actix_files::Files;
 use actix_session::{SessionMiddleware, config::PersistentSession, storage::CookieSessionStore};
 use actix_web::{
-    App, HttpServer,
-    cookie::{self, Key},
-    middleware,
+    App, HttpServer, cookie, middleware,
     web::{self, Redirect},
 };
 use log::{error, info, warn};
-use passwords::{analyzer::analyze, scorer::score};
 use rusqlite::Connection;
 use std::{
     collections::HashMap,
-    env::{self, var},
+    env::var,
     io::Result,
     process::exit,
     sync::{Arc, Once},
@@ -107,34 +104,7 @@ async fn main() -> Result<()> {
         None
     };
 
-    let secret_key = env::var("CHHOTO_SESSION_MASTER_KEY")
-        .ok()
-        .map(|value| value.trim().to_owned())
-        .and_then(|value| {
-            let key = score(&analyze(&value))
-                .ge(&90.0)
-                .then(|| hex::decode(&value).ok())
-                .flatten()
-                .filter(|bytes| bytes.len() >= 64)
-                .map(|bytes| Key::from(&bytes));
-
-            match key {
-                Some(key) => {
-                    info!("Using provided session master key.");
-                    Some(key)
-                }
-                None => {
-                    warn!(
-                        "Provided session master key is invalid. \
-                     Expected at least 512 bits of hex-encoded key material. \
-                     Generating a new key."
-                    );
-                    None
-                }
-            }
-        })
-        .unwrap_or_else(Key::generate);
-
+    let secret_key = utils::generate_key();
     let port = conf.port;
     let addr = conf.listen_address.clone();
     let db_location_for_health = conf.db_location.clone();

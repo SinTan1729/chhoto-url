@@ -1,9 +1,12 @@
 // SPDX-FileCopyrightText: 2023-2026 Sayantan Santra <sayantan.santra689@gmail.com>
 // SPDX-License-Identifier: MIT
 
-use log::warn;
+use actix_web::cookie::Key;
+use log::{info, warn};
 use regex::Regex;
-use std::{fs, io, path::Path};
+use std::{env::var, fs, io, path::Path};
+
+use crate::auth;
 
 fn copy_frontend(src: &str, dst: &str) -> io::Result<()> {
     fn copy_contents(src: &Path, dst: &Path) -> io::Result<()> {
@@ -112,4 +115,35 @@ pub(crate) fn is_custom_landing_directory_valid(loc: &str) -> bool {
     })();
 
     result.unwrap_or(false)
+}
+
+pub(crate) fn generate_key() -> Key {
+    let key = match var("CHHOTO_SESSION_MASTER_KEY")
+        .ok()
+        .map(|value| value.trim().to_owned())
+    {
+        Some(value) => {
+            let key = base64_url::decode(value.as_bytes())
+                .ok()
+                .filter(|b| b.len() >= 64);
+
+            match key {
+                Some(key) => {
+                    info!("Using provided session master key.");
+                    Some(Key::from(&key))
+                }
+                None => {
+                    warn!(
+                        "Provided session master key is invalid. \
+                        Generated secure key which you may use: {}",
+                        auth::gen_key()
+                    );
+                    None
+                }
+            }
+        }
+        None => None,
+    };
+
+    key.unwrap_or(Key::generate())
 }
