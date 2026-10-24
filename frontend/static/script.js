@@ -37,16 +37,6 @@ SVG_NEXT_BUTTON = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24
 // https://svgicons.com/icon/10769/info-rect-outline
 SVG_INFO_BUTTON = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><path fill="currentColor" d="M12 10.75a.75.75 0 0 1 .75.75v5a.75.75 0 1 1-1.5 0v-5a.75.75 0 0 1 .75-.75M12 9a1 1 0 1 0 0-2a1 1 0 0 0 0 2"/><path fill="currentColor" fill-rule="evenodd" d="M7.317 3.769a42.5 42.5 0 0 1 9.366 0c1.827.204 3.302 1.642 3.516 3.48c.37 3.156.37 6.346 0 9.503c-.215 1.836-1.69 3.275-3.516 3.48a42.5 42.5 0 0 1-9.366 0c-1.827-.205-3.302-1.644-3.516-3.48a41 41 0 0 1 0-9.504c.214-1.837 1.69-3.275 3.516-3.48m9.2 1.49a41 41 0 0 0-9.034 0A2.486 2.486 0 0 0 5.29 7.423a39.4 39.4 0 0 0 0 9.154a2.486 2.486 0 0 0 2.193 2.163c2.977.333 6.057.333 9.034 0a2.486 2.486 0 0 0 2.192-2.163a39.4 39.4 0 0 0 0-9.154a2.486 2.486 0 0 0-2.192-2.164" clip-rule="evenodd"/></svg>`;
 
-// in miliseconds
-const UNITS = {
-  year: 31536000000,
-  month: 2592000000,
-  day: 86400000,
-  hour: 3600000,
-  minute: 60000,
-  second: 1000,
-};
-
 const loadCachedState = () => {
   try {
     const cachedAdmin = sessionStorage.getItem("admin");
@@ -291,9 +281,7 @@ const refreshData = async () => {
           if (expiry > 0) {
             loading_text.textContent +=
               " Unless chosen a shorter expiry time, submitted links will automatically expire ";
-            const time = new Date();
-            time.setSeconds(time.getSeconds() + expiry);
-            loading_text.textContent += formatRelativeTime(time) + ".";
+            loading_text.textContent += formatTime(expiry) + ".";
           }
 
           admin_button.getElementsByTagName("span")[0].innerText = "login";
@@ -498,8 +486,8 @@ const refreshExpiryTimes = async () => {
     if (span.innerText == "expired") {
       continue;
     }
-    let expiryTimeParsed = new Date(td.getAttribute("data-time") * 1000);
-    let relativeTime = formatRelativeTime(expiryTimeParsed);
+    let expiryTime = td.getAttribute("data-time");
+    let relativeTime = formatRelativeTime(expiryTime);
     if (relativeTime == "expired") {
       td.style.color = "light-dark(red, #a01e1e)";
       for (const btn of td.parentElement.lastChild.querySelectorAll("button")) {
@@ -517,17 +505,28 @@ const refreshExpiryTimes = async () => {
 };
 
 const formatRelativeTime = (timestamp) => {
-  const now = new Date();
-
+  const now = Math.floor(Date.now() / 1000);
   const diff = timestamp - now;
+  return formatTime(diff);
+};
+
+const formatTime = (seconds) => {
+  const UNITS = {
+    year: 31536000,
+    month: 2592000,
+    day: 86400,
+    hour: 3600,
+    minute: 60,
+    second: 1,
+  };
   const rtf = new Intl.RelativeTimeFormat("en", { numeric: "auto" });
-  if (diff <= 0) {
+  if (seconds <= 0) {
     return "expired";
   }
   // "Math.abs" accounts for both "past" & "future" scenarios
   for (const u in UNITS) {
-    if (Math.abs(diff) > UNITS[u] || u === "second") {
-      return rtf.format(Math.round(diff / UNITS[u]), u);
+    if (Math.abs(seconds) > UNITS[u] || u === "second") {
+      return rtf.format(Math.round(seconds / UNITS[u]), u);
     }
   }
 };
@@ -571,11 +570,11 @@ const TR = (i, row) => {
   hitsTD.setAttribute("name", "hitsColumn");
 
   const expiryTime = row["expiry_time"];
+  let relativeExpiryTime = "expired";
   let expiryHTML = "-";
   if (expiryTime > 0) {
-    const expiryTimeParsed = new Date(expiryTime * 1000);
-    const relativeExpiryTime = formatRelativeTime(expiryTimeParsed);
-    const accurateExpiryTime = expiryTimeParsed.toLocaleString();
+    relativeExpiryTime = formatRelativeTime(expiryTime);
+    const accurateExpiryTime = Date(expiryTime * 1000).toLocaleString();
     expiryHTML =
       "<span>" +
       relativeExpiryTime +
@@ -585,7 +584,7 @@ const TR = (i, row) => {
   }
 
   let expiryTD = TD(expiryHTML, null);
-  if (expiryTime > 0) {
+  if (expiryTime > 0 && relativeExpiryTime != "expired") {
     expiryTD.width = "160px";
     expiryTD.setAttribute("data-time", expiryTime);
     expiryTD.classList.add("tooltip");
@@ -605,6 +604,14 @@ const TR = (i, row) => {
   btnGrp.appendChild(editButton(shortlink, longlink, expiryTime, row["notes"]));
   btnGrp.appendChild(deleteButton(shortlink));
   actionsTD.appendChild(btnGrp);
+
+  if (relativeExpiryTime == "expired") {
+    expiryTD.style.color = "light-dark(red, #a01e1e)";
+    for (const btn of actionsTD.querySelectorAll("button")) {
+      btn.disabled = true;
+    }
+    expiryTD.firstChild.lastChild.remove();
+  }
 
   for (const td of [numTD, shortTD, longTD, hitsTD, expiryTD, actionsTD]) {
     tr.appendChild(td);
