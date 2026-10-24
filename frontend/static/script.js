@@ -272,7 +272,7 @@ const refreshData = async () => {
           return;
 
         case "public":
-          cacheNoPass(role == "public-nopass");
+          cacheNoPass(!data["password_enabled"] && !data["oidc_enabled"]);
           cacheAdmin(false);
           await getConfig();
 
