@@ -519,18 +519,26 @@ pub(crate) async fn error404(data: web::Data<AppState>) -> impl Responder {
 
 // Verify login details
 pub(super) async fn verify_login(
-    password: String,
-    config: Config,
+    provided_password: String,
+    password: Option<Credential>,
     auth: Auth,
 ) -> Result<(bool, bool), actix_web::Error> {
     actix_web::web::block(move || {
-        is_authorized(&password, &config, matches!(auth, Auth::NoAuthNeeded))
+        is_authorized(
+            &provided_password,
+            &password,
+            matches!(auth, Auth::NoAuthNeeded),
+        )
     })
     .await
     .map_err(actix_web::error::ErrorInternalServerError)
 }
-fn is_authorized(provided_pass: &str, config: &Config, no_auth_needed: bool) -> (bool, bool) {
-    if let Some(password) = &config.password {
+fn is_authorized(
+    provided_pass: &str,
+    password: &Option<Credential>,
+    no_auth_needed: bool,
+) -> (bool, bool) {
+    if let Some(password) = password {
         let authorized = match password {
             Credential::Argon2(hash) => Argon2::default()
                 .verify_password(provided_pass.as_bytes(), hash.as_ref())

@@ -41,7 +41,7 @@ struct AppState {
     hits_tx: mpsc::Sender<(String, bool)>,
     reader: Connection,
     writer: Arc<Mutex<Connection>>,
-    config: config::Config,
+    config: Arc<config::Config>,
     frontend_dir: String,
     oidc_data: Option<Arc<Mutex<oidc::OidcData>>>,
 }
@@ -62,7 +62,7 @@ async fn main() -> Result<()> {
     logging::init_async(Duration::from_secs(1), 8 * 1024, 512);
 
     // Read config from env vars
-    let conf = config::read();
+    let conf = Arc::new(config::read());
     // ArcMutex is necessary since the writer is shared across threads
     let writer = Arc::new(Mutex::new(database::open_db(&conf.db_location, false)));
 
@@ -160,7 +160,7 @@ async fn main() -> Result<()> {
                 hits_tx: hits_tx.clone(),
                 reader: database::open_db(&conf.db_location, true),
                 writer: Arc::clone(&writer),
-                config: conf.clone(),
+                config: Arc::clone(&conf),
                 frontend_dir: frontend_dir.clone(),
                 oidc_data: oidc_data.clone(),
             }))

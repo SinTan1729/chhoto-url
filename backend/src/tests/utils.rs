@@ -127,7 +127,7 @@ pub(super) async fn create_app(
                     hits_tx,
                     reader: database::open_db(db_file.to_str().unwrap(), false),
                     writer,
-                    config: conf.clone(),
+                    config: Arc::new(conf.clone()),
                     frontend_dir: String::new(),
                     oidc_data: None,
                 }))

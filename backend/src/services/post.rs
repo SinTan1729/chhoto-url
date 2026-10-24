@@ -179,7 +179,7 @@ pub(crate) async fn login(
     };
 
     let (authorized, password_needed) =
-        match utils::verify_login(password, config.clone(), auth).await {
+        match utils::verify_login(password, config.password.clone(), auth).await {
             Ok(result) => result,
             Err(err) => {
                 error!("Password verification worker failed: {err}");
