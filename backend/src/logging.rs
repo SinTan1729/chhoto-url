@@ -22,7 +22,7 @@ struct AsyncLoggerParams {
     poll_interval: Duration,
     queue_capacity: usize,
     avg_log_line_bytes: usize,
-    filter: Filter,
+    filter: Arc<Filter>,
     color: bool,
 }
 
@@ -196,6 +196,7 @@ pub fn init_async(
 
     let filter = builder.build();
     let max_level = filter.filter();
+    let filter = Arc::new(filter);
     let color = std::io::stderr().is_terminal();
     let params = AsyncLoggerParams {
         poll_interval,
