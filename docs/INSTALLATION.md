@@ -121,9 +121,10 @@ for production use.
 ### `CHHOTO_API_KEY`
 
 Provide a secure API key. It'll be checked at start for security. If the API key is considered weak, a strong API
-key will be generated and printed in the logs, but the weak one will be used for the time being.
+key will be generated and printed in the logs, but the weak one will be used for the time being. It's recommended
+that you use a URL-safe `base64` encoded key (no padding) with 512 bits of entropy.
 
-Example Linux command for generating a secure API key: `openssl -rand hex 64`.
+Example Linux command for generating a secure API key: `head -c 64 /dev/urandom | base64 -w 0 | tr '+/' '-_' | tr -d '='`.
 
 If no API key is provided, the website will still work, but it'll be a significantly worse experience if you try
 to use Chhoto URL from the CLI.
@@ -295,10 +296,10 @@ as shortlinks. Also do not use `api`, `admin`, and `oidc` for directory names, s
 ### `CHHOTO_SESSION_MASTER_KEY`
 
 By default, the session key for cookies validation is regenerated at start-up, thus requiring all users to reauthenticate.
-A master key can be provided here to persist those sessions. It must be at least 64 bytes, hex encoded, and cryptographically
-secure.
+A master key can be provided here to persist those sessions. It must be at least 512 bits, cryptographically secure, and encoded using
+URL-safe `base64` encoding without padding.
 
-Example Linux command for generating a secure session master key: `openssl -rand hex 64`.
+Example Linux command for generating a secure session master key: `head -c 64 /dev/urandom | base64 -w 0 | tr '+/' '-_' | tr -d '='`.
 
 ### `CHHOTO_CACHE_CONTROL_HEADER`
 
