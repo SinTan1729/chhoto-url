@@ -25,6 +25,7 @@ pub(crate) fn cleanup(
     use_wal_mode: bool,
     no_time_budget: bool,
 ) -> Result<(), String> {
+    let start = Instant::now();
     let now = Utc::now().timestamp();
 
     debug!("Starting database cleanup.");
@@ -95,6 +96,10 @@ pub(crate) fn cleanup(
         Err("Unable to optimize database.".to_string())
     } else {
         debug!("Optimized database.");
+        debug!(
+            "Cleanup completed successfully in {:.3} ms.",
+            start.elapsed().as_secs_f32() * 1000.0
+        );
         Ok(())
     }
 }
@@ -109,6 +114,7 @@ pub(crate) fn manage_backups(
         return Ok(());
     }
 
+    let start = Instant::now();
     let db_path = PathBuf::from(db_link);
     let parent = db_path
         .parent()
@@ -165,6 +171,10 @@ pub(crate) fn manage_backups(
         }
     }
 
+    debug!(
+        "Backup completed successfully in {:.3} ms.",
+        start.elapsed().as_secs_f32() * 1000.0
+    );
     Ok(())
 }
 
