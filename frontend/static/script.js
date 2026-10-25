@@ -246,7 +246,7 @@ const refreshData = async () => {
 
     if (ADMIN !== true) {
       const res = await fetch(prepSubdir("/api/whoami"), {
-        headers: new Headers({ "content-type": "application/json" }),
+        headers: new Headers({ accept: "application/json" }),
         cache: "no-cache",
       });
       if (res.status !== 200) {
@@ -570,7 +570,7 @@ const TR = (i, row) => {
   hitsTD.setAttribute("name", "hitsColumn");
 
   const expiryTime = row["expiry_time"];
-  let relativeExpiryTime = "expired";
+  let relativeExpiryTime = null;
   let expiryHTML = "-";
   if (expiryTime > 0) {
     relativeExpiryTime = formatRelativeTime(expiryTime);
