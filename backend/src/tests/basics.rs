@@ -1,7 +1,7 @@
 // SPDX-FileCopyrightText: 2023-2026 Sayantan Santra <sayantan.santra689@gmail.com>
 // SPDX-License-Identifier: MIT
 
-use actix_web::{body::to_bytes, test};
+use actix_web::{body::to_bytes, mime::APPLICATION_JSON, test};
 
 use crate::config::Credential;
 
@@ -24,7 +24,7 @@ async fn basic_site_config() {
     assert_eq!(body.as_str(), "nobody");
     let req = test::TestRequest::get()
         .uri("/api/whoami")
-        .insert_header(("Accept", "application/json"))
+        .insert_header(("Accept", APPLICATION_JSON))
         .to_request();
     let resp = test::call_service(&app, req).await;
     let body = to_bytes(resp.into_body()).await.unwrap();
@@ -34,7 +34,7 @@ async fn basic_site_config() {
     );
     let req = test::TestRequest::get()
         .uri("/api/whoami")
-        .insert_header(("X-API-Key", conf.api_key.clone().unwrap()))
+        .insert_header((API_HEADER, conf.api_key.clone().unwrap()))
         .to_request();
     let resp = test::call_service(&app, req).await;
     let body = to_bytes(resp.into_body()).await.unwrap();
@@ -50,7 +50,7 @@ async fn basic_site_config() {
 
     let req = test::TestRequest::get()
         .uri("/api/getconfig")
-        .insert_header(("X-API-Key", conf.api_key.unwrap()))
+        .insert_header((API_HEADER, conf.api_key.unwrap()))
         .to_request();
     let resp = test::call_service(&app, req).await;
     assert!(resp.status().is_success());
@@ -74,7 +74,7 @@ async fn auth_verification() {
 
     let req = test::TestRequest::get()
         .uri("/api/all")
-        .insert_header(("X-API-Key", "random-stuff"))
+        .insert_header((API_HEADER, "random-stuff"))
         .to_request();
     let resp = test::call_service(&app, req).await;
     assert_eq!(resp.status(), 401);

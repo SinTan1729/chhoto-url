@@ -4,7 +4,7 @@
 use actix_web::{
     Either, HttpRequest, HttpResponse, Responder, get,
     http::header::{Accept, Header},
-    mime::APPLICATION_JSON,
+    mime::{APPLICATION_JSON, TEXT_PLAIN},
     web::{self, Redirect},
 };
 use log::{debug, info, warn};
@@ -36,18 +36,18 @@ pub(crate) async fn getall(
 ) -> HttpResponse {
     match auth {
         Auth::None { result: _ } => HttpResponse::Unauthorized()
-            .content_type("text/plain")
+            .content_type(TEXT_PLAIN)
             .body("Unauthorized"),
         Auth::InvalidAPIKey { result } => HttpResponse::Unauthorized()
-            .content_type("text/plain")
+            .content_type(TEXT_PLAIN)
             .body(result.reason),
         _ => match utils::getall_helper(&data.reader, params.into_inner()) {
-            Ok(s) => HttpResponse::Ok().content_type("application/json").body(s),
+            Ok(s) => HttpResponse::Ok().content_type(APPLICATION_JSON).body(s),
             Err(ServerError) => HttpResponse::InternalServerError()
-                .content_type("text/plain")
+                .content_type(TEXT_PLAIN)
                 .body("Something went wrong while loading the links.".to_owned()),
             Err(ClientError { reason }) => HttpResponse::BadRequest()
-                .content_type("text/plain")
+                .content_type(TEXT_PLAIN)
                 .body(reason),
         },
     }
@@ -60,10 +60,10 @@ pub(crate) async fn getall(
 pub(crate) async fn siteurl(data: web::Data<AppState>) -> HttpResponse {
     if let Some(url) = &data.config.site_url {
         HttpResponse::Ok()
-            .content_type("text/plain")
+            .content_type(TEXT_PLAIN)
             .body(url.clone())
     } else {
-        HttpResponse::Ok().content_type("text/plain").body("unset")
+        HttpResponse::Ok().content_type(TEXT_PLAIN).body("unset")
     }
 }
 
@@ -76,7 +76,7 @@ pub(crate) async fn version() -> HttpResponse {
     let mut out = String::with_capacity(12 + version.len());
     out.push_str("Chhoto URL v");
     out.push_str(&version);
-    HttpResponse::Ok().content_type("text/plain").body(out)
+    HttpResponse::Ok().content_type(TEXT_PLAIN).body(out)
 }
 
 // Get the user's current role
@@ -106,7 +106,7 @@ pub(crate) async fn whoami(
         } else {
             "nobody"
         };
-        HttpResponse::Ok().content_type("text/plain").body(res)
+        HttpResponse::Ok().content_type(TEXT_PLAIN).body(res)
     }
 }
 
@@ -172,7 +172,7 @@ pub(crate) async fn oidc_redirect(
     let Some(oidc) = data.oidc_data.as_ref() else {
         return Either::Left(
             HttpResponse::Forbidden()
-                .content_type("text/plain")
+                .content_type(TEXT_PLAIN)
                 .body("OIDC is disabled."),
         );
     };
@@ -180,7 +180,7 @@ pub(crate) async fn oidc_redirect(
     if config.disable_frontend {
         return Either::Left(
             HttpResponse::Forbidden()
-                .content_type("text/plain")
+                .content_type(TEXT_PLAIN)
                 .body("Frontend is disabled."),
         );
     }
@@ -193,7 +193,7 @@ pub(crate) async fn oidc_redirect(
         warn!("Bad OIDC origin URL: {origin}");
         return Either::Left(
             HttpResponse::BadRequest()
-                .content_type("text/plain")
+                .content_type(TEXT_PLAIN)
                 .body("Bad OIDC origin URL."),
         );
     };
@@ -244,14 +244,14 @@ pub(crate) async fn oidc_callback(
     if config.oidc_issuer_url.is_none() {
         return Either::Left(
             HttpResponse::Forbidden()
-                .content_type("text/plain")
+                .content_type(TEXT_PLAIN)
                 .body("OIDC is disabled."),
         );
     };
     if config.disable_frontend {
         return Either::Left(
             HttpResponse::Forbidden()
-                .content_type("text/plain")
+                .content_type(TEXT_PLAIN)
                 .body("Frontend is disabled."),
         );
     }
@@ -264,7 +264,7 @@ pub(crate) async fn oidc_callback(
         info!("Failed OIDC login.");
         return Either::Left(
             HttpResponse::InternalServerError()
-                .content_type("text/plain")
+                .content_type(TEXT_PLAIN)
                 .body("OIDC login failed."),
         );
     };
@@ -276,7 +276,7 @@ pub(crate) async fn oidc_callback(
         warn!("Bad OIDC origin URL: {origin}");
         return Either::Left(
             HttpResponse::BadRequest()
-                .content_type("text/plain")
+                .content_type(TEXT_PLAIN)
                 .body("Bad OIDC origin URL."),
         );
     };
@@ -307,7 +307,7 @@ pub(crate) async fn oidc_callback(
         info!("Failed OIDC login.");
         return Either::Left(
             HttpResponse::Forbidden()
-                .content_type("text/plain")
+                .content_type(TEXT_PLAIN)
                 .body("OIDC login failed."),
         );
     };
@@ -323,12 +323,10 @@ pub(crate) async fn oidc_callback(
 #[get("/healthz")]
 pub(crate) async fn health_handler(db: web::Data<Connection>) -> impl Responder {
     if database::is_database_healthy(&db) {
-        HttpResponse::Ok()
-            .content_type("text/plain")
-            .body("healthy")
+        HttpResponse::Ok().content_type(TEXT_PLAIN).body("healthy")
     } else {
         HttpResponse::InternalServerError()
-            .content_type("text/plain")
+            .content_type(TEXT_PLAIN)
             .body("unhealthy")
     }
 }

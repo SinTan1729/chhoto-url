@@ -2,7 +2,10 @@
 // SPDX-License-Identifier: MIT
 
 use actix_files::NamedFile;
-use actix_web::{HttpResponse, Responder, dev::ConnectionInfo, http::StatusCode, web};
+use actix_web::{
+    http::header::{CACHE_CONTROL, LOCATION},
+    {HttpResponse, Responder, dev::ConnectionInfo, http::StatusCode, web},
+};
 use argon2::{Argon2, PasswordVerifier};
 use log::{debug, error};
 use nanoid::nanoid;
@@ -505,8 +508,8 @@ fn gen_link(
 // Redirect with no cache
 pub(super) fn oidc_redirect_once(url: &str) -> HttpResponse {
     HttpResponse::Found()
-        .insert_header(("Location", url))
-        .insert_header(("Cache-Control", "no-store, no-cache, must-revalidate"))
+        .insert_header((LOCATION, url))
+        .insert_header((CACHE_CONTROL, "no-store, no-cache, must-revalidate"))
         .finish()
 }
 

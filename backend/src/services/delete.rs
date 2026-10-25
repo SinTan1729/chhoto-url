@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: MIT
 
 use actix_session::Session;
-use actix_web::{HttpResponse, delete, web};
+use actix_web::{HttpResponse, delete, mime::TEXT_PLAIN, web};
 use log::{debug, info};
 
 use crate::{
@@ -24,11 +24,11 @@ pub(crate) async fn logout(session: Session) -> HttpResponse {
     if session.remove("chhoto-url-auth").is_some() {
         info!("Successful logout.");
         HttpResponse::Ok()
-            .content_type("text/plain")
+            .content_type(TEXT_PLAIN)
             .body("Logged out!")
     } else {
         HttpResponse::Unauthorized()
-            .content_type("text/plain")
+            .content_type(TEXT_PLAIN)
             .body("You don't seem to be logged in.")
     }
 }
@@ -91,11 +91,11 @@ pub(crate) async fn delete_link(
             .is_ok()
             {
                 HttpResponse::Ok()
-                    .content_type("text/plain")
+                    .content_type(TEXT_PLAIN)
                     .body(deleted_text(shortlink.to_string()))
             } else {
                 HttpResponse::NotFound()
-                    .content_type("text/plain")
+                    .content_type(TEXT_PLAIN)
                     .body("Not found!")
             }
         }

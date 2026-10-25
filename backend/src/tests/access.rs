@@ -34,7 +34,7 @@ async fn link_deletion() {
 
     let req = test::TestRequest::delete()
         .uri("/api/del/test2")
-        .insert_header(("X-API-Key", conf.api_key.unwrap()))
+        .insert_header((API_HEADER, conf.api_key.unwrap()))
         .to_request();
 
     let resp = test::call_service(&app, req).await;

@@ -14,6 +14,8 @@ use tempfile::TempDir;
 
 use crate::{config::Credential, *};
 
+pub(super) const API_HEADER: &str = "X-API-Key";
+
 pub(super) trait BodyTest {
     fn as_str(&self) -> &str;
 }
@@ -158,7 +160,7 @@ pub(super) async fn add_link<
     notes: &str,
 ) -> (StatusCode, URLData) {
     let req = test::TestRequest::post().uri("/api/new")
-        .insert_header(("X-API-Key", api_key))
+        .insert_header((API_HEADER, api_key))
         .set_payload(format!(
             "{{\"shortlink\":\"{shortlink}\",\"longlink\":\"https://example-{shortlink}.com\",\"expiry_delay\":{expiry_delay},\"notes\":\"{notes}\"}}"
         ))
@@ -182,7 +184,7 @@ pub(super) async fn expand<
 ) -> (StatusCode, URLData) {
     let req = test::TestRequest::query()
         .uri("/api/expand")
-        .insert_header(("X-API-Key", api_key))
+        .insert_header((API_HEADER, api_key))
         .set_payload(shortlink.to_string())
         .to_request();
     let resp = test::call_service(&app, req).await;
@@ -200,7 +202,7 @@ pub(super) async fn getall<T: Service<Request, Response = ServiceResponse, Error
 ) -> Rc<[URLData]> {
     let req = test::TestRequest::get()
         .uri(&format!("/api/all?{params}"))
-        .insert_header(("X-API-Key", api_key))
+        .insert_header((API_HEADER, api_key))
         .to_request();
 
     let resp = test::call_service(&app, req).await;
@@ -230,7 +232,7 @@ pub(super) async fn edit_link<T: Service<Request, Response = ServiceResponse, Er
     }
     let req = test::TestRequest::put()
         .uri("/api/edit")
-        .insert_header(("X-API-Key", api_key))
+        .insert_header((API_HEADER, api_key))
         .set_payload(format!("{{{payload}}}"))
         .to_request();
     let resp = test::call_service(&app, req).await;

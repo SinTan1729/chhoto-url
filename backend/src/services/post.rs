@@ -4,7 +4,7 @@
 use std::rc::Rc;
 
 use actix_session::Session;
-use actix_web::{HttpMessage, HttpRequest, HttpResponse, post, web};
+use actix_web::{HttpMessage, HttpRequest, HttpResponse, mime::TEXT_PLAIN, post, web};
 use log::{error, info, warn};
 
 use crate::{
@@ -40,13 +40,13 @@ pub(crate) async fn add_links(
         .and_then(|(v, _)| v.into_iter().next().unwrap_or(Err(ServerError)));
         match result {
             Ok((shorturl, _)) => HttpResponse::Created()
-                .content_type("text/plain")
+                .content_type(TEXT_PLAIN)
                 .body(shorturl),
             Err(ClientError { reason }) => HttpResponse::Conflict()
-                .content_type("text/plain")
+                .content_type(TEXT_PLAIN)
                 .body(reason),
             Err(ServerError) => HttpResponse::InternalServerError()
-                .content_type("text/plain")
+                .content_type(TEXT_PLAIN)
                 .body(SERVER_ERROR_RES.to_owned()),
         }
     };
@@ -129,7 +129,7 @@ pub(crate) async fn add_links(
                 cookie_response(true).await
             } else {
                 HttpResponse::Unauthorized()
-                    .content_type("text/plain")
+                    .content_type(TEXT_PLAIN)
                     .body("Not logged in!")
             }
         }
@@ -203,7 +203,7 @@ pub(crate) async fn login(
             })
         } else {
             HttpResponse::Ok()
-                .content_type("text/plain")
+                .content_type(TEXT_PLAIN)
                 .body("Correct password!")
         }
     } else {
@@ -234,7 +234,7 @@ pub(crate) async fn login(
                 HttpResponse::Forbidden()
             };
 
-            res.content_type("text/plain").body(reason)
+            res.content_type(TEXT_PLAIN).body(reason)
         }
     }
 }

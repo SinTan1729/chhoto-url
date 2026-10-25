@@ -12,9 +12,11 @@ use std::time::SystemTime;
 use crate::config::Credential::{self, Argon2, Plain};
 use crate::{AppState, services::types::JSONResponse};
 
+const API_HEADER: &str = "X-API-Key";
+
 // Read API key from header and process it
 async fn is_api_ok(req: HttpRequest, api_key: Option<Credential>) -> JSONResponse {
-    let api_header = req.headers().get("X-API-Key").and_then(|h| h.to_str().ok());
+    let api_header = req.headers().get(API_HEADER).and_then(|h| h.to_str().ok());
     // If the api_key environment variable exists
     if let Some(key) = api_key {
         // If the header exists

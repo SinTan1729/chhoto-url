@@ -76,7 +76,7 @@ async fn empty_insertion() {
     let (_tempdir, app) = create_app(&conf, test).await;
     let req = test::TestRequest::post()
         .uri("/api/new")
-        .insert_header(("X-API-Key", conf.api_key.unwrap()))
+        .insert_header((API_HEADER, conf.api_key.unwrap()))
         .set_payload("[]")
         .to_request();
     let resp = test::call_service(&app, req).await;
@@ -105,7 +105,7 @@ async fn bad_inserts() {
     ] {
         let req = test::TestRequest::post()
             .uri("/api/new")
-            .insert_header(("X-API-Key", api_key.clone()))
+            .insert_header((API_HEADER, api_key.clone()))
             .set_payload(format!(
                 r#"{{"shortlink":"{shortlink}","longlink":"{longlink}","notes":"{notes}"}}"#
             ))
@@ -141,7 +141,7 @@ async fn bad_edits() {
 
     let req = test::TestRequest::put()
         .uri("/api/edit")
-        .insert_header(("X-API-Key", api_key))
+        .insert_header((API_HEADER, api_key))
         .set_payload(r#"[{"shortlink":"test1","longlink":"ftps://example.com/test1"}"#)
         .to_request();
     let resp = test::call_service(&app, req).await;
@@ -157,7 +157,7 @@ async fn batch_insertion() {
     let (_tempdir, app) = create_app(&conf, test).await;
     let req = test::TestRequest::post()
         .uri("/api/new")
-        .insert_header(("X-API-Key", conf.api_key.unwrap()))
+        .insert_header((API_HEADER, conf.api_key.unwrap()))
         .set_payload(
             r#"[{"shortlink":"test1","longlink":"https://example.com/test1"},
         {"shortlink":"test2","longlink":"https://example.com/test2"},
@@ -243,7 +243,7 @@ async fn adding_links_with_custom_protocol() {
     let api_key = conf.api_key.clone().unwrap();
     let req = test::TestRequest::post()
         .uri("/api/new")
-        .insert_header(("X-API-Key", api_key.clone()))
+        .insert_header((API_HEADER, api_key.clone()))
         .set_payload(r#"{{"shortlink":"test","longlink":"ftps://example.com","notes":"note"}}"#)
         .to_request();
     let resp = test::call_service(&app, req).await;

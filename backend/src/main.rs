@@ -4,7 +4,9 @@
 use actix_files::Files;
 use actix_session::{SessionMiddleware, config::PersistentSession, storage::CookieSessionStore};
 use actix_web::{
-    App, HttpServer, cookie, middleware,
+    App, HttpServer, cookie,
+    http::header::CACHE_CONTROL,
+    middleware,
     web::{self, Redirect},
 };
 use log::{error, info, warn};
@@ -135,7 +137,7 @@ async fn main() -> Result<()> {
                 oidc_data: oidc_data.clone(),
             }))
             .wrap(if let Some(header) = &conf.cache_control_header {
-                middleware::DefaultHeaders::new().add(("Cache-Control", header.to_owned()))
+                middleware::DefaultHeaders::new().add((CACHE_CONTROL, header.to_owned()))
             } else {
                 middleware::DefaultHeaders::new()
             })
