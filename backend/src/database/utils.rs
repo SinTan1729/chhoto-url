@@ -3,9 +3,11 @@
 
 use chrono::Utc;
 use log::{debug, info, warn};
-use rusqlite::{Connection, OpenFlags, named_params};
-use std::time::Instant;
-use std::{collections::HashSet, fs, path::PathBuf, time::Duration};
+use rusqlite::{Connection, OpenFlags, backup::NO_PROGRESS, named_params};
+use std::{
+    time::Instant,
+    {collections::HashSet, fs, path::PathBuf, time::Duration},
+};
 
 use crate::database::{self, queries};
 
@@ -143,8 +145,12 @@ pub(crate) fn manage_backups(
     let backup_path = |idx: usize| backup_dir.join(format!("{db_name}.{suffix}{idx}"));
 
     let db = database::open_db(db_link, true);
-    db.backup("main", backup_path(0).to_string_lossy().as_ref(), None)
-        .map_err(|_| "There was an error while creating the backup.".to_string())?;
+    db.backup::<_, _, _>(
+        "main",
+        backup_path(0).to_string_lossy().as_ref(),
+        NO_PROGRESS,
+    )
+    .map_err(|_| "There was an error while creating the backup.".to_string())?;
 
     // Migrate legacy backups
     if matches!(backup_type, BackupType::Daily) {
