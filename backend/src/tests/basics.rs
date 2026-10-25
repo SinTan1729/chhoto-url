@@ -24,7 +24,7 @@ async fn basic_site_config() {
     assert_eq!(body.as_str(), "nobody");
     let req = test::TestRequest::get()
         .uri("/api/whoami")
-        .insert_header(("Content-Type", "application/json"))
+        .insert_header(("Accept", "application/json"))
         .to_request();
     let resp = test::call_service(&app, req).await;
     let body = to_bytes(resp.into_body()).await.unwrap();

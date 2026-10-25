@@ -150,7 +150,7 @@ curl -H "X-API-Key: <YOUR_API_KEY>" http://localhost:4567/api/whoami
 By default, the server will reply with `text/plain`; `admin` if admin access is granted, `public` if admin access is not granted but
 public mode is enabled, and `nobody` if no access is granted.
 
-If content type `application/json` is requested, the response will look like the following.
+If the header `Accept: application/json` is passed, the response will look like the following.
 
 ```json
 {

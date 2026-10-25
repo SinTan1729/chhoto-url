@@ -2,7 +2,9 @@
 // SPDX-License-Identifier: MIT
 
 use actix_web::{
-    Either, HttpMessage, HttpRequest, HttpResponse, Responder, get,
+    Either, HttpRequest, HttpResponse, Responder, get,
+    http::header::{Accept, Header},
+    mime::APPLICATION_JSON,
     web::{self, Redirect},
 };
 use log::{debug, info, warn};
@@ -85,27 +87,26 @@ pub(crate) async fn whoami(
     auth: Auth,
 ) -> HttpResponse {
     let config = &data.config;
-    match req.content_type() {
-        "application/json" => {
-            let res = WhoamiRes {
-                admin: matches!(auth, Auth::ValidSession | Auth::ValidAPIKey),
-                public_mode_enabled: config.public_mode,
-                password_enabled: config.password.is_some(),
-                oidc_enabled: data.oidc_data.is_some(),
-            };
-            HttpResponse::Ok().json(res)
-        }
+    if Accept::parse(&req)
+        .is_ok_and(|accept| accept.iter().any(|item| item.item == APPLICATION_JSON))
+    {
+        let res = WhoamiRes {
+            admin: matches!(auth, Auth::ValidSession | Auth::ValidAPIKey),
+            public_mode_enabled: config.public_mode,
+            password_enabled: config.password.is_some(),
+            oidc_enabled: data.oidc_data.is_some(),
+        };
+        HttpResponse::Ok().json(res)
         // Deprecated: Compatibility mode for older versions, might be removed in a later major release
-        _ => {
-            let res = if matches!(auth, Auth::ValidSession | Auth::ValidAPIKey) {
-                "admin"
-            } else if config.public_mode {
-                "public"
-            } else {
-                "nobody"
-            };
-            HttpResponse::Ok().content_type("text/plain").body(res)
-        }
+    } else {
+        let res = if matches!(auth, Auth::ValidSession | Auth::ValidAPIKey) {
+            "admin"
+        } else if config.public_mode {
+            "public"
+        } else {
+            "nobody"
+        };
+        HttpResponse::Ok().content_type("text/plain").body(res)
     }
 }
 
