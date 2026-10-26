@@ -293,6 +293,9 @@ summary,
   -webkit-tap-highlight-color: rgba(0, 0, 0, 0);
 }
 
+#edit-dialog {
+  text-align: center;
+}
 #edit-dialog form,
 #login-dialog {
   min-height: 8em;
