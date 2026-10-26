@@ -295,7 +295,6 @@ pub(crate) fn read() -> Config {
     {
         let url = remove_surrounding_quotes(&provided_url);
         let url = remove_trailing_slash(&url);
-        info!("Provided Site URL is: {url}");
 
         match Url::parse(&url) {
             Ok(u) => {
@@ -303,14 +302,14 @@ pub(crate) fn read() -> Config {
                     Some(url)
                 } else {
                     error!(
-                        "Bad scheme {} supplied for site url. Ignoring the config.",
-                        u.scheme()
+                        "Bad scheme {} supplied for provided site url {url}. Ignoring the config.",
+                        u.scheme(),
                     );
                     None
                 }
             }
             Err(url::ParseError::RelativeUrlWithoutBase) => {
-                warn!("No scheme supplied for site url. Defaulting to https.");
+                warn!("No scheme supplied for site url {url}, defaulting to https.");
                 let u = format!("https://{url}");
                 if Url::parse(&u).is_ok() {
                     Some(u)
@@ -320,7 +319,7 @@ pub(crate) fn read() -> Config {
                 }
             }
             Err(e) => {
-                error!("Error while processing the site url: {e}");
+                error!("Error while processing the provided site url {url}: {e}");
                 None
             }
         }
