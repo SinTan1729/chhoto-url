@@ -15,7 +15,7 @@ use rusqlite::Connection;
 
 use crate::{
     AppState,
-    auth::{self, Auth},
+    auth::{Auth, gen_cookie},
     database,
     services::{
         types::{
@@ -283,7 +283,7 @@ pub(crate) async fn oidc_callback(
         });
     }
 
-    let cookie = auth::gen_cookie(true, true, &data.secret_key);
+    let cookie = gen_cookie(true, true, &data.secret_key);
     info!("Successful OIDC login.");
 
     if config.custom_landing_directory.is_some() {

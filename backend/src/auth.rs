@@ -17,6 +17,9 @@ use crate::config::Credential::{self, Argon2, Plain};
 use crate::{AppState, services::types::JSONResponse};
 
 const API_HEADER: &str = "X-API-Key";
+pub(crate) const COOKIE_NAME: &str = "chhoto-url-auth";
+const COOKIE_VALUE_PASSWORD: &str = "chhoto-url-password";
+const COOKIE_VALUE_OIDC: &str = "chhoto-url-oidc";
 
 // Read API key from header and process it
 async fn is_api_ok(headers: &HeaderMap, api_key: Option<Credential>) -> JSONResponse {
@@ -99,14 +102,14 @@ pub(crate) fn gen_key() -> String {
 fn is_cookie_valid(cookie: Cookie, key: &Key) -> bool {
     let mut jar = CookieJar::new();
     jar.add_original(cookie.into_owned());
-    if let Some(token) = jar.private(key).get("chhoto-url-auth") {
+    if let Some(token) = jar.private(key).get(COOKIE_NAME) {
         let token_parts = token.value().split_once(';');
         if let Some((marker, expiry)) = token_parts {
             let time_now = SystemTime::now()
                 .duration_since(SystemTime::UNIX_EPOCH)
                 .expect("Time went backwards!")
                 .as_secs();
-            (marker == "chhoto-url-password" || marker == "chhoto-url-oidc")
+            (marker == COOKIE_VALUE_PASSWORD || marker == COOKIE_VALUE_OIDC)
                 && time_now < expiry.parse::<u64>().unwrap_or(0)
         } else {
             false
@@ -154,7 +157,7 @@ impl FromRequest for Auth {
                 return Ok(Auth::NoAuthNeeded);
             }
 
-            if let Some(cookie) = req.cookie("chhoto-url-auth")
+            if let Some(cookie) = req.cookie(COOKIE_NAME)
                 && is_cookie_valid(cookie, &data.secret_key)
             {
                 return Ok(Auth::ValidSession);
@@ -168,9 +171,9 @@ impl FromRequest for Auth {
 // Generate a new token for usage in cookie
 pub(crate) fn gen_cookie(remember: bool, oidc: bool, secret_key: &Key) -> Cookie<'static> {
     let token_text = if oidc {
-        "chhoto-url-oidc"
+        COOKIE_VALUE_OIDC
     } else {
-        "chhoto-url-password"
+        COOKIE_VALUE_PASSWORD
     };
 
     let remember_sec = if remember {
@@ -190,7 +193,7 @@ pub(crate) fn gen_cookie(remember: bool, oidc: bool, secret_key: &Key) -> Cookie
     val.push_str(&time);
 
     let mut jar = CookieJar::new();
-    let mut cookie = Cookie::build("chhoto-url-auth", val)
+    let mut cookie = Cookie::build(COOKIE_NAME, val)
         .path("/")
         .http_only(true)
         .same_site(SameSite::Lax);

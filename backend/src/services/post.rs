@@ -1,14 +1,13 @@
 // SPDX-FileCopyrightText: 2023-2026 Sayantan Santra <sayantan.santra689@gmail.com>
 // SPDX-License-Identifier: MIT
 
-use std::rc::Rc;
-
 use actix_web::{HttpMessage, HttpRequest, HttpResponse, mime::TEXT_PLAIN, post, web};
 use log::{error, info, warn};
+use std::rc::Rc;
 
 use crate::{
     AppState,
-    auth::{self, Auth},
+    auth::{Auth, gen_cookie},
     services::{
         types::{
             AddLinkResponse,
@@ -187,7 +186,7 @@ pub(crate) async fn login(
         };
 
     if authorized {
-        let cookie = auth::gen_cookie(remember, false, &data.secret_key);
+        let cookie = gen_cookie(remember, false, &data.secret_key);
         info!("Successful login. Remember: {remember}");
 
         if is_json {

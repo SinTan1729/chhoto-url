@@ -12,7 +12,7 @@ use log::{debug, info};
 
 use crate::{
     AppState,
-    auth::Auth,
+    auth::{Auth, COOKIE_NAME},
     services::{
         types::{
             ChhotoError::{ClientError, ServerError},
@@ -29,10 +29,10 @@ pub(crate) async fn logout(auth: Auth, req: HttpRequest) -> HttpResponse {
     if matches!(auth, Auth::ValidSession) {
         let mut jar = CookieJar::new();
         let cookie = req
-            .cookie("chhoto-url-auth")
+            .cookie(COOKIE_NAME)
             .expect("Valid session must have an auth cookie at this point.");
         jar.add_original(cookie.into_owned());
-        jar.remove(Cookie::build("chhoto-url-auth", "").path("/").finish());
+        jar.remove(Cookie::build(COOKIE_NAME, "").path("/").finish());
 
         info!("Successful logout.");
         HttpResponse::Ok()
