@@ -1,8 +1,13 @@
 // SPDX-FileCopyrightText: 2023-2026 Sayantan Santra <sayantan.santra689@gmail.com>
 // SPDX-License-Identifier: MIT
 
-use actix_session::Session;
-use actix_web::{HttpResponse, delete, mime::TEXT_PLAIN, web};
+use actix_web::{
+    HttpRequest, HttpResponse,
+    cookie::{Cookie, CookieJar},
+    delete,
+    mime::TEXT_PLAIN,
+    web,
+};
 use log::{debug, info};
 
 use crate::{
@@ -20,10 +25,23 @@ use crate::{
 // Handle logout
 // There's no reason to be calling this route with an API key
 #[delete("/api/logout")]
-pub(crate) async fn logout(session: Session) -> HttpResponse {
-    if session.remove("chhoto-url-auth").is_some() {
+pub(crate) async fn logout(auth: Auth, req: HttpRequest) -> HttpResponse {
+    if matches!(auth, Auth::ValidSession) {
+        let mut jar = CookieJar::new();
+        let cookie = req
+            .cookie("chhoto-url-auth")
+            .expect("Valid session must have an auth cookie at this point.");
+        jar.add_original(cookie.into_owned());
+        jar.remove(Cookie::build("chhoto-url-auth", "").path("/").finish());
+
         info!("Successful logout.");
         HttpResponse::Ok()
+            .cookie(
+                jar.delta()
+                    .next()
+                    .expect("Cookie jar delta should always succeed.")
+                    .to_owned(),
+            )
             .content_type(TEXT_PLAIN)
             .body("Logged out!")
     } else {

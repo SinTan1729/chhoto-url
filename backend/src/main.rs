@@ -2,9 +2,9 @@
 // SPDX-License-Identifier: MIT
 
 use actix_files::Files;
-use actix_session::{SessionMiddleware, config::PersistentSession, storage::CookieSessionStore};
 use actix_web::{
-    App, HttpServer, cookie,
+    App, HttpServer,
+    cookie::Key,
     http::header::CACHE_CONTROL,
     middleware,
     web::{self, Redirect},
@@ -43,6 +43,7 @@ struct AppState {
     config: Arc<config::Config>,
     frontend_dir: String,
     oidc_data: Option<Arc<Mutex<oidc::OidcData>>>,
+    secret_key: Arc<Key>,
 }
 
 static LOGGER: Once = Once::new();
@@ -57,7 +58,6 @@ async fn main() -> Result<()> {
     eprintln!("Source: https://github.com/SinTan1729/chhoto-url");
     eprintln!("----------------------------------------------------------------------");
 
-    // Generate session key in runtime so that restart invalidates older logins
     logging::init_async(Duration::from_secs(1), 8 * 1024, 512);
 
     // Read config from env vars
@@ -106,7 +106,8 @@ async fn main() -> Result<()> {
         None
     };
 
-    let secret_key = utils::generate_key();
+    // Generate or load session master key
+    let secret_key = Arc::new(utils::generate_key());
     let port = conf.port;
     let addr = conf.listen_address.clone();
     let db_location_for_health = conf.db_location.clone();
@@ -118,15 +119,6 @@ async fn main() -> Result<()> {
             .wrap(middleware::NormalizePath::new(
                 middleware::TrailingSlash::MergeOnly,
             ))
-            .wrap(
-                SessionMiddleware::builder(CookieSessionStore::default(), secret_key.clone())
-                    .cookie_same_site(actix_web::cookie::SameSite::Strict)
-                    .session_lifecycle(
-                        PersistentSession::default().session_ttl(cookie::time::Duration::days(7)),
-                    )
-                    .cookie_secure(false)
-                    .build(),
-            )
             // Maintain a single instance of database throughout
             .app_data(web::Data::new(AppState {
                 hits_tx: hits_tx.clone(),
@@ -135,6 +127,7 @@ async fn main() -> Result<()> {
                 config: Arc::clone(&conf),
                 frontend_dir: frontend_dir.clone(),
                 oidc_data: oidc_data.clone(),
+                secret_key: Arc::clone(&secret_key),
             }))
             .wrap(if let Some(header) = &conf.cache_control_header {
                 middleware::DefaultHeaders::new().add((CACHE_CONTROL, header.to_owned()))

@@ -3,7 +3,6 @@
 
 use std::rc::Rc;
 
-use actix_session::Session;
 use actix_web::{HttpMessage, HttpRequest, HttpResponse, mime::TEXT_PLAIN, post, web};
 use log::{error, info, warn};
 
@@ -152,7 +151,6 @@ pub(crate) async fn login(
     auth: Auth,
     req: HttpRequest,
     body: String,
-    session: Session,
     data: web::Data<AppState>,
 ) -> HttpResponse {
     let config = &data.config;
@@ -189,20 +187,20 @@ pub(crate) async fn login(
         };
 
     if authorized {
-        session
-            .insert("chhoto-url-auth", auth::gen_token_text(remember, false))
-            .expect("Error inserting auth token.");
-
+        let cookie = auth::gen_cookie(remember, false, &data.secret_key);
         info!("Successful login. Remember: {remember}");
 
         if is_json {
-            HttpResponse::Ok().json(JSONResponse {
-                success: true,
-                error: false,
-                reason: "Correct password!".to_owned(),
-            })
+            HttpResponse::Ok()
+                .cookie(cookie.to_owned())
+                .json(JSONResponse {
+                    success: true,
+                    error: false,
+                    reason: "Correct password!".to_owned(),
+                })
         } else {
             HttpResponse::Ok()
+                .cookie(cookie.to_owned())
                 .content_type(TEXT_PLAIN)
                 .body("Correct password!")
         }

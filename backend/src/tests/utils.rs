@@ -132,6 +132,7 @@ pub(super) async fn create_app(
                     config: Arc::new(conf.clone()),
                     frontend_dir: String::new(),
                     oidc_data: None,
+                    secret_key: Arc::new(Key::generate()),
                 }))
                 .service(services::siteurl)
                 .service(services::version)

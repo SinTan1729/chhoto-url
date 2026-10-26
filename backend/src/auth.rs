@@ -1,9 +1,13 @@
 // SPDX-FileCopyrightText: 2023-2026 Sayantan Santra <sayantan.santra689@gmail.com>
 // SPDX-License-Identifier: MIT
 
-use actix_session::{Session, SessionExt};
-use actix_web::cookie::Key;
-use actix_web::{Error, FromRequest, HttpRequest, dev::Payload, web};
+use actix_web::{
+    Error, FromRequest, HttpRequest,
+    cookie::{Cookie, CookieJar, Key, SameSite, time::Duration},
+    dev::Payload,
+    http::header::HeaderMap,
+    web,
+};
 use argon2::PasswordVerifier;
 use log::{debug, warn};
 use std::pin::Pin;
@@ -15,8 +19,8 @@ use crate::{AppState, services::types::JSONResponse};
 const API_HEADER: &str = "X-API-Key";
 
 // Read API key from header and process it
-async fn is_api_ok(req: HttpRequest, api_key: Option<Credential>) -> JSONResponse {
-    let api_header = req.headers().get(API_HEADER).and_then(|h| h.to_str().ok());
+async fn is_api_ok(headers: &HeaderMap, api_key: Option<Credential>) -> JSONResponse {
+    let api_header = headers.get(API_HEADER).and_then(|h| h.to_str().ok());
     // If the api_key environment variable exists
     if let Some(key) = api_key {
         // If the header exists
@@ -92,18 +96,11 @@ pub(crate) fn gen_key() -> String {
 }
 
 // Validate a session
-fn is_session_valid(session: &Session) -> bool {
-    if let Ok(token) = session.get::<String>("chhoto-url-auth") {
-        is_token_valid(token.as_deref())
-    } else {
-        false
-    }
-}
-
-// Check a token cryptographically
-fn is_token_valid(token: Option<&str>) -> bool {
-    if let Some(token_body) = token {
-        let token_parts = token_body.split_once(';');
+fn is_cookie_valid(cookie: Cookie, key: &Key) -> bool {
+    let mut jar = CookieJar::new();
+    jar.add_original(cookie.into_owned());
+    if let Some(token) = jar.private(key).get("chhoto-url-auth") {
+        let token_parts = token.value().split_once(';');
         if let Some((marker, expiry)) = token_parts {
             let time_now = SystemTime::now()
                 .duration_since(SystemTime::UNIX_EPOCH)
@@ -136,13 +133,14 @@ impl FromRequest for Auth {
         let req = req.clone();
         let data = req
             .app_data::<web::Data<AppState>>()
-            .expect("Appstate wasn't created yet. THIS SHOULD NEVER OCCUR!!!");
+            .expect("Appstate wasn't created yet. THIS SHOULD NEVER OCCUR!!!")
+            .clone();
         let api_key = data.config.api_key.clone();
         let no_password = data.config.password.is_none();
         let no_oidc = data.oidc_data.is_none();
 
         Box::pin(async move {
-            let api_result = is_api_ok(req.clone(), api_key).await;
+            let api_result = is_api_ok(req.headers(), api_key).await;
 
             if api_result.success {
                 return Ok(Auth::ValidAPIKey);
@@ -156,9 +154,9 @@ impl FromRequest for Auth {
                 return Ok(Auth::NoAuthNeeded);
             }
 
-            let session = req.get_session();
-
-            if is_session_valid(&session) {
+            if let Some(cookie) = req.cookie("chhoto-url-auth")
+                && is_cookie_valid(cookie, &data.secret_key)
+            {
                 return Ok(Auth::ValidSession);
             }
 
@@ -168,7 +166,7 @@ impl FromRequest for Auth {
 }
 
 // Generate a new token for usage in cookie
-pub(crate) fn gen_token_text(remember: bool, oidc: bool) -> String {
+pub(crate) fn gen_cookie(remember: bool, oidc: bool, secret_key: &Key) -> Cookie<'static> {
     let token_text = if oidc {
         "chhoto-url-oidc"
     } else {
@@ -186,9 +184,23 @@ pub(crate) fn gen_token_text(remember: bool, oidc: bool) -> String {
         .as_secs()
         + remember_sec)
         .to_string(); // Valid for 7 days
-    let mut out = String::with_capacity(token_text.len() + time.len() + 1);
-    out.push_str(token_text);
-    out.push(';');
-    out.push_str(&time);
-    out
+    let mut val = String::with_capacity(token_text.len() + time.len() + 1);
+    val.push_str(token_text);
+    val.push(';');
+    val.push_str(&time);
+
+    let mut jar = CookieJar::new();
+    let mut cookie = Cookie::build("chhoto-url-auth", val)
+        .path("/")
+        .http_only(true)
+        .same_site(SameSite::Lax);
+    if remember {
+        cookie = cookie.max_age(Duration::days(7));
+    }
+
+    jar.private_mut(secret_key).add(cookie.finish());
+    jar.delta()
+        .next()
+        .expect("Cookie jar delta should always succeed.")
+        .to_owned()
 }

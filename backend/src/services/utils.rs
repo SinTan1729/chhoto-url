@@ -3,8 +3,13 @@
 
 use actix_files::NamedFile;
 use actix_web::{
-    http::header::{CACHE_CONTROL, LOCATION},
-    {HttpResponse, Responder, dev::ConnectionInfo, http::StatusCode, web},
+    HttpResponse, HttpResponseBuilder, Responder,
+    dev::ConnectionInfo,
+    http::{
+        StatusCode,
+        header::{CACHE_CONTROL, LOCATION},
+    },
+    web,
 };
 use argon2::{Argon2, PasswordVerifier};
 use log::{debug, error};
@@ -506,11 +511,11 @@ fn gen_link(
 }
 
 // Redirect with no cache
-pub(super) fn oidc_redirect_once(url: &str) -> HttpResponse {
+pub(super) fn oidc_redirect_once(url: &str) -> HttpResponseBuilder {
     HttpResponse::Found()
         .insert_header((LOCATION, url))
         .insert_header((CACHE_CONTROL, "no-store, no-cache, must-revalidate"))
-        .finish()
+        .take()
 }
 
 // 404 error page

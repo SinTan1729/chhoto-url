@@ -15,7 +15,7 @@ use rusqlite::Connection;
 
 use crate::{
     AppState,
-    auth::Auth,
+    auth::{self, Auth},
     database,
     services::{
         types::{
@@ -168,21 +168,17 @@ pub(crate) async fn oidc_redirect(
     auth: Auth,
     data: web::Data<AppState>,
     req: HttpRequest,
-) -> impl Responder {
+) -> HttpResponse {
     let Some(oidc) = data.oidc_data.as_ref() else {
-        return Either::Left(
-            HttpResponse::Forbidden()
-                .content_type(TEXT_PLAIN)
-                .body("OIDC is disabled."),
-        );
+        return HttpResponse::Forbidden()
+            .content_type(TEXT_PLAIN)
+            .body("OIDC is disabled.");
     };
     let config = &data.config;
     if config.disable_frontend {
-        return Either::Left(
-            HttpResponse::Forbidden()
-                .content_type(TEXT_PLAIN)
-                .body("Frontend is disabled."),
-        );
+        return HttpResponse::Forbidden()
+            .content_type(TEXT_PLAIN)
+            .body("Frontend is disabled.");
     }
 
     let (origin, callback) = derive_origin_info(&req.connection_info());
@@ -191,17 +187,15 @@ pub(crate) async fn oidc_redirect(
         .filter(|_| config.oidc_allowed_origins.contains(&origin))
     else {
         warn!("Bad OIDC origin URL: {origin}");
-        return Either::Left(
-            HttpResponse::BadRequest()
-                .content_type(TEXT_PLAIN)
-                .body("Bad OIDC origin URL."),
-        );
+        return HttpResponse::BadRequest()
+            .content_type(TEXT_PLAIN)
+            .body("Bad OIDC origin URL.");
     };
 
     let oidc = &mut *oidc.lock().await;
     let client = oidc.oidc_client.clone().set_redirect_uri(url);
     if matches!(auth, Auth::ValidSession) {
-        return Either::Right(oidc_redirect_once(&origin));
+        return oidc_redirect_once(&origin).finish();
     }
 
     // Generate a PKCE challenge.
@@ -227,7 +221,7 @@ pub(crate) async fn oidc_redirect(
     secrets.insert(state, (pkce_verifier, nonce));
 
     debug!("Attempting OIDC login.");
-    Either::Left(oidc_redirect_once(auth_url.as_str()))
+    oidc_redirect_once(auth_url.as_str()).finish()
 }
 
 //OIDC callback
@@ -237,36 +231,29 @@ pub(crate) async fn oidc_callback(
     data: web::Data<AppState>,
     params: web::Query<OidcCallbackParams>,
     req: HttpRequest,
-    session: actix_session::Session,
-) -> impl Responder {
+) -> HttpResponse {
     let config = &data.config;
     let (mut origin, callback) = derive_origin_info(&req.connection_info());
     if config.oidc_issuer_url.is_none() {
-        return Either::Left(
-            HttpResponse::Forbidden()
-                .content_type(TEXT_PLAIN)
-                .body("OIDC is disabled."),
-        );
+        return HttpResponse::Forbidden()
+            .content_type(TEXT_PLAIN)
+            .body("OIDC is disabled.");
     };
     if config.disable_frontend {
-        return Either::Left(
-            HttpResponse::Forbidden()
-                .content_type(TEXT_PLAIN)
-                .body("Frontend is disabled."),
-        );
+        HttpResponse::Forbidden()
+            .content_type(TEXT_PLAIN)
+            .body("Frontend is disabled.");
     }
     if matches!(auth, Auth::ValidSession) {
         info!("Successful OIDC login. (Already had valid session.)");
-        return Either::Right(oidc_redirect_once(&origin));
+        return oidc_redirect_once(&origin).finish();
     }
 
     let Some(oidc_data) = &data.oidc_data else {
         info!("Failed OIDC login.");
-        return Either::Left(
-            HttpResponse::InternalServerError()
-                .content_type(TEXT_PLAIN)
-                .body("OIDC login failed."),
-        );
+        return HttpResponse::InternalServerError()
+            .content_type(TEXT_PLAIN)
+            .body("OIDC login failed.");
     };
 
     let Some(url) = RedirectUrl::new(callback)
@@ -274,11 +261,9 @@ pub(crate) async fn oidc_callback(
         .filter(|_| config.oidc_allowed_origins.contains(&origin))
     else {
         warn!("Bad OIDC origin URL: {origin}");
-        return Either::Left(
-            HttpResponse::BadRequest()
-                .content_type(TEXT_PLAIN)
-                .body("Bad OIDC origin URL."),
-        );
+        return HttpResponse::BadRequest()
+            .content_type(TEXT_PLAIN)
+            .body("Bad OIDC origin URL.");
     };
 
     let oidc_data = &mut *oidc_data.lock().await;
@@ -291,32 +276,22 @@ pub(crate) async fn oidc_callback(
     .await
     {
         warn!("Failed OIDC login: {e}");
-        return Either::Left(HttpResponse::Forbidden().body(
-            if e.as_str() == "Custom claim mismatch." {
-                "You don't have enough permissions."
-            } else {
-                "OIDC login failed."
-            },
-        ));
+        return HttpResponse::Forbidden().body(if e.as_str() == "Custom claim mismatch." {
+            "You don't have enough permissions."
+        } else {
+            "OIDC login failed."
+        });
     }
 
-    if session
-        .insert("chhoto-url-auth", crate::auth::gen_token_text(true, true))
-        .is_err()
-    {
-        info!("Failed OIDC login.");
-        return Either::Left(
-            HttpResponse::Forbidden()
-                .content_type(TEXT_PLAIN)
-                .body("OIDC login failed."),
-        );
-    };
-
+    let cookie = auth::gen_cookie(true, true, &data.secret_key);
     info!("Successful OIDC login.");
+
     if config.custom_landing_directory.is_some() {
         origin.push_str("/admin/manage");
     }
-    Either::Right(oidc_redirect_once(&origin))
+    oidc_redirect_once(&origin)
+        .cookie(cookie.to_owned())
+        .finish()
 }
 
 // Healthcheck endpoint
