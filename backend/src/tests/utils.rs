@@ -130,7 +130,7 @@ pub(super) async fn create_app(
                     reader: database::open_db(db_file.to_str().unwrap(), false),
                     writer,
                     config: Arc::new(conf.clone()),
-                    frontend_dir: String::new(),
+                    frontend_dir: Arc::new(String::new()),
                     oidc_data: None,
                     secret_key: Arc::new(Key::generate()),
                 }))

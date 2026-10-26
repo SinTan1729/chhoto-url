@@ -41,7 +41,7 @@ struct AppState {
     reader: Connection,
     writer: Arc<Mutex<Connection>>,
     config: Arc<config::Config>,
-    frontend_dir: String,
+    frontend_dir: Arc<String>,
     oidc_data: Option<Arc<Mutex<oidc::OidcData>>>,
     secret_key: Arc<Key>,
 }
@@ -78,13 +78,13 @@ async fn main() -> Result<()> {
     let (hits_tx, hits_rx) = mpsc::channel::<(String, bool)>(1024);
     background::spawn_hits_worker(Arc::clone(&writer), hits_rx);
     // Apply custom title if needed
-    let frontend_dir = match utils::apply_custom_title(&conf.custom_site_title) {
+    let frontend_dir = Arc::new(match utils::apply_custom_title(&conf.custom_site_title) {
         Ok(dir) => dir,
         Err(e) => {
-            warn!("Issue while applying custom title: {}", e);
+            warn!("Issue while applying custom title: {e}");
             utils::get_frontend_location().0
         }
-    };
+    });
 
     let oidc_client = oidc::create_oidc_client(&conf).await;
     let oidc_data = if let Some((http_client, oidc_client)) = oidc_client {
@@ -125,7 +125,7 @@ async fn main() -> Result<()> {
                 reader: database::open_db(&conf.db_location, true),
                 writer: Arc::clone(&writer),
                 config: Arc::clone(&conf),
-                frontend_dir: frontend_dir.clone(),
+                frontend_dir: Arc::clone(&frontend_dir),
                 oidc_data: oidc_data.clone(),
                 secret_key: Arc::clone(&secret_key),
             }))
@@ -154,10 +154,10 @@ async fn main() -> Result<()> {
             if let Some(dir) = &conf.custom_landing_directory {
                 app = app
                     .service(Redirect::new("/admin/manage", "/admin/manage/"))
-                    .service(Files::new("/admin/manage/", &frontend_dir).index_file("index.html"))
+                    .service(Files::new("/admin/manage/", &*frontend_dir).index_file("index.html"))
                     .service(Files::new("/", dir).index_file("index.html"));
             } else {
-                app = app.service(Files::new("/", &frontend_dir).index_file("index.html"));
+                app = app.service(Files::new("/", &*frontend_dir).index_file("index.html"));
             }
         }
 
