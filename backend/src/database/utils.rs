@@ -5,9 +5,12 @@ use chrono::Utc;
 use log::{debug, info, warn};
 use rusqlite::{Connection, OpenFlags, backup::NO_PROGRESS, named_params};
 use std::{
-    time::Instant,
-    {collections::HashSet, fs, path::PathBuf, time::Duration},
+    collections::HashSet,
+    fs,
+    path::{Path, PathBuf},
+    time::{Duration, Instant},
 };
+use time::{OffsetDateTime, macros::format_description};
 
 use crate::database::{self, queries};
 
@@ -142,39 +145,44 @@ pub(crate) fn manage_backups(
         }
     };
 
-    let backup_path = |idx: usize| backup_dir.join(format!("{db_name}.{suffix}{idx}"));
-
     let db = database::open_db(db_link, true);
     db.backup::<_, _, _>(
         "main",
-        backup_path(0).to_string_lossy().as_ref(),
+        backup_dir
+            .join(format!(
+                "{db_name}.{suffix}.{}",
+                OffsetDateTime::now_utc()
+                    .format(format_description!(
+                        "[year]-[month]-[day]T[hour]-[minute]-[second]Z"
+                    ))
+                    .expect("Failed to format backup timestamp.")
+            ))
+            .to_string_lossy()
+            .as_ref(),
         NO_PROGRESS,
     )
     .map_err(|_| "There was an error while creating the backup.".to_string())?;
 
-    // Migrate legacy backups
-    if matches!(backup_type, BackupType::Daily) {
-        for path in fs::read_dir(parent).into_iter().flatten().flatten() {
-            let path = path.path();
-            if path
-                .file_name()
-                .and_then(|f| f.to_str())
-                .is_some_and(|f| f.starts_with(&format!("{db_name}.bak")))
-            {
-                let filename = path.file_name().unwrap().to_string_lossy();
-                let daily_name = filename.replacen(".bak", ".daily", 1);
-                fs::rename(&path, backup_dir.join(daily_name))
-                    .map_err(|_| "There was an error migrating legacy backup.".to_string())?;
-            }
-        }
-    }
+    fn matching_backups(dir: &Path, prefix: &str) -> std::io::Result<Vec<PathBuf>> {
+        let mut paths = fs::read_dir(dir)?
+            .filter_map(Result::ok)
+            .map(|entry| entry.path())
+            .filter(|path| {
+                path.file_name()
+                    .and_then(|name| name.to_str())
+                    .is_some_and(|name| name.starts_with(prefix))
+            })
+            .map(|path| Ok((path.metadata()?.modified()?, path)))
+            .collect::<std::io::Result<Vec<_>>>()?;
 
-    for i in (0..retain).rev() {
-        if let Err(e) = fs::rename(backup_path(i), backup_path(i + 1))
-            && e.kind() != std::io::ErrorKind::NotFound
-        {
-            return Err(format!("Failed to rotate backup {i}: {e}"));
-        }
+        paths.sort_by_key(|(mtime, _)| *mtime);
+
+        Ok(paths.into_iter().map(|(_, path)| path).collect())
+    }
+    let backups = matching_backups(&backup_dir, &format!("{db_name}.{suffix}"))
+        .map_err(|_| "Error getting old backups.")?;
+    for path in backups.iter().rev().skip(retain) {
+        fs::remove_file(path).map_err(|_| "Error cleaning old backups.")?;
     }
 
     debug!(

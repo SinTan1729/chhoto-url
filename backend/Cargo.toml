@@ -54,6 +54,7 @@ subtle = "2.6.1"
 openidconnect = "4.0.1"
 env_filter = "2.0.0"
 base64-url = "4.0.1"
+time = { version = "0.3.55", features = [ "formatting", "macros" ] }
 
 [dev-dependencies]
 actix-http = "3.20.0"
