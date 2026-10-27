@@ -50,8 +50,9 @@ pub(crate) struct NewURLRequest {
 struct EditURLRequest {
     shortlink: String,
     longlink: String,
-    reset_hits: bool,
+    reset_hits: Option<bool>,
     expiry_time: Option<i64>,
+    enabled: Option<bool>,
     notes: Option<String>,
 }
 
@@ -302,8 +303,9 @@ pub(super) async fn edit_link_helper(
     let result = database::edit_link(
         &chunks.shortlink,
         &chunks.longlink,
-        chunks.reset_hits,
+        chunks.reset_hits.unwrap_or(false),
         chunks.expiry_time.filter(|&t| t > 0),
+        chunks.enabled.unwrap_or(true),
         chunks.notes.filter(|s| !s.is_empty()).as_deref(),
         hits_tx,
         db,

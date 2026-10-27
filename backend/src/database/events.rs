@@ -22,6 +22,7 @@ pub(crate) struct DBRow {
     pub(crate) longlink: String,
     pub(crate) hits: i64,
     pub(crate) expiry_time: i64,
+    pub(crate) enabled: bool,
     pub(crate) notes: String,
 }
 
@@ -29,7 +30,7 @@ pub(crate) struct DBRow {
 pub(crate) fn find_url(shortlink: &str, db: &Connection) -> Result<DBRow, ChhotoError> {
     // Long link, hits, expiry time
     let now = chrono::Utc::now().timestamp();
-    let Ok(mut statement) = db.prepare_cached(queries::FIND_URL) else {
+    let Ok(mut statement) = db.prepare_cached(queries::EXPAND_URL) else {
         error!("Error preparing SQL statement for find_url.");
         return Err(ServerError);
     };
@@ -40,6 +41,7 @@ pub(crate) fn find_url(shortlink: &str, db: &Connection) -> Result<DBRow, Chhoto
                 longlink: row.get("long_url")?,
                 hits: row.get("hits")?,
                 expiry_time: row.get("expiry_time").unwrap_or_default(),
+                enabled: row.get("enabled")?,
                 notes: row.get("notes").unwrap_or_default(),
             })
         })
@@ -124,6 +126,7 @@ pub(crate) fn getall(
                 longlink: row.get("long_url")?,
                 hits: row.get("hits")?,
                 expiry_time: row.get("expiry_time").unwrap_or_default(),
+                enabled: row.get("enabled")?,
                 notes: row.get("notes").unwrap_or_default(),
             })
         })
@@ -147,7 +150,7 @@ pub(crate) async fn find_and_add_hit(
     hits_tx: &mpsc::Sender<(String, bool)>,
 ) -> Result<String, ()> {
     let now = chrono::Utc::now().timestamp();
-    let Ok(mut statement) = db.prepare_cached(queries::FIND_LINK) else {
+    let Ok(mut statement) = db.prepare_cached(queries::ACCESS_URL) else {
         error!("Error preparing SQL statement for find link.");
         return Err(());
     };
@@ -283,6 +286,7 @@ pub(crate) async fn edit_link(
     longlink: &str,
     reset_hits: bool,
     expiry_time: Option<i64>,
+    enabled: bool,
     notes: Option<&str>,
     hits_tx: &mpsc::Sender<(String, bool)>,
     db: &Connection,
@@ -302,6 +306,7 @@ pub(crate) async fn edit_link(
             ":now": now,
             ":hits": reset_hits.then_some(0),
             ":notes": notes,
+            ":enabled": enabled,
             ":expiry": expiry_time,
         })
         .inspect_err(|err| {
@@ -311,8 +316,8 @@ pub(crate) async fn edit_link(
         })
         .inspect(|_| {
             debug!(
-                "Link {} was edited using longlink: {}, reset_hits: {}, expiry_time: {:?}, notes: {:?}.",
-                shortlink, longlink, reset_hits, expiry_time, notes
+                "Link {} was edited using longlink: {}, reset_hits: {}, expiry_time: {:?}, enabled: {}, notes: {:?}.",
+                shortlink, longlink, reset_hits, expiry_time, enabled, notes
             );
         })
         .map_err(drop)

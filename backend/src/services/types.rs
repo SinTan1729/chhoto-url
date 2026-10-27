@@ -57,6 +57,7 @@ pub(super) struct CreatedURL {
     pub(super) success: bool,
     pub(super) error: bool,
     pub(super) shorturl: String,
+    pub(super) enabled: bool,
     pub(super) expiry_time: i64,
 }
 
@@ -76,6 +77,7 @@ pub(super) struct LinkInfo {
     pub(super) longurl: String,
     pub(super) hits: i64,
     pub(super) expiry_time: i64,
+    pub(super) enabled: bool,
     pub(super) notes: String,
 }
 

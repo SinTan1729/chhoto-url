@@ -1,17 +1,18 @@
 // SPDX-FileCopyrightText: 2023-2026 Sayantan Santra <sayantan.santra689@gmail.com>
 // SPDX-License-Identifier: MIT
 
-pub(super) const FIND_URL: &str = "
-SELECT long_url, hits, expiry_time, notes FROM urls
+pub(super) const EXPAND_URL: &str = "
+SELECT long_url, hits, expiry_time, enabled, notes FROM urls
   WHERE short_url = :short
     AND (
       expiry_time IS NULL 
       OR expiry_time > :now
     )";
 
-pub(super) const FIND_LINK: &str = "
+pub(super) const ACCESS_URL: &str = "
 SELECT long_url FROM urls 
   WHERE short_url = :short 
+    AND enabled = True
     AND (
       expiry_time IS NULL 
       OR expiry_time > :now
@@ -121,6 +122,7 @@ UPDATE urls
     long_url = :long,
     hits = COALESCE(:hits, hits),
     notes = COALESCE(:notes, notes),
+    enabled = :enabled,
     expiry_time = COALESCE(:expiry, expiry_time)
   WHERE short_url = :short
     AND (expiry_time IS NULL OR expiry_time > :now)
@@ -129,8 +131,8 @@ UPDATE urls
 pub(super) const GETALL_QUERIES: [&str; 4] = [
     // 0 => standard
     "
-SELECT short_url, long_url, hits, expiry_time, notes FROM (
-  SELECT t.id, t.short_url, t.long_url, t.hits, t.expiry_time, t.notes
+SELECT short_url, long_url, hits, expiry_time, enabled, notes FROM (
+  SELECT t.id, t.short_url, t.long_url, t.hits, t.expiry_time, t.enabled, t.notes
   FROM urls AS t
   WHERE (
     t.expiry_time IS NULL
@@ -142,8 +144,8 @@ SELECT short_url, long_url, hits, expiry_time, notes FROM (
 ORDER BY id ASC",
     // 1 => cursor
     "
-SELECT short_url, long_url, hits, expiry_time, notes FROM (
-  SELECT t.id, t.short_url, t.long_url, t.hits, t.expiry_time, t.notes
+SELECT short_url, long_url, hits, expiry_time, enabled, notes FROM (
+  SELECT t.id, t.short_url, t.long_url, t.hits, t.expiry_time, t.enabled, t.notes
   FROM urls AS t
   JOIN urls AS u
     ON u.short_url = :pos
@@ -158,8 +160,8 @@ SELECT short_url, long_url, hits, expiry_time, notes FROM (
 ) ORDER BY id ASC",
     // 2 => standard + fts
     "
-SELECT short_url, long_url, hits, expiry_time, notes FROM (
-  SELECT t.id, t.short_url, t.long_url, t.hits, t.expiry_time, t.notes
+SELECT short_url, long_url, hits, expiry_time, enabled, notes FROM (
+  SELECT t.id, t.short_url, t.long_url, t.hits, t.expiry_time, t.enabled, t.notes
   FROM urls AS t
   JOIN urls_fts AS f
     ON t.id = f.rowid
@@ -174,8 +176,8 @@ SELECT short_url, long_url, hits, expiry_time, notes FROM (
 ORDER BY id ASC",
     // 3 => cursor + fts
     "
-SELECT short_url, long_url, hits, expiry_time, notes FROM (
-  SELECT t.id, t.short_url, t.long_url, t.hits, t.expiry_time, t.notes
+SELECT short_url, long_url, hits, expiry_time, enabled, notes FROM (
+  SELECT t.id, t.short_url, t.long_url, t.hits, t.expiry_time, t.enabled, t.notes
   FROM urls AS t
   JOIN urls AS u
     ON u.short_url = :pos
