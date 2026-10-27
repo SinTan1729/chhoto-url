@@ -339,11 +339,6 @@ pub(crate) fn init_db(
         let tx = db
             .transaction()
             .expect("Unable to create transaction for migration 4.");
-        tx.execute(
-            "ALTER TABLE urls ADD COLUMN enabled BOOL NOT NULL DEFAULT True",
-            (),
-        )
-        .expect("Unable to apply migration 4.");
         tx.execute_batch(queries::URLS_MIGRATION_4)
             .expect("Unable to apply migration 4.");
         tx.pragma_update(None, "user_version", 5)

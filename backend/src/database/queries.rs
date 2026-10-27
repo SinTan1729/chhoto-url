@@ -102,16 +102,19 @@ INSERT INTO urls (long_url, short_url, hits, expiry_time, notes)
   FROM urls_old       
   ORDER BY id";
 pub(super) const URLS_MIGRATION_4: &str = "
-ALTER TABLE urls ADD COLUMN expiry_temp DATETIME;
-UPDATE urls SET expiry_temp = expiry_time;
-DROP INDEX idx_expiry_time;
-ALTER TABLE urls DROP COLUMN expiry_time;
-ALTER TABLE urls RENAME COLUMN expiry_temp TO expiry_time;
-ALTER TABLE urls ADD COLUMN hits_temp INTEGER NOT NULL DEFAULT 0;
-UPDATE urls SET hits_temp = hits;
-ALTER TABLE urls DROP COLUMN hits;
-ALTER TABLE urls RENAME COLUMN hits_temp TO hits;
-CREATE INDEX idx_expiry_time ON urls (expiry_time)";
+ALTER TABLE urls ADD COLUMN enabled BOOL NOT NULL DEFAULT True;
+PRAGMA writable_schema = ON;
+UPDATE sqlite_schema
+SET sql = replace(
+  replace(sql, 'expiry_time INTEGER', 'expiry_time DATETIME'),
+  'hits INTEGER NOT NULL',
+  'hits INTEGER NOT NULL DEFAULT 0'
+)
+WHERE type = 'table'
+  AND name = 'urls';
+PRAGMA schema_version = 2;
+PRAGMA writable_schema = RESET;
+PRAGMA integrity_check;";
 
 pub(super) const EDIT_LINK: &str = "
 UPDATE urls
