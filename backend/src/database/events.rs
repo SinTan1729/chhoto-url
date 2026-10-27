@@ -293,6 +293,16 @@ pub(crate) async fn edit_link(
     let expiry_time = data.expiry_time.filter(|&t| t > 0);
     let notes = data.notes.as_ref().filter(|s| !s.is_empty());
 
+    // No database changes are necessary
+    if !reset_hits
+        && data.longlink.is_none()
+        && expiry_time.is_none()
+        && notes.is_none()
+        && data.enabled.is_none()
+    {
+        return Ok(1);
+    }
+
     let now = chrono::Utc::now().timestamp();
     let Ok(mut statement) = db.prepare_cached(queries::EDIT_LINK) else {
         error!("Error preparing SQL statement for edit_link.");
@@ -313,13 +323,13 @@ pub(crate) async fn edit_link(
         })
         .inspect_err(|err| {
             error!(
-                "Got an error while editing link ({}, {}, {}, {:?}, {:?}, {:?}): {err}",
+                "Got an error while editing link ({}, {:?}, {}, {:?}, {:?}, {:?}): {err}",
                 data.shortlink, data.longlink, reset_hits, expiry_time, data.enabled, notes
             );
         })
         .inspect(|_| {
             debug!(
-                "Link {} was edited using longlink: {}, reset_hits: {}, expiry_time: {:?}, enabled: {:?}, notes: {:?}.",
+                "Link {} was edited using longlink: {:?}, reset_hits: {}, expiry_time: {:?}, enabled: {:?}, notes: {:?}.",
                 data.shortlink, data.longlink, reset_hits, expiry_time, data.enabled, notes
             );
         })

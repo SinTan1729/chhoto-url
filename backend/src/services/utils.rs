@@ -47,7 +47,10 @@ pub(crate) struct NewURLRequest {
 
 // Only allow safe URI schemes
 #[inline]
-fn is_longlink_valid(link: &str, allowed_protocols: &HashSet<String>) -> bool {
+fn is_longlink_valid(link: Option<&str>, allowed_protocols: &HashSet<String>) -> bool {
+    let Some(link) = link else {
+        return true;
+    };
     let parts = Url::parse(link);
     parts.is_ok_and(|u| allowed_protocols.contains(&u.scheme().to_owned()))
 }
@@ -200,7 +203,7 @@ pub(super) fn add_links_helper(
             output[i] = Err(ClientError {
                 reason: "Invalid shortlink!".to_owned(),
             });
-        } else if !is_longlink_valid(&req.longlink, &config.allowed_protocols) {
+        } else if !is_longlink_valid(Some(&req.longlink), &config.allowed_protocols) {
             output[i] = Err(ClientError {
                 reason: "Invalid longlink!".to_owned(),
             });
@@ -280,7 +283,7 @@ pub(super) async fn edit_link_helper(
         return Err(ClientError {
             reason: "Invalid shortlink!".to_owned(),
         });
-    } else if !is_longlink_valid(&chunks.longlink, &config.allowed_protocols) {
+    } else if !is_longlink_valid(chunks.longlink.as_deref(), &config.allowed_protocols) {
         return Err(ClientError {
             reason: "Invalid longlink!".to_owned(),
         });
@@ -289,6 +292,7 @@ pub(super) async fn edit_link_helper(
             reason: "Invalid notes!".to_owned(),
         });
     }
+
     let result = database::edit_link(&chunks, hits_tx, db).await;
     match result {
         // Zero rows returned means no updates

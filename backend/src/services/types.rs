@@ -73,7 +73,7 @@ pub(super) enum AddLinkResponse {
 #[derive(Deserialize)]
 pub(crate) struct EditURLRequest {
     pub(crate) shortlink: String,
-    pub(crate) longlink: String,
+    pub(crate) longlink: Option<String>,
     pub(crate) reset_hits: Option<bool>,
     pub(crate) expiry_time: Option<i64>,
     pub(crate) enabled: Option<bool>,

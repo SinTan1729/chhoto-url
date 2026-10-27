@@ -180,7 +180,7 @@ curl -X PUT \
 http://localhost:4567/api/edit
 ```
 
-Only `shortlink` and `longlink` are mandatory. The existing values will be kept in the database if nothing is provided.
+Only `shortlink` is mandatory. The existing values will be kept in the database if nothing else is provided.
 
 The server will reply in the following format.
 

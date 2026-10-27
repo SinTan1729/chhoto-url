@@ -119,7 +119,7 @@ PRAGMA writable_schema = RESET;";
 pub(super) const EDIT_LINK: &str = "
 UPDATE urls
   SET
-    long_url = :long,
+    long_url = COALESCE(:long, long_url),
     hits = COALESCE(:hits, hits),
     notes = COALESCE(:notes, notes),
     enabled = COALESCE(:enabled, enabled),
