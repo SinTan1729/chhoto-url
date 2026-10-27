@@ -101,6 +101,13 @@ INSERT INTO urls (long_url, short_url, hits, expiry_time, notes)
   SELECT long_url, short_url, hits, NULLIF(expiry_time,0), NULLIF(notes,'')
   FROM urls_old       
   ORDER BY id";
+pub(super) const URLS_MIGRATION_4: &str = "
+ALTER TABLE urls ADD COLUMN expiry_temp DATETIME;
+UPDATE urls SET expiry_temp = expiry_time;
+DROP INDEX idx_expiry_time;
+ALTER TABLE urls DROP COLUMN expiry_time;
+ALTER TABLE urls RENAME COLUMN expiry_temp TO expiry_time;
+CREATE INDEX idx_expiry_time ON urls (expiry_time)";
 
 pub(super) const EDIT_LINK: &str = "
 UPDATE urls

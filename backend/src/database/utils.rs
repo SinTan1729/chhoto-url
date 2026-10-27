@@ -341,15 +341,8 @@ pub(crate) fn init_db(
             (),
         )
         .expect("Unable to apply migration 4.");
-        tx.execute_batch(
-            "ALTER TABLE urls ADD COLUMN expiry_temp DATETIME;
-             UPDATE urls SET expiry_temp = expiry_time;
-             DROP INDEX idx_expiry_time;
-             ALTER TABLE urls DROP COLUMN expiry_time;
-             ALTER TABLE urls RENAME COLUMN expiry_temp TO expiry_time;
-             CREATE INDEX idx_expiry_time ON urls (expiry_time)",
-        )
-        .expect("Unable to apply migration 4.");
+        tx.execute_batch(queries::URLS_MIGRATION_4)
+            .expect("Unable to apply migration 4.");
         tx.pragma_update(None, "user_version", 5)
             .expect("Unable to set pragma: user_version.");
         tx.commit()
