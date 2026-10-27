@@ -134,6 +134,9 @@ a {
   overflow: hidden;
   text-overflow: ellipsis;
 }
+.chhoto-table tr.disabled td:nth-child(3) {
+  text-decoration: line-through;
+}
 .chhoto-table tr td[label="Long URL"] div {
   word-break: break-all;
   color: var(--link);

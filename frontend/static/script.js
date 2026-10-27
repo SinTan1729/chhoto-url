@@ -616,6 +616,9 @@ const TR = (i, row) => {
   for (const td of [numTD, shortTD, longTD, hitsTD, expiryTD, actionsTD]) {
     tr.appendChild(td);
   }
+  if (!row["enabled"]) {
+    tr.classList.add("disabled");
+  }
   return tr;
 };
 
