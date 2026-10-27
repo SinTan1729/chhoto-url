@@ -112,9 +112,8 @@ SET sql = replace(
 )
 WHERE type = 'table'
   AND name = 'urls';
-PRAGMA schema_version = 2;
-PRAGMA writable_schema = RESET;
-PRAGMA integrity_check;";
+PRAGMA schema_version = {};
+PRAGMA writable_schema = RESET;";
 
 pub(super) const EDIT_LINK: &str = "
 UPDATE urls

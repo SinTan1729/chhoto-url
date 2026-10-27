@@ -237,20 +237,14 @@ pub(crate) fn init_db(
     let urls_fts_table_exists = tables.contains("urls_fts");
 
     let current_user_version: u32 = if urls_table_exists {
-        db.query_row_and_then("SELECT user_version FROM pragma_user_version", (), |row| {
-            row.get(0)
-        })
-        .unwrap_or_default()
+        db.query_row_and_then("PRAGMA user_version", (), |row| row.get(0))
+            .unwrap_or_default()
     } else {
         USER_VERSION
     };
 
     let current_application_id: i32 = db
-        .query_row_and_then(
-            "SELECT application_id FROM pragma_application_id",
-            (),
-            |row| row.get(0),
-        )
+        .query_row_and_then("PRAGMA application_id", (), |row| row.get(0))
         .unwrap_or_default();
     if current_application_id != 0
         || (urls_table_exists && urls_fts_table_exists && current_user_version > 1)
@@ -333,14 +327,27 @@ pub(crate) fn init_db(
     // and add enabled column, introduced in version 7.10.0
     if current_user_version < 5 {
         info!(
-            "Applying migration 4: Change expiry column type, add default to hits,\
-            and add enabled column."
+            "Applying migration 4: Change expiry column type, add default to hits, and \
+            add enabled column."
         );
         let tx = db
             .transaction()
             .expect("Unable to create transaction for migration 4.");
-        tx.execute_batch(queries::URLS_MIGRATION_4)
+        let schema_version = tx
+            .query_one("PRAGMA schema_version", (), |row| row.get::<usize, i32>(0))
+            .expect("Unable to read schema_version")
+            .to_string();
+        tx.execute_batch(&queries::URLS_MIGRATION_4.replace("{}", &schema_version))
             .expect("Unable to apply migration 4.");
+        if tx
+            .query_one("PRAGMA integrity_check", (), |row| {
+                row.get::<usize, String>(0)
+            })
+            .expect("Unable to read integrity_check")
+            != "ok"
+        {
+            panic!("Unable to verify integrity after migration 4.");
+        }
         tx.pragma_update(None, "user_version", 5)
             .expect("Unable to set pragma: user_version.");
         tx.commit()
@@ -443,11 +450,7 @@ pub(crate) fn open_db(path: &str, read_only: bool) -> Connection {
 
 // Perform a healthcheck
 pub(crate) fn is_database_healthy(db: &Connection) -> bool {
-    db.query_row_and_then(
-        "SELECT application_id FROM pragma_application_id",
-        (),
-        |row| row.get::<usize, i32>(0),
-    )
-    .unwrap_or_default()
+    db.query_row_and_then("PRAGMA application_id", (), |row| row.get::<usize, i32>(0))
+        .unwrap_or_default()
         == APPLICATION_ID
 }
