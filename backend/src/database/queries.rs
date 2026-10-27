@@ -40,7 +40,8 @@ CREATE TABLE urls (
   short_url TEXT NOT NULL,
   long_url TEXT NOT NULL,
   hits INTEGER NOT NULL,
-  expiry_time INTEGER,
+  expiry_time DATETIME,
+  enabled BOOL NOT NULL DEFAULT True,
   notes TEXT
 )";
 

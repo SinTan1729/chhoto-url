@@ -16,7 +16,7 @@ use crate::database::{self, queries};
 
 // Some constants
 const APPLICATION_ID: i32 = i32::from_be_bytes(*b"chht"); // MUST NEVER BE CHANGED
-const USER_VERSION: u32 = 4; // Should be incremented on change of schema
+const USER_VERSION: u32 = 5; // Should be incremented on change of schema
 
 // Enum for backup types
 pub(crate) enum BackupType {
@@ -329,6 +329,32 @@ pub(crate) fn init_db(
         db.execute("VACUUM", ())
             .expect("failed to vacuum database after migration 3.");
     }
+    // Migration 4: Change expiry_time column type and add enabled column,
+    // introduced in version 7.10.0
+    if current_user_version < 5 {
+        info!("Applying migration 4: Change expiry column type and add enabled column.");
+        let tx = db
+            .transaction()
+            .expect("Unable to create transaction for migration 4.");
+        tx.execute(
+            "ALTER TABLE urls ADD COLUMN enabled BOOL NOT NULL DEFAULT True",
+            (),
+        )
+        .expect("Unable to apply migration 4.");
+        tx.execute_batch(
+            "ALTER TABLE urls ADD COLUMN expiry_temp DATETIME;
+             UPDATE urls SET expiry_temp = expiry_time;
+             DROP INDEX idx_expiry_time;
+             ALTER TABLE urls DROP COLUMN expiry_time;
+             ALTER TABLE urls RENAME COLUMN expiry_temp TO expiry_time;
+             CREATE INDEX idx_expiry_time ON urls (expiry_time)",
+        )
+        .expect("Unable to apply migration 4.");
+        tx.pragma_update(None, "user_version", 5)
+            .expect("Unable to set pragma: user_version.");
+        tx.commit()
+            .expect("Unable to commit transaction for migration 4.");
+    }
 
     // Create index on short_url for faster lookups
     if !indices.contains("idx_short_url") {
@@ -336,12 +362,20 @@ pub(crate) fn init_db(
         db.execute("CREATE UNIQUE INDEX idx_short_url ON urls (short_url)", ())
             .expect("Unable to create index on short_url.");
     }
-
     // Create index on expiry_time for faster lookups
     if !indices.contains("idx_expiry_time") {
         info!("Creating index idx_expiry_time on urls(expiry_time).");
         db.execute("CREATE INDEX idx_expiry_time ON urls (expiry_time)", ())
             .expect("Unable to create index on expiry_time.");
+    }
+    // Create partial index on enabled for faster lookups
+    if !indices.contains("idx_enabled") {
+        info!("Creating index idx_enabled on urls(enabled).");
+        db.execute(
+            "CREATE INDEX idx_enabled ON urls (enabled) WHERE enabled == TRUE",
+            (),
+        )
+        .expect("Unable to create index on enabled.");
     }
 
     // Create FTS5 table if it doesn't exist, and also create triggers
