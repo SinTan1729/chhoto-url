@@ -329,10 +329,13 @@ pub(crate) fn init_db(
         db.execute("VACUUM", ())
             .expect("failed to vacuum database after migration 3.");
     }
-    // Migration 4: Change expiry_time column type and add enabled column,
-    // introduced in version 7.10.0
+    // Migration 4: Change expiry_time column type, add default value to hits,
+    // and add enabled column, introduced in version 7.10.0
     if current_user_version < 5 {
-        info!("Applying migration 4: Change expiry column type and add enabled column.");
+        info!(
+            "Applying migration 4: Change expiry column type, add default to hits,\
+            and add enabled column."
+        );
         let tx = db
             .transaction()
             .expect("Unable to create transaction for migration 4.");

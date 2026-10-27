@@ -24,8 +24,8 @@ UPDATE urls
 
 pub(super) const ADD_LINK: &str = "
 INSERT INTO urls
-  (long_url, short_url, hits, expiry_time, notes)
-  VALUES (:long, :short, 0, :expiry, :notes)
+  (long_url, short_url, expiry_time, notes)
+  VALUES (:long, :short, :expiry, :notes)
 ON CONFLICT(short_url) DO UPDATE 
   SET long_url = :long, hits = 0, expiry_time = :expiry, notes = :notes
   WHERE short_url = :short 
@@ -39,7 +39,7 @@ CREATE TABLE urls (
   id INTEGER PRIMARY KEY,
   short_url TEXT NOT NULL,
   long_url TEXT NOT NULL,
-  hits INTEGER NOT NULL,
+  hits INTEGER NOT NULL DEFAULT 0,
   expiry_time DATETIME,
   enabled BOOL NOT NULL DEFAULT True,
   notes TEXT
@@ -107,6 +107,10 @@ UPDATE urls SET expiry_temp = expiry_time;
 DROP INDEX idx_expiry_time;
 ALTER TABLE urls DROP COLUMN expiry_time;
 ALTER TABLE urls RENAME COLUMN expiry_temp TO expiry_time;
+ALTER TABLE urls ADD COLUMN hits_temp INTEGER NOT NULL DEFAULT 0;
+UPDATE urls SET hits_temp = hits;
+ALTER TABLE urls DROP COLUMN hits;
+ALTER TABLE urls RENAME COLUMN hits_temp TO hits;
 CREATE INDEX idx_expiry_time ON urls (expiry_time)";
 
 pub(super) const EDIT_LINK: &str = "
