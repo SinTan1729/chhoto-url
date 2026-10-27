@@ -122,7 +122,7 @@ UPDATE urls
     long_url = :long,
     hits = COALESCE(:hits, hits),
     notes = COALESCE(:notes, notes),
-    enabled = :enabled,
+    enabled = COALESCE(:enabled, enabled),
     expiry_time = COALESCE(:expiry, expiry_time)
   WHERE short_url = :short
     AND (expiry_time IS NULL OR expiry_time > :now)

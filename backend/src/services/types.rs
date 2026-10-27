@@ -69,6 +69,17 @@ pub(super) enum AddLinkResponse {
     Error(JSONResponse),
 }
 
+// Struct for reading link pairs sent during API call for editing link
+#[derive(Deserialize)]
+pub(crate) struct EditURLRequest {
+    pub(crate) shortlink: String,
+    pub(crate) longlink: String,
+    pub(crate) reset_hits: Option<bool>,
+    pub(crate) expiry_time: Option<i64>,
+    pub(crate) enabled: Option<bool>,
+    pub(crate) notes: Option<String>,
+}
+
 // Struct for returning information about a shortlink in expand
 #[derive(Serialize)]
 pub(super) struct LinkInfo {

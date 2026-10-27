@@ -31,7 +31,7 @@ use crate::{
     oidc::{OidcClient, OidcData},
     services::types::{
         ChhotoError::{self, ClientError, ServerError},
-        GetReqParams, OidcCallbackParams, OneOrMany,
+        EditURLRequest, GetReqParams, OidcCallbackParams, OneOrMany,
     },
 };
 
@@ -43,17 +43,6 @@ pub(crate) struct NewURLRequest {
     pub(crate) longlink: String,
     pub(crate) expiry_delay: Option<i64>,
     pub(crate) notes: Option<String>,
-}
-
-// Struct for reading link pairs sent during API call for editing link
-#[derive(Deserialize)]
-struct EditURLRequest {
-    shortlink: String,
-    longlink: String,
-    reset_hits: Option<bool>,
-    expiry_time: Option<i64>,
-    enabled: Option<bool>,
-    notes: Option<String>,
 }
 
 // Only allow safe URI schemes
@@ -300,17 +289,7 @@ pub(super) async fn edit_link_helper(
             reason: "Invalid notes!".to_owned(),
         });
     }
-    let result = database::edit_link(
-        &chunks.shortlink,
-        &chunks.longlink,
-        chunks.reset_hits.unwrap_or(false),
-        chunks.expiry_time.filter(|&t| t > 0),
-        chunks.enabled.unwrap_or(true),
-        chunks.notes.filter(|s| !s.is_empty()).as_deref(),
-        hits_tx,
-        db,
-    )
-    .await;
+    let result = database::edit_link(&chunks, hits_tx, db).await;
     match result {
         // Zero rows returned means no updates
         Ok(0) => Err(ClientError {

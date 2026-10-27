@@ -10,7 +10,10 @@ use tokio::sync::mpsc;
 use crate::{
     database::queries,
     services::{
-        types::ChhotoError::{self, ClientError, ServerError},
+        types::{
+            ChhotoError::{self, ClientError, ServerError},
+            EditURLRequest,
+        },
         utils::NewURLRequest,
     },
 };
@@ -282,42 +285,42 @@ pub(crate) fn add_links(
 
 // Edit an existing link
 pub(crate) async fn edit_link(
-    shortlink: &str,
-    longlink: &str,
-    reset_hits: bool,
-    expiry_time: Option<i64>,
-    enabled: bool,
-    notes: Option<&str>,
+    data: &EditURLRequest,
     hits_tx: &mpsc::Sender<(String, bool)>,
     db: &Connection,
 ) -> Result<usize, ()> {
+    let reset_hits = data.reset_hits.unwrap_or(false);
+    let expiry_time = data.expiry_time.filter(|&t| t > 0);
+    let notes = data.notes.as_ref().filter(|s| !s.is_empty());
+
     let now = chrono::Utc::now().timestamp();
     let Ok(mut statement) = db.prepare_cached(queries::EDIT_LINK) else {
         error!("Error preparing SQL statement for edit_link.");
         return Err(());
     };
-    if reset_hits && let Err(err) = hits_tx.send((shortlink.to_owned(), true)).await {
+    if reset_hits && let Err(err) = hits_tx.send((data.shortlink.to_owned(), true)).await {
         error!("Failed to enqueue hit update after edit: {err}");
     }
     statement
         .execute(named_params! {
-            ":long": longlink,
-            ":short": shortlink,
+            ":long": data.longlink,
+            ":short": data.shortlink,
             ":now": now,
             ":hits": reset_hits.then_some(0),
-            ":notes": notes,
-            ":enabled": enabled,
             ":expiry": expiry_time,
+            ":enabled": data.enabled,
+            ":notes": notes,
         })
         .inspect_err(|err| {
             error!(
-                "Got an error while editing link ({shortlink}, {longlink}, {reset_hits}): {err}"
+                "Got an error while editing link ({}, {}, {}, {:?}, {:?}, {:?}): {err}",
+                data.shortlink, data.longlink, reset_hits, expiry_time, data.enabled, notes
             );
         })
         .inspect(|_| {
             debug!(
-                "Link {} was edited using longlink: {}, reset_hits: {}, expiry_time: {:?}, enabled: {}, notes: {:?}.",
-                shortlink, longlink, reset_hits, expiry_time, enabled, notes
+                "Link {} was edited using longlink: {}, reset_hits: {}, expiry_time: {:?}, enabled: {:?}, notes: {:?}.",
+                data.shortlink, data.longlink, reset_hits, expiry_time, data.enabled, notes
             );
         })
         .map_err(drop)
