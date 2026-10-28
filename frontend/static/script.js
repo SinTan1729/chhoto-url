@@ -601,7 +601,9 @@ const TR = (i, row) => {
   btnGrp.appendChild(copyButton(shortlink));
   btnGrp.appendChild(qrCodeButton(shortlink));
   btnGrp.appendChild(infoButton(shortlink));
-  btnGrp.appendChild(editButton(shortlink, longlink, expiryTime, row["notes"]));
+  btnGrp.appendChild(
+    editButton(shortlink, longlink, expiryTime, row["enabled"], row["notes"]),
+  );
   btnGrp.appendChild(deleteButton(shortlink));
   actionsTD.appendChild(btnGrp);
 
@@ -679,7 +681,7 @@ const copyButton = (shortUrl) => {
   return btn;
 };
 
-const editButton = (shortUrl, longUrl, expiry, notes) => {
+const editButton = (shortUrl, longUrl, expiry, enabled, notes) => {
   const btn = document.createElement("button");
   btn.classList.add("svg-button");
   btn.innerHTML = SVG_EDIT_BUTTON;
@@ -692,7 +694,8 @@ const editButton = (shortUrl, longUrl, expiry, notes) => {
     const editedExpiry = document.getElementById("edited-expiry");
     if (editUrlSpan.textContent != shortUrl) {
       editUrlSpan.textContent = shortUrl;
-      document.getElementById("edit-checkbox").checked = false;
+      document.getElementById("edit-reset-hits-checkbox").checked = false;
+      document.getElementById("edit-enabled-checkbox").checked = enabled;
       editedUrl.value = longUrl;
       document.getElementById("edited-notes").value = notes;
       if (expiry > 0) {
@@ -971,7 +974,8 @@ const submitEdit = () => {
   const editUrlSpan = document.getElementById("edit-link");
   const longUrl = urlInput.value;
   const shortUrl = editUrlSpan.textContent;
-  const checkBox = document.getElementById("edit-checkbox");
+  const resetCheckBox = document.getElementById("edit-reset-hits-checkbox");
+  const enabledCheckBox = document.getElementById("edit-enabled-checkbox");
   const notes = document.getElementById("edited-notes").value;
   let expiry = 0;
   const expiry_raw = document.getElementById("edited-expiry").value;
@@ -982,7 +986,8 @@ const submitEdit = () => {
     const data = {
       shortlink: shortUrl,
       longlink: longUrl,
-      reset_hits: checkBox.checked,
+      reset_hits: resetCheckBox.checked,
+      enabled: enabledCheckBox.checked,
       notes: notes,
       expiry_time: expiry,
     };
@@ -1011,11 +1016,12 @@ const submitEdit = () => {
           );
           LOCAL_DATA[editedIndex]["longlink"] = longUrl;
           LOCAL_DATA[editedIndex]["notes"] = notes;
+          LOCAL_DATA[editedIndex]["enabled"] = enabledCheckBox.checked;
           LOCAL_DATA[editedIndex]["expiry_time"] = expiry;
-          if (checkBox.checked) {
+          if (resetCheckBox.checked) {
             LOCAL_DATA[editedIndex]["hits"] = 0;
           }
-          checkBox.checked = false;
+          resetCheckBox.checked = false;
         }
         document.getElementById("edit-dialog").close();
         displayData();

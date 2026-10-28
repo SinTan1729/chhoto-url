@@ -314,7 +314,12 @@ summary,
   max-width: 5em;
   margin-right: 0em;
 }
-#edit-dialog label[for="edit-checkbox"] {
+#edit-checkboxes {
+  display: inline-flex;
+  gap: 1em;
+}
+#edit-dialog label[for="edit-reset-hits-checkbox"],
+#edit-dialog label[for="edit-enabled-checkbox"] {
   max-width: 100%;
 }
 #edit-buttons {
