@@ -255,7 +255,7 @@ fn apply_migration_4(db: &mut Connection) {
             add enabled column."
     );
     db.execute(
-        "ALTER TABLE urls ADD COLUMN enabled BOOL NOT NULL DEFAULT True",
+        "ALTER TABLE urls ADD COLUMN enabled BOOL NOT NULL DEFAULT TRUE",
         (),
     )
     .expect("Unable to apply migration 4.");

@@ -12,7 +12,7 @@ SELECT long_url, hits, expiry_time, enabled, notes FROM urls
 pub(super) const ACCESS_URL: &str = "
 SELECT long_url FROM urls 
   WHERE short_url = :short 
-    AND enabled = True
+    AND enabled = TRUE
     AND (
       expiry_time IS NULL 
       OR expiry_time > :now
@@ -42,7 +42,7 @@ CREATE TABLE urls (
   long_url TEXT NOT NULL,
   hits INTEGER NOT NULL DEFAULT 0,
   expiry_time DATETIME,
-  enabled BOOL NOT NULL DEFAULT True,
+  enabled BOOL NOT NULL DEFAULT TRUE,
   notes TEXT
 )";
 
