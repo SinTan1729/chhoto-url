@@ -7,6 +7,7 @@ use rusqlite::{Connection, OpenFlags, backup::NO_PROGRESS, named_params};
 use std::{
     collections::HashSet,
     fs,
+    ops::Add,
     path::{Path, PathBuf},
     time::{Duration, Instant},
 };
@@ -253,12 +254,18 @@ fn apply_migration_4(db: &mut Connection) {
         "Applying migration 4: Change expiry column type, add default to hits, and \
             add enabled column."
     );
+    db.execute(
+        "ALTER TABLE urls ADD COLUMN enabled BOOL NOT NULL DEFAULT True",
+        (),
+    )
+    .expect("Unable to apply migration 4.");
     let tx = db
         .transaction()
         .expect("Unable to create transaction for migration 4.");
     let schema_version = tx
         .query_one("PRAGMA schema_version", (), |row| row.get::<usize, i32>(0))
-        .expect("Unable to read schema_version")
+        .expect("Unable to read schema_version.")
+        .add(1)
         .to_string();
     tx.execute_batch(&queries::URLS_MIGRATION_4.replace("{}", &schema_version))
         .expect("Unable to apply migration 4.");
@@ -266,7 +273,7 @@ fn apply_migration_4(db: &mut Connection) {
         .query_one("PRAGMA integrity_check", (), |row| {
             row.get::<usize, String>(0)
         })
-        .expect("Unable to read integrity_check")
+        .expect("Unable to perform integrity_check.")
         != "ok"
     {
         panic!("Unable to verify integrity after migration 4.");

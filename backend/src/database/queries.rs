@@ -103,7 +103,6 @@ INSERT INTO urls (long_url, short_url, hits, expiry_time, notes)
   FROM urls_old       
   ORDER BY id";
 pub(super) const URLS_MIGRATION_4: &str = "
-ALTER TABLE urls ADD COLUMN enabled BOOL NOT NULL DEFAULT True;
 PRAGMA writable_schema = ON;
 UPDATE sqlite_schema
 SET sql = replace(
