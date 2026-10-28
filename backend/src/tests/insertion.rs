@@ -135,7 +135,7 @@ async fn bad_edits() {
         ("good1", "note\x00"),
         ("good1", "note\t"),
     ] {
-        let resp = edit_link(&app, &api_key, shortlink, false, None, Some(notes));
+        let resp = edit_link(&app, &api_key, shortlink, false, true, None, Some(notes));
         assert!(resp.await.is_client_error());
     }
 
@@ -274,7 +274,7 @@ async fn link_editing() {
     sleep(timer).await;
 
     let now = chrono::Utc::now().timestamp();
-    let status = edit_link(&app, &api_key, "test2", false, Some(now + 1), None).await;
+    let status = edit_link(&app, &api_key, "test2", false, true, Some(now + 1), None).await;
     assert!(status.is_success());
 
     let (status, reply) = expand(&app, &api_key, "test2").await;
@@ -284,7 +284,7 @@ async fn link_editing() {
     assert_eq!(reply.expiry_time, now + 1);
 
     assert!(resp.status().is_redirection());
-    let status = edit_link(&app, &api_key, "test1", true, None, None).await;
+    let status = edit_link(&app, &api_key, "test1", true, true, None, None).await;
     assert!(status.is_success());
 
     let (status, reply) = expand(&app, &api_key, "test1").await;

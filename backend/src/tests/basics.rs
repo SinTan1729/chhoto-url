@@ -86,6 +86,7 @@ async fn auth_verification() {
         &Credential::Plain("a".to_string()),
         "test2",
         false,
+        true,
         None,
         None,
     )
