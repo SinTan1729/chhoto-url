@@ -127,7 +127,7 @@ async fn notes_and_filtering() {
     let (status, _) = add_link(&app, &api_key, "test2", 10, "note2").await;
     assert!(status.is_success());
 
-    let status = edit_link(&app, &api_key, "test2", false, None, Some("changed")).await;
+    let status = edit_link(&app, &api_key, "test2", false, true, None, Some("changed")).await;
     assert!(status.is_success());
 
     let reply = getall(&app, &api_key, "filter=chan").await;
@@ -155,7 +155,7 @@ async fn edit_expiry() {
     let resp = test::call_service(&app, req).await;
     assert!(resp.status().is_redirection());
 
-    let status = edit_link(&app, &api_key, "test1", false, None, None).await;
+    let status = edit_link(&app, &api_key, "test1", false, true, None, None).await;
     assert!(status.is_success());
 
     let (status, reply) = expand(&app, &api_key, "test1").await;
@@ -163,11 +163,38 @@ async fn edit_expiry() {
     assert_eq!(reply.longlink, "https://edited-test1.com");
 
     let now = chrono::Utc::now().timestamp();
-    let status = edit_link(&app, &api_key, "test1", false, Some(now + 1), None).await;
+    let status = edit_link(&app, &api_key, "test1", false, false, Some(now + 1), None).await;
     assert!(status.is_success());
 
     let one_second = Duration::from_secs(1);
     sleep(one_second).await;
-    let status = edit_link(&app, &api_key, "test1", true, None, None).await;
+    let status = edit_link(&app, &api_key, "test1", true, true, None, None).await;
     assert!(status.is_client_error());
+}
+
+#[test]
+async fn link_disabling() {
+    let test = "link-editing";
+    let conf = default_config(test);
+    let (_tempdir, app) = create_app(&conf, test).await;
+    let api_key = conf.api_key.clone().unwrap();
+
+    let (status, _) = add_link(&app, &api_key, "test1", 10, "").await;
+    assert!(status.is_success());
+
+    let req = test::TestRequest::get().uri("/test1").to_request();
+    let resp = test::call_service(&app, req).await;
+    assert!(resp.status().is_redirection());
+
+    let status = edit_link(&app, &api_key, "test1", false, false, None, None).await;
+    assert!(status.is_success());
+    let req = test::TestRequest::get().uri("/test1").to_request();
+    let resp = test::call_service(&app, req).await;
+    assert_eq!(resp.status().as_u16(), 404);
+
+    let status = edit_link(&app, &api_key, "test1", true, true, None, None).await;
+    assert!(status.is_success());
+    let req = test::TestRequest::get().uri("/test1").to_request();
+    let resp = test::call_service(&app, req).await;
+    assert!(resp.status().is_redirection());
 }

@@ -219,11 +219,13 @@ pub(super) async fn edit_link<T: Service<Request, Response = ServiceResponse, Er
     api_key: &Credential,
     shortlink: &str,
     reset_hits: bool,
+    enabled: bool,
     expiry_time: Option<i64>,
     notes: Option<&str>,
 ) -> StatusCode {
     let mut payload = format!(
-        "\"shortlink\":\"{shortlink}\",\"longlink\":\"https://edited-{shortlink}.com\",\"reset_hits\":{reset_hits}"
+        r#""shortlink":"{}","longlink":"https://edited-{}.com","reset_hits":{},"enabled":{}"#,
+        shortlink, shortlink, reset_hits, enabled,
     );
     if let Some(expiry) = expiry_time {
         payload.push_str(&format!(",\"expiry_time\":{expiry}"));

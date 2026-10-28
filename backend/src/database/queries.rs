@@ -1,17 +1,18 @@
 // SPDX-FileCopyrightText: 2023-2026 Sayantan Santra <sayantan.santra689@gmail.com>
 // SPDX-License-Identifier: MIT
 
-pub(super) const FIND_URL: &str = "
-SELECT long_url, hits, expiry_time, notes FROM urls
+pub(super) const EXPAND_URL: &str = "
+SELECT long_url, hits, expiry_time, enabled, notes FROM urls
   WHERE short_url = :short
     AND (
       expiry_time IS NULL 
       OR expiry_time > :now
     )";
 
-pub(super) const FIND_LINK: &str = "
+pub(super) const ACCESS_URL: &str = "
 SELECT long_url FROM urls 
   WHERE short_url = :short 
+    AND enabled = True
     AND (
       expiry_time IS NULL 
       OR expiry_time > :now
@@ -24,8 +25,8 @@ UPDATE urls
 
 pub(super) const ADD_LINK: &str = "
 INSERT INTO urls
-  (long_url, short_url, hits, expiry_time, notes)
-  VALUES (:long, :short, 0, :expiry, :notes)
+  (long_url, short_url, expiry_time, notes)
+  VALUES (:long, :short, :expiry, :notes)
 ON CONFLICT(short_url) DO UPDATE 
   SET long_url = :long, hits = 0, expiry_time = :expiry, notes = :notes
   WHERE short_url = :short 
@@ -39,8 +40,9 @@ CREATE TABLE urls (
   id INTEGER PRIMARY KEY,
   short_url TEXT NOT NULL,
   long_url TEXT NOT NULL,
-  hits INTEGER NOT NULL,
-  expiry_time INTEGER,
+  hits INTEGER NOT NULL DEFAULT 0,
+  expiry_time DATETIME,
+  enabled BOOL NOT NULL DEFAULT True,
   notes TEXT
 )";
 
@@ -100,13 +102,27 @@ INSERT INTO urls (long_url, short_url, hits, expiry_time, notes)
   SELECT long_url, short_url, hits, NULLIF(expiry_time,0), NULLIF(notes,'')
   FROM urls_old       
   ORDER BY id";
+pub(super) const URLS_MIGRATION_4: &str = "
+ALTER TABLE urls ADD COLUMN enabled BOOL NOT NULL DEFAULT True;
+PRAGMA writable_schema = ON;
+UPDATE sqlite_schema
+SET sql = replace(
+  replace(sql, 'expiry_time INTEGER', 'expiry_time DATETIME'),
+  'hits INTEGER NOT NULL',
+  'hits INTEGER NOT NULL DEFAULT 0'
+)
+WHERE type = 'table'
+  AND name = 'urls';
+PRAGMA schema_version = {};
+PRAGMA writable_schema = RESET;";
 
 pub(super) const EDIT_LINK: &str = "
 UPDATE urls
   SET
-    long_url = :long,
+    long_url = COALESCE(:long, long_url),
     hits = COALESCE(:hits, hits),
     notes = COALESCE(:notes, notes),
+    enabled = COALESCE(:enabled, enabled),
     expiry_time = COALESCE(:expiry, expiry_time)
   WHERE short_url = :short
     AND (expiry_time IS NULL OR expiry_time > :now)
@@ -115,8 +131,8 @@ UPDATE urls
 pub(super) const GETALL_QUERIES: [&str; 4] = [
     // 0 => standard
     "
-SELECT short_url, long_url, hits, expiry_time, notes FROM (
-  SELECT t.id, t.short_url, t.long_url, t.hits, t.expiry_time, t.notes
+SELECT short_url, long_url, hits, expiry_time, enabled, notes FROM (
+  SELECT t.id, t.short_url, t.long_url, t.hits, t.expiry_time, t.enabled, t.notes
   FROM urls AS t
   WHERE (
     t.expiry_time IS NULL
@@ -128,8 +144,8 @@ SELECT short_url, long_url, hits, expiry_time, notes FROM (
 ORDER BY id ASC",
     // 1 => cursor
     "
-SELECT short_url, long_url, hits, expiry_time, notes FROM (
-  SELECT t.id, t.short_url, t.long_url, t.hits, t.expiry_time, t.notes
+SELECT short_url, long_url, hits, expiry_time, enabled, notes FROM (
+  SELECT t.id, t.short_url, t.long_url, t.hits, t.expiry_time, t.enabled, t.notes
   FROM urls AS t
   JOIN urls AS u
     ON u.short_url = :pos
@@ -144,8 +160,8 @@ SELECT short_url, long_url, hits, expiry_time, notes FROM (
 ) ORDER BY id ASC",
     // 2 => standard + fts
     "
-SELECT short_url, long_url, hits, expiry_time, notes FROM (
-  SELECT t.id, t.short_url, t.long_url, t.hits, t.expiry_time, t.notes
+SELECT short_url, long_url, hits, expiry_time, enabled, notes FROM (
+  SELECT t.id, t.short_url, t.long_url, t.hits, t.expiry_time, t.enabled, t.notes
   FROM urls AS t
   JOIN urls_fts AS f
     ON t.id = f.rowid
@@ -160,8 +176,8 @@ SELECT short_url, long_url, hits, expiry_time, notes FROM (
 ORDER BY id ASC",
     // 3 => cursor + fts
     "
-SELECT short_url, long_url, hits, expiry_time, notes FROM (
-  SELECT t.id, t.short_url, t.long_url, t.hits, t.expiry_time, t.notes
+SELECT short_url, long_url, hits, expiry_time, enabled, notes FROM (
+  SELECT t.id, t.short_url, t.long_url, t.hits, t.expiry_time, t.enabled, t.notes
   FROM urls AS t
   JOIN urls AS u
     ON u.short_url = :pos

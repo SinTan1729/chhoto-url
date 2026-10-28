@@ -262,7 +262,7 @@ jobs:
         id: git-cliff
         with:
           config: .github/cliff.toml
-          args: --latest
+          args: --latest --strip header
         env:
           GITHUB_REPO: ${{ github.repository }}
           OUTPUT: CHANGELOG.md

@@ -174,12 +174,13 @@ curl -X PUT \
     "longlink":"<longlink>", \
     "reset_hits": <bool>, \
     "expiry_time": <time>, \
+    "enabled": <bool>, \
     "notes": <notes> \
     }' \
 http://localhost:4567/api/edit
 ```
 
-The fields `expiry_time` and `notes` are optional. The existing values will be kept in the database if nothing is provided.
+Only `shortlink` is mandatory. The existing values will be kept in the database if nothing else is provided.
 
 The server will reply in the following format.
 

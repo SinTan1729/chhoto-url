@@ -33,6 +33,7 @@ pub(super) async fn expand_helper(
                     error: false,
                     longurl: chunks.longlink,
                     hits: chunks.hits,
+                    enabled: chunks.enabled,
                     expiry_time: chunks.expiry_time,
                     notes: chunks.notes,
                 };

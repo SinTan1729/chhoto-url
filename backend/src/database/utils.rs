@@ -16,7 +16,7 @@ use crate::database::{self, queries};
 
 // Some constants
 const APPLICATION_ID: i32 = i32::from_be_bytes(*b"chht"); // MUST NEVER BE CHANGED
-const USER_VERSION: u32 = 4; // Should be incremented on change of schema
+const USER_VERSION: u32 = 5; // Should be incremented on change of schema
 
 // Enum for backup types
 pub(crate) enum BackupType {
@@ -192,6 +192,173 @@ pub(crate) fn manage_backups(
     Ok(())
 }
 
+// Migrations
+fn apply_migration_1(db: &mut Connection) {
+    info!("Applying migration 1: Add expiry_time column to urls.");
+    let tx = db
+        .transaction()
+        .expect("Unable to create transaction for migration 1.");
+    tx.execute(
+        "ALTER TABLE urls ADD COLUMN expiry_time INTEGER NOT NULL DEFAULT 0",
+        (),
+    )
+    .expect("Unable to apply migration 1.");
+    tx.pragma_update(None, "user_version", 1)
+        .expect("Unable to set pragma: user_version.");
+    tx.commit()
+        .expect("Unable to commit transaction for migration 1.");
+}
+fn apply_migration_2(db: &mut Connection) {
+    info!("Applying migration 2: Add notes column to urls.");
+    let tx = db
+        .transaction()
+        .expect("Unable to create transaction for migration 2.");
+    tx.execute("ALTER TABLE urls ADD COLUMN notes TEXT", ())
+        .expect("Unable to apply migration 2.");
+    tx.pragma_update(None, "user_version", 2)
+        .expect("Unable to set pragma: user_version.");
+    tx.commit()
+        .expect("Unable to commit transaction for migration 2.");
+}
+fn apply_migration_3(
+    db: &mut Connection,
+    urls_fts_table_exists: bool,
+) -> (HashSet<String>, HashSet<String>) {
+    info!("Applying migration 3: Remove AUTOINCREMENT from id row.");
+    let tx = db
+        .transaction()
+        .expect("Unable to create transaction for migration 2.");
+    tx.execute("ALTER TABLE urls RENAME TO urls_old", ())
+        .expect("Unable to temporarily rename urls to urls_old.");
+    tx.execute(queries::URLS_TABLE_SCHEMA, ())
+        .expect("Unable to create new urls table.");
+    tx.execute(queries::URLS_MIGRATION_3, ())
+        .expect("Unable to clone data to the new table.");
+    tx.execute("DROP TABLE urls_old", ())
+        .expect("Unable to delete old urls table.");
+    if urls_fts_table_exists {
+        tx.execute("DROP TABLE urls_fts", ())
+            .expect("Unable to delete old urls_fts table.");
+    }
+    tx.pragma_update(None, "user_version", 3)
+        .expect("Unable to set pragma: user_version.");
+    tx.commit()
+        .expect("Unable to commit transaction for migration 3.");
+    db.execute("VACUUM", ())
+        .expect("failed to vacuum database after migration 3.");
+    (HashSet::from(["urls".to_owned()]), HashSet::new())
+}
+fn apply_migration_4(db: &mut Connection) {
+    info!(
+        "Applying migration 4: Change expiry column type, add default to hits, and \
+            add enabled column."
+    );
+    let tx = db
+        .transaction()
+        .expect("Unable to create transaction for migration 4.");
+    let schema_version = tx
+        .query_one("PRAGMA schema_version", (), |row| row.get::<usize, i32>(0))
+        .expect("Unable to read schema_version")
+        .to_string();
+    tx.execute_batch(&queries::URLS_MIGRATION_4.replace("{}", &schema_version))
+        .expect("Unable to apply migration 4.");
+    if tx
+        .query_one("PRAGMA integrity_check", (), |row| {
+            row.get::<usize, String>(0)
+        })
+        .expect("Unable to read integrity_check")
+        != "ok"
+    {
+        panic!("Unable to verify integrity after migration 4.");
+    }
+    tx.pragma_update(None, "user_version", 5)
+        .expect("Unable to set pragma: user_version.");
+    tx.commit()
+        .expect("Unable to commit transaction for migration 4.");
+}
+
+fn create_indices(db: &mut Connection, tables: HashSet<String>, indices: HashSet<String>) {
+    // Create index on short_url for faster lookups
+    if !indices.contains("idx_short_url") {
+        info!("Creating index idx_short_url on urls(short_url).");
+        db.execute("CREATE UNIQUE INDEX idx_short_url ON urls (short_url)", ())
+            .expect("Unable to create index on short_url.");
+    }
+    // Create index on expiry_time for faster lookups
+    if !indices.contains("idx_expiry_time") {
+        info!("Creating index idx_expiry_time on urls(expiry_time).");
+        db.execute("CREATE INDEX idx_expiry_time ON urls (expiry_time)", ())
+            .expect("Unable to create index on expiry_time.");
+    }
+    // Create partial index on enabled for faster lookups
+    if !indices.contains("idx_enabled") {
+        info!("Creating index idx_enabled on urls(enabled).");
+        db.execute(
+            "CREATE INDEX idx_enabled ON urls (enabled) WHERE enabled == TRUE",
+            (),
+        )
+        .expect("Unable to create index on enabled.");
+    }
+
+    // Create FTS5 table if it doesn't exist, and also create triggers
+    if !tables.contains("urls_fts") {
+        info!("Creating FTS table urls_fts, and adding triggers.");
+        let tx = db
+            .transaction()
+            .expect("Unable to create transaction for FTS table creation.");
+        tx.execute(queries::FTS_TABLE_SCHEMA, ())
+            .expect("Unable to create FTS table.");
+
+        tx.execute("INSERT INTO urls_fts(urls_fts) VALUES ('rebuild')", ())
+            .expect("Unable to populate FTS table.");
+        for trigger in queries::FTS_TRIGGERS {
+            tx.execute(trigger, ())
+                .expect("Unable to create FTS trigger(s).");
+        }
+
+        tx.commit().expect("Unable to create FTS table.");
+    }
+}
+
+fn apply_pragma(db: &mut Connection, use_wal_mode: bool, ensure_acid: bool) {
+    let (journal_mode, synchronous) = match (use_wal_mode, ensure_acid) {
+        (true, false) => ("WAL", "NORMAL"),
+        (true, true) => ("WAL", "FULL"),
+        (false, false) => ("DELETE", "FULL"),
+        (false, true) => ("DELETE", "EXTRA"),
+    };
+    db.pragma_update(None, "journal_mode", journal_mode)
+        .expect("Unable to set pragma: journal_mode.");
+    db.pragma_update(None, "synchronous", synchronous)
+        .expect("Unable to set pragma: synchronous.");
+    db.pragma_update(None, "temp_store", "memory")
+        .expect("Unable to set pragma: temp_store.");
+    let tx = db
+        .transaction()
+        .expect("Unable to create transaction for pragma updates.");
+    // Set some further optimizations and run vacuum if necessary
+    tx.pragma_update(None, "journal_size_limit", "8388608")
+        .expect("Unable to set pragma: journal_size_limit.");
+    tx.pragma_update(None, "mmap_size", "16777216")
+        .expect("Unable to set pragma: mmap_size.");
+    // The schema should be up-to-date by this point
+    tx.pragma_update(None, "user_version", USER_VERSION)
+        .expect("Unable to set pragma: user_version.");
+    tx.commit().expect("Unable to set correct pragma values.");
+    let link_count: i64 = db
+        .query_one("SELECT COUNT(id) FROM urls", (), |row| row.get(0))
+        .unwrap_or_default();
+    if link_count > 2000 {
+        db.execute("PRAGMA optimize=0x10002", ())
+            .expect("Unable to optimize database.");
+        debug!("Optimized database.");
+    } else {
+        debug!("Using bootstrap stat1 table");
+        db.execute_batch(queries::Z_STAT1_INIT)
+            .expect("Error inserting bootstrap table.");
+    }
+}
+
 // Initialize the database
 pub(crate) fn init_db(
     db: &mut Connection,
@@ -237,20 +404,14 @@ pub(crate) fn init_db(
     let urls_fts_table_exists = tables.contains("urls_fts");
 
     let current_user_version: u32 = if urls_table_exists {
-        db.query_row_and_then("SELECT user_version FROM pragma_user_version", (), |row| {
-            row.get(0)
-        })
-        .unwrap_or_default()
+        db.query_row_and_then("PRAGMA user_version", (), |row| row.get(0))
+            .unwrap_or_default()
     } else {
         USER_VERSION
     };
 
     let current_application_id: i32 = db
-        .query_row_and_then(
-            "SELECT application_id FROM pragma_application_id",
-            (),
-            |row| row.get(0),
-        )
+        .query_row_and_then("PRAGMA application_id", (), |row| row.get(0))
         .unwrap_or_default();
     if current_application_id != 0
         || (urls_table_exists && urls_fts_table_exists && current_user_version > 1)
@@ -276,130 +437,24 @@ pub(crate) fn init_db(
 
     // Migration 1: Add expiry_time, introduced in 6.0.0
     if current_user_version < 1 {
-        info!("Applying migration 1: Add expiry_time column to urls.");
-        let tx = db
-            .transaction()
-            .expect("Unable to create transaction for migration 1.");
-        tx.execute(
-            "ALTER TABLE urls ADD COLUMN expiry_time INTEGER NOT NULL DEFAULT 0",
-            (),
-        )
-        .expect("Unable to apply migration 1.");
-        tx.pragma_update(None, "user_version", 1)
-            .expect("Unable to set pragma: user_version.");
-        tx.commit()
-            .expect("Unable to commit transaction for migration 1.");
+        apply_migration_1(db);
     }
     // Migration 2: Add notes, introduced in 7.0.0
     if current_user_version < 3 {
-        info!("Applying migration 2: Add notes column to urls.");
-        let tx = db
-            .transaction()
-            .expect("Unable to create transaction for migration 2.");
-        tx.execute("ALTER TABLE urls ADD COLUMN notes TEXT", ())
-            .expect("Unable to apply migration 2.");
-        tx.pragma_update(None, "user_version", 2)
-            .expect("Unable to set pragma: user_version.");
-        tx.commit()
-            .expect("Unable to commit transaction for migration 2.");
+        apply_migration_2(db);
     }
     // Migration 3: Remove AUTOINCREMENT from the id row
     if current_user_version < 4 {
-        info!("Applying migration 3: Remove AUTOINCREMENT from id row.");
-        let tx = db
-            .transaction()
-            .expect("Unable to create transaction for migration 2.");
-        tx.execute("ALTER TABLE urls RENAME TO urls_old", ())
-            .expect("Unable to temporarily rename urls to urls_old.");
-        tx.execute(queries::URLS_TABLE_SCHEMA, ())
-            .expect("Unable to create new urls table.");
-        tx.execute(queries::URLS_MIGRATION_3, ())
-            .expect("Unable to clone data to the new table.");
-        tx.execute("DROP TABLE urls_old", ())
-            .expect("Unable to delete old urls table.");
-        if urls_fts_table_exists {
-            tx.execute("DROP TABLE urls_fts", ())
-                .expect("Unable to delete old urls_fts table.");
-        }
-        (tables, indices) = (HashSet::from(["urls".to_owned()]), HashSet::new());
-        tx.pragma_update(None, "user_version", 3)
-            .expect("Unable to set pragma: user_version.");
-        tx.commit()
-            .expect("Unable to commit transaction for migration 3.");
-        db.execute("VACUUM", ())
-            .expect("failed to vacuum database after migration 3.");
+        (tables, indices) = apply_migration_3(db, urls_fts_table_exists);
+    }
+    // Migration 4: Change expiry_time column type, add default value to hits,
+    // and add enabled column, introduced in version 7.10.0
+    if current_user_version < 5 {
+        apply_migration_4(db);
     }
 
-    // Create index on short_url for faster lookups
-    if !indices.contains("idx_short_url") {
-        info!("Creating index idx_short_url on urls(short_url).");
-        db.execute("CREATE UNIQUE INDEX idx_short_url ON urls (short_url)", ())
-            .expect("Unable to create index on short_url.");
-    }
-
-    // Create index on expiry_time for faster lookups
-    if !indices.contains("idx_expiry_time") {
-        info!("Creating index idx_expiry_time on urls(expiry_time).");
-        db.execute("CREATE INDEX idx_expiry_time ON urls (expiry_time)", ())
-            .expect("Unable to create index on expiry_time.");
-    }
-
-    // Create FTS5 table if it doesn't exist, and also create triggers
-    if !tables.contains("urls_fts") {
-        info!("Creating FTS table urls_fts, and adding triggers.");
-        let tx = db
-            .transaction()
-            .expect("Unable to create transaction for FTS table creation.");
-        tx.execute(queries::FTS_TABLE_SCHEMA, ())
-            .expect("Unable to create FTS table.");
-
-        tx.execute("INSERT INTO urls_fts(urls_fts) VALUES ('rebuild')", ())
-            .expect("Unable to populate FTS table.");
-        for trigger in queries::FTS_TRIGGERS {
-            tx.execute(trigger, ())
-                .expect("Unable to create FTS trigger(s).");
-        }
-
-        tx.commit().expect("Unable to create FTS table.");
-    }
-
-    // Set WAL mode if specified
-    let (journal_mode, synchronous) = match (use_wal_mode, ensure_acid) {
-        (true, false) => ("WAL", "NORMAL"),
-        (true, true) => ("WAL", "FULL"),
-        (false, false) => ("DELETE", "FULL"),
-        (false, true) => ("DELETE", "EXTRA"),
-    };
-    db.pragma_update(None, "journal_mode", journal_mode)
-        .expect("Unable to set pragma: journal_mode.");
-    db.pragma_update(None, "synchronous", synchronous)
-        .expect("Unable to set pragma: synchronous.");
-    db.pragma_update(None, "temp_store", "memory")
-        .expect("Unable to set pragma: temp_store.");
-    let tx = db
-        .transaction()
-        .expect("Unable to create transaction for pragma updates.");
-    // Set some further optimizations and run vacuum if necessary
-    tx.pragma_update(None, "journal_size_limit", "8388608")
-        .expect("Unable to set pragma: journal_size_limit.");
-    tx.pragma_update(None, "mmap_size", "16777216")
-        .expect("Unable to set pragma: mmap_size.");
-    // The schema should be up-to-date by this point
-    tx.pragma_update(None, "user_version", USER_VERSION)
-        .expect("Unable to set pragma: user_version.");
-    tx.commit().expect("Unable to set correct pragma values.");
-    let link_count: i64 = db
-        .query_one("SELECT COUNT(id) FROM urls", (), |row| row.get(0))
-        .unwrap_or_default();
-    if link_count > 2000 {
-        db.execute("PRAGMA optimize=0x10002", ())
-            .expect("Unable to optimize database.");
-        debug!("Optimized database.");
-    } else {
-        debug!("Using bootstrap stat1 table");
-        db.execute_batch(queries::Z_STAT1_INIT)
-            .expect("Error inserting bootstrap table.");
-    }
+    create_indices(db, tables, indices);
+    apply_pragma(db, use_wal_mode, ensure_acid);
 
     info!("Database initialization was successful.");
 }
@@ -418,11 +473,7 @@ pub(crate) fn open_db(path: &str, read_only: bool) -> Connection {
 
 // Perform a healthcheck
 pub(crate) fn is_database_healthy(db: &Connection) -> bool {
-    db.query_row_and_then(
-        "SELECT application_id FROM pragma_application_id",
-        (),
-        |row| row.get::<usize, i32>(0),
-    )
-    .unwrap_or_default()
+    db.query_row_and_then("PRAGMA application_id", (), |row| row.get::<usize, i32>(0))
+        .unwrap_or_default()
         == APPLICATION_ID
 }

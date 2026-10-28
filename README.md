@@ -69,7 +69,7 @@ Password: `chhoto-url-demo-pass`
 - Counts number of hits for each short link in a privacy respecting way
   i.e. only the hit is recorded, and nothing else.
 - Supports OIDC authentication.
-- Short links can be edited after creation.
+- Short links can be edited after creation. They can also be temporarily disabled.
 - Each short link may have custom notes attached to it. The UI features filtering for links,
   based on short link, long link, and notes.
 - QR codes can be generated for easy sharing.

@@ -75,6 +75,7 @@ pub(crate) async fn add_links(
                             success: true,
                             error: false,
                             shorturl,
+                            enabled: true,
                             expiry_time,
                         }),
                     )
