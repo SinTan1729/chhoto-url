@@ -3,7 +3,7 @@
 
 [package]
 name = "chhoto-url"
-version = "7.9.9"
+version = "7.10.0"
 edition = "2024"
 authors = ["Sayantan Santra <mail@sayantansantra.com>"]
 license = "mit"
