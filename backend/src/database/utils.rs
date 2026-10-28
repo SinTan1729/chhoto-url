@@ -179,7 +179,7 @@ pub(crate) fn manage_backups(
 
         Ok(paths.into_iter().map(|(_, path)| path).collect())
     }
-    let backups = matching_backups(&backup_dir, &format!("{db_name}.{suffix}"))
+    let backups = matching_backups(&backup_dir, &format!("{db_name}.{suffix}."))
         .map_err(|_| "Error getting old backups.")?;
     for path in backups.iter().rev().skip(retain) {
         fs::remove_file(path).map_err(|_| "Error cleaning old backups.")?;
