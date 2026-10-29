@@ -398,6 +398,8 @@ summary,
 }
 .dynamic-expiry .tooltip-text {
   left: 50%;
+  width: 8em;
+  margin-left: -4em;
 }
 .tooltip .tooltip-text::after {
   content: "";
