@@ -85,7 +85,7 @@
   <body>
     <div class="container" id="container">
       <form class="pure-form pure-form-aligned" name="new-url-form">
-        <fieldset>
+        <fieldset id="new-url-fieldset">
           <legend id="logo">
             <img src="assets/favicon.svg" alt="chhoto-url-logo" />
             <span> Chhoto URL</span>
@@ -357,9 +357,9 @@
       <form class="pure-form pure-form-aligned" name="edit-form">
         <p>
           Enter new details for <span id="edit-link">placeholder</span>. Be
-          careful, it cannot be undone.
+          careful.
         </p>
-        <fieldset>
+        <fieldset id="edit-fieldset">
           <div class="pure-control-group">
             <label for="edited-url">Long URL</label>
             <input class="chhoto-input" type="url" id="edited-url" />

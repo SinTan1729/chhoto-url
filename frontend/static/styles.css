@@ -422,6 +422,15 @@ summary,
   .pure-form input.chhoto-input {
     width: 98%;
   }
+  #new-url-fieldset label {
+    width: 14em;
+    text-align: left;
+    margin-bottom: 0.2em;
+  }
+  #controls,
+  #optionsSection summary {
+    margin-left: 0.2em;
+  }
 
   #version-number {
     margin-right: 0.3em;
@@ -497,6 +506,11 @@ summary,
     display: flex;
     align-items: center;
     gap: 0.3em;
+  }
+  #edit-fieldset div.pure-control-group,
+  #edit-fieldset div.pure-control-group label {
+    text-align: left;
+    margin-bottom: 0.2em;
   }
   #filterText,
   #filter-div button {
