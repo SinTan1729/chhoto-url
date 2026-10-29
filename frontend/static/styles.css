@@ -379,7 +379,7 @@ summary,
 .tooltip span {
   cursor: pointer;
 }
-.tooltip .tooltiptext {
+.tooltip .tooltip-text {
   visibility: hidden;
   width: 12em;
   background-color: var(--tooltip);
@@ -391,12 +391,15 @@ summary,
   position: absolute;
   z-index: 1;
   bottom: calc(50% + 1.25em);
-  left: 50%;
+  left: 25%;
   margin-left: -6em;
   opacity: 0;
   transition: opacity 0.3s;
 }
-.tooltip .tooltiptext::after {
+.dynamic-expiry .tooltip-text {
+  left: 50%;
+}
+.tooltip .tooltip-text::after {
   content: "";
   position: absolute;
   top: 100%;
@@ -406,7 +409,7 @@ summary,
   border-style: solid;
   border-color: var(--tooltip) transparent transparent transparent;
 }
-.tooltip span:hover + .tooltiptext {
+.tooltip span:hover + .tooltip-text {
   visibility: visible;
   opacity: 1;
 }
@@ -519,7 +522,7 @@ summary,
     align-content: center;
   }
 
-  .tooltip .tooltiptext {
+  .tooltip .tooltip-text {
     left: 8em;
     margin-left: -4em;
   }

@@ -560,7 +560,7 @@ const TR = (i, row) => {
   if (!row["enabled"]) {
     const a_span = document.createElement("span");
     const t_span = document.createElement("span");
-    t_span.classList.add("tooltiptext");
+    t_span.classList.add("tooltip-text");
     longTD.classList.add("tooltip");
     t_span.textContent = "Link is disabled. Edit to enable again.";
     a_span.appendChild(a);
@@ -589,7 +589,7 @@ const TR = (i, row) => {
     expiryHTML =
       "<span>" +
       relativeExpiryTime +
-      '</span> <span class="tooltiptext">' +
+      '</span> <span class="tooltip-text">' +
       accurateExpiryTime +
       "</span>";
   }
