@@ -479,7 +479,7 @@ const showAlert = (text, col) => {
 };
 
 const refreshExpiryTimes = async () => {
-  const tds = document.getElementsByClassName("tooltip");
+  const tds = document.getElementsByClassName("dynamic-expiry");
   for (let i = 0; i < tds.length; i++) {
     let td = tds[i];
     let span = td.firstChild.firstChild;
@@ -554,10 +554,21 @@ const TR = (i, row) => {
   a.textContent = longlink;
   a.target = "_blank";
   const div = document.createElement("div");
-  div.appendChild(a);
   const longTD = document.createElement("td");
   longTD.setAttribute("label", "Long URL");
   longTD.setAttribute("name", "longColumn");
+  if (!row["enabled"]) {
+    const a_span = document.createElement("span");
+    const t_span = document.createElement("span");
+    t_span.classList.add("tooltiptext");
+    longTD.classList.add("tooltip");
+    t_span.textContent = "Link is disabled. Edit to enable again.";
+    a_span.appendChild(a);
+    div.appendChild(a_span);
+    div.appendChild(t_span);
+  } else {
+    div.appendChild(a);
+  }
   longTD.appendChild(div);
 
   const shortlink = row["shortlink"];
@@ -585,9 +596,9 @@ const TR = (i, row) => {
 
   let expiryTD = TD(expiryHTML, null);
   if (expiryTime > 0 && relativeExpiryTime != "expired") {
-    expiryTD.width = "160px";
     expiryTD.setAttribute("data-time", expiryTime);
     expiryTD.classList.add("tooltip");
+    expiryTD.classList.add("dynamic-expiry");
   }
   expiryTD.setAttribute("label", "Expiry");
   expiryTD.setAttribute("name", "expiryColumn");

@@ -96,7 +96,7 @@ clean: podman-stop
 minify:
 	rm -rf "/tmp/chhoto-url-site/"
 	@echo "Minifying resources..."
-	minify -rs "./site/" -o "/tmp/chhoto-url-site/"
+	minify -rs "./website/" -o "/tmp/chhoto-url-site/"
 	find /tmp/chhoto-url-site/ -type f -regextype egrep -not -regex '.+\.(html|js|css|svg|ico|png|webp)' -delete
 
 deploy: minify
