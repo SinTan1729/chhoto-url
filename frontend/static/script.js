@@ -944,7 +944,8 @@ const submitForm = () => {
         const params = new URLSearchParams();
         params.append('page_size', 1);
         const newEntry = await pullData(params);
-        if (LOCAL_DATA?.[0]?.['shortlink'] !== newEntry[0]['shortlink']) {
+        // Do not change to [0]?['shortlink'], the minifier messes it up
+        if (LOCAL_DATA?.[0]?.shortlink !== newEntry[0]['shortlink']) {
           LOCAL_DATA.unshift(newEntry[0]);
         }
         CUR_PAGE = 0;
