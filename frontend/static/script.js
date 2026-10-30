@@ -3,7 +3,7 @@
 
 // Application state
 let VERSION = null;
-let SITE_URL = "-";
+let SITE_URL = '-';
 let CONFIG = null;
 let SUBDIR = null;
 let ADMIN = null;
@@ -39,18 +39,18 @@ const SVG_INFO_BUTTON = `<svg xmlns="http://www.w3.org/2000/svg" width="24" heig
 
 const loadCachedState = () => {
   try {
-    const cachedAdmin = sessionStorage.getItem("admin");
-    const cachedConfig = sessionStorage.getItem("config");
-    const cachedNoPass = sessionStorage.getItem("no_pass");
+    const cachedAdmin = sessionStorage.getItem('admin');
+    const cachedConfig = sessionStorage.getItem('config');
+    const cachedNoPass = sessionStorage.getItem('no_pass');
 
     if (cachedAdmin !== null) {
-      ADMIN = cachedAdmin === "true";
+      ADMIN = cachedAdmin === 'true';
     }
     if (cachedConfig !== null) {
       CONFIG = JSON.parse(cachedConfig);
     }
     if (cachedNoPass !== null) {
-      NO_AUTH_NEEDED = cachedNoPass === "true";
+      NO_AUTH_NEEDED = cachedNoPass === 'true';
     } else {
       NO_AUTH_NEEDED = false;
     }
@@ -63,33 +63,33 @@ const loadCachedState = () => {
 const clearCachedState = () => {
   ADMIN = null;
   CONFIG = null;
-  sessionStorage.removeItem("admin");
-  sessionStorage.removeItem("config");
-  sessionStorage.removeItem("no_pass");
+  sessionStorage.removeItem('admin');
+  sessionStorage.removeItem('config');
+  sessionStorage.removeItem('no_pass');
 };
 
 const cacheAdmin = (admin) => {
   ADMIN = admin;
-  sessionStorage.setItem("admin", String(admin));
+  sessionStorage.setItem('admin', String(admin));
 };
 const cacheConfig = (config) => {
   CONFIG = config;
-  sessionStorage.setItem("config", JSON.stringify(config));
+  sessionStorage.setItem('config', JSON.stringify(config));
 };
 const cacheNoPass = (no_pass) => {
   NO_AUTH_NEEDED = no_pass;
-  sessionStorage.setItem("no_pass", no_pass);
+  sessionStorage.setItem('no_pass', no_pass);
 };
 
 const prepSubdir = (link) => {
   if (!SUBDIR) {
-    SUBDIR = window.location.pathname.replace(/\/admin\/manage\/$/, "/");
+    SUBDIR = window.location.pathname.replace(/\/admin\/manage\/$/, '/');
   }
-  return (SUBDIR + link).replace("//", "/");
+  return (SUBDIR + link).replace('//', '/');
 };
 
 const hasAllowedScheme = (url) => {
-  const allowedSchemes = CONFIG.allowed_protocols.map((s) => s + ":");
+  const allowedSchemes = CONFIG.allowed_protocols.map((s) => s + ':');
   try {
     return allowedSchemes.includes(new URL(url).protocol);
   } catch {
@@ -102,11 +102,11 @@ const getConfig = async () => {
     return;
   }
   if (CONFIG == null || NO_AUTH_NEEDED) {
-    const res = await fetch(prepSubdir("/api/getconfig"), {
-      cache: "no-cache",
+    const res = await fetch(prepSubdir('/api/getconfig'), {
+      cache: 'no-cache',
     });
     if (!res.ok) {
-      console.log("Error while fetching config.");
+      console.log('Error while fetching config.');
       clearCachedState();
       return;
     }
@@ -123,11 +123,11 @@ const getConfig = async () => {
   if (CONFIG.site_url == null) {
     SITE_URL = window.location.origin;
   } else {
-    SITE_URL = CONFIG.site_url.replace(/^"/, "").replace(/"$/, "");
+    SITE_URL = CONFIG.site_url.replace(/^"/, '').replace(/"$/, '');
     const url = new URL(SITE_URL);
     SITE_URL = SITE_URL.replace(url.hostname, punycode.toUnicode(url.hostname));
     SITE_URL = SITE_URL.replace(url.pathname, punycode.toUnicode(url.pathname));
-    SITE_URL = SITE_URL.replace(/\/$/, "");
+    SITE_URL = SITE_URL.replace(/\/$/, '');
   }
 
   if (CONFIG.frontend_page_size == null) {
@@ -139,16 +139,16 @@ const getConfig = async () => {
 };
 
 const showVersion = () => {
-  const link = document.getElementById("version-number");
+  const link = document.getElementById('version-number');
   if (VERSION) {
-    link.getElementsByTagName("span")[0].innerText = "v" + VERSION;
-    if (VERSION.includes("-dev+")) {
+    link.getElementsByTagName('span')[0].innerText = 'v' + VERSION;
+    if (VERSION.includes('-dev+')) {
       link.href =
-        "https://github.com/SinTan1729/chhoto-url/commits/" +
-        VERSION.split("+")[1];
+        'https://github.com/SinTan1729/chhoto-url/commits/' +
+        VERSION.split('+')[1];
     } else {
       link.href =
-        "https://github.com/SinTan1729/chhoto-url/releases/tag/" + VERSION;
+        'https://github.com/SinTan1729/chhoto-url/releases/tag/' + VERSION;
     }
     link.hidden = false;
   } else {
@@ -158,43 +158,43 @@ const showVersion = () => {
 
 const showLogin = () => {
   if (NO_AUTH_NEEDED) {
-    document.getElementById("password").value = "";
-    document.getElementById("login-checkbox").checked = false;
+    document.getElementById('password').value = '';
+    document.getElementById('login-checkbox').checked = false;
     submitLogin();
   } else {
-    document.getElementById("version-number").hidden = true;
-    document.getElementById("admin-button").hidden = true;
-    document.getElementById("container").style.filter = "blur(2px)";
+    document.getElementById('version-number').hidden = true;
+    document.getElementById('admin-button').hidden = true;
+    document.getElementById('container').style.filter = 'blur(2px)';
     if (!PASSWORD_ENABLED) {
-      document.getElementById("password-div").hidden = true;
+      document.getElementById('password-div').hidden = true;
     }
     if (!OIDC_ENABLED) {
-      document.getElementById("oidc-login-button").hidden = true;
+      document.getElementById('oidc-login-button').hidden = true;
     }
-    document.getElementById("login-dialog").showModal();
+    document.getElementById('login-dialog').showModal();
     if (PASSWORD_ENABLED) {
-      document.getElementById("password").focus();
+      document.getElementById('password').focus();
     }
   }
 };
 
 const refreshData = async () => {
   try {
-    const loading_text = document.getElementById("loading-text");
-    const admin_button = document.getElementById("admin-button");
+    const loading_text = document.getElementById('loading-text');
+    const admin_button = document.getElementById('admin-button');
 
     const getPullParams = () => {
       const params = new URLSearchParams();
 
       if (LOCAL_DATA.length == 0) {
-        params.append("page_size", 2 * CONFIG.frontend_page_size);
+        params.append('page_size', 2 * CONFIG.frontend_page_size);
       } else {
         if (LOCAL_DATA.length <= CUR_PAGE * CONFIG.frontend_page_size) {
-          console.log("Reached the end of URLs.");
+          console.log('Reached the end of URLs.');
           return null;
         }
-        params.append("page_size", CONFIG.frontend_page_size);
-        params.append("page_after", LOCAL_DATA.at(-1)["shortlink"]);
+        params.append('page_size', CONFIG.frontend_page_size);
+        params.append('page_after', LOCAL_DATA.at(-1)['shortlink']);
       }
 
       return params;
@@ -213,8 +213,8 @@ const refreshData = async () => {
     if (ADMIN === true && CONFIG !== null) {
       try {
         showVersion();
-        const admin_button = document.getElementById("admin-button");
-        admin_button.getElementsByTagName("span")[0].innerText = "logout";
+        const admin_button = document.getElementById('admin-button');
+        admin_button.getElementsByTagName('span')[0].innerText = 'logout';
         if (NO_AUTH_NEEDED === false || CONFIG.public_mode == true) {
           admin_button.hidden = false;
         }
@@ -235,74 +235,74 @@ const refreshData = async () => {
           displayData();
         }
         managePageControls();
-        sessionStorage.removeItem("config");
+        sessionStorage.removeItem('config');
         await getConfig();
         return;
       } catch (err) {
-        console.log("/api/all failed, clearing cache and falling back.", err);
+        console.log('/api/all failed, clearing cache and falling back.', err);
         clearCachedState();
       }
     }
 
     if (ADMIN !== true) {
-      const res = await fetch(prepSubdir("/api/whoami"), {
-        headers: new Headers({ accept: "application/json" }),
-        cache: "no-cache",
+      const res = await fetch(prepSubdir('/api/whoami'), {
+        headers: new Headers({ accept: 'application/json' }),
+        cache: 'no-cache',
       });
       if (res.status !== 200) {
-        throw Error("There was an issue getting user whoami info.");
+        throw Error('There was an issue getting user whoami info.');
       }
 
       const data = await res.json();
-      let role = "nobody";
-      PASSWORD_ENABLED = data["password_enabled"];
-      OIDC_ENABLED = data["oidc_enabled"];
-      if (data["admin"]) {
-        role = "admin";
-      } else if (data["public_mode_enabled"]) {
-        role = "public";
-      } else if (!data["password_enabled"] && !data["oidc_enabled"]) {
-        role = "nopass";
+      let role = 'nobody';
+      PASSWORD_ENABLED = data['password_enabled'];
+      OIDC_ENABLED = data['oidc_enabled'];
+      if (data['admin']) {
+        role = 'admin';
+      } else if (data['public_mode_enabled']) {
+        role = 'public';
+      } else if (!data['password_enabled'] && !data['oidc_enabled']) {
+        role = 'nopass';
       }
       switch (role) {
-        case "nobody":
+        case 'nobody':
           clearCachedState();
           cacheNoPass(false);
           showLogin();
           return;
 
-        case "public":
-          cacheNoPass(!data["password_enabled"] && !data["oidc_enabled"]);
+        case 'public':
+          cacheNoPass(!data['password_enabled'] && !data['oidc_enabled']);
           cacheAdmin(false);
           await getConfig();
 
-          loading_text.textContent = "Using public mode.";
+          loading_text.textContent = 'Using public mode.';
           const expiry = parseInt(CONFIG.public_mode_expiry_delay);
           if (expiry > 0) {
             loading_text.textContent +=
-              " Unless chosen a shorter expiry time, submitted links will automatically expire ";
-            loading_text.textContent += formatTimeDiff(expiry) + ".";
+              ' Unless chosen a shorter expiry time, submitted links will automatically expire ';
+            loading_text.textContent += formatTimeDiff(expiry) + '.';
           }
 
-          admin_button.getElementsByTagName("span")[0].innerText = "login";
+          admin_button.getElementsByTagName('span')[0].innerText = 'login';
           admin_button.hidden = false;
           updateInputBox();
           break;
 
-        case "nopass":
+        case 'nopass':
           cacheNoPass(true);
-          document.getElementById("admin-button").hidden = true;
+          document.getElementById('admin-button').hidden = true;
           showLogin();
           return;
 
-        case "admin":
+        case 'admin':
           cacheAdmin(true);
           await getConfig();
           break;
 
         default:
           clearCachedState();
-          throw Error("Got undefined user role.");
+          throw Error('Got undefined user role.');
       }
     }
 
@@ -333,14 +333,14 @@ const refreshData = async () => {
       }
       managePageControls();
     } else {
-      document.getElementById("table-box").hidden = true;
+      document.getElementById('table-box').hidden = true;
       loading_text.hidden = false;
-      document.getElementById("url-table").replaceChildren();
+      document.getElementById('url-table').replaceChildren();
     }
   } catch (err) {
     console.log(err);
     clearCachedState();
-    if (!alert("Something went wrong! Click OK to refresh page.")) {
+    if (!alert('Something went wrong! Click OK to refresh page.')) {
       window.location.reload();
     }
   }
@@ -348,16 +348,16 @@ const refreshData = async () => {
 
 const pullData = async (params) => {
   if (FILTER != null) {
-    params.append("filter", FILTER);
+    params.append('filter', FILTER);
   }
   const res = await fetch(prepSubdir(`/api/all?${params}`), {
-    cache: "no-cache",
+    cache: 'no-cache',
   });
   if (res.status == 200) {
     const data = await res.json();
     return data;
   } else {
-    throw Error("There was an error getting data.");
+    throw Error('There was an error getting data.');
   }
 };
 
@@ -389,20 +389,20 @@ const gotoNextPage = () => {
 
 const updateInputBox = () => {
   if (CONFIG.allow_capital_letters) {
-    const input_box = document.getElementById("shortUrl");
-    input_box.pattern = "[A-Za-z0-9\\\-_]+";
-    input_box.title = "Only A-Z, a-z, 0-9, - and _ are allowed";
-    input_box.placeholder = "Only A-Z, a-z, 0-9, - and _ are allowed";
+    const input_box = document.getElementById('shortUrl');
+    input_box.pattern = '[A-Za-z0-9\\\-_]+';
+    input_box.title = 'Only A-Z, a-z, 0-9, - and _ are allowed';
+    input_box.placeholder = 'Only A-Z, a-z, 0-9, - and _ are allowed';
   }
 };
 
 const refreshWithFilter = () => {
-  const filterInput = document.getElementById("filterText");
+  const filterInput = document.getElementById('filterText');
   const filter = filterInput.value;
 
-  filterInput.setCustomValidity("");
+  filterInput.setCustomValidity('');
   const oldFilter = FILTER;
-  if (filter == "") {
+  if (filter == '') {
     FILTER = null;
   } else {
     FILTER = filter;
@@ -415,7 +415,7 @@ const refreshWithFilter = () => {
 
 const displayData = () => {
   if (CUR_PAGE < 0) {
-    console.log("Trying to access negative numbered page.");
+    console.log('Trying to access negative numbered page.');
     return;
   }
   const data = LOCAL_DATA.slice(
@@ -423,20 +423,20 @@ const displayData = () => {
     (CUR_PAGE + 1) * CONFIG.frontend_page_size,
   );
   showVersion();
-  const admin_button = document.getElementById("admin-button");
-  admin_button.getElementsByTagName("span")[0].innerText = "logout";
+  const admin_button = document.getElementById('admin-button');
+  admin_button.getElementsByTagName('span')[0].innerText = 'logout';
   if (NO_AUTH_NEEDED === false || CONFIG.public_mode == true) {
     admin_button.hidden = false;
   }
   updateInputBox();
 
-  const table_box = document.getElementById("table-box");
-  const loading_text = document.getElementById("loading-text");
-  const table = document.getElementById("url-table");
+  const table_box = document.getElementById('table-box');
+  const loading_text = document.getElementById('loading-text');
+  const table = document.getElementById('url-table');
 
   if (data.length === 0 && FILTER == null) {
     table_box.hidden = true;
-    loading_text.textContent = "No active links.";
+    loading_text.textContent = 'No active links.';
     loading_text.hidden = false;
   } else {
     loading_text.hidden = true;
@@ -456,9 +456,9 @@ const managePageControls = () => {
   const on_last_page =
     LOCAL_DATA.length <= (CUR_PAGE + 1) * CONFIG.frontend_page_size;
 
-  document.getElementById("prevPageBtn").disabled = on_first_page;
-  document.getElementById("nextPageBtn").disabled = on_last_page;
-  document.getElementById("pageControls").hidden =
+  document.getElementById('prevPageBtn').disabled = on_first_page;
+  document.getElementById('nextPageBtn').disabled = on_last_page;
+  document.getElementById('pageControls').hidden =
     on_first_page && on_last_page;
   PROCESSING_PAGE_TRANSITION = false;
 };
@@ -466,33 +466,33 @@ const managePageControls = () => {
 let alertTimeout;
 const showAlert = (text, col) => {
   clearTimeout(alertTimeout);
-  const alertBox = document.getElementById("alert-box");
+  const alertBox = document.getElementById('alert-box');
   alertBox.style.background = col;
   alertBox.innerHTML = text;
-  if (text == "\u00A0") {
-    alertBox.removeAttribute("style");
+  if (text == '\u00A0') {
+    alertBox.removeAttribute('style');
   } else {
-    alertBox.style.display = "block";
-    const timeout = col.includes("red") ? 5000 : 3000;
+    alertBox.style.display = 'block';
+    const timeout = col.includes('red') ? 5000 : 3000;
     alertTimeout = setTimeout(() => {
-      showAlert("\u00A0", "transparent");
+      showAlert('\u00A0', 'transparent');
     }, timeout);
   }
 };
 
 const refreshExpiryTimes = async () => {
-  const tds = document.getElementsByClassName("dynamic-expiry");
+  const tds = document.getElementsByClassName('dynamic-expiry');
   for (let i = 0; i < tds.length; i++) {
     let td = tds[i];
     let span = td.firstChild.firstChild;
-    if (span.innerText == "expired") {
+    if (span.innerText == 'expired') {
       continue;
     }
-    let expiryTime = td.getAttribute("data-time");
+    let expiryTime = td.getAttribute('data-time');
     let relativeTime = formatRelativeTime(expiryTime);
-    if (relativeTime == "expired") {
-      td.style.color = "light-dark(red, #a01e1e)";
-      for (const btn of td.parentElement.lastChild.querySelectorAll("button")) {
+    if (relativeTime == 'expired') {
+      td.style.color = 'light-dark(red, #a01e1e)';
+      for (const btn of td.parentElement.lastChild.querySelectorAll('button')) {
         btn.disabled = true;
       }
       td.firstChild.lastChild.remove();
@@ -521,13 +521,13 @@ const formatTimeDiff = (seconds) => {
     minute: 60,
     second: 1,
   };
-  const rtf = new Intl.RelativeTimeFormat("en", { numeric: "auto" });
+  const rtf = new Intl.RelativeTimeFormat('en', { numeric: 'auto' });
   if (seconds <= 0) {
-    return "expired";
+    return 'expired';
   }
   // "Math.abs" accounts for both "past" & "future" scenarios
   for (const u in UNITS) {
-    if (Math.abs(seconds) > UNITS[u] || u === "second") {
+    if (Math.abs(seconds) > UNITS[u] || u === 'second') {
       return rtf.format(Math.round(seconds / UNITS[u]), u);
     }
   }
@@ -537,60 +537,60 @@ const formatLocalDateTime = (ts) => {
   const d = new Date(ts * 1000);
   const opts = { timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone };
   const parts = Object.fromEntries(
-    new Intl.DateTimeFormat("en-US", {
+    new Intl.DateTimeFormat('en-US', {
       ...opts,
-      day: "2-digit",
-      month: "short",
-      year: "numeric",
-      hour: "2-digit",
-      minute: "2-digit",
-      second: "2-digit",
+      day: '2-digit',
+      month: 'short',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit',
       hour12: true,
     })
       .formatToParts(d)
       .map((p) => [p.type, p.value]),
   );
-  const tz = new Intl.DateTimeFormat("en-US", {
+  const tz = new Intl.DateTimeFormat('en-US', {
     ...opts,
-    timeZoneName: "short",
+    timeZoneName: 'short',
   })
     .formatToParts(d)
-    .find((p) => p.type === "timeZoneName").value;
+    .find((p) => p.type === 'timeZoneName').value;
 
   return `${parts.day} ${parts.month} ${parts.year} ${parts.hour}:${parts.minute}:${parts.second} ${parts.dayPeriod} (${tz})`;
 };
 
 const create_td = (s, u) => {
-  const td = document.createElement("td");
-  const div = document.createElement("div");
+  const td = document.createElement('td');
+  const div = document.createElement('div');
   div.innerHTML = s;
   td.appendChild(div);
-  if (u !== null) td.setAttribute("label", u);
+  if (u !== null) td.setAttribute('label', u);
   return td;
 };
 
 const create_tr = (i, row) => {
-  const tr = document.createElement("tr");
+  const tr = document.createElement('tr');
 
   const numTD = create_td(i, null);
-  numTD.setAttribute("name", "numColumn");
-  numTD.setAttribute("label", "#");
+  numTD.setAttribute('name', 'numColumn');
+  numTD.setAttribute('label', '#');
 
-  const longlink = row["longlink"];
-  const a = document.createElement("a");
+  const longlink = row['longlink'];
+  const a = document.createElement('a');
   a.href = longlink;
   a.textContent = longlink;
-  a.target = "_blank";
-  const div = document.createElement("div");
-  const longTD = document.createElement("td");
-  longTD.setAttribute("label", "Long URL");
-  longTD.setAttribute("name", "longColumn");
-  if (!row["enabled"]) {
-    const a_span = document.createElement("span");
-    const t_span = document.createElement("span");
-    t_span.classList.add("tooltip-text");
-    longTD.classList.add("tooltip");
-    t_span.textContent = "Link is disabled. Edit to enable again.";
+  a.target = '_blank';
+  const div = document.createElement('div');
+  const longTD = document.createElement('td');
+  longTD.setAttribute('label', 'Long URL');
+  longTD.setAttribute('name', 'longColumn');
+  if (!row['enabled']) {
+    const a_span = document.createElement('span');
+    const t_span = document.createElement('span');
+    t_span.classList.add('tooltip-text');
+    longTD.classList.add('tooltip');
+    t_span.textContent = 'Link is disabled. Edit to enable again.';
     a_span.appendChild(a);
     div.appendChild(a_span);
     div.appendChild(t_span);
@@ -599,58 +599,58 @@ const create_tr = (i, row) => {
   }
   longTD.appendChild(div);
 
-  const shortlink = row["shortlink"];
+  const shortlink = row['shortlink'];
   tr.id = shortlink;
   const shortTD = create_td(
     `<a href="${SITE_URL}/${shortlink}" target="_blank">${shortlink}</a>`,
   );
-  shortTD.setAttribute("name", "shortColumn");
+  shortTD.setAttribute('name', 'shortColumn');
 
-  const hitsTD = create_td(row["hits"].toLocaleString(), null);
-  hitsTD.setAttribute("label", "Hits");
-  hitsTD.setAttribute("name", "hitsColumn");
+  const hitsTD = create_td(row['hits'].toLocaleString(), null);
+  hitsTD.setAttribute('label', 'Hits');
+  hitsTD.setAttribute('name', 'hitsColumn');
 
-  const expiryTime = row["expiry_time"];
+  const expiryTime = row['expiry_time'];
   let relativeExpiryTime = null;
-  let expiryHTML = "-";
+  let expiryHTML = '-';
   if (expiryTime > 0) {
     relativeExpiryTime = formatRelativeTime(expiryTime);
     const accurateExpiryTime = formatLocalDateTime(expiryTime);
     expiryHTML =
-      "<span>" +
+      '<span>' +
       relativeExpiryTime +
       '</span> <span class="tooltip-text">' +
       accurateExpiryTime +
-      "</span>";
+      '</span>';
   }
 
   let expiryTD = create_td(expiryHTML, null);
-  if (expiryTime > 0 && relativeExpiryTime != "expired") {
-    expiryTD.setAttribute("data-time", expiryTime);
-    expiryTD.classList.add("tooltip");
-    expiryTD.classList.add("dynamic-expiry");
+  if (expiryTime > 0 && relativeExpiryTime != 'expired') {
+    expiryTD.setAttribute('data-time', expiryTime);
+    expiryTD.classList.add('tooltip');
+    expiryTD.classList.add('dynamic-expiry');
   }
-  expiryTD.setAttribute("label", "Expiry");
-  expiryTD.setAttribute("name", "expiryColumn");
+  expiryTD.setAttribute('label', 'Expiry');
+  expiryTD.setAttribute('name', 'expiryColumn');
 
-  const actionsTD = document.createElement("td");
-  actionsTD.setAttribute("name", "actions");
-  actionsTD.setAttribute("label", "Actions");
-  const btnGrp = document.createElement("div");
-  btnGrp.classList.add("pure-button-group");
-  btnGrp.role = "group";
+  const actionsTD = document.createElement('td');
+  actionsTD.setAttribute('name', 'actions');
+  actionsTD.setAttribute('label', 'Actions');
+  const btnGrp = document.createElement('div');
+  btnGrp.classList.add('pure-button-group');
+  btnGrp.role = 'group';
   btnGrp.appendChild(copyButton(shortlink));
   btnGrp.appendChild(qrCodeButton(shortlink));
   btnGrp.appendChild(infoButton(shortlink));
   btnGrp.appendChild(
-    editButton(shortlink, longlink, expiryTime, row["enabled"], row["notes"]),
+    editButton(shortlink, longlink, expiryTime, row['enabled'], row['notes']),
   );
   btnGrp.appendChild(deleteButton(shortlink));
   actionsTD.appendChild(btnGrp);
 
-  if (relativeExpiryTime == "expired") {
-    expiryTD.style.color = "light-dark(red, #a01e1e)";
-    for (const btn of actionsTD.querySelectorAll("button")) {
+  if (relativeExpiryTime == 'expired') {
+    expiryTD.style.color = 'light-dark(red, #a01e1e)';
+    for (const btn of actionsTD.querySelectorAll('button')) {
       btn.disabled = true;
     }
     expiryTD.firstChild.lastChild.remove();
@@ -659,8 +659,8 @@ const create_tr = (i, row) => {
   for (const td of [numTD, shortTD, longTD, hitsTD, expiryTD, actionsTD]) {
     tr.appendChild(td);
   }
-  if (!row["enabled"]) {
-    tr.classList.add("disabled");
+  if (!row['enabled']) {
+    tr.classList.add('disabled');
   }
   return tr;
 };
@@ -671,15 +671,15 @@ const copyShortUrl = (shortLink, doCopy) => {
 
   let copyPromise;
   if (
-    typeof ClipboardItem === "function" &&
-    typeof navigator.clipboard === "object"
+    typeof ClipboardItem === 'function' &&
+    typeof navigator.clipboard === 'object'
   ) {
     copyPromise = doCopy // We want to use it only for the UI in some cases
       ? navigator.clipboard.writeText(fullLink)
       : Promise.resolve();
   } else {
     copyPromise = Promise.reject(
-      new Error("Unable to get access to clipboard."),
+      new Error('Unable to get access to clipboard.'),
     );
   }
 
@@ -687,7 +687,7 @@ const copyShortUrl = (shortLink, doCopy) => {
     .then(() =>
       showAlert(
         `Short URL ${linkElt} was copied to clipboard!`,
-        "light-dark(green, #1e501e)",
+        'light-dark(green, #1e501e)',
       ),
     )
     .catch((err) => {
@@ -695,7 +695,7 @@ const copyShortUrl = (shortLink, doCopy) => {
       clearCachedState();
       showAlert(
         `Could not copy short URL to clipboard, please do it manually: ${linkElt}`,
-        "light-dark(red, #a01e1e)",
+        'light-dark(red, #a01e1e)',
       );
     });
 };
@@ -704,16 +704,16 @@ const addHTTPSToLongURL = (id) => {
   const input = document.getElementById(id);
   let url = input.value.trim();
   if (!!url && !hasAllowedScheme(url)) {
-    url = "https://" + url;
+    url = 'https://' + url;
   }
   input.value = url;
 };
 
 const copyButton = (shortUrl) => {
-  const btn = document.createElement("button");
-  btn.classList.add("svg-button");
+  const btn = document.createElement('button');
+  btn.classList.add('svg-button');
   btn.innerHTML = SVG_COPY_BUTTON;
-  btn.title = "Copy Short URL";
+  btn.title = 'Copy Short URL';
 
   btn.onclick = (e) => {
     e.preventDefault();
@@ -723,22 +723,22 @@ const copyButton = (shortUrl) => {
 };
 
 const editButton = (shortUrl, longUrl, expiry, enabled, notes) => {
-  const btn = document.createElement("button");
-  btn.classList.add("svg-button");
+  const btn = document.createElement('button');
+  btn.classList.add('svg-button');
   btn.innerHTML = SVG_EDIT_BUTTON;
-  btn.title = "Edit Short URL";
+  btn.title = 'Edit Short URL';
 
   btn.onclick = () => {
-    document.getElementById("container").style.filter = "blur(2px)";
-    const editUrlSpan = document.getElementById("edit-link");
-    const editedUrl = document.getElementById("edited-url");
-    const editedExpiry = document.getElementById("edited-expiry");
+    document.getElementById('container').style.filter = 'blur(2px)';
+    const editUrlSpan = document.getElementById('edit-link');
+    const editedUrl = document.getElementById('edited-url');
+    const editedExpiry = document.getElementById('edited-expiry');
     if (editUrlSpan.textContent != shortUrl) {
       editUrlSpan.textContent = shortUrl;
-      document.getElementById("edit-reset-hits-checkbox").checked = false;
-      document.getElementById("edit-enabled-checkbox").checked = enabled;
+      document.getElementById('edit-reset-hits-checkbox').checked = false;
+      document.getElementById('edit-enabled-checkbox').checked = enabled;
       editedUrl.value = longUrl;
-      document.getElementById("edited-notes").value = notes;
+      document.getElementById('edited-notes').value = notes;
       if (expiry > 0) {
         const date = new Date(expiry * 1000);
         const local_expiry = new Date(
@@ -748,7 +748,7 @@ const editButton = (shortUrl, longUrl, expiry, enabled, notes) => {
           .slice(0, 19);
         editedExpiry.value = local_expiry;
       } else {
-        editedExpiry.value = "";
+        editedExpiry.value = '';
       }
       const min = new Date();
       min.setMinutes(min.getMinutes() + 1);
@@ -756,16 +756,16 @@ const editButton = (shortUrl, longUrl, expiry, enabled, notes) => {
       max.setFullYear(max.getFullYear() + 5);
 
       const toLocalISOString = (date) => {
-        const pad = (n) => String(n).padStart(2, "0");
+        const pad = (n) => String(n).padStart(2, '0');
         return (
           date.getFullYear() +
-          "-" +
+          '-' +
           pad(date.getMonth() + 1) +
-          "-" +
+          '-' +
           pad(date.getDate()) +
-          "T" +
+          'T' +
           pad(date.getHours()) +
-          ":" +
+          ':' +
           pad(date.getMinutes())
         );
       };
@@ -773,44 +773,47 @@ const editButton = (shortUrl, longUrl, expiry, enabled, notes) => {
       editedExpiry.min = toLocalISOString(min);
       editedExpiry.max = toLocalISOString(max);
     }
-    document.getElementById("edit-dialog").showModal();
+    document.getElementById('edit-dialog').showModal();
     editedUrl.focus();
   };
   return btn;
 };
 
 const infoButton = (shortUrl) => {
-  const btn = document.createElement("button");
-  btn.classList.add("svg-button");
+  const btn = document.createElement('button');
+  btn.classList.add('svg-button');
   btn.innerHTML = SVG_INFO_BUTTON;
-  btn.title = "Show Short URL Info";
+  btn.title = 'Show Short URL Info';
 
   btn.onclick = () => {
-    document.getElementById("container").style.filter = "blur(2px)";
-    document.getElementById("info-dialog").showModal();
-    const row = LOCAL_DATA.filter((row) => row.shortlink == shortUrl)[0];
-    document.getElementById("info-short").textContent = row.shortlink;
-    const infoLong = document.getElementById("info-long");
-    const longLink = document.createElement("a");
-    longLink.textContent = row.longlink;
-    longLink.href = row.longlink;
-    longLink.target = "_blank";
+    document.getElementById('container').style.filter = 'blur(2px)';
+    document.getElementById('info-dialog').showModal();
+    const row = LOCAL_DATA.filter((row) => row['shortlink'] == shortUrl)[0];
+    document.getElementById('info-short').textContent = row['shortlink'];
+    const infoLong = document.getElementById('info-long');
+    const longLink = document.createElement('a');
+    longLink.textContent = row['longlink'];
+    longLink.href = row['longlink'];
+    longLink.target = '_blank';
     infoLong.replaceChildren(longLink);
-    document.getElementById("info-hits").textContent =
-      row.hits.toLocaleString();
+    document.getElementById('info-hits').textContent =
+      row['hits'].toLocaleString();
     const accurateExpiryTime =
-      row.expiry_time > 0 ? formatLocalDateTime(row.expiry_time) : "Disabled";
-    document.getElementById("info-expiry").textContent = accurateExpiryTime;
-    document.getElementById("info-notes").textContent = row.notes;
+      row['expiry_time'] > 0
+        ? formatLocalDateTime(row['expiry_time'])
+        : 'Disabled';
+    document.getElementById('info-expiry').textContent = accurateExpiryTime;
+    document.getElementById('info-enabled').textContent = row['enabled'];
+    document.getElementById('info-notes').textContent = row['notes'];
   };
   return btn;
 };
 
 const qrCodeButton = (shortlink) => {
-  const btn = document.createElement("button");
-  btn.classList.add("svg-button");
+  const btn = document.createElement('button');
+  btn.classList.add('svg-button');
   btn.innerHTML = SVG_QR_BUTTON;
-  btn.title = "Show QR Code";
+  btn.title = 'Show QR Code';
 
   const qrWidth = 512;
   const qrPadding = 24;
@@ -819,7 +822,7 @@ const qrCodeButton = (shortlink) => {
   const canvasWidth = qrWidth + qrPadding * 2;
 
   btn.onclick = () => {
-    const tmpDiv = document.createElement("div");
+    const tmpDiv = document.createElement('div');
     new QRCode(tmpDiv, {
       text: `${SITE_URL}/${shortlink}`,
       correctLevel: QRCode.CorrectLevel.H,
@@ -828,19 +831,19 @@ const qrCodeButton = (shortlink) => {
     });
     const oldCanvas = tmpDiv.firstChild;
 
-    const newCanvas = document.createElement("canvas");
+    const newCanvas = document.createElement('canvas');
     newCanvas.height = canvasWidth;
     newCanvas.width = canvasWidth;
 
-    const ctx = newCanvas.getContext("2d");
-    ctx.fillStyle = "white";
+    const ctx = newCanvas.getContext('2d');
+    ctx.fillStyle = 'white';
     ctx.fillRect(0, 0, canvasWidth, canvasWidth);
     ctx.drawImage(oldCanvas, qrPadding, qrPadding);
 
     const img = new Image();
-    img.src = "assets/favicon.svg";
+    img.src = 'assets/favicon.svg';
     img.onload = () => {
-      ctx.fillStyle = "white";
+      ctx.fillStyle = 'white';
       ctx.beginPath();
       ctx.arc(canvasWidth / 2, canvasWidth / 2, logoRadius * 2, 0, Math.PI * 2);
       ctx.fill();
@@ -853,10 +856,10 @@ const qrCodeButton = (shortlink) => {
         logoWidth,
       );
 
-      document.getElementById("qr-code").appendChild(newCanvas);
-      document.getElementById("container").style.filter = "blur(2px)";
-      document.getElementById("qr-code-dialog").showModal();
-      const qrDown = document.getElementById("qr-download-button");
+      document.getElementById('qr-code').appendChild(newCanvas);
+      document.getElementById('container').style.filter = 'blur(2px)';
+      document.getElementById('qr-code-dialog').showModal();
+      const qrDown = document.getElementById('qr-download-button');
       qrDown.href = newCanvas.toDataURL();
       qrDown.download = `chhoto-qr-${shortlink}.png`;
     };
@@ -865,25 +868,25 @@ const qrCodeButton = (shortlink) => {
 };
 
 const deleteButton = (shortUrl) => {
-  const btn = document.createElement("button");
-  btn.classList.add("svg-button");
+  const btn = document.createElement('button');
+  btn.classList.add('svg-button');
   btn.innerHTML = SVG_DELETE_BUTTON;
-  btn.title = "Delete Short URL";
+  btn.title = 'Delete Short URL';
 
   btn.onclick = (e) => {
     e.preventDefault();
     if (confirm("Click OK to delete the entry '" + shortUrl + "'.")) {
-      showAlert("\u00A0", "transparent");
+      showAlert('\u00A0', 'transparent');
       fetch(prepSubdir(`/api/del/${shortUrl}`), {
-        method: "DELETE",
-        cache: "no-cache",
+        method: 'DELETE',
+        cache: 'no-cache',
       })
         .then(async (res) => {
           if (!res.ok) {
-            throw new Error("Could not delete.");
+            throw new Error('Could not delete.');
           }
           LOCAL_DATA = LOCAL_DATA.filter(
-            (item) => item["shortlink"] != shortUrl,
+            (item) => item['shortlink'] != shortUrl,
           );
           if (
             LOCAL_DATA.length <= CUR_PAGE * CONFIG.frontend_page_size &&
@@ -896,11 +899,11 @@ const deleteButton = (shortUrl) => {
           managePageControls();
         })
         .catch((err) => {
-          console.log("Error:", err);
+          console.log('Error:', err);
           clearCachedState();
           showAlert(
-            "Unable to delete " + shortUrl + ". Please try again!",
-            "light-dark(red, #a01e1e)",
+            'Unable to delete ' + shortUrl + '. Please try again!',
+            'light-dark(red, #a01e1e)',
           );
         });
     }
@@ -909,10 +912,10 @@ const deleteButton = (shortUrl) => {
 };
 
 const submitForm = () => {
-  const form = document.forms.namedItem("new-url-form");
-  const longUrl = form.elements["longUrl"];
-  const shortUrl = form.elements["shortUrl"];
-  const expiryDelay = form.elements["expiryDelay"];
+  const form = document.forms.namedItem('new-url-form');
+  const longUrl = form.elements['longUrl'];
+  const shortUrl = form.elements['shortUrl'];
+  const expiryDelay = form.elements['expiryDelay'];
   const data = {
     longlink: longUrl.value,
     shortlink: shortUrl.value,
@@ -920,28 +923,28 @@ const submitForm = () => {
     notes: notes.value,
   };
 
-  const url = prepSubdir("/api/new");
+  const url = prepSubdir('/api/new');
 
   const payload = {
-    method: "POST",
-    cache: "no-cache",
+    method: 'POST',
+    cache: 'no-cache',
     headers: {
-      "Content-Type": "application/json",
+      'Content-Type': 'application/json',
     },
     body: JSON.stringify(data),
   };
 
   const cleanPageAfterSubmit = async (ok) => {
     if (ok) {
-      longUrl.value = "";
-      shortUrl.value = "";
+      longUrl.value = '';
+      shortUrl.value = '';
       expiryDelay.value = 0;
-      notes.value = "";
+      notes.value = '';
       if (ADMIN) {
         const params = new URLSearchParams();
-        params.append("page_size", 1);
+        params.append('page_size', 1);
         const newEntry = await pullData(params);
-        if (LOCAL_DATA?.[0]?.shortlink !== newEntry[0].shortlink) {
+        if (LOCAL_DATA?.[0]?.['shortlink'] !== newEntry[0]['shortlink']) {
           LOCAL_DATA.unshift(newEntry[0]);
         }
         CUR_PAGE = 0;
@@ -954,11 +957,11 @@ const submitForm = () => {
 
   let ok = false;
   if (
-    typeof ClipboardItem === "function" &&
-    typeof navigator.clipboard === "object"
+    typeof ClipboardItem === 'function' &&
+    typeof navigator.clipboard === 'object'
   ) {
     const copyPromise = new ClipboardItem({
-      "text/plain": fetch(url, payload)
+      'text/plain': fetch(url, payload)
         .then((res) => {
           ok = res.ok;
           return res.text();
@@ -968,16 +971,16 @@ const submitForm = () => {
             copyShortUrl(shortUrl, false);
             cleanPageAfterSubmit(ok);
             return new Blob([`${SITE_URL}/${shortUrl}`], {
-              type: "text/plain",
+              type: 'text/plain',
             });
           } else {
-            showAlert(shortUrl, "light-dark(red, #a01e1e)");
+            showAlert(shortUrl, 'light-dark(red, #a01e1e)');
           }
         })
         .catch((err) => {
-          console.log("Error:", err);
+          console.log('Error:', err);
           clearCachedState();
-          if (!alert("Something went wrong! Click OK to refresh page.")) {
+          if (!alert('Something went wrong! Click OK to refresh page.')) {
             window.location.reload();
           }
         }),
@@ -985,7 +988,7 @@ const submitForm = () => {
     navigator.clipboard.write([copyPromise]);
   } else {
     // To maintain backwards compatibility, might be removed later
-    fetch(url, payload, { cache: "no-cache" })
+    fetch(url, payload, { cache: 'no-cache' })
       .then((res) => {
         ok = res.ok;
         return res.text();
@@ -994,14 +997,14 @@ const submitForm = () => {
         if (ok) {
           copyShortUrl(shortUrl, true);
         } else {
-          showAlert(shortUrl, "light-dark(red, #a01e1e)");
+          showAlert(shortUrl, 'light-dark(red, #a01e1e)');
         }
       })
       .then(() => cleanPageAfterSubmit(ok))
       .catch((err) => {
-        console.log("Error:", err);
+        console.log('Error:', err);
         clearCachedState();
-        if (!alert("Something went wrong! Click OK to refresh page.")) {
+        if (!alert('Something went wrong! Click OK to refresh page.')) {
           window.location.reload();
         }
       });
@@ -1009,16 +1012,16 @@ const submitForm = () => {
 };
 
 const submitEdit = () => {
-  const urlInput = document.getElementById("edited-url");
-  const editUrlSpan = document.getElementById("edit-link");
+  const urlInput = document.getElementById('edited-url');
+  const editUrlSpan = document.getElementById('edit-link');
   const longUrl = urlInput.value;
   const shortUrl = editUrlSpan.textContent;
-  const resetCheckBox = document.getElementById("edit-reset-hits-checkbox");
-  const enabledCheckBox = document.getElementById("edit-enabled-checkbox");
-  const notes = document.getElementById("edited-notes").value;
+  const resetCheckBox = document.getElementById('edit-reset-hits-checkbox');
+  const enabledCheckBox = document.getElementById('edit-enabled-checkbox');
+  const notes = document.getElementById('edited-notes').value;
   let expiry = 0;
-  const expiry_raw = document.getElementById("edited-expiry").value;
-  if (expiry_raw != "") {
+  const expiry_raw = document.getElementById('edited-expiry').value;
+  if (expiry_raw != '') {
     expiry = Math.floor(new Date(expiry_raw).getTime() / 1000);
   }
   if (confirm("Click OK to confirm the edit of '" + shortUrl + "'.")) {
@@ -1030,14 +1033,14 @@ const submitEdit = () => {
       notes: notes,
       expiry_time: expiry,
     };
-    const url = prepSubdir("/api/edit");
+    const url = prepSubdir('/api/edit');
     let ok = false;
 
     fetch(url, {
-      method: "PUT",
-      cache: "no-cache",
+      method: 'PUT',
+      cache: 'no-cache',
       headers: {
-        "Content-Type": "application/json",
+        'Content-Type': 'application/json',
       },
       body: JSON.stringify(data),
     })
@@ -1047,28 +1050,28 @@ const submitEdit = () => {
       })
       .then(async (text) => {
         if (!ok) {
-          showAlert(JSON.parse(text).reason, "light-dark(red, #a01e1e)");
+          showAlert(JSON.parse(text).reason, 'light-dark(red, #a01e1e)');
         } else {
           editUrlSpan.textContent = shortUrl;
           const editedIndex = LOCAL_DATA.findIndex(
-            (item) => item["shortlink"] == shortUrl,
+            (item) => item['shortlink'] == shortUrl,
           );
-          LOCAL_DATA[editedIndex]["longlink"] = longUrl;
-          LOCAL_DATA[editedIndex]["notes"] = notes;
-          LOCAL_DATA[editedIndex]["enabled"] = enabledCheckBox.checked;
-          LOCAL_DATA[editedIndex]["expiry_time"] = expiry;
+          LOCAL_DATA[editedIndex]['longlink'] = longUrl;
+          LOCAL_DATA[editedIndex]['notes'] = notes;
+          LOCAL_DATA[editedIndex]['enabled'] = enabledCheckBox.checked;
+          LOCAL_DATA[editedIndex]['expiry_time'] = expiry;
           if (resetCheckBox.checked) {
-            LOCAL_DATA[editedIndex]["hits"] = 0;
+            LOCAL_DATA[editedIndex]['hits'] = 0;
           }
           resetCheckBox.checked = false;
         }
-        document.getElementById("edit-dialog").close();
+        document.getElementById('edit-dialog').close();
         displayData();
       })
       .catch((err) => {
-        console.log("Error:", err);
+        console.log('Error:', err);
         clearCachedState();
-        if (!alert("Something went wrong! Click OK to refresh page.")) {
+        if (!alert('Something went wrong! Click OK to refresh page.')) {
           window.location.reload();
         }
       });
@@ -1076,86 +1079,86 @@ const submitEdit = () => {
 };
 
 const submitLogin = () => {
-  const password = document.getElementById("password");
-  const checkBox = document.getElementById("login-checkbox");
+  const password = document.getElementById('password');
+  const checkBox = document.getElementById('login-checkbox');
   const data = {
     password: password.value,
     remember: checkBox.checked,
   };
-  fetch(prepSubdir("/api/login"), {
-    method: "POST",
-    cache: "no-cache",
+  fetch(prepSubdir('/api/login'), {
+    method: 'POST',
+    cache: 'no-cache',
     headers: {
-      "Content-Type": "application/json",
+      'Content-Type': 'application/json',
     },
     body: JSON.stringify(data),
   })
     .then(async (res) => {
       switch (res.status) {
         case 200:
-          document.getElementById("container").style.filter = "blur(0px)";
-          document.getElementById("login-dialog").close();
-          password.value = "";
-          document.getElementById("wrong-pass").hidden = true;
+          document.getElementById('container').style.filter = 'blur(0px)';
+          document.getElementById('login-dialog').close();
+          password.value = '';
+          document.getElementById('wrong-pass').hidden = true;
           ADMIN = true;
           cacheAdmin(true);
           await getConfig();
           await refreshData();
           break;
         case 401:
-          document.getElementById("wrong-pass").hidden = false;
+          document.getElementById('wrong-pass').hidden = false;
           password.focus();
           break;
         default:
-          throw new Error("Got status " + res.status);
+          throw new Error('Got status ' + res.status);
       }
     })
     .catch((err) => {
-      console.log("Error:", err);
+      console.log('Error:', err);
       clearCachedState();
-      if (!alert("Something went wrong! Click OK to refresh page.")) {
+      if (!alert('Something went wrong! Click OK to refresh page.')) {
         window.location.reload();
       }
     });
 };
 
 const logOut = async () => {
-  if (confirm("Click OK to log out.")) {
-    await fetch(prepSubdir("/api/logout"), {
-      method: "DELETE",
-      cache: "no-cache",
+  if (confirm('Click OK to log out.')) {
+    await fetch(prepSubdir('/api/logout'), {
+      method: 'DELETE',
+      cache: 'no-cache',
     })
       .then(async (res) => {
         if (res.ok) {
-          document.getElementById("version-number").hidden = true;
-          document.getElementById("admin-button").hidden = true;
-          showAlert("\u00A0", "transparent");
+          document.getElementById('version-number').hidden = true;
+          document.getElementById('admin-button').hidden = true;
+          showAlert('\u00A0', 'transparent');
           clearCachedState();
           ADMIN = false;
           LOCAL_DATA = [];
-          document.getElementById("table-box").hidden = true;
-          document.getElementById("loading-text").hidden = false;
-          document.getElementById("url-table").replaceChildren();
+          document.getElementById('table-box').hidden = true;
+          document.getElementById('loading-text').hidden = false;
+          document.getElementById('url-table').replaceChildren();
           await refreshData();
         } else {
           if (!NO_AUTH_NEEDED) {
-            showAlert(`Logout failed.`, "light-dark(red, #a01e1e)");
+            showAlert(`Logout failed.`, 'light-dark(red, #a01e1e)');
             clearCachedState();
             refreshData();
           } else {
             ADMIN = false;
             LOCAL_DATA = [];
-            document.getElementById("table-box").hidden = true;
-            document.getElementById("loading-text").hidden = false;
-            document.getElementById("url-table").replaceChildren();
+            document.getElementById('table-box').hidden = true;
+            document.getElementById('loading-text').hidden = false;
+            document.getElementById('url-table').replaceChildren();
             await refreshData();
           }
         }
       })
       .catch((err) => {
-        console.log("Error:", err);
+        console.log('Error:', err);
         clearCachedState();
-        if (!alert("Something went wrong! Click OK to refresh page.")) {
+        if (!alert('Something went wrong! Click OK to refresh page.')) {
           window.location.reload();
         }
       });
@@ -1165,19 +1168,19 @@ const logOut = async () => {
 // This is where loading starts
 refreshData()
   .then(() => {
-    document.getElementById("longUrl").onblur = () => {
-      addHTTPSToLongURL("longUrl");
+    document.getElementById('longUrl').onblur = () => {
+      addHTTPSToLongURL('longUrl');
     };
-    document.getElementById("edited-url").onblur = () => {
-      addHTTPSToLongURL("edited-url");
+    document.getElementById('edited-url').onblur = () => {
+      addHTTPSToLongURL('edited-url');
     };
-    const form = document.forms.namedItem("new-url-form");
+    const form = document.forms.namedItem('new-url-form');
     form.onsubmit = (e) => {
       e.preventDefault();
       submitForm();
     };
 
-    document.getElementById("admin-button").onclick = (e) => {
+    document.getElementById('admin-button').onclick = (e) => {
       e.preventDefault();
       if (ADMIN) {
         logOut();
@@ -1188,10 +1191,10 @@ refreshData()
 
     // Block outside touches when dialog is open
     document.addEventListener(
-      "touchstart",
+      'touchstart',
       (event) => {
-        const dialog = [...document.querySelectorAll("dialog[open]")].findLast(
-          (dialog) => dialog.matches(":modal"),
+        const dialog = [...document.querySelectorAll('dialog[open]')].findLast(
+          (dialog) => dialog.matches(':modal'),
         );
 
         if (!dialog) return;
@@ -1213,78 +1216,78 @@ refreshData()
       { capture: true, passive: false },
     );
 
-    const editDialog = document.getElementById("edit-dialog");
+    const editDialog = document.getElementById('edit-dialog');
     editDialog.onclose = () => {
-      document.getElementById("container").style.filter = "blur(0px)";
+      document.getElementById('container').style.filter = 'blur(0px)';
     };
-    document.forms.namedItem("edit-form").onsubmit = (e) => {
+    document.forms.namedItem('edit-form').onsubmit = (e) => {
       e.preventDefault();
       submitEdit();
     };
-    document.getElementById("edit-cancel-button").onclick = () => {
+    document.getElementById('edit-cancel-button').onclick = () => {
       editDialog.close();
     };
 
-    const passEye = document.getElementById("password-eye-button");
+    const passEye = document.getElementById('password-eye-button');
     passEye.innerHTML = SVG_OPEN_EYE;
     passEye.onclick = () => {
-      const passBox = document.getElementById("password");
-      if (passBox.type === "password") {
-        passBox.type = "text";
+      const passBox = document.getElementById('password');
+      if (passBox.type === 'password') {
+        passBox.type = 'text';
         passEye.innerHTML = SVG_CLOSED_EYE;
       } else {
-        passBox.type = "password";
+        passBox.type = 'password';
         passEye.innerHTML = SVG_OPEN_EYE;
       }
-      document.getElementById("password").focus();
+      document.getElementById('password').focus();
     };
 
-    const prevPageBtn = document.getElementById("prevPageBtn");
+    const prevPageBtn = document.getElementById('prevPageBtn');
     prevPageBtn.innerHTML = SVG_PREV_BUTTON;
     prevPageBtn.onclick = () => {
       gotoPrevPage();
     };
-    const nextPageBtn = document.getElementById("nextPageBtn");
+    const nextPageBtn = document.getElementById('nextPageBtn');
     nextPageBtn.innerHTML = SVG_NEXT_BUTTON;
     nextPageBtn.onclick = () => {
       gotoNextPage();
     };
 
-    document.getElementById("filterText").value = "";
-    document.forms.namedItem("filter-form").onsubmit = (e) => {
+    document.getElementById('filterText').value = '';
+    document.forms.namedItem('filter-form').onsubmit = (e) => {
       e.preventDefault();
       refreshWithFilter();
     };
 
-    const infoDialog = document.getElementById("info-dialog");
-    document.getElementById("info-close-button").onclick = () => {
+    const infoDialog = document.getElementById('info-dialog');
+    document.getElementById('info-close-button').onclick = () => {
       infoDialog.close();
     };
     infoDialog.onclose = () => {
-      document.getElementById("container").style.filter = "blur(0px)";
+      document.getElementById('container').style.filter = 'blur(0px)';
     };
 
-    const qrCodeDialog = document.getElementById("qr-code-dialog");
-    document.getElementById("qr-close-button").onclick = () => {
+    const qrCodeDialog = document.getElementById('qr-code-dialog');
+    document.getElementById('qr-close-button').onclick = () => {
       qrCodeDialog.close();
     };
     qrCodeDialog.onclose = () => {
-      document.getElementById("container").style.filter = "blur(0px)";
-      document.getElementById("qr-code").replaceChildren();
+      document.getElementById('container').style.filter = 'blur(0px)';
+      document.getElementById('qr-code').replaceChildren();
     };
 
-    document.forms.namedItem("login-form").onsubmit = (e) => {
+    document.forms.namedItem('login-form').onsubmit = (e) => {
       e.preventDefault();
       submitLogin();
     };
-    document.getElementById("oidc-login-button").onclick = () => {
-      window.location.href = "/oidc/login";
+    document.getElementById('oidc-login-button').onclick = () => {
+      window.location.href = '/oidc/login';
     };
   })
   .catch((err) => {
-    console.log("Something went wrong:", err);
+    console.log('Something went wrong:', err);
     clearCachedState();
-    if (!alert("Something went wrong! Click OK to refresh page.")) {
+    if (!alert('Something went wrong! Click OK to refresh page.')) {
       window.location.reload();
     }
   });
