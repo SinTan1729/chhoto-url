@@ -443,7 +443,9 @@ const displayData = () => {
     table_box.hidden = false;
     table.replaceChildren();
     for (const [i, row] of data.entries()) {
-      table.appendChild(TR(CUR_PAGE * CONFIG.frontend_page_size + i + 1, row));
+      table.appendChild(
+        create_tr(CUR_PAGE * CONFIG.frontend_page_size + i + 1, row),
+      );
     }
     setTimeout(refreshExpiryTimes, 1000);
   }
@@ -558,8 +560,7 @@ const formatLocalDateTime = (ts) => {
   return `${parts.day} ${parts.month} ${parts.year} ${parts.hour}:${parts.minute}:${parts.second} ${parts.dayPeriod} (${tz})`;
 };
 
-const A_SHORT = (s) => `<a href="${SITE_URL}/${s}" target="_blank">${s}</a>`;
-const TD = (s, u) => {
+const create_td = (s, u) => {
   const td = document.createElement("td");
   const div = document.createElement("div");
   div.innerHTML = s;
@@ -568,10 +569,10 @@ const TD = (s, u) => {
   return td;
 };
 
-const TR = (i, row) => {
+const create_tr = (i, row) => {
   const tr = document.createElement("tr");
 
-  const numTD = TD(i, null);
+  const numTD = create_td(i, null);
   numTD.setAttribute("name", "numColumn");
   numTD.setAttribute("label", "#");
 
@@ -600,10 +601,12 @@ const TR = (i, row) => {
 
   const shortlink = row["shortlink"];
   tr.id = shortlink;
-  const shortTD = TD(A_SHORT(shortlink), "Short URL");
+  const shortTD = create_td(
+    `<a href="${SITE_URL}/${shortlink}" target="_blank">${shortlink}</a>`,
+  );
   shortTD.setAttribute("name", "shortColumn");
 
-  const hitsTD = TD(row["hits"].toLocaleString(), null);
+  const hitsTD = create_td(row["hits"].toLocaleString(), null);
   hitsTD.setAttribute("label", "Hits");
   hitsTD.setAttribute("name", "hitsColumn");
 
@@ -621,7 +624,7 @@ const TR = (i, row) => {
       "</span>";
   }
 
-  let expiryTD = TD(expiryHTML, null);
+  let expiryTD = create_td(expiryHTML, null);
   if (expiryTime > 0 && relativeExpiryTime != "expired") {
     expiryTD.setAttribute("data-time", expiryTime);
     expiryTD.classList.add("tooltip");
