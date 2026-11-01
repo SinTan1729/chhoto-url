@@ -604,6 +604,7 @@ const create_tr = (i, row) => {
   const shortTD = create_td(
     `<a href="${SITE_URL}/${shortlink}" target="_blank">${shortlink}</a>`,
   );
+  shortTD.setAttribute('label', 'Short URL');
   shortTD.setAttribute('name', 'shortColumn');
 
   const hitsTD = create_td(row['hits'].toLocaleString(), null);

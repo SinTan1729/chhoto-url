@@ -3,7 +3,7 @@
 
 :root {
   color-scheme: light dark;
-  font-family: "Montserrat", "Open Sans", Helvetica, Arial, sans-serif;
+  font-family: 'Montserrat', 'Open Sans', Helvetica, Arial, sans-serif;
   /* Colors */
   --text: light-dark(black, #e8e6e3);
   --bg: light-dark(white, #181a1b);
@@ -53,7 +53,7 @@ body {
 #logo,
 .chhoto-table th,
 .chhoto-table td,
-span[name="label"] {
+span[name='label'] {
   user-select: none;
   -webkit-user-select: none; /* Safari */
 }
@@ -131,14 +131,14 @@ a {
 .chhoto-table tr.disabled td:nth-child(3) a {
   text-decoration: line-through;
 }
-.chhoto-table tr td[label="Long URL"] div {
+.chhoto-table tr td[label='Long URL'] div {
   word-break: break-all;
   color: var(--link);
 }
-.chhoto-table tr td[name="numColumn"] div {
+.chhoto-table tr td[name='numColumn'] div {
   word-break: normal;
 }
-.chhoto-table tr td[name="hitsColumn"] div {
+.chhoto-table tr td[name='hitsColumn'] div {
   word-break: normal;
 }
 .chhoto-table tr:nth-child(even) {
@@ -192,24 +192,24 @@ a {
   margin-bottom: 1em;
 }
 
-th[name="hitsColumn"],
-td[name="hitsColumn"] {
+th[name='hitsColumn'],
+td[name='hitsColumn'] {
   text-align: right;
 }
 
-th[name="expiryColumn"],
-td[name="expiryColumn"] {
+th[name='expiryColumn'],
+td[name='expiryColumn'] {
   text-align: center;
 }
 
-th[name="actions"],
-td[name="actions"] div {
+th[name='actions'],
+td[name='actions'] div {
   align-items: center;
   justify-items: center;
   text-align: center;
   width: 12em;
 }
-td[name="actions"] div button,
+td[name='actions'] div button,
 .pure-table caption button.svg-button {
   aspect-ratio: 1;
   border-style: none;
@@ -218,7 +218,7 @@ td[name="actions"] div button,
   vertical-align: middle;
   background-color: transparent;
 }
-td[name="actions"] div button.svg-button svg,
+td[name='actions'] div button.svg-button svg,
 .pure-table caption button.svg-button svg {
   height: 1.3em;
 }
@@ -230,16 +230,16 @@ td[name="actions"] div button.svg-button svg,
 .pure-table caption span {
   margin-right: 1em;
 }
-.pure-table caption span[name="label"] {
+.pure-table caption span[name='label'] {
   display: inline-block;
   margin: 0.2em 1em 0.4em 0em;
 }
 
-form input[name="shortUrl"]::placeholder {
+form input[name='shortUrl']::placeholder {
   text-transform: none;
 }
 
-div[name="links-div"] {
+div[name='links-div'] {
   position: absolute;
   right: 0.5%;
   top: 0.5%;
@@ -306,14 +306,14 @@ summary,
 }
 #edit-dialog label {
   max-width: 5em;
-  margin-right: 0em;
+  margin-right: 0.2em;
 }
 #edit-checkboxes {
   display: inline-flex;
   gap: 1em;
 }
-#edit-dialog label[for="edit-reset-hits-checkbox"],
-#edit-dialog label[for="edit-enabled-checkbox"] {
+#edit-dialog label[for='edit-reset-hits-checkbox'],
+#edit-dialog label[for='edit-enabled-checkbox'] {
   max-width: 100%;
 }
 #edit-buttons {
@@ -402,7 +402,7 @@ summary,
   margin-left: -4em;
 }
 .tooltip .tooltip-text::after {
-  content: "";
+  content: '';
   position: absolute;
   top: 100%;
   left: 50%;
@@ -469,7 +469,7 @@ summary,
     position: relative;
   }
 
-  .chhoto-table td[name="numColumn"] {
+  .chhoto-table td[name='numColumn'] {
     display: flex;
     position: absolute;
     right: 0.2em;
@@ -479,20 +479,20 @@ summary,
     justify-content: flex-end;
     gap: 0.15em;
   }
-  .chhoto-table td[name="numColumn"]::before {
+  .chhoto-table td[name='numColumn']::before {
     min-width: 0;
   }
-  .chhoto-table th[name="numColumn"] {
+  .chhoto-table th[name='numColumn'] {
     display: none;
   }
 
-  .chhoto-table tr td[name="shortColumn"] {
+  .chhoto-table tr td[name='shortColumn'] {
     padding-top: 0.5em;
   }
-  .chhoto-table tr td[name="actions"] {
+  .chhoto-table tr td[name='actions'] {
     padding-bottom: 0.5em;
   }
-  .chhoto-table tr td[name="actions"] div {
+  .chhoto-table tr td[name='actions'] div {
     text-align: left;
     margin-left: -0.5em;
   }
