@@ -497,6 +497,15 @@ summary,
     margin-left: -0.5em;
   }
 
+  #info-dialog {
+    padding: 0.2em;
+  }
+  #info-table td {
+    padding-left: 0.2em;
+    padding-right: 0.2em;
+    min-width: 6em;
+  }
+
   #alert-box {
     display: none;
   }
