@@ -1,9 +1,7 @@
 // SPDX-FileCopyrightText: 2023-2026 Sayantan Santra <sayantan.santra689@gmail.com>
 // SPDX-License-Identifier: MIT
 
-use std::collections::HashMap;
-
-use log::{error, warn};
+use log::{error, info, warn};
 use openidconnect::{
     AdditionalClaims, Client, ClientId, ClientSecret, EmptyExtraTokenFields, EndpointMaybeSet,
     EndpointNotSet, EndpointSet, IdTokenFields, IssuerUrl, Nonce, PkceCodeVerifier,
@@ -14,9 +12,10 @@ use openidconnect::{
         CoreRevocableToken, CoreRevocationErrorResponse, CoreTokenIntrospectionResponse,
         CoreTokenType,
     },
-    reqwest,
+    reqwest::{self, Certificate},
 };
 use serde::{Deserialize, Serialize};
+use std::{collections::HashMap, env::var, fs};
 
 use crate::config::Config;
 
@@ -78,10 +77,34 @@ pub async fn create_oidc_client(config: &Config) -> Option<(reqwest::Client, Oid
 
     match IssuerUrl::new(issuer_url) {
         Ok(issuer_url) => {
-            let async_http_client = reqwest::ClientBuilder::new()
-                .redirect(reqwest::redirect::Policy::none())
+            let mut builder =
+                reqwest::ClientBuilder::new().redirect(reqwest::redirect::Policy::none());
+            if let Some(path) = var("SSL_CERT_FILE")
+                .ok()
+                .map(|s| s.trim().to_owned())
+                .filter(|s| !s.is_empty())
+            {
+                match fs::read(&path) {
+                    Ok(pem) => match Certificate::from_pem_bundle(&pem) {
+                        Ok(certs) if !certs.is_empty() => {
+                            for cert in certs {
+                                builder = builder.add_root_certificate(cert);
+                            }
+                            info!("Trusting custom certificates from {path} in OIDC client.");
+                        }
+                        Ok(_) => warn!("No SSL certificates found in {path}."),
+                        Err(e) => warn!("Could not parse SSL certificates from {path}: {e}"),
+                    },
+                    Err(e) => warn!("Could not read SSL_CERT_FILE at {path}: {e}"),
+                }
+            }
+            let async_http_client = builder
                 .build()
-                .unwrap();
+                .inspect_err(|e| {
+                    error!("Error building reqwest client for OIDC: {e}");
+                })
+                .ok()?;
+
             match CoreProviderMetadata::discover_async(issuer_url, &async_http_client).await {
                 Ok(provider_metadata) => {
                     let core_client = OidcClient::from_provider_metadata(

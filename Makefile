@@ -3,18 +3,32 @@
 
 include .env
 
-.PHONY: clean test setup merge tag reset-db upgrade-deps upgrade-deps-pre podman-stop
-.PHONY: build podman-build podman-run podman-test audit
-.PHONY: build-release podman-build-release podman-run-release podman-test-release podman-run-github
-.PHONY: minify deploy purge-cache publish
+.PHONY: test tag reset-db upgrade-deps upgrade-deps-pre podman-stop
+.PHONY: build podman-build podman-run podman-stop podman-run-github podman-test audit
+.PHONY: build-release podman-build-release podman-run-release podman-test-release
+.PHONY: minify deploy purge-cache publish fixup clean merge merge-squash reset-db setup
 
 setup:
 	rustup target add x86_64-unknown-linux-musl
 	podman buildx inspect --bootstrap
 
+fixup:
+	git add .
+	git commit --fixup HEAD
+	GIT_SEQUENCE_EDITOR=true git rebase -i --autosquash HEAD~2
 merge:
 	git switch main
 	git merge dev
+	git switch dev
+merge-squash:
+	git switch main
+	trap 'git switch dev' EXIT && set -e && \
+	read -r -p "Commit message: " MSG && \
+	git merge --squash dev && \
+	{ \
+		printf '%s\n\n' "$$MSG"; \
+		git log --reverse HEAD..dev --format='- %s%n%n  %b'; \
+	} | git commit -F -
 	git switch dev
 
 short_sha := $(shell git rev-parse --short HEAD) 

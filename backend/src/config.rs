@@ -369,7 +369,6 @@ pub(crate) fn read() -> Config {
     let oidc_client_id = var("CHHOTO_OIDC_CLIENT_ID")
         .ok()
         .map(|s| remove_surrounding_quotes(s.trim()))
-        .map(|s| remove_surrounding_quotes(&s))
         .filter(|s| !s.is_empty() && oidc_issuer_url.is_some());
     let oidc_client_secret = var("CHHOTO_OIDC_CLIENT_SECRET")
         .ok()

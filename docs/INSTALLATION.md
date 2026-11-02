@@ -135,6 +135,9 @@ Provide the Issuer URL for OIDC authentication provider (e.g. Authelia, Authenti
 authentication. A Client ID and also needs to be provided. A [Site URL](#chhoto_site_url) also needs to be provided for this
 to work.
 
+In order to use a locally trusted CA for connecting to the issuer, mount the root cert inside the container
+and point Chhoto URL to it using `SSL_CERT_FILE=<cert-file-location>`.
+
 ### `CHHOTO_OIDC_CLIENT_ID`
 
 Provide the Client ID for OIDC authentication.
