@@ -55,7 +55,14 @@ Password: `chhoto-url-demo-pass`
 #### Note:
 
 - The database is cleared every 15 minutes, so don't use it for anything other than testing.
-- If you host a public instance of Chhoto URL, please let me know, and I'll add it to the README.
+
+# Public instance
+
+Known publicly available instances of Chhoto URL.
+
+- [links.utilibre.org](https://links.utilibre.org)
+
+Note: If you host a public instance of Chhoto URL, please let me know, and I'll add it to the README.
 
 # Features
 
