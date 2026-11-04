@@ -191,7 +191,7 @@ async fn oidc_redirect(auth: Auth, data: web::Data<AppState>, req: HttpRequest) 
             .body("Bad OIDC origin URL.");
     };
 
-    let oidc = &mut *oidc.lock().await;
+    let oidc = &mut *oidc.lock().expect(super::utils::OIDC_MUTEX_ERROR);
     let client = oidc.oidc_client.clone().set_redirect_uri(url);
     if matches!(auth, Auth::ValidSession) {
         return oidc_redirect_once(&origin).finish();
@@ -264,9 +264,8 @@ async fn oidc_callback(
             .body("Bad OIDC origin URL.");
     };
 
-    let oidc_data = &mut *oidc_data.lock().await;
     if let Err(e) = utils::oidc_verify(
-        oidc_data.oidc_client.clone().set_redirect_uri(url),
+        url,
         params.into_inner(),
         oidc_data,
         &config.oidc_custom_claim,

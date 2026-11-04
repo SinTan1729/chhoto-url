@@ -112,7 +112,7 @@ pub(super) async fn create_app(
         false,
     )));
     database::init_db(
-        &mut writer.lock().expect("Mutex is poisoned."),
+        &mut writer.lock().expect(crate::DB_MUTEX_ERROR),
         conf.use_wal_mode,
         conf.ensure_acid,
         conf.disable_backups,

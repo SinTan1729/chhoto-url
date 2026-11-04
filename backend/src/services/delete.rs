@@ -71,7 +71,7 @@ async fn delete_link(
         Auth::ValidAPIKey => {
             match utils::delete_link_helper(
                 &shortlink,
-                &data.writer.lock().expect("Mutex is poisoned."),
+                &data.writer.lock().expect(crate::DB_MUTEX_ERROR),
                 data.config.allow_capital_letters,
             ) {
                 Ok(()) => {
@@ -105,7 +105,7 @@ async fn delete_link(
         Auth::ValidSession | Auth::NoAuthNeeded => {
             if utils::delete_link_helper(
                 &shortlink,
-                &data.writer.lock().expect("Mutex is poisoned."),
+                &data.writer.lock().expect(crate::DB_MUTEX_ERROR),
                 data.config.allow_capital_letters,
             )
             .is_ok()

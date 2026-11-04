@@ -14,7 +14,9 @@ use actix_web::{
 use argon2::{Argon2, PasswordVerifier};
 use log::{debug, error};
 use nanoid::nanoid;
-use openidconnect::{AccessTokenHash, AuthorizationCode, OAuth2TokenResponse, TokenResponse};
+use openidconnect::{
+    AccessTokenHash, AuthorizationCode, OAuth2TokenResponse, RedirectUrl, TokenResponse,
+};
 use rand::{random_range, seq::IndexedRandom};
 use rusqlite::Connection;
 use serde::Deserialize;
@@ -27,7 +29,7 @@ use crate::{
     auth::Auth,
     config::{Config, Credential, SlugStyle},
     database::{self, add_links},
-    oidc::{OidcClient, OidcData},
+    oidc::OidcData,
     services::types::{
         ChhotoError::{self, ClientError, ServerError},
         EditURLRequest, GetReqParams, OidcCallbackParams, OneOrMany,
@@ -291,7 +293,7 @@ pub(super) fn edit_link_helper(
         });
     }
 
-    let result = database::edit_link(&chunks, &db.lock().expect("Mutex is poisoned."));
+    let result = database::edit_link(&chunks, &db.lock().expect(crate::DB_MUTEX_ERROR));
     match result {
         // Zero rows returned means no updates
         Ok((0, _)) => Err(ClientError {
@@ -314,19 +316,31 @@ pub(super) fn derive_origin_info(connection: &ConnectionInfo) -> (String, String
     (origin, callback)
 }
 
+pub(super) const OIDC_MUTEX_ERROR: &str = "Mutex for OIDC Data is poisoned!";
 // Verify OIDC callback data
 pub(super) async fn oidc_verify(
-    client: OidcClient,
+    url: RedirectUrl,
     params: OidcCallbackParams,
-    oidc: &mut OidcData,
+    oidc: &Mutex<OidcData>,
     custom_claim: &Option<(String, String)>,
 ) -> Result<(), String> {
     let Some(state) = &params.state else {
         return Err("State check failed.".to_string());
     };
 
-    let Some((verifier, nonce)) = (oidc.states).remove(state) else {
-        return Err("State mismatch.".to_string());
+    let (verifier, nonce, http_client, client) = {
+        let mut oidc = oidc.lock().expect(OIDC_MUTEX_ERROR);
+
+        let Some((verifier, nonce)) = oidc.states.remove(state) else {
+            return Err("State mismatch.".to_string());
+        };
+
+        (
+            verifier,
+            nonce,
+            oidc.http_client.clone(),
+            oidc.oidc_client.clone().set_redirect_uri(url),
+        )
     };
 
     let code = params
@@ -338,7 +352,7 @@ pub(super) async fn oidc_verify(
         .map_err(|_| "Auth request failed: code")?
         // Set the PKCE code verifier.
         .set_pkce_verifier(verifier)
-        .request_async(&oidc.http_client)
+        .request_async(&http_client)
         .await
         .map_err(|e| {
             eprintln!("OIDC token exchange failed: {e:?}");

@@ -39,7 +39,7 @@ async fn add_links(
     let cookie_response = async |public_mode| {
         let result = utils::add_links_helper(
             &payload,
-            &mut data.writer.lock().expect("Mutex is poisoned."),
+            &mut data.writer.lock().expect(crate::DB_MUTEX_ERROR),
             config,
             public_mode,
         )
@@ -108,7 +108,7 @@ async fn add_links(
 
             match utils::add_links_helper(
                 &payload,
-                &mut data.writer.lock().expect("Mutex is poisoned."),
+                &mut data.writer.lock().expect(crate::DB_MUTEX_ERROR),
                 config,
                 false,
             ) {

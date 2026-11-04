@@ -36,6 +36,7 @@ mod utils;
 #[cfg(test)]
 mod tests;
 
+pub(crate) const DB_MUTEX_ERROR: &str = "Mutex for Database writer is poisoned!";
 // This struct represents state
 struct AppState {
     hits_tx: mpsc::Sender<(String, bool)>,
@@ -43,7 +44,7 @@ struct AppState {
     writer: Arc<Mutex<Connection>>,
     config: Arc<config::Config>,
     frontend_dir: Arc<String>,
-    oidc_data: Option<Arc<tokio::sync::Mutex<oidc::OidcData>>>,
+    oidc_data: Option<Arc<Mutex<oidc::OidcData>>>,
     secret_key: Arc<Key>,
 }
 
@@ -68,7 +69,7 @@ async fn main() -> Result<()> {
 
     // Initialize the database and perform migrations
     database::init_db(
-        &mut writer.lock().expect("Mutex is poisoned."),
+        &mut writer.lock().expect(DB_MUTEX_ERROR),
         conf.use_wal_mode,
         conf.ensure_acid,
         conf.disable_backups,
@@ -95,7 +96,7 @@ async fn main() -> Result<()> {
     let oidc_client = oidc::create_oidc_client(&conf).await;
     let oidc_data = if let Some((http_client, oidc_client)) = oidc_client {
         info!("OIDC was successfully enabled.");
-        Some(Arc::new(tokio::sync::Mutex::new(oidc::OidcData {
+        Some(Arc::new(Mutex::new(oidc::OidcData {
             http_client,
             oidc_client,
             states: HashMap::new(),

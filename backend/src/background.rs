@@ -48,7 +48,7 @@ pub(crate) fn spawn_hits_worker(
                 if !pending.is_empty() {
                     database::add_hits(
                         std::mem::take(&mut pending),
-                        &mut writer.lock().expect("Mutex is poisoned."),
+                        &mut writer.lock().expect(crate::DB_MUTEX_ERROR),
                     );
                 }
             }
@@ -77,7 +77,7 @@ pub(crate) fn spawn_cleaner(
                 for attempt in 0..3 {
                     let mutex = writer.clone();
                     let result = tokio::task::spawn_blocking(move || {
-                        let mut db = mutex.lock().expect("Mutex is poisoned.");
+                        let mut db = mutex.lock().expect(crate::DB_MUTEX_ERROR);
                         database::cleanup(&mut db, use_wal_mode, first_run, attempt)
                     })
                     .await;
