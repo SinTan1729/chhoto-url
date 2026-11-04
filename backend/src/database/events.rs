@@ -5,7 +5,6 @@ use log::{debug, error, warn};
 use rusqlite::{Connection, fallible_iterator::FallibleIterator, named_params};
 use serde::Serialize;
 use std::{collections::HashMap, rc::Rc};
-use tokio::sync::mpsc;
 
 use crate::{
     database::queries,
@@ -147,11 +146,7 @@ pub(crate) fn getall(
 }
 
 // Resolve site and add link to add_hit queue
-pub(crate) async fn find_and_add_hit(
-    shortlink: &str,
-    db: &Connection,
-    hits_tx: &mpsc::Sender<(String, bool)>,
-) -> Result<String, ()> {
+pub(crate) fn find_and_add_hit(shortlink: &str, db: &Connection) -> Result<String, ()> {
     let now = chrono::Utc::now().timestamp();
     let Ok(mut statement) = db.prepare_cached(queries::ACCESS_URL) else {
         error!("Error preparing SQL statement for find link.");
@@ -166,9 +161,6 @@ pub(crate) async fn find_and_add_hit(
     };
 
     debug!("Accessed link: {shortlink}.");
-    if let Err(err) = hits_tx.send((shortlink.to_owned(), false)).await {
-        error!("Failed to enqueue hit update after access: {err}");
-    }
     Ok(long_url)
 }
 // Add hits
@@ -284,11 +276,10 @@ pub(crate) fn add_links(
 }
 
 // Edit an existing link
-pub(crate) async fn edit_link(
+pub(crate) fn edit_link(
     data: &EditURLRequest,
-    hits_tx: &mpsc::Sender<(String, bool)>,
     db: &Connection,
-) -> Result<usize, ()> {
+) -> Result<(usize, Option<String>), ()> {
     let reset_hits = data.reset_hits.unwrap_or(false);
     let expiry_time = data.expiry_time.filter(|&t| t > 0);
     let notes = data.notes.as_ref().filter(|s| !s.is_empty());
@@ -300,7 +291,7 @@ pub(crate) async fn edit_link(
         && notes.is_none()
         && data.enabled.is_none()
     {
-        return Ok(1);
+        return Ok((1, None));
     }
 
     let now = chrono::Utc::now().timestamp();
@@ -308,9 +299,6 @@ pub(crate) async fn edit_link(
         error!("Error preparing SQL statement for edit_link.");
         return Err(());
     };
-    if reset_hits && let Err(err) = hits_tx.send((data.shortlink.to_owned(), true)).await {
-        error!("Failed to enqueue hit update after edit: {err}");
-    }
     statement
         .execute(named_params! {
             ":long": data.longlink,
@@ -334,6 +322,7 @@ pub(crate) async fn edit_link(
             );
         })
         .map_err(drop)
+        .map(|u| (u, reset_hits.then_some(data.shortlink.to_owned())))
 }
 
 // Delete an existing link

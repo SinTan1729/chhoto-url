@@ -112,7 +112,7 @@ pub(super) async fn create_app(
         false,
     )));
     database::init_db(
-        &mut *writer.lock().await,
+        &mut writer.lock().expect("Mutex is poisoned."),
         conf.use_wal_mode,
         conf.ensure_acid,
         conf.disable_backups,

@@ -7,7 +7,7 @@ use actix_web::{
     mime::{APPLICATION_JSON, TEXT_PLAIN},
     web::{self, Redirect, ServiceConfig, get},
 };
-use log::{debug, info, warn};
+use log::{debug, error, info, warn};
 use openidconnect::{
     CsrfToken, Nonce, PkceCodeChallenge, RedirectUrl, Scope, core::CoreAuthenticationFlow,
 };
@@ -151,9 +151,10 @@ pub(super) async fn link_handler(
     data: web::Data<AppState>,
 ) -> impl Responder {
     let shortlink_str = shortlink.as_str();
-    if let Ok(longlink) =
-        database::find_and_add_hit(shortlink_str, &data.reader, &data.hits_tx).await
-    {
+    if let Ok(longlink) = database::find_and_add_hit(shortlink_str, &data.reader) {
+        if let Err(err) = data.hits_tx.send((shortlink.to_owned(), false)).await {
+            error!("Failed to enqueue hit update after access: {err}");
+        }
         if data.config.use_temp_redirect {
             Either::Left(Redirect::to(longlink))
         } else {

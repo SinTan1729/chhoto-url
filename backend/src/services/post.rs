@@ -39,7 +39,7 @@ async fn add_links(
     let cookie_response = async |public_mode| {
         let result = utils::add_links_helper(
             &payload,
-            &mut *data.writer.lock().await,
+            &mut data.writer.lock().expect("Mutex is poisoned."),
             config,
             public_mode,
         )
@@ -106,7 +106,12 @@ async fn add_links(
                 ),
             };
 
-            match utils::add_links_helper(&payload, &mut *data.writer.lock().await, config, false) {
+            match utils::add_links_helper(
+                &payload,
+                &mut data.writer.lock().expect("Mutex is poisoned."),
+                config,
+                false,
+            ) {
                 Ok((reply, single_request)) => {
                     if single_request {
                         let (status, response) = to_response(

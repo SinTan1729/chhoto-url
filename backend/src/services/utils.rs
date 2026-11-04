@@ -19,8 +19,7 @@ use rand::{random_range, seq::IndexedRandom};
 use rusqlite::Connection;
 use serde::Deserialize;
 use serde_json::Value;
-use std::{collections::HashSet, env};
-use tokio::sync::mpsc;
+use std::{collections::HashSet, env, sync::Mutex};
 use url::Url;
 
 use crate::{
@@ -265,12 +264,11 @@ pub(super) fn add_links_helper(
 }
 
 // Make checks and then request the DB to edit an URL entry
-pub(super) async fn edit_link_helper(
+pub(super) fn edit_link_helper(
     req: &str,
-    db: &Connection,
-    hits_tx: &mpsc::Sender<(String, bool)>,
+    db: &Mutex<Connection>,
     config: &Config,
-) -> Result<(), ChhotoError> {
+) -> Result<Option<String>, ChhotoError> {
     let chunks: EditURLRequest;
     if let Ok(json) = serde_json::from_str(req) {
         chunks = json;
@@ -293,13 +291,13 @@ pub(super) async fn edit_link_helper(
         });
     }
 
-    let result = database::edit_link(&chunks, hits_tx, db).await;
+    let result = database::edit_link(&chunks, &db.lock().expect("Mutex is poisoned."));
     match result {
         // Zero rows returned means no updates
-        Ok(0) => Err(ClientError {
+        Ok((0, _)) => Err(ClientError {
             reason: "The shortlink was not found, and could not be edited.".to_owned(),
         }),
-        Ok(_) => Ok(()),
+        Ok((_, shortlink)) => Ok(shortlink),
         Err(()) => Err(ServerError),
     }
 }

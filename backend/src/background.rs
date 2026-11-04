@@ -4,10 +4,13 @@
 use chrono::{Local, Timelike};
 use log::{info, warn};
 use rusqlite::Connection;
-use std::{collections::HashMap, sync::Arc};
+use std::{
+    collections::HashMap,
+    sync::{Arc, Mutex},
+};
 use tokio::{
     spawn,
-    sync::{Mutex, mpsc},
+    sync::mpsc,
     time::{Duration, Instant, interval, sleep, sleep_until},
 };
 
@@ -43,7 +46,10 @@ pub(crate) fn spawn_hits_worker(
                     }
                 }
                 if !pending.is_empty() {
-                    database::add_hits(std::mem::take(&mut pending), &mut *writer.lock().await);
+                    database::add_hits(
+                        std::mem::take(&mut pending),
+                        &mut writer.lock().expect("Mutex is poisoned."),
+                    );
                 }
             }
         }
@@ -71,7 +77,7 @@ pub(crate) fn spawn_cleaner(
                 for attempt in 0..3 {
                     let mutex = writer.clone();
                     let result = tokio::task::spawn_blocking(move || {
-                        let mut db = mutex.blocking_lock();
+                        let mut db = mutex.lock().expect("Mutex is poisoned.");
                         database::cleanup(&mut db, use_wal_mode, first_run, attempt)
                     })
                     .await;
