@@ -504,7 +504,7 @@ pub(super) fn oidc_redirect_once(url: &str) -> HttpResponseBuilder {
 }
 
 // 404 error page
-pub(crate) async fn error404(data: web::Data<AppState>) -> impl Responder {
+pub(super) async fn error404(data: web::Data<AppState>) -> impl Responder {
     NamedFile::open([&data.frontend_dir, "/static/404.html"].concat())
         .customize()
         .with_status(StatusCode::NOT_FOUND)

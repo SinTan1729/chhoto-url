@@ -1,7 +1,10 @@
 // SPDX-FileCopyrightText: 2023-2026 Sayantan Santra <sayantan.santra689@gmail.com>
 // SPDX-License-Identifier: MIT
 
-use actix_web::{HttpResponse, query, web};
+use actix_web::{
+    HttpResponse,
+    web::{self, ServiceConfig, post, query},
+};
 use log::debug;
 
 use crate::{
@@ -14,17 +17,12 @@ use crate::{
     },
 };
 
-// Get information about a single shortlink
-#[query("/api/expand")]
-pub(crate) async fn expand(req: String, auth: Auth, data: web::Data<AppState>) -> HttpResponse {
-    expand_helper(req, auth, data).await
+pub(super) fn query_routes_v1(cfg: &mut ServiceConfig) {
+    cfg.route("/expand", query().to(expand))
+        .route("/expand", post().to(expand)); // For backwards compatibility, deprecated
 }
-
-pub(super) async fn expand_helper(
-    req: String,
-    auth: Auth,
-    data: web::Data<AppState>,
-) -> HttpResponse {
+// Get information about a single shortlink
+async fn expand(req: String, auth: Auth, data: web::Data<AppState>) -> HttpResponse {
     match auth {
         Auth::ValidAPIKey => match database::find_url(&req, &data.reader) {
             Ok(chunks) => {

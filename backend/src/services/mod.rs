@@ -6,11 +6,10 @@ mod get;
 mod post;
 mod put;
 mod query;
+pub(crate) mod routes;
 pub(crate) mod types;
-pub(super) mod utils;
+pub(crate) mod utils;
 
-pub(crate) use self::delete::*;
-pub(crate) use self::get::*;
-pub(crate) use self::post::*;
-pub(crate) use self::put::*;
-pub(crate) use self::query::*;
+pub(crate) use self::routes::{
+    api_routes_v1, error_route, health_route, link_handler, oidc_routes,
+};

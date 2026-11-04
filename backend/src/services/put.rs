@@ -1,7 +1,10 @@
 // SPDX-FileCopyrightText: 2023-2026 Sayantan Santra <sayantan.santra689@gmail.com>
 // SPDX-License-Identifier: MIT
 
-use actix_web::{HttpResponse, put, web};
+use actix_web::{
+    HttpResponse,
+    web::{self, ServiceConfig, put},
+};
 
 use crate::{
     AppState,
@@ -15,9 +18,12 @@ use crate::{
     },
 };
 
+pub(super) fn put_routes_v1(cfg: &mut ServiceConfig) {
+    cfg.route("/edit", put().to(edit_link));
+}
+
 // Edit a shortlink
-#[put("/api/edit")]
-pub(crate) async fn edit_link(req: String, auth: Auth, data: web::Data<AppState>) -> HttpResponse {
+async fn edit_link(req: String, auth: Auth, data: web::Data<AppState>) -> HttpResponse {
     let config = &data.config;
     match auth {
         Auth::ValidAPIKey | Auth::ValidSession | Auth::NoAuthNeeded => {

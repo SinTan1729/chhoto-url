@@ -134,17 +134,9 @@ pub(super) async fn create_app(
                     oidc_data: None,
                     secret_key: Arc::new(Key::generate()),
                 }))
-                .service(services::siteurl)
-                .service(services::version)
-                .service(services::getconfig)
-                .service(services::add_links)
-                .service(services::getall)
-                .service(services::link_handler)
-                .service(services::edit_link)
-                .service(services::delete_link)
-                .service(services::whoami)
-                .service(services::expand)
-                .service(services::oidc_redirect),
+                .service(web::scope("/api").configure(services::api_routes_v1))
+                .service(web::scope("/oidc").configure(services::oidc_routes))
+                .route("/{shortlink}", services::link_handler()),
         )
         .await,
     )

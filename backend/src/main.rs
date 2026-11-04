@@ -134,21 +134,9 @@ async fn main() -> Result<()> {
             } else {
                 middleware::DefaultHeaders::new()
             })
-            .service(services::link_handler)
-            .service(services::edit_link)
-            .service(services::getall)
-            .service(services::siteurl)
-            .service(services::version)
-            .service(services::getconfig)
-            .service(services::add_links)
-            .service(services::delete_link)
-            .service(services::login)
-            .service(services::logout)
-            .service(services::expand)
-            .service(services::expand_legacy)
-            .service(services::oidc_redirect)
-            .service(services::oidc_callback)
-            .service(services::whoami);
+            .service(web::scope("/api").configure(services::api_routes_v1))
+            .service(web::scope("/oidc").configure(services::oidc_routes))
+            .route("/{shortlink}", services::link_handler());
 
         if !conf.disable_frontend {
             if let Some(dir) = &conf.custom_landing_directory {
@@ -161,7 +149,7 @@ async fn main() -> Result<()> {
             }
         }
 
-        app.default_service(actix_web::web::get().to(services::utils::error404))
+        app.default_service(services::error_route())
     })
     // Hardcode the port the server listens to. Allows for more intuitive Docker Compose port management
     .bind((&*addr, port))
@@ -178,7 +166,7 @@ async fn main() -> Result<()> {
                 &db_location_for_health,
                 true,
             )))
-            .service(services::health_handler)
+            .route("/healthz", services::health_route())
     })
     .workers(1)
     .bind(("127.0.0.1", 1729))?

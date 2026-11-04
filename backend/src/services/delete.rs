@@ -4,9 +4,8 @@
 use actix_web::{
     HttpRequest, HttpResponse,
     cookie::{Cookie, CookieJar},
-    delete,
     mime::TEXT_PLAIN,
-    web,
+    web::{self, ServiceConfig, delete},
 };
 use log::{debug, info};
 
@@ -22,10 +21,14 @@ use crate::{
     },
 };
 
+pub(super) fn delete_routes_v1(cfg: &mut ServiceConfig) {
+    cfg.route("/logout", delete().to(logout))
+        .route("/del/{shortlink}", delete().to(delete_link));
+}
+
 // Handle logout
 // There's no reason to be calling this route with an API key
-#[delete("/api/logout")]
-pub(crate) async fn logout(auth: Auth, req: HttpRequest) -> HttpResponse {
+async fn logout(auth: Auth, req: HttpRequest) -> HttpResponse {
     if matches!(auth, Auth::ValidSession) {
         let mut jar = CookieJar::new();
         let cookie = req
@@ -52,8 +55,7 @@ pub(crate) async fn logout(auth: Auth, req: HttpRequest) -> HttpResponse {
 }
 
 // Delete a given shortlink
-#[delete("/api/del/{shortlink}")]
-pub(crate) async fn delete_link(
+async fn delete_link(
     shortlink: web::Path<String>,
     auth: Auth,
     data: web::Data<AppState>,

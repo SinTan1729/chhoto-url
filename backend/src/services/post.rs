@@ -1,7 +1,11 @@
 // SPDX-FileCopyrightText: 2023-2026 Sayantan Santra <sayantan.santra689@gmail.com>
 // SPDX-License-Identifier: MIT
 
-use actix_web::{HttpMessage, HttpRequest, HttpResponse, mime::TEXT_PLAIN, post, web};
+use actix_web::{
+    HttpMessage, HttpRequest, HttpResponse,
+    mime::TEXT_PLAIN,
+    web::{self, ServiceConfig, post},
+};
 use log::{error, info, warn};
 use std::rc::Rc;
 
@@ -18,9 +22,13 @@ use crate::{
     },
 };
 
+pub(super) fn post_routes_v1(cfg: &mut ServiceConfig) {
+    cfg.route("/new", post().to(add_links))
+        .route("/login", post().to(login));
+}
+
 // Add new links
-#[post("/api/new")]
-pub(crate) async fn add_links(
+async fn add_links(
     req: HttpRequest,
     payload: String,
     auth: Auth,
@@ -135,19 +143,8 @@ pub(crate) async fn add_links(
     }
 }
 
-// Deprecated POST method for /api/expand, will be removed in a future release
-#[post("/api/expand")]
-pub(crate) async fn expand_legacy(
-    req: String,
-    auth: Auth,
-    data: web::Data<AppState>,
-) -> HttpResponse {
-    crate::services::expand_helper(req, auth, data).await
-}
-
 // Handle login
-#[post("/api/login")]
-pub(crate) async fn login(
+async fn login(
     auth: Auth,
     req: HttpRequest,
     body: String,

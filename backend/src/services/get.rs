@@ -2,10 +2,10 @@
 // SPDX-License-Identifier: MIT
 
 use actix_web::{
-    Either, HttpRequest, HttpResponse, Responder, get,
+    Either, HttpRequest, HttpResponse, Responder,
     http::header::{Accept, Header},
     mime::{APPLICATION_JSON, TEXT_PLAIN},
-    web::{self, Redirect},
+    web::{self, Redirect, ServiceConfig, get},
 };
 use log::{debug, info, warn};
 use openidconnect::{
@@ -27,9 +27,21 @@ use crate::{
     },
 };
 
+pub(super) fn get_routes_v1(cfg: &mut ServiceConfig) {
+    cfg.route("/all", get().to(getall))
+        .route("/siteurl", get().to(siteurl))
+        .route("/version", get().to(version))
+        .route("/whoami", get().to(whoami))
+        .route("/getconfig", get().to(getconfig));
+}
+
+pub(super) fn oidc_routes(cfg: &mut ServiceConfig) {
+    cfg.route("/login", get().to(oidc_redirect))
+        .route("/callback", get().to(oidc_callback));
+}
+
 // Return all active links
-#[get("/api/all")]
-pub(crate) async fn getall(
+async fn getall(
     auth: Auth,
     data: web::Data<AppState>,
     params: web::Query<GetReqParams>,
@@ -56,8 +68,7 @@ pub(crate) async fn getall(
 // Get the site URL
 // This is deprecated, and might be removed in the future.
 // Use /api/getconfig instead
-#[get("/api/siteurl")]
-pub(crate) async fn siteurl(data: web::Data<AppState>) -> HttpResponse {
+async fn siteurl(data: web::Data<AppState>) -> HttpResponse {
     if let Some(url) = &data.config.site_url {
         HttpResponse::Ok()
             .content_type(TEXT_PLAIN)
@@ -70,8 +81,7 @@ pub(crate) async fn siteurl(data: web::Data<AppState>) -> HttpResponse {
 // Get the version number
 // This is deprecated, and might be removed in the future.
 // Use /api/getconfig instead
-#[get("/api/version")]
-pub(crate) async fn version() -> HttpResponse {
+async fn version() -> HttpResponse {
     let version = utils::get_version();
     let mut out = String::with_capacity(12 + version.len());
     out.push_str("Chhoto URL v");
@@ -80,12 +90,7 @@ pub(crate) async fn version() -> HttpResponse {
 }
 
 // Get the user's current role
-#[get("/api/whoami")]
-pub(crate) async fn whoami(
-    data: web::Data<AppState>,
-    req: HttpRequest,
-    auth: Auth,
-) -> HttpResponse {
+async fn whoami(data: web::Data<AppState>, req: HttpRequest, auth: Auth) -> HttpResponse {
     let config = &data.config;
     if Accept::parse(&req)
         .is_ok_and(|accept| accept.iter().any(|item| item.item == APPLICATION_JSON))
@@ -111,8 +116,7 @@ pub(crate) async fn whoami(
 }
 
 // Get some useful backend config
-#[get("/api/getconfig")]
-pub(crate) async fn getconfig(auth: Auth, data: web::Data<AppState>) -> HttpResponse {
+async fn getconfig(auth: Auth, data: web::Data<AppState>) -> HttpResponse {
     let config = &data.config;
     let ok_response = || {
         let backend_config = BackendConfig {
@@ -142,8 +146,7 @@ pub(crate) async fn getconfig(auth: Auth, data: web::Data<AppState>) -> HttpResp
 }
 
 // Handle a given shortlink
-#[get("/{shortlink}")]
-pub(crate) async fn link_handler(
+pub(super) async fn link_handler(
     shortlink: web::Path<String>,
     data: web::Data<AppState>,
 ) -> impl Responder {
@@ -163,12 +166,7 @@ pub(crate) async fn link_handler(
 }
 
 // OIDC redirect
-#[get("/oidc/login")]
-pub(crate) async fn oidc_redirect(
-    auth: Auth,
-    data: web::Data<AppState>,
-    req: HttpRequest,
-) -> HttpResponse {
+async fn oidc_redirect(auth: Auth, data: web::Data<AppState>, req: HttpRequest) -> HttpResponse {
     let Some(oidc) = data.oidc_data.as_ref() else {
         return HttpResponse::Forbidden()
             .content_type(TEXT_PLAIN)
@@ -225,8 +223,7 @@ pub(crate) async fn oidc_redirect(
 }
 
 //OIDC callback
-#[get("/oidc/callback")]
-pub(crate) async fn oidc_callback(
+async fn oidc_callback(
     auth: Auth,
     data: web::Data<AppState>,
     params: web::Query<OidcCallbackParams>,
@@ -295,8 +292,7 @@ pub(crate) async fn oidc_callback(
 }
 
 // Healthcheck endpoint
-#[get("/healthz")]
-pub(crate) async fn health_handler(db: web::Data<Connection>) -> impl Responder {
+pub(super) async fn health_handler(db: web::Data<Connection>) -> impl Responder {
     if database::is_database_healthy(&db) {
         HttpResponse::Ok().content_type(TEXT_PLAIN).body("healthy")
     } else {
