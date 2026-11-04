@@ -53,7 +53,7 @@ pub(super) const CLEANUP_BATCH: &str = "
     FROM urls
     WHERE :now >= expiry_time
       AND expiry_time IS NOT NULL
-    LIMIT 500
+    LIMIT 1000
 )";
 pub(super) const CLEANUP_LEFTOVERS: &str = "
 SELECT EXISTS(

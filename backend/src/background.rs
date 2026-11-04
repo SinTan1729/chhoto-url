@@ -8,7 +8,7 @@ use std::{collections::HashMap, sync::Arc};
 use tokio::{
     spawn,
     sync::{Mutex, mpsc},
-    time::{Duration, Instant, interval, sleep_until},
+    time::{Duration, Instant, interval, sleep, sleep_until},
 };
 
 use crate::database;
@@ -53,6 +53,7 @@ pub(crate) fn spawn_hits_worker(
 // Do database cleanup once every hour
 pub(crate) fn spawn_cleaner(
     writer: Arc<Mutex<Connection>>,
+    db_path: String,
     use_wal_mode: bool,
     disable_backups: bool,
 ) -> tokio::task::JoinHandle<()> {
@@ -65,27 +66,59 @@ pub(crate) fn spawn_cleaner(
             loop {
                 interval.tick().await;
                 let hour = Local::now().hour();
-                let path;
-                {
-                    let mut db = writer.lock().await;
-                    if let Err(e) = database::cleanup(&mut db, use_wal_mode, first_run) {
-                        warn!("Cleanup: {e}");
+
+                info!("Starting database cleanup task.");
+                for attempt in 0..3 {
+                    let mutex = writer.clone();
+                    let result = tokio::task::spawn_blocking(move || {
+                        let mut db = mutex.blocking_lock();
+                        database::cleanup(&mut db, use_wal_mode, first_run, attempt)
+                    })
+                    .await;
+                    match result {
+                        Ok(Ok(true)) => {
+                            if attempt < 2 {
+                                info!("Expired links remain; will try again in 10 seconds.");
+                            } else {
+                                info!(
+                                    "Expired links remain; they will be tried again during a later cleanup."
+                                );
+                                info!("Cleanup task complete.");
+                            };
+                        }
+                        Ok(Ok(false)) => {
+                            info!("No expired links remain.");
+                            break;
+                        }
+                        Ok(Err(e)) => {
+                            warn!("Cleanup issue: {e}");
+                            break;
+                        }
+                        Err(e) => {
+                            warn!("Cleanup task failed: {e}");
+                            break;
+                        }
+                    };
+                    if attempt < 2 {
+                        sleep(Duration::from_secs(10)).await;
                     }
-                    first_run = false;
-                    path = db.path().map(str::to_owned);
                 }
+                first_run = false;
                 if hour == 3 {
                     info!("Doing a scheduled daily backup.");
-                    if let Some(db_path) = path {
-                        if let Err(e) = database::manage_backups(
-                            &db_path,
+                    let path = db_path.clone();
+                    match tokio::task::spawn_blocking(move || {
+                        database::manage_backups(
+                            &path,
                             disable_backups,
                             database::BackupType::Daily,
-                        ) {
-                            warn!("Scheduled backup error: {e}");
-                        }
-                    } else {
-                        warn!("Failed to do daily database backup.");
+                        )
+                    })
+                    .await
+                    {
+                        Ok(Ok(())) => {}
+                        Ok(Err(e)) => warn!("Scheduled backup error: {e}"),
+                        Err(e) => warn!("Scheduled backup task failed: {e}"),
                     }
                 }
             }

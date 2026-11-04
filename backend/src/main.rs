@@ -73,7 +73,12 @@ async fn main() -> Result<()> {
         conf.disable_backups,
     );
     // Spawn cleaner
-    background::spawn_cleaner(Arc::clone(&writer), conf.use_wal_mode, conf.disable_backups);
+    background::spawn_cleaner(
+        Arc::clone(&writer),
+        conf.db_location.clone(),
+        conf.use_wal_mode,
+        conf.disable_backups,
+    );
     // Spawn hit updater
     let (hits_tx, hits_rx) = mpsc::channel::<(String, bool)>(1024);
     background::spawn_hits_worker(Arc::clone(&writer), hits_rx);

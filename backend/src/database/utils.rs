@@ -30,12 +30,12 @@ pub(crate) fn cleanup(
     db: &mut Connection,
     use_wal_mode: bool,
     no_time_budget: bool,
-) -> Result<(), String> {
+    attempt: u8,
+) -> Result<bool, String> {
     let start = Instant::now();
     let now = Utc::now().timestamp();
 
-    debug!("Starting database cleanup.");
-    let deadline = Instant::now() + Duration::from_millis(500);
+    let deadline = Instant::now() + Duration::from_millis(200);
     let mut total_deleted = 0;
     let tx = db
         .transaction()
@@ -58,11 +58,11 @@ pub(crate) fn cleanup(
     }
     tx.commit()
         .map_err(|_| "Error committinng transaction.".to_string())?;
-
+    let time_taken = start.elapsed().as_secs_f32() * 1000.0;
     match total_deleted {
         0 => info!("No expired links were found."),
-        1 => info!("1 expired link was deleted."),
-        n => info!("{n} expired links were deleted."),
+        1 => info!("1 expired link was deleted in {:.3} ms.", time_taken),
+        n => info!("{n} expired links were deleted in {:.3} ms.", time_taken),
     }
 
     let leftovers = db
@@ -73,8 +73,8 @@ pub(crate) fn cleanup(
         )
         .map_err(|_| "Error checking for expired links.".to_string())?;
 
-    if leftovers {
-        info!("Expired links remain; they will be tried again during a later cleanup.");
+    if leftovers && attempt < 2 {
+        return Ok(true);
     }
 
     if use_wal_mode
@@ -102,11 +102,7 @@ pub(crate) fn cleanup(
         Err("Unable to optimize database.".to_string())
     } else {
         debug!("Optimized database.");
-        debug!(
-            "Cleanup completed successfully in {:.3} ms.",
-            start.elapsed().as_secs_f32() * 1000.0
-        );
-        Ok(())
+        Ok(leftovers)
     }
 }
 
