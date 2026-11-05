@@ -11,6 +11,7 @@ use std::{
 use tokio::{
     spawn,
     sync::mpsc,
+    task::spawn_blocking,
     time::{Duration, Instant, interval, sleep, sleep_until},
 };
 
@@ -46,11 +47,17 @@ pub(crate) fn spawn_hits_worker(
                     }
                 }
                 if !pending.is_empty() {
-                    let Ok(mut writer) = writer.lock() else {
-                        error!("{}", crate::DB_MUTEX_ERROR);
-                        continue;
-                    };
-                    database::add_hits(std::mem::take(&mut pending), &mut writer);
+                    let mutex = writer.clone();
+                    let batch = std::mem::take(&mut pending);
+                    spawn_blocking(move || {
+                        let Ok(mut writer) = mutex.lock() else {
+                            error!("{}", crate::DB_MUTEX_ERROR);
+                            return;
+                        };
+                        database::add_hits(batch, &mut writer);
+                    })
+                    .await
+                    .unwrap_or_else(|err| error!("Hits worker task failed: {err}"));
                 }
             }
         }

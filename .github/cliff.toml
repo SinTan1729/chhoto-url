@@ -67,8 +67,10 @@ commit_parsers = [
   { message = "^[f|F]ix", group = "<1>Fixes" },
   { message = "^[c|C]hange", group = "<2>Changes" },
   { message = "^[c|C]hg", group = "<2>Changes" },
-  { message = "^[r|R]emove", group = "<3>Removed" },
-  { message = "^[r|R]mv", group = "<3>Removed" },
+  { message = "^[p|P]erf", group = "<3>Performance" },
+  { message = "^[o|O]pti", group = "<3>Optimization" },
+  { message = "^[r|R]emove", group = "<4>Removed" },
+  { message = "^[r|R]mv", group = "<4>Removed" },
   { message = ".*", skip = true },
 ]
 filter_commits = true
