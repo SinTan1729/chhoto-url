@@ -412,6 +412,11 @@ pub(crate) fn init_db(
     } else {
         USER_VERSION
     };
+    if current_user_version > USER_VERSION {
+        panic!(
+            "User version is greater than what's supported in this version. Please update to the latest version."
+        );
+    }
 
     let current_application_id: i32 = db
         .query_row_and_then("PRAGMA application_id", (), |row| row.get(0))
