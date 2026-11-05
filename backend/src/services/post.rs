@@ -37,13 +37,14 @@ async fn add_links(
     const SERVER_ERROR_RES: &str = "Something went wrong when adding the link.";
     let config = &data.config;
     let cookie_response = async |public_mode| {
-        let result = utils::add_links_helper(
-            &payload,
-            &mut data.writer.lock().expect(crate::DB_MUTEX_ERROR),
-            config,
-            public_mode,
-        )
-        .and_then(|(v, _)| v.into_iter().next().unwrap_or(Err(ServerError)));
+        let Ok(mut writer) = data.writer.lock() else {
+            error!("{}", crate::DB_MUTEX_ERROR);
+            return HttpResponse::InternalServerError()
+                .content_type(TEXT_PLAIN)
+                .body("Internal server error.");
+        };
+        let result = utils::add_links_helper(&payload, &mut writer, config, public_mode)
+            .and_then(|(v, _)| v.into_iter().next().unwrap_or(Err(ServerError)));
         match result {
             Ok((shorturl, _)) => HttpResponse::Created()
                 .content_type(TEXT_PLAIN)
@@ -106,12 +107,13 @@ async fn add_links(
                 ),
             };
 
-            match utils::add_links_helper(
-                &payload,
-                &mut data.writer.lock().expect(crate::DB_MUTEX_ERROR),
-                config,
-                false,
-            ) {
+            let Ok(mut writer) = data.writer.lock() else {
+                error!("{}", crate::DB_MUTEX_ERROR);
+                return HttpResponse::InternalServerError()
+                    .content_type(TEXT_PLAIN)
+                    .body("Internal server error.");
+            };
+            match utils::add_links_helper(&payload, &mut writer, config, false) {
                 Ok((reply, single_request)) => {
                     if single_request {
                         let (status, response) = to_response(

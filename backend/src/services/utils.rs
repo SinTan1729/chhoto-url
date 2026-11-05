@@ -293,7 +293,11 @@ pub(super) fn edit_link_helper(
         });
     }
 
-    let result = database::edit_link(&chunks, &db.lock().expect(crate::DB_MUTEX_ERROR));
+    let Ok(writer) = db.lock() else {
+        error!("{}", crate::DB_MUTEX_ERROR);
+        return Err(ServerError);
+    };
+    let result = database::edit_link(&chunks, &writer);
     match result {
         // Zero rows returned means no updates
         Ok((0, _)) => Err(ClientError {

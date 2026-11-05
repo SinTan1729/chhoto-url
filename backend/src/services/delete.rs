@@ -7,7 +7,7 @@ use actix_web::{
     mime::TEXT_PLAIN,
     web::{self, ServiceConfig, delete},
 };
-use log::{debug, info};
+use log::{debug, error, info};
 
 use crate::{
     AppState,
@@ -69,11 +69,14 @@ async fn delete_link(
     };
     match auth {
         Auth::ValidAPIKey => {
-            match utils::delete_link_helper(
-                &shortlink,
-                &data.writer.lock().expect(crate::DB_MUTEX_ERROR),
-                data.config.allow_capital_letters,
-            ) {
+            let Ok(writer) = data.writer.lock() else {
+                error!("{}", crate::DB_MUTEX_ERROR);
+                return HttpResponse::InternalServerError()
+                    .content_type(TEXT_PLAIN)
+                    .body("Internal server error.");
+            };
+            match utils::delete_link_helper(&shortlink, &writer, data.config.allow_capital_letters)
+            {
                 Ok(()) => {
                     let response = JSONResponse {
                         success: true,
@@ -103,12 +106,14 @@ async fn delete_link(
         Auth::InvalidAPIKey { result } => HttpResponse::Unauthorized().json(result),
         // If using password - keeps backwards compatibility
         Auth::ValidSession | Auth::NoAuthNeeded => {
-            if utils::delete_link_helper(
-                &shortlink,
-                &data.writer.lock().expect(crate::DB_MUTEX_ERROR),
-                data.config.allow_capital_letters,
-            )
-            .is_ok()
+            let Ok(writer) = data.writer.lock() else {
+                error!("{}", crate::DB_MUTEX_ERROR);
+                return HttpResponse::InternalServerError()
+                    .content_type(TEXT_PLAIN)
+                    .body("Internal server error.");
+            };
+            if utils::delete_link_helper(&shortlink, &writer, data.config.allow_capital_letters)
+                .is_ok()
             {
                 HttpResponse::Ok()
                     .content_type(TEXT_PLAIN)

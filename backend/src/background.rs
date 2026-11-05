@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: MIT
 
 use chrono::{Local, Timelike};
-use log::{info, warn};
+use log::{error, info, warn};
 use rusqlite::Connection;
 use std::{
     collections::HashMap,
@@ -46,10 +46,11 @@ pub(crate) fn spawn_hits_worker(
                     }
                 }
                 if !pending.is_empty() {
-                    database::add_hits(
-                        std::mem::take(&mut pending),
-                        &mut writer.lock().expect(crate::DB_MUTEX_ERROR),
-                    );
+                    let Ok(mut writer) = writer.lock() else {
+                        error!("{}", crate::DB_MUTEX_ERROR);
+                        continue;
+                    };
+                    database::add_hits(std::mem::take(&mut pending), &mut writer);
                 }
             }
         }
@@ -77,7 +78,10 @@ pub(crate) fn spawn_cleaner(
                 for attempt in 0..3 {
                     let mutex = writer.clone();
                     let result = tokio::task::spawn_blocking(move || {
-                        let mut db = mutex.lock().expect(crate::DB_MUTEX_ERROR);
+                        let Ok(mut db) = mutex.lock() else {
+                            error!("{}", crate::DB_MUTEX_ERROR);
+                            return Err(crate::DB_MUTEX_ERROR.to_string());
+                        };
                         database::cleanup(&mut db, use_wal_mode, first_run, attempt)
                     })
                     .await;
