@@ -149,7 +149,10 @@ pub(super) fn getall_helper(data: &AppState, params: GetReqParams) -> Result<Str
             })
         })
         .transpose()?;
-    let db = data.readers.get().map_err(|_| ChhotoError::ServerError)?;
+    let db = data.readers.get().map_err(|_| {
+        error!("{}", crate::DB_POOL_ERROR);
+        ChhotoError::ServerError
+    })?;
     let links = database::getall(&db, page_after.as_deref(), page_no, page_size, filter);
     serde_json::to_string(&links).map_err(|err| {
         error!("Failure during creation of json from db columns.\n{err}");

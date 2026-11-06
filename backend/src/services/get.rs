@@ -316,6 +316,7 @@ pub(super) async fn health_handler(data: web::Data<AppState>) -> impl Responder 
     {
         HttpResponse::Ok().content_type(TEXT_PLAIN).body("healthy")
     } else {
+        error!("{}", crate::DB_POOL_ERROR);
         HttpResponse::InternalServerError()
             .content_type(TEXT_PLAIN)
             .body("unhealthy")

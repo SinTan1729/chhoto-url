@@ -5,7 +5,7 @@ use actix_web::{
     HttpResponse,
     web::{self, ServiceConfig, post, query},
 };
-use log::debug;
+use log::{debug, error};
 use tokio::task::spawn_blocking;
 
 use crate::{
@@ -27,7 +27,10 @@ async fn expand(req: String, auth: Auth, data: web::Data<AppState>) -> HttpRespo
     debug!("Expanding link {}", req);
     match auth {
         Auth::ValidAPIKey => match spawn_blocking(move || {
-            let db = data.readers.get().map_err(|_| ServerError)?;
+            let db = data.readers.get().map_err(|_| {
+                error!("{}", crate::DB_POOL_ERROR);
+                ServerError
+            })?;
             database::find_url(&req, &db)
         })
         .await

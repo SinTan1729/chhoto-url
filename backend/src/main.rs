@@ -36,6 +36,7 @@ mod tests;
 
 pub(crate) const RO_DB_OPEN_ERROR: &str = "Unable to open reader database connection!";
 pub(crate) const RW_DB_OPEN_ERROR: &str = "Unable to open writer database connection!";
+pub(crate) const DB_POOL_ERROR: &str = "Unable to get a reader database form the pool!";
 pub(crate) const DB_MUTEX_ERROR: &str = "Mutex for Database writer is poisoned!";
 
 // This struct represents state
