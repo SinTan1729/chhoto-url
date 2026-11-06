@@ -8,6 +8,7 @@ use actix_web::{
 };
 use log::{error, info, warn};
 use std::rc::Rc;
+use tokio::task::spawn_blocking;
 
 use crate::{
     AppState,
@@ -107,13 +108,18 @@ async fn add_links(
                 ),
             };
 
-            let Ok(mut writer) = data.writer.lock() else {
-                error!("{}", crate::DB_MUTEX_ERROR);
-                return HttpResponse::InternalServerError()
-                    .content_type(TEXT_PLAIN)
-                    .body("Internal server error.");
-            };
-            match utils::add_links_helper(&payload, &mut writer, config, false) {
+            let data_clone = data.clone();
+            match spawn_blocking(move || {
+                let Ok(mut writer) = data_clone.writer.lock() else {
+                    error!("{}", crate::DB_MUTEX_ERROR);
+                    return Err(ServerError);
+                };
+                utils::add_links_helper(&payload, &mut writer, &data_clone.config, false)
+            })
+            .await
+            .map_err(|_| ServerError)
+            .flatten()
+            {
                 Ok((reply, single_request)) => {
                     if single_request {
                         let (status, response) = to_response(

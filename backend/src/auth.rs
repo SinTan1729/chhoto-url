@@ -12,6 +12,7 @@ use argon2::PasswordVerifier;
 use log::{debug, warn};
 use std::pin::Pin;
 use std::time::SystemTime;
+use tokio::task::spawn_blocking;
 
 use crate::config::Credential::{self, Argon2, Plain};
 use crate::{AppState, services::types::JSONResponse};
@@ -73,7 +74,7 @@ async fn is_api_ok(headers: &HeaderMap, api_key: Option<Credential>) -> JSONResp
 async fn is_key_valid(key: String, api_key: Credential) -> Result<(), String> {
     // Check if API Key is hashed using Argon2. More algorithms maybe added later.
     let authorized = match api_key {
-        Argon2(hash) => actix_web::web::block(move || {
+        Argon2(hash) => spawn_blocking(move || {
             argon2::Argon2::default().verify_password(key.as_bytes(), hash.as_ref())
         })
         .await

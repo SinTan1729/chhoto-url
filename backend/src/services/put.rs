@@ -6,6 +6,7 @@ use actix_web::{
     web::{self, ServiceConfig, put},
 };
 use log::error;
+use tokio::task::spawn_blocking;
 
 use crate::{
     AppState,
@@ -25,10 +26,16 @@ pub(super) fn put_routes_v1(cfg: &mut ServiceConfig) {
 
 // Edit a shortlink
 async fn edit_link(req: String, auth: Auth, data: web::Data<AppState>) -> HttpResponse {
-    let config = &data.config;
     match auth {
         Auth::ValidAPIKey | Auth::ValidSession | Auth::NoAuthNeeded => {
-            match utils::edit_link_helper(&req, &data.writer, config) {
+            let data_clone = data.clone();
+            match spawn_blocking(move || {
+                utils::edit_link_helper(&req, &data_clone.writer, &data_clone.config)
+            })
+            .await
+            .map_err(|_| ServerError)
+            .flatten()
+            {
                 Ok(result) => {
                     let body = JSONResponse {
                         success: true,

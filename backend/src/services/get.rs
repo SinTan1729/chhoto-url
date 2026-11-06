@@ -11,7 +11,7 @@ use log::{debug, error, info, warn};
 use openidconnect::{
     CsrfToken, Nonce, PkceCodeChallenge, RedirectUrl, Scope, core::CoreAuthenticationFlow,
 };
-use rusqlite::Connection;
+use tokio::task::spawn_blocking;
 
 use crate::{
     AppState,
@@ -20,7 +20,7 @@ use crate::{
     services::{
         types::{
             BackendConfig,
-            ChhotoError::{ClientError, ServerError},
+            ChhotoError::{self, ClientError, ServerError},
             GetReqParams, OidcCallbackParams, WhoamiRes,
         },
         utils::{self, derive_origin_info, oidc_redirect_once},
@@ -53,7 +53,13 @@ async fn getall(
         Auth::InvalidAPIKey { result } => HttpResponse::Unauthorized()
             .content_type(TEXT_PLAIN)
             .body(result.reason),
-        _ => match utils::getall_helper(&data.reader, params.into_inner()) {
+        _ => match spawn_blocking(move || {
+            utils::getall_helper(&data.into_inner(), params.into_inner())
+        })
+        .await
+        .map_err(|_| ChhotoError::ServerError)
+        .flatten()
+        {
             Ok(s) => HttpResponse::Ok().content_type(APPLICATION_JSON).body(s),
             Err(ServerError) => HttpResponse::InternalServerError()
                 .content_type(TEXT_PLAIN)
@@ -150,8 +156,13 @@ pub(super) async fn link_handler(
     shortlink: web::Path<String>,
     data: web::Data<AppState>,
 ) -> impl Responder {
-    let shortlink_str = shortlink.as_str();
-    if let Ok(longlink) = database::find_and_add_hit(shortlink_str, &data.reader) {
+    let shortlink_clone = shortlink.clone();
+    let data_clone = data.clone();
+    if let Ok(Ok(longlink)) = spawn_blocking(move || {
+        database::find_and_add_hit(&shortlink_clone, &data_clone.into_inner())
+    })
+    .await
+    {
         if let Err(err) = data.hits_tx.send((shortlink.to_owned(), false)).await {
             error!("Failed to enqueue hit update after access: {err}");
         }
@@ -297,8 +308,12 @@ async fn oidc_callback(
 }
 
 // Healthcheck endpoint
-pub(super) async fn health_handler(db: web::Data<Connection>) -> impl Responder {
-    if database::is_database_healthy(&db) {
+pub(super) async fn health_handler(data: web::Data<AppState>) -> impl Responder {
+    if let Ok(db) = data.readers.get()
+        && spawn_blocking(move || database::is_database_healthy(&db))
+            .await
+            .is_ok_and(|r| r.is_ok())
+    {
         HttpResponse::Ok().content_type(TEXT_PLAIN).body("healthy")
     } else {
         HttpResponse::InternalServerError()

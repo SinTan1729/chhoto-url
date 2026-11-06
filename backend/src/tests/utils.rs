@@ -1,7 +1,7 @@
 // SPDX-FileCopyrightText: 2023-2026 Sayantan Santra <sayantan.santra689@gmail.com>
 // SPDX-License-Identifier: MIT
 
-use std::{collections::HashSet, fmt::Display, rc::Rc};
+use std::{collections::HashSet, fmt::Display, path::PathBuf, rc::Rc};
 
 use actix_http::{
     Request, StatusCode,
@@ -68,7 +68,7 @@ pub(super) fn default_config(test: &str) -> config::Config {
     config::Config {
         listen_address: String::from("0.0.0.0"),
         port: 4567,
-        db_location: format!("/tmp/chhoto-url-test-{test}.sqlite"),
+        db_location: PathBuf::from(format!("/tmp/chhoto-url-test-{test}.sqlite")),
         cache_control_header: None,
         disable_frontend: true,
         custom_site_title: None,
@@ -107,10 +107,7 @@ pub(super) async fn create_app(
 ) {
     let tempdir = TempDir::new().unwrap();
     let db_file = tempdir.path().join(format!("{test}.sqlite"));
-    let writer = Arc::from(Mutex::from(database::open_db(
-        db_file.to_str().unwrap(),
-        false,
-    )));
+    let writer = Mutex::from(database::open_db(&db_file, false).unwrap());
     database::init_db(
         &mut writer.lock().expect(crate::DB_MUTEX_ERROR),
         conf.use_wal_mode,
@@ -119,21 +116,22 @@ pub(super) async fn create_app(
     );
 
     let (hits_tx, hits_rx) = mpsc::channel::<(String, bool)>(1024);
-    background::spawn_hits_worker(Arc::clone(&writer), hits_rx);
+    let data = web::Data::new(AppState {
+        hits_tx,
+        readers: database::pool::open_pool(&db_file).unwrap(),
+        writer,
+        config: conf.clone(),
+        frontend_dir: String::new(),
+        oidc_data: None,
+        secret_key: Key::generate(),
+    });
+    background::spawn_hits_worker(data.clone(), hits_rx);
 
     (
         tempdir,
         test::init_service(
             App::new()
-                .app_data(web::Data::new(AppState {
-                    hits_tx,
-                    reader: database::open_db(db_file.to_str().unwrap(), false),
-                    writer,
-                    config: Arc::new(conf.clone()),
-                    frontend_dir: Arc::new(String::new()),
-                    oidc_data: None,
-                    secret_key: Arc::new(Key::generate()),
-                }))
+                .app_data(data.clone())
                 .service(web::scope("/api").configure(services::api_routes_v1))
                 .service(web::scope("/oidc").configure(services::oidc_routes))
                 .route("/{shortlink}", services::link_handler()),

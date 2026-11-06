@@ -3,7 +3,7 @@
 
 use chrono::Utc;
 use log::{debug, info, warn};
-use rusqlite::{Connection, OpenFlags, backup::NO_PROGRESS, named_params};
+use rusqlite::{Connection, Error, OpenFlags, backup::NO_PROGRESS, named_params};
 use std::{
     collections::HashSet,
     fs,
@@ -108,7 +108,7 @@ pub(crate) fn cleanup(
 
 // Create backups
 pub(crate) fn manage_backups(
-    db_link: &str,
+    db_link: &PathBuf,
     disable_backups: bool,
     backup_type: BackupType,
 ) -> Result<(), String> {
@@ -142,7 +142,7 @@ pub(crate) fn manage_backups(
         }
     };
 
-    let db = database::open_db(db_link, true);
+    let db = database::open_db(db_link, true).map_err(|_| crate::RO_DB_OPEN_ERROR)?;
     db.backup::<_, _, _>(
         "main",
         backup_dir
@@ -370,7 +370,11 @@ pub(crate) fn init_db(
     disable_backups: bool,
 ) {
     if let Some(db_path) = db.path() {
-        if let Err(e) = manage_backups(db_path, disable_backups, BackupType::Init) {
+        if let Err(e) = manage_backups(
+            &db_path.to_string().into(),
+            disable_backups,
+            BackupType::Init,
+        ) {
             warn!("Init backup error: {e}")
         };
     } else {
@@ -468,20 +472,31 @@ pub(crate) fn init_db(
 }
 
 // Open and return a rusqlite connection
-pub(crate) fn open_db(path: &str, read_only: bool) -> Connection {
-    if read_only {
-        let flags = OpenFlags::SQLITE_OPEN_READ_ONLY
+pub(crate) fn open_db(path: &PathBuf, read_only: bool) -> Result<Connection, Error> {
+    let flags = if read_only {
+        OpenFlags::SQLITE_OPEN_READ_ONLY
             | OpenFlags::SQLITE_OPEN_URI
-            | OpenFlags::SQLITE_OPEN_NO_MUTEX;
-        Connection::open_with_flags(path, flags).expect("Unable to open reader database.")
+            | OpenFlags::SQLITE_OPEN_NO_MUTEX
     } else {
-        Connection::open(path).expect("Unable to open writer database.")
-    }
+        OpenFlags::SQLITE_OPEN_READ_WRITE
+            | OpenFlags::SQLITE_OPEN_CREATE
+            | OpenFlags::SQLITE_OPEN_URI
+            | OpenFlags::SQLITE_OPEN_NO_MUTEX
+    };
+
+    let conn = Connection::open_with_flags(path, flags)?;
+    conn.busy_timeout(Duration::from_secs(5))?;
+    Ok(conn)
 }
 
 // Perform a healthcheck
-pub(crate) fn is_database_healthy(db: &Connection) -> bool {
-    db.query_row_and_then("PRAGMA application_id", (), |row| row.get::<usize, i32>(0))
-        .unwrap_or_default()
-        == APPLICATION_ID
+pub(crate) fn is_database_healthy(db: &Connection) -> Result<(), Error> {
+    let healthy = db
+        .query_row_and_then("PRAGMA application_id", (), |row| row.get::<usize, i32>(0))?
+        == APPLICATION_ID;
+    if healthy {
+        Ok(())
+    } else {
+        Err(Error::InvalidQuery)
+    }
 }

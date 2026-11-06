@@ -8,13 +8,14 @@ use actix_web::{
     web::{self, ServiceConfig, delete},
 };
 use log::{debug, error, info};
+use tokio::task::spawn_blocking;
 
 use crate::{
     AppState,
     auth::{Auth, COOKIE_NAME},
     services::{
         types::{
-            ChhotoError::{ClientError, ServerError},
+            ChhotoError::{self, ClientError, ServerError},
             JSONResponse,
         },
         utils,
@@ -69,13 +70,21 @@ async fn delete_link(
     };
     match auth {
         Auth::ValidAPIKey => {
-            let Ok(writer) = data.writer.lock() else {
-                error!("{}", crate::DB_MUTEX_ERROR);
-                return HttpResponse::InternalServerError()
-                    .content_type(TEXT_PLAIN)
-                    .body("Internal server error.");
-            };
-            match utils::delete_link_helper(&shortlink, &writer, data.config.allow_capital_letters)
+            let shortlink_clone = shortlink.clone();
+            match spawn_blocking(move || {
+                let Ok(writer) = data.writer.lock() else {
+                    error!("{}", crate::DB_MUTEX_ERROR);
+                    return Err(ChhotoError::ServerError);
+                };
+                utils::delete_link_helper(
+                    &shortlink_clone,
+                    &writer,
+                    data.config.allow_capital_letters,
+                )
+            })
+            .await
+            .map_err(|_| ChhotoError::ServerError)
+            .flatten()
             {
                 Ok(()) => {
                     let response = JSONResponse {
@@ -106,14 +115,20 @@ async fn delete_link(
         Auth::InvalidAPIKey { result } => HttpResponse::Unauthorized().json(result),
         // If using password - keeps backwards compatibility
         Auth::ValidSession | Auth::NoAuthNeeded => {
-            let Ok(writer) = data.writer.lock() else {
-                error!("{}", crate::DB_MUTEX_ERROR);
-                return HttpResponse::InternalServerError()
-                    .content_type(TEXT_PLAIN)
-                    .body("Internal server error.");
-            };
-            if utils::delete_link_helper(&shortlink, &writer, data.config.allow_capital_letters)
-                .is_ok()
+            let shortlink_clone = shortlink.clone();
+            if spawn_blocking(move || {
+                let Ok(writer) = data.writer.lock() else {
+                    error!("{}", crate::DB_MUTEX_ERROR);
+                    return Err(ChhotoError::ServerError);
+                };
+                utils::delete_link_helper(
+                    &shortlink_clone,
+                    &writer,
+                    data.config.allow_capital_letters,
+                )
+            })
+            .await
+            .is_ok_and(|r| r.is_ok())
             {
                 HttpResponse::Ok()
                     .content_type(TEXT_PLAIN)

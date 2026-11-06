@@ -22,6 +22,7 @@ use rusqlite::Connection;
 use serde::Deserialize;
 use serde_json::Value;
 use std::{collections::HashSet, env, sync::Mutex};
+use tokio::task::spawn_blocking;
 use url::Url;
 
 use crate::{
@@ -122,7 +123,7 @@ pub(crate) fn get_version() -> String {
 }
 
 // Request the DB for all URLs
-pub(super) fn getall_helper(db: &Connection, params: GetReqParams) -> Result<String, ChhotoError> {
+pub(super) fn getall_helper(data: &AppState, params: GetReqParams) -> Result<String, ChhotoError> {
     let page_after = match params.page_after {
         Some(s) if s.is_empty() => {
             return Err(ChhotoError::ClientError {
@@ -148,7 +149,8 @@ pub(super) fn getall_helper(db: &Connection, params: GetReqParams) -> Result<Str
             })
         })
         .transpose()?;
-    let links = database::getall(db, page_after.as_deref(), page_no, page_size, filter);
+    let db = data.readers.get().map_err(|_| ChhotoError::ServerError)?;
+    let links = database::getall(&db, page_after.as_deref(), page_no, page_size, filter);
     serde_json::to_string(&links).map_err(|err| {
         error!("Failure during creation of json from db columns.\n{err}");
         ChhotoError::ServerError
@@ -532,7 +534,7 @@ pub(super) async fn verify_login(
     password: Option<Credential>,
     auth: Auth,
 ) -> Result<(bool, bool), actix_web::Error> {
-    actix_web::web::block(move || {
+    spawn_blocking(move || {
         is_authorized(
             &provided_password,
             &password,

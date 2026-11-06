@@ -6,6 +6,7 @@ use actix_web::{
     web::{self, ServiceConfig, post, query},
 };
 use log::debug;
+use tokio::task::spawn_blocking;
 
 use crate::{
     AppState,
@@ -23,8 +24,16 @@ pub(super) fn query_routes_v1(cfg: &mut ServiceConfig) {
 }
 // Get information about a single shortlink
 async fn expand(req: String, auth: Auth, data: web::Data<AppState>) -> HttpResponse {
+    debug!("Expanding link {}", req);
     match auth {
-        Auth::ValidAPIKey => match database::find_url(&req, &data.reader) {
+        Auth::ValidAPIKey => match spawn_blocking(move || {
+            let db = data.readers.get().map_err(|_| ServerError)?;
+            database::find_url(&req, &db)
+        })
+        .await
+        .map_err(|_| ServerError)
+        .flatten()
+        {
             Ok(chunks) => {
                 let body = LinkInfo {
                     success: true,
@@ -35,7 +44,6 @@ async fn expand(req: String, auth: Auth, data: web::Data<AppState>) -> HttpRespo
                     expiry_time: chunks.expiry_time,
                     notes: chunks.notes,
                 };
-                debug!("Expanded link {}", req);
                 HttpResponse::Ok().json(body)
             }
             Err(ServerError) => {
@@ -44,7 +52,7 @@ async fn expand(req: String, auth: Auth, data: web::Data<AppState>) -> HttpRespo
                     error: true,
                     reason: "Something went wrong when expanding the link".to_owned(),
                 };
-                HttpResponse::BadRequest().json(body)
+                HttpResponse::InternalServerError().json(body)
             }
             Err(ClientError { reason }) => {
                 let body = JSONResponse {

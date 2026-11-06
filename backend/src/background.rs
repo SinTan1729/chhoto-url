@@ -1,13 +1,10 @@
 // SPDX-FileCopyrightText: 2023-2026 Sayantan Santra <sayantan.santra689@gmail.com>
 // SPDX-License-Identifier: MIT
 
+use actix_web::web;
 use chrono::{Local, Timelike};
 use log::{error, info, warn};
-use rusqlite::Connection;
-use std::{
-    collections::HashMap,
-    sync::{Arc, Mutex},
-};
+use std::collections::HashMap;
 use tokio::{
     spawn,
     sync::mpsc,
@@ -15,11 +12,11 @@ use tokio::{
     time::{Duration, Instant, interval, sleep, sleep_until},
 };
 
-use crate::database;
+use crate::{AppState, database};
 
 // Run hit updates every 500ms or once 500 distinct links are pending.
 pub(crate) fn spawn_hits_worker(
-    writer: Arc<Mutex<Connection>>,
+    data: web::Data<AppState>,
     mut hits_rx: mpsc::Receiver<(String, bool)>,
 ) -> tokio::task::JoinHandle<()> {
     spawn({
@@ -47,10 +44,10 @@ pub(crate) fn spawn_hits_worker(
                     }
                 }
                 if !pending.is_empty() {
-                    let mutex = writer.clone();
+                    let data = data.clone();
                     let batch = std::mem::take(&mut pending);
                     spawn_blocking(move || {
-                        let Ok(mut writer) = mutex.lock() else {
+                        let Ok(mut writer) = data.writer.lock() else {
                             error!("{}", crate::DB_MUTEX_ERROR);
                             return;
                         };
@@ -65,15 +62,13 @@ pub(crate) fn spawn_hits_worker(
 }
 
 // Do database cleanup once every hour
-pub(crate) fn spawn_cleaner(
-    writer: Arc<Mutex<Connection>>,
-    db_path: String,
-    use_wal_mode: bool,
-    disable_backups: bool,
-) -> tokio::task::JoinHandle<()> {
+pub(crate) fn spawn_cleaner(data: web::Data<AppState>) -> tokio::task::JoinHandle<()> {
     spawn({
-        let writer = Arc::clone(&writer);
         async move {
+            let use_wal_mode = data.config.use_wal_mode;
+            let db_path = &data.config.db_location;
+            let disable_backups = data.config.disable_backups;
+
             info!("Starting database cleanup service, will run once every hour.");
             let mut interval = interval(Duration::from_hours(1));
             let mut first_run = true;
@@ -83,9 +78,9 @@ pub(crate) fn spawn_cleaner(
 
                 info!("Starting database cleanup task.");
                 for attempt in 0..3 {
-                    let mutex = writer.clone();
+                    let data = data.clone();
                     let result = tokio::task::spawn_blocking(move || {
-                        let Ok(mut db) = mutex.lock() else {
+                        let Ok(mut db) = data.writer.lock() else {
                             error!("{}", crate::DB_MUTEX_ERROR);
                             return Err(crate::DB_MUTEX_ERROR.to_string());
                         };

@@ -7,6 +7,7 @@ use serde::Serialize;
 use std::{collections::HashMap, rc::Rc};
 
 use crate::{
+    AppState,
     database::queries,
     services::{
         types::{
@@ -146,8 +147,9 @@ pub(crate) fn getall(
 }
 
 // Resolve site and add link to add_hit queue
-pub(crate) fn find_and_add_hit(shortlink: &str, db: &Connection) -> Result<String, ()> {
+pub(crate) fn find_and_add_hit(shortlink: &str, data: &AppState) -> Result<String, ()> {
     let now = chrono::Utc::now().timestamp();
+    let db = data.readers.get().map_err(drop)?;
     let Ok(mut statement) = db.prepare_cached(queries::ACCESS_URL) else {
         error!("Error preparing SQL statement for find link.");
         return Err(());

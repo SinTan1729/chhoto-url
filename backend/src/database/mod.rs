@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: MIT
 
 mod events;
+pub(crate) mod pool;
 mod queries;
 mod utils;
 

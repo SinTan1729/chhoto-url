@@ -7,7 +7,7 @@ use std::{
     env::{VarError, var},
     fmt::Display,
     fs,
-    path::Path,
+    path::{Path, PathBuf},
     sync::Arc,
 };
 use url::Url;
@@ -66,14 +66,14 @@ fn read_config_wrapper(new_name: &str, old_name: &str) -> Result<String, VarErro
 }
 
 // Get db location, and move from old location if needed
-fn get_db_location() -> String {
+fn get_db_location() -> PathBuf {
     if let Some(db_url) = read_config_wrapper("CHHOTO_DB_URL", "db_url")
         .ok()
         .map(|s| s.trim().to_owned())
         .filter(|s| !s.is_empty())
     {
         info!("Custom database location was provided.");
-        return db_url;
+        return db_url.into();
     }
 
     let (legacy_location, new_location) = ("/urls.sqlite", "/data/urls.sqlite");
@@ -117,7 +117,7 @@ fn get_db_location() -> String {
             info!("Existing database found at {new_location}.");
         }
     }
-    new_location.to_owned()
+    new_location.into()
 }
 
 #[derive(Clone)]
@@ -146,7 +146,7 @@ impl Credential {
 pub(crate) struct Config {
     pub(crate) listen_address: String,
     pub(crate) port: u16,
-    pub(crate) db_location: String,
+    pub(crate) db_location: PathBuf,
     pub(crate) cache_control_header: Option<String>,
     pub(crate) disable_frontend: bool,
     pub(crate) custom_site_title: Option<String>,
@@ -175,7 +175,13 @@ pub(crate) struct Config {
 
 pub(crate) fn read() -> Config {
     let db_location = get_db_location();
-    info!("Database Location is set to: {db_location}");
+    info!(
+        "Database Location is set to: {}",
+        db_location
+            .as_os_str()
+            .to_str()
+            .expect("DB location should be a valid string.")
+    );
 
     // Get the address environment variable
     let listen_address = read_config_wrapper("CHHOTO_LISTEN_ADDRESS", "listen_address")

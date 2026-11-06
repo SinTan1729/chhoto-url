@@ -1,0 +1,47 @@
+// SPDX-FileCopyrightText: 2023-2026 Sayantan Santra <sayantan.santra689@gmail.com>
+// SPDX-License-Identifier: MIT
+
+use r2d2::{ManageConnection, Pool};
+use rusqlite::Connection;
+use std::path::PathBuf;
+use std::time::Duration;
+
+use crate::database::is_database_healthy;
+
+pub(crate) struct SqliteConnectionManager {
+    path: PathBuf,
+}
+
+impl ManageConnection for SqliteConnectionManager {
+    type Connection = Connection;
+    type Error = rusqlite::Error;
+
+    fn connect(&self) -> Result<Connection, Self::Error> {
+        let conn = super::utils::open_db(&self.path, true)?;
+        Ok(conn)
+    }
+
+    fn is_valid(&self, conn: &mut Connection) -> Result<(), Self::Error> {
+        is_database_healthy(conn)
+    }
+
+    fn has_broken(&self, _conn: &mut Connection) -> bool {
+        false
+    }
+}
+
+pub(crate) type DbPool = Pool<SqliteConnectionManager>;
+
+pub(crate) fn open_pool(path: &PathBuf) -> Result<DbPool, r2d2::Error> {
+    let manager = SqliteConnectionManager { path: path.clone() };
+
+    Pool::builder()
+        .max_size(
+            2 * std::thread::available_parallelism()
+                .map(usize::from)
+                .unwrap_or(2) as u32,
+        )
+        .min_idle(Some(2))
+        .connection_timeout(Duration::from_secs(5))
+        .build(manager)
+}
