@@ -107,8 +107,7 @@ async fn main() -> Result<()> {
 
     // Generate or load session master key
     let secret_key = utils::generate_key();
-    let port = config.port;
-    let addr = config.listen_address.clone();
+    let (port, addr) = (config.port, config.listen_address.clone());
 
     let (hits_tx, hits_rx) = mpsc::channel::<(String, bool)>(1024);
 
