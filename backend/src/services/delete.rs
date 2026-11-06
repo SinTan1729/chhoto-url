@@ -90,7 +90,7 @@ async fn delete_link(
                     let response = JSONResponse {
                         success: true,
                         error: false,
-                        reason: deleted_text(shortlink.to_string()),
+                        reason: deleted_text(shortlink.to_owned()),
                     };
                     HttpResponse::Ok().json(response)
                 }

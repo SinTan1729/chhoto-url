@@ -8,11 +8,11 @@ use std::time::Duration;
 
 use crate::database::is_database_healthy;
 
-pub(crate) struct SqliteConnectionManager {
+pub(crate) struct ReaderDbManager {
     path: PathBuf,
 }
 
-impl ManageConnection for SqliteConnectionManager {
+impl ManageConnection for ReaderDbManager {
     type Connection = Connection;
     type Error = rusqlite::Error;
 
@@ -30,10 +30,10 @@ impl ManageConnection for SqliteConnectionManager {
     }
 }
 
-pub(crate) type DbPool = Pool<SqliteConnectionManager>;
+pub(crate) type DbPool = Pool<ReaderDbManager>;
 
 pub(crate) fn open_pool(path: &Path) -> Result<DbPool, r2d2::Error> {
-    let manager = SqliteConnectionManager {
+    let manager = ReaderDbManager {
         path: path.to_path_buf(),
     };
 

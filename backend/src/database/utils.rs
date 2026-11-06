@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: MIT
 
 use chrono::Utc;
-use log::{debug, info, warn};
+use log::{debug, error, info, warn};
 use rusqlite::{Connection, Error, OpenFlags, backup::NO_PROGRESS, named_params};
 use std::{
     collections::HashSet,
@@ -484,7 +484,8 @@ pub(crate) fn open_db(path: &PathBuf, read_only: bool) -> Result<Connection, Err
             | OpenFlags::SQLITE_OPEN_NO_MUTEX
     };
 
-    let conn = Connection::open_with_flags(path, flags)?;
+    let conn = Connection::open_with_flags(path, flags)
+        .inspect_err(|err| error!("Error while opening database: {err}"))?;
     conn.busy_timeout(Duration::from_secs(5))?;
     Ok(conn)
 }

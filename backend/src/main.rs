@@ -18,7 +18,7 @@ use std::{
 };
 use tokio::sync::mpsc;
 
-use crate::database::pool::{SqliteConnectionManager, open_pool};
+use crate::database::pool::{ReaderDbManager, open_pool};
 
 // Import modules
 mod auth;
@@ -42,7 +42,7 @@ pub(crate) const DB_MUTEX_ERROR: &str = "Mutex for Database writer is poisoned!"
 // This struct represents state
 struct AppState {
     hits_tx: mpsc::Sender<(String, bool)>,
-    readers: Pool<SqliteConnectionManager>,
+    readers: Pool<ReaderDbManager>,
     writer: Mutex<Connection>,
     config: config::Config,
     frontend_dir: String,
