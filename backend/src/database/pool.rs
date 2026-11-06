@@ -6,8 +6,6 @@ use rusqlite::Connection;
 use std::path::{Path, PathBuf};
 use std::time::Duration;
 
-use crate::database::is_database_healthy;
-
 pub(crate) struct ReaderDbManager {
     path: PathBuf,
 }
@@ -21,8 +19,8 @@ impl ManageConnection for ReaderDbManager {
         Ok(conn)
     }
 
-    fn is_valid(&self, conn: &mut Connection) -> Result<(), Self::Error> {
-        is_database_healthy(conn)
+    fn is_valid(&self, _conn: &mut Connection) -> Result<(), Self::Error> {
+        Ok(())
     }
 
     fn has_broken(&self, _conn: &mut Connection) -> bool {
