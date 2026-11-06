@@ -84,6 +84,9 @@ that's what I use for testing. A sample file for podman quadlets is provided at
 All the configuration is done using environmental variables. Here's a link of all supported ones. Please take
 a look at the ones marked with a `#` as those are important, especially [`CHHOTO_SQLITE_USE_WAL_MODE`](#chhoto_sqlite_use_wal_mode).
 
+**Note:** Make sure that you carefully check the logs for warnings or errors after any changes in configs in case something
+isn't working properly.
+
 <!-- prettier-ignore-start -->
 <a id="chhoto_db_url"></a>
 ### `CHHOTO_DB_URL` \#
