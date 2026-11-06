@@ -37,8 +37,8 @@ panic = "abort"
 strip = "symbols"
 
 [dependencies]
-actix-web = { version = "4.18.1", features = [ "secure-cookies" ] }
-actix-files = "0.7.3"
+actix-web = { version = "4.18.2", features = [ "secure-cookies" ] }
+actix-files = "0.7.4"
 rusqlite = { version = "0.41.1", features = [ "backup", "bundled" ] }
 regex = "1.13.1"
 rand = "0.10.3"
@@ -55,9 +55,10 @@ openidconnect = "4.1.0"
 env_filter = "2.0.0"
 base64-url = "4.0.1"
 time = { version = "0.3.55", features = [ "formatting", "macros" ] }
+r2d2 = "0.8.10"
 
 [dev-dependencies]
-actix-http = "3.20.0"
+actix-http = "3.20.3"
 actix-service = "2.0.3"
 regex = "1.13.1"
 tempfile = "3.27.0"
