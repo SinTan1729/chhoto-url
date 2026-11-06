@@ -3,7 +3,7 @@
 
 use r2d2::{ManageConnection, Pool};
 use rusqlite::Connection;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use std::time::Duration;
 
 use crate::database::is_database_healthy;
@@ -32,8 +32,10 @@ impl ManageConnection for SqliteConnectionManager {
 
 pub(crate) type DbPool = Pool<SqliteConnectionManager>;
 
-pub(crate) fn open_pool(path: &PathBuf) -> Result<DbPool, r2d2::Error> {
-    let manager = SqliteConnectionManager { path: path.clone() };
+pub(crate) fn open_pool(path: &Path) -> Result<DbPool, r2d2::Error> {
+    let manager = SqliteConnectionManager {
+        path: path.to_path_buf(),
+    };
 
     Pool::builder()
         .max_size(
