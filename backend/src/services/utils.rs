@@ -337,7 +337,6 @@ pub(super) fn derive_origin_info(connection: &ConnectionInfo) -> (String, String
     (origin, callback)
 }
 
-pub(super) const OIDC_MUTEX_ERROR: &str = "Mutex for OIDC Data is poisoned!";
 // Verify OIDC callback data
 pub(super) async fn oidc_verify(
     url: RedirectUrl,
@@ -350,7 +349,10 @@ pub(super) async fn oidc_verify(
     };
 
     let (verifier, nonce, http_client, client) = {
-        let mut oidc = oidc.lock().expect(OIDC_MUTEX_ERROR);
+        let Ok(mut oidc) = oidc.lock() else {
+            error!("{}", crate::OIDC_MUTEX_ERROR);
+            return Err("Something went wrong!".to_string());
+        };
 
         let Some((verifier, nonce)) = oidc.states.remove(state) else {
             return Err("State mismatch.".to_string());
@@ -364,9 +366,10 @@ pub(super) async fn oidc_verify(
         )
     };
 
-    let code = params
-        .code
-        .expect("Authorization code should be available when state it valid.");
+    let Some(code) = params.code else {
+        error!("Authorization code should be available when state is valid.");
+        return Err("Something went wrong!".into());
+    };
 
     let token_response = client
         .exchange_code(AuthorizationCode::new(code))
@@ -503,11 +506,10 @@ fn gen_link(
         SlugStyle::Pair => {
             let adj = ADJECTIVES
                 .choose(&mut rand::rng())
-                .expect("Error choosing random adjective.")
-                .to_owned();
+                .expect("This should never happen.");
             let name = NAMES
                 .choose(&mut rand::rng())
-                .expect("Error choosing random name.");
+                .expect("This should never happen.");
             let mut out = String::with_capacity(adj.len() + name.len() + 4);
             out.push_str(name);
             out.push('-');

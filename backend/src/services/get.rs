@@ -214,7 +214,7 @@ async fn oidc_redirect(auth: Auth, data: web::Data<AppState>, req: HttpRequest) 
     };
 
     let Ok(oidc) = &mut oidc.lock() else {
-        error!("{}", super::utils::OIDC_MUTEX_ERROR);
+        error!("{}", crate::OIDC_MUTEX_ERROR);
         return HttpResponse::InternalServerError()
             .content_type(TEXT_PLAIN)
             .body("Internal server error.");
@@ -320,6 +320,17 @@ async fn oidc_callback(
 
 // Healthcheck endpoint
 pub(super) async fn health_handler(data: web::Data<AppState>) -> impl Responder {
+    let unhealthy = HttpResponse::InternalServerError()
+        .content_type(TEXT_PLAIN)
+        .body("unhealthy");
+    if data.writer.is_poisoned() {
+        error!("{}", crate::DB_MUTEX_ERROR);
+        return unhealthy;
+    }
+    if data.oidc_data.as_ref().is_some_and(|m| m.is_poisoned()) {
+        error!("{}", crate::OIDC_MUTEX_ERROR);
+        return unhealthy;
+    }
     if let Ok(db) = data.readers.get()
         && spawn_blocking(move || database::is_database_healthy(&db))
             .await
@@ -328,8 +339,6 @@ pub(super) async fn health_handler(data: web::Data<AppState>) -> impl Responder 
         HttpResponse::Ok().content_type(TEXT_PLAIN).body("healthy")
     } else {
         error!("{}", crate::DB_POOL_ERROR);
-        HttpResponse::InternalServerError()
-            .content_type(TEXT_PLAIN)
-            .body("unhealthy")
+        unhealthy
     }
 }

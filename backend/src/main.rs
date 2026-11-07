@@ -43,6 +43,7 @@ pub(crate) const RO_DB_OPEN_ERROR: &str = "Unable to open reader database connec
 pub(crate) const RW_DB_OPEN_ERROR: &str = "Unable to open writer database connection!";
 pub(crate) const DB_POOL_ERROR: &str = "Unable to get a reader database form the pool!";
 pub(crate) const DB_MUTEX_ERROR: &str = "Mutex for Database writer is poisoned!";
+pub(crate) const OIDC_MUTEX_ERROR: &str = "Mutex for OIDC Data is poisoned!";
 
 struct Semaphores {
     auth: Arc<Semaphore>,
