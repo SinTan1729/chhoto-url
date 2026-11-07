@@ -9,11 +9,11 @@ use actix_web::{
     web,
 };
 use argon2::PasswordVerifier;
+use constant_time_eq::constant_time_eq;
 use log::{debug, warn};
 use sha2::{Digest, Sha512};
 use std::pin::Pin;
 use std::time::SystemTime;
-use subtle::ConstantTimeEq;
 use tokio::task::spawn_blocking;
 
 use crate::{AppState, services::types::JSONResponse};
@@ -95,12 +95,10 @@ async fn is_key_valid(key: String, api_key: Credential) -> Result<(), String> {
             Argon2(hash) => argon2::Argon2::default()
                 .verify_password(key.as_bytes(), hash.as_ref())
                 .is_ok(),
-            SHA512(val) => {
-                ConstantTimeEq::ct_eq(Sha512::digest(key).as_slice(), val.as_ref()).into()
-            }
+            SHA512(val) => constant_time_eq(Sha512::digest(key).as_slice(), val.as_ref()),
             Plain(val) => {
                 // If hashing is not enabled, use the plaintext API key for matching
-                ConstantTimeEq::ct_eq(val.as_bytes(), key.as_bytes()).into()
+                constant_time_eq(val.as_bytes(), key.as_bytes())
             }
         }
     })

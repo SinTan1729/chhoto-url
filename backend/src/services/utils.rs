@@ -12,6 +12,7 @@ use actix_web::{
     web,
 };
 use argon2::{Argon2, PasswordVerifier};
+use constant_time_eq::constant_time_eq;
 use log::{debug, error, warn};
 use nanoid::nanoid;
 use openidconnect::{
@@ -27,7 +28,6 @@ use std::{
     env,
     sync::{Arc, Mutex},
 };
-use subtle::ConstantTimeEq;
 use tokio::{sync::Semaphore, task::spawn_blocking};
 use url::Url;
 
@@ -579,12 +579,9 @@ fn is_authorized(
                 .verify_password(provided_pass.as_bytes(), hash.as_ref())
                 .is_ok(),
             Credential::SHA512(hash) => {
-                ConstantTimeEq::ct_eq(Sha512::digest(provided_pass).as_slice(), hash.as_ref())
-                    .into()
+                constant_time_eq(Sha512::digest(provided_pass).as_slice(), hash.as_ref())
             }
-            Credential::Plain(pass) => {
-                ConstantTimeEq::ct_eq(pass.as_bytes(), provided_pass.as_bytes()).into()
-            }
+            Credential::Plain(pass) => constant_time_eq(pass.as_bytes(), provided_pass.as_bytes()),
         };
 
         (authorized, true)
