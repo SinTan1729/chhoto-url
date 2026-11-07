@@ -189,6 +189,11 @@ pub(super) fn add_links_helper(
             reason: "An empty array of links was provided!".to_owned(),
         });
     }
+    if chunks.len() > 2000 {
+        return Err(ClientError {
+            reason: "More than 2000 links were provided!".to_owned(),
+        });
+    }
 
     let allow_capital_letters = config.allow_capital_letters;
     let public_mode_expiry_delay = config.public_mode_expiry_delay;

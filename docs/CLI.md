@@ -100,8 +100,8 @@ curl -X POST \
     http://localhost:4567/api/new
 ```
 
-In that case, the response is an array containing one
-result per input object (in order), each in one of the formats shown above.
+In that case, the response is an array containing one result per input object (in order), each in one of the formats shown above.
+A maximum of 2000 links can be added in a single request.
 
 Except for malformed requests or internal server errors, the HTTP status code is always `200`. Clients must inspect the `success` field of
 each response object to determine whether the operation succeeded.
