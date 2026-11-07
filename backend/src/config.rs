@@ -300,7 +300,11 @@ pub(crate) fn read() -> Config {
         .filter(|s| !s.is_empty())
     {
         let url = remove_surrounding_quotes(&provided_url);
-        let url = remove_trailing_slash(&url);
+        let mut url = remove_trailing_slash(&url);
+        if !(url.starts_with("https://") || url.starts_with("http://")) {
+            warn!("No scheme supplied for site url {url}, defaulting to https.");
+            url = format!("https://{url}");
+        }
 
         match Url::parse(&url) {
             Ok(u) => {
