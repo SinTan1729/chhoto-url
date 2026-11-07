@@ -32,6 +32,7 @@ impl TryIntoHeaderValue for Credential {
         match self {
             Credential::Plain(s) => HeaderValue::from_str(&s),
             Credential::Argon2(_) => HeaderValue::from_str("Argon2 cannot be converted to header."),
+            Credential::SHA512(_) => HeaderValue::from_str("SHA512 cannot be converted to header."),
         }
     }
 }

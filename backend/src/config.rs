@@ -124,19 +124,21 @@ fn get_db_location() -> PathBuf {
 pub(crate) enum Credential {
     Plain(String),
     Argon2(Arc<argon2::PasswordHash>),
+    SHA512(Arc<[u8]>),
 }
 impl Credential {
     fn parse(val: String, hash_algorithm: &Option<String>) -> Option<Self> {
-        if hash_algorithm.as_deref() == Some("Argon2") {
-            match argon2::PasswordHash::new(&val) {
-                Ok(hash) => Some(Credential::Argon2(Arc::new(hash))),
+        match hash_algorithm.as_deref() {
+            Some("Argon2") => match argon2::PasswordHash::new(&val) {
+                Ok(hash) => Some(Credential::Argon2(hash.into())),
                 Err(e) => {
                     warn!("Invalid Argon2 hash was provided: {e}");
                     None
                 }
-            }
-        } else {
-            Some(Credential::Plain(val))
+            },
+            Some("SHA512") => Some(Credential::SHA512(val.as_bytes().into())),
+            None => Some(Credential::Plain(val)),
+            _ => panic!("Bad hashing algorithm was provided!"),
         }
     }
 }
@@ -214,6 +216,14 @@ pub(crate) fn read() -> Config {
     let hash_algorithm = read_config_wrapper("CHHOTO_HASH_ALGORITHM", "hash_algorithm")
         .ok()
         .map(|h| h.trim().to_owned());
+    let password_hash_algorithm = var("CHHOTO_PASSWORD_HASH_ALGORITHM")
+        .ok()
+        .map(|h| h.trim().to_owned())
+        .or(hash_algorithm.clone());
+    let api_hash_algorithm = var("CHHOTO_API_HASH_ALGORITHM")
+        .ok()
+        .map(|h| h.trim().to_owned())
+        .or(hash_algorithm.clone());
     // If an API key is set, check the security
     let api_key = read_config_wrapper("CHHOTO_API_KEY", "api_key")
         .ok()
@@ -233,7 +243,7 @@ pub(crate) fn read() -> Config {
                 info!("Secure API key was provided.");
             }
         })
-        .and_then(|s| Credential::parse(s, &hash_algorithm));
+        .and_then(|s| Credential::parse(s, &api_hash_algorithm));
 
     let public_mode =
         read_config_wrapper("CHHOTO_PUBLIC_MODE", "public_mode") == Ok(String::from("Enable"));
@@ -283,7 +293,7 @@ pub(crate) fn read() -> Config {
                 warn!("No password was provided.");
                 None
             },
-            |s| Credential::parse(s, &hash_algorithm),
+            |s| Credential::parse(s, &password_hash_algorithm),
         );
 
     if password.is_some() || api_key.is_some() {

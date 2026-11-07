@@ -10,14 +10,16 @@ use actix_web::{
 };
 use argon2::PasswordVerifier;
 use log::{debug, warn};
+use sha2::{Digest, Sha512};
 use std::pin::Pin;
 use std::time::SystemTime;
+use subtle::ConstantTimeEq;
 use tokio::task::spawn_blocking;
 
 use crate::{AppState, services::types::JSONResponse};
 use crate::{
     background::acquire_permit,
-    config::Credential::{self, Argon2, Plain},
+    config::Credential::{self, Argon2, Plain, SHA512},
 };
 
 const API_HEADER: &str = "X-API-Key";
@@ -87,18 +89,25 @@ async fn is_api_ok(
 // Validate API key
 async fn is_key_valid(key: String, api_key: Credential) -> Result<(), String> {
     // Check if API Key is hashed using Argon2. More algorithms maybe added later.
-    let authorized = match api_key {
-        // Semaphore is checked before this in is_api_ok
-        Argon2(hash) => spawn_blocking(move || {
-            argon2::Argon2::default().verify_password(key.as_bytes(), hash.as_ref())
-        })
-        .await
-        .map_err(|_| "API key validation temporarily unavailable.".to_string())?
-        .is_ok(),
-        Plain(val) => {
-            // If hashing is not enabled, use the plaintext API key for matching
-            subtle::ConstantTimeEq::ct_eq(val.as_bytes(), key.as_bytes()).into()
+    let Ok(authorized) = spawn_blocking(move || {
+        match api_key {
+            // Semaphore is checked before this in is_api_ok
+            Argon2(hash) => argon2::Argon2::default()
+                .verify_password(key.as_bytes(), hash.as_ref())
+                .is_ok(),
+            SHA512(val) => {
+                ConstantTimeEq::ct_eq(Sha512::digest(key).as_slice(), val.as_ref()).into()
+            }
+            Plain(val) => {
+                // If hashing is not enabled, use the plaintext API key for matching
+                ConstantTimeEq::ct_eq(val.as_bytes(), key.as_bytes()).into()
+            }
         }
+    })
+    .await
+    else {
+        warn!("Error verifying API key.");
+        return Err("API key validation temporarily unavailable.".to_string());
     };
     if !authorized {
         warn!("Incorrect API key was provided.");

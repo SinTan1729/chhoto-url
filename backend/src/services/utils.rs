@@ -12,7 +12,7 @@ use actix_web::{
     web,
 };
 use argon2::{Argon2, PasswordVerifier};
-use log::{debug, error};
+use log::{debug, error, warn};
 use nanoid::nanoid;
 use openidconnect::{
     AccessTokenHash, AuthorizationCode, OAuth2TokenResponse, RedirectUrl, TokenResponse,
@@ -21,11 +21,13 @@ use rand::{random_range, seq::IndexedRandom};
 use rusqlite::Connection;
 use serde::Deserialize;
 use serde_json::Value;
+use sha2::{Digest, Sha512};
 use std::{
     collections::HashSet,
     env,
     sync::{Arc, Mutex},
 };
+use subtle::ConstantTimeEq;
 use tokio::{sync::Semaphore, task::spawn_blocking};
 use url::Url;
 
@@ -561,7 +563,10 @@ pub(super) async fn verify_login(
         )
     })
     .await
-    .map_err(actix_web::error::ErrorInternalServerError)
+    .map_err({
+        warn!("Error verifying password.");
+        actix_web::error::ErrorInternalServerError
+    })
 }
 fn is_authorized(
     provided_pass: &str,
@@ -573,8 +578,12 @@ fn is_authorized(
             Credential::Argon2(hash) => Argon2::default()
                 .verify_password(provided_pass.as_bytes(), hash.as_ref())
                 .is_ok(),
+            Credential::SHA512(hash) => {
+                ConstantTimeEq::ct_eq(Sha512::digest(provided_pass).as_slice(), hash.as_ref())
+                    .into()
+            }
             Credential::Plain(pass) => {
-                subtle::ConstantTimeEq::ct_eq(pass.as_bytes(), provided_pass.as_bytes()).into()
+                ConstantTimeEq::ct_eq(pass.as_bytes(), provided_pass.as_bytes()).into()
             }
         };
 
