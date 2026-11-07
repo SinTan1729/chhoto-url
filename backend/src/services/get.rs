@@ -16,6 +16,7 @@ use tokio::task::spawn_blocking;
 use crate::{
     AppState,
     auth::{Auth, gen_cookie},
+    background::acquire_permit,
     database,
     services::{
         types::{
@@ -53,21 +54,28 @@ async fn getall(
         Auth::InvalidAPIKey { result } => HttpResponse::Unauthorized()
             .content_type(TEXT_PLAIN)
             .body(result.reason),
-        _ => match spawn_blocking(move || {
-            utils::getall_helper(&data.into_inner(), params.into_inner())
-        })
-        .await
-        .map_err(|_| ChhotoError::ServerError)
-        .flatten()
-        {
-            Ok(s) => HttpResponse::Ok().content_type(APPLICATION_JSON).body(s),
-            Err(ServerError) => HttpResponse::InternalServerError()
+        _ => {
+            let server_error = HttpResponse::InternalServerError()
                 .content_type(TEXT_PLAIN)
-                .body("Something went wrong while loading the links.".to_owned()),
-            Err(ClientError { reason }) => HttpResponse::BadRequest()
-                .content_type(TEXT_PLAIN)
-                .body(reason),
-        },
+                .body("Something went wrong while loading the links.".to_owned());
+
+            let Ok(_permit) = acquire_permit(data.permits.db.clone()).await else {
+                return server_error;
+            };
+            match spawn_blocking(move || {
+                utils::getall_helper(&data.into_inner(), params.into_inner())
+            })
+            .await
+            .map_err(|_| ChhotoError::ServerError)
+            .flatten()
+            {
+                Ok(s) => HttpResponse::Ok().content_type(APPLICATION_JSON).body(s),
+                Err(ServerError) => server_error,
+                Err(ClientError { reason }) => HttpResponse::BadRequest()
+                    .content_type(TEXT_PLAIN)
+                    .body(reason),
+            }
+        }
     }
 }
 
@@ -158,6 +166,9 @@ pub(super) async fn link_handler(
 ) -> impl Responder {
     let shortlink_clone = shortlink.clone();
     let data_clone = data.clone();
+    let Ok(_permit) = acquire_permit(data.permits.db.clone()).await else {
+        return Either::Right(utils::error404(data).await);
+    };
     if let Ok(Ok(longlink)) = spawn_blocking(move || {
         database::find_and_add_hit(&shortlink_clone, &data_clone.into_inner())
     })

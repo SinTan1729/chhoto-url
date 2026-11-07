@@ -21,13 +21,18 @@ use rand::{random_range, seq::IndexedRandom};
 use rusqlite::Connection;
 use serde::Deserialize;
 use serde_json::Value;
-use std::{collections::HashSet, env, sync::Mutex};
-use tokio::task::spawn_blocking;
+use std::{
+    collections::HashSet,
+    env,
+    sync::{Arc, Mutex},
+};
+use tokio::{sync::Semaphore, task::spawn_blocking};
 use url::Url;
 
 use crate::{
     AppState,
     auth::Auth,
+    background::acquire_permit,
     config::{Config, Credential, SlugStyle},
     database::{self, add_links},
     oidc::OidcData,
@@ -536,7 +541,13 @@ pub(super) async fn verify_login(
     provided_password: String,
     password: Option<Credential>,
     auth: Auth,
+    permit: Arc<Semaphore>,
 ) -> Result<(bool, bool), actix_web::Error> {
+    let Ok(_permit) = acquire_permit(permit).await else {
+        return Err(actix_web::error::ErrorInternalServerError(
+            "Password verifier threads are full.",
+        ));
+    };
     spawn_blocking(move || {
         is_authorized(
             &provided_password,

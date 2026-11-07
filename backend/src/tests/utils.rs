@@ -122,6 +122,12 @@ pub(super) async fn create_app(
         writer,
         config: conf.clone(),
         frontend_dir: String::new(),
+        permits: {
+            Semaphores {
+                auth: Arc::new(Semaphore::new(1)),
+                db: Arc::new(Semaphore::new(2)),
+            }
+        },
         oidc_data: None,
         secret_key: Key::generate(),
     });

@@ -14,8 +14,11 @@ use std::pin::Pin;
 use std::time::SystemTime;
 use tokio::task::spawn_blocking;
 
-use crate::config::Credential::{self, Argon2, Plain};
 use crate::{AppState, services::types::JSONResponse};
+use crate::{
+    background::acquire_permit,
+    config::Credential::{self, Argon2, Plain},
+};
 
 const API_HEADER: &str = "X-API-Key";
 pub(crate) const COOKIE_NAME: &str = "chhoto-url-auth";
@@ -23,13 +26,24 @@ const COOKIE_VALUE_PASSWORD: &str = "chhoto-url-password";
 const COOKIE_VALUE_OIDC: &str = "chhoto-url-oidc";
 
 // Read API key from header and process it
-async fn is_api_ok(headers: &HeaderMap, api_key: Option<Credential>) -> JSONResponse {
+async fn is_api_ok(
+    headers: &HeaderMap,
+    api_key: Option<Credential>,
+    data: web::Data<AppState>,
+) -> JSONResponse {
     let api_header = headers.get(API_HEADER).and_then(|h| h.to_str().ok());
     // If the api_key environment variable exists
     if let Some(key) = api_key {
         // If the header exists
         if let Some(header) = api_header {
             // If the header is correct
+            let Ok(_permit) = acquire_permit(data.permits.auth.clone()).await else {
+                return JSONResponse {
+                    success: false,
+                    error: true,
+                    reason: "Something went wrong.".to_owned(),
+                };
+            };
             match is_key_valid(header.to_string(), key).await {
                 Ok(()) => JSONResponse {
                     success: true,
@@ -74,6 +88,7 @@ async fn is_api_ok(headers: &HeaderMap, api_key: Option<Credential>) -> JSONResp
 async fn is_key_valid(key: String, api_key: Credential) -> Result<(), String> {
     // Check if API Key is hashed using Argon2. More algorithms maybe added later.
     let authorized = match api_key {
+        // Semaphore is checked before this in is_api_ok
         Argon2(hash) => spawn_blocking(move || {
             argon2::Argon2::default().verify_password(key.as_bytes(), hash.as_ref())
         })
@@ -144,7 +159,7 @@ impl FromRequest for Auth {
         let no_oidc = data.oidc_data.is_none();
 
         Box::pin(async move {
-            let api_result = is_api_ok(req.headers(), api_key).await;
+            let api_result = is_api_ok(req.headers(), api_key, data.clone()).await;
 
             if api_result.success {
                 return Ok(Auth::ValidAPIKey);

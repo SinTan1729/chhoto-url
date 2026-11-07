@@ -13,6 +13,7 @@ use tokio::task::spawn_blocking;
 use crate::{
     AppState,
     auth::{Auth, COOKIE_NAME},
+    background::acquire_permit,
     services::{
         types::{
             ChhotoError::{self, ClientError, ServerError},
@@ -71,6 +72,14 @@ async fn delete_link(
     match auth {
         Auth::ValidAPIKey => {
             let shortlink_clone = shortlink.clone();
+            let server_error = HttpResponse::InternalServerError().json(JSONResponse {
+                success: false,
+                error: true,
+                reason: "Something went wrong when deleting the link.".to_owned(),
+            });
+            let Ok(_permit) = acquire_permit(data.permits.db.clone()).await else {
+                return server_error;
+            };
             match spawn_blocking(move || {
                 let Ok(writer) = data.writer.lock() else {
                     error!("{}", crate::DB_MUTEX_ERROR);
@@ -94,14 +103,7 @@ async fn delete_link(
                     };
                     HttpResponse::Ok().json(response)
                 }
-                Err(ServerError) => {
-                    let response = JSONResponse {
-                        success: false,
-                        error: true,
-                        reason: "Something went wrong when deleting the link.".to_owned(),
-                    };
-                    HttpResponse::InternalServerError().json(response)
-                }
+                Err(ServerError) => server_error,
                 Err(ClientError { reason }) => {
                     let response = JSONResponse {
                         success: false,
@@ -116,6 +118,12 @@ async fn delete_link(
         // If using password - keeps backwards compatibility
         Auth::ValidSession | Auth::NoAuthNeeded => {
             let shortlink_clone = shortlink.clone();
+            let server_error = HttpResponse::NotFound()
+                .content_type(TEXT_PLAIN)
+                .body("Not found!");
+            let Ok(_permit) = acquire_permit(data.permits.auth.clone()).await else {
+                return server_error;
+            };
             if spawn_blocking(move || {
                 let Ok(writer) = data.writer.lock() else {
                     error!("{}", crate::DB_MUTEX_ERROR);
@@ -134,9 +142,7 @@ async fn delete_link(
                     .content_type(TEXT_PLAIN)
                     .body(deleted_text(shortlink.to_string()))
             } else {
-                HttpResponse::NotFound()
-                    .content_type(TEXT_PLAIN)
-                    .body("Not found!")
+                server_error
             }
         }
         Auth::None { result: _ } => HttpResponse::Unauthorized().body("Not logged in!"),

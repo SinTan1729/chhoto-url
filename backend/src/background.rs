@@ -4,12 +4,12 @@
 use actix_web::web;
 use chrono::{Local, Timelike};
 use log::{error, info, warn};
-use std::collections::HashMap;
+use std::{collections::HashMap, sync::Arc};
 use tokio::{
     spawn,
-    sync::mpsc,
+    sync::{AcquireError, OwnedSemaphorePermit, Semaphore, mpsc},
     task::spawn_blocking,
-    time::{Duration, Instant, interval, sleep, sleep_until},
+    time::{Duration, Instant, interval, sleep, sleep_until, timeout},
 };
 
 use crate::{AppState, database};
@@ -136,4 +136,18 @@ pub(crate) fn spawn_cleaner(data: web::Data<AppState>) -> tokio::task::JoinHandl
             }
         }
     })
+}
+
+pub(crate) enum AcquirePermitError {
+    Timeout,
+    Closed(AcquireError),
+}
+pub(crate) async fn acquire_permit(
+    semaphore: Arc<Semaphore>,
+) -> Result<OwnedSemaphorePermit, AcquirePermitError> {
+    match timeout(Duration::from_secs(5), semaphore.acquire_owned()).await {
+        Ok(Ok(permit)) => Ok(permit),
+        Ok(Err(err)) => Err(AcquirePermitError::Closed(err)),
+        Err(_) => Err(AcquirePermitError::Timeout),
+    }
 }

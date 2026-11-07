@@ -13,6 +13,7 @@ use tokio::task::spawn_blocking;
 use crate::{
     AppState,
     auth::{Auth, gen_cookie},
+    background::acquire_permit,
     services::{
         types::{
             AddLinkResponse,
@@ -109,6 +110,14 @@ async fn add_links(
             };
 
             let data_clone = data.clone();
+            let Ok(_permit) = acquire_permit(data.permits.db.clone()).await else {
+                let res = JSONResponse {
+                    success: false,
+                    error: true,
+                    reason: "Something went wrong while adding links".to_owned(),
+                };
+                return HttpResponse::InternalServerError().json(res);
+            };
             match spawn_blocking(move || {
                 let Ok(mut writer) = data_clone.writer.lock() else {
                     error!("{}", crate::DB_MUTEX_ERROR);
@@ -186,15 +195,21 @@ async fn login(
         _ => return HttpResponse::BadRequest().body("Bad content type."),
     };
 
-    let (authorized, password_needed) =
-        match utils::verify_login(password, config.password.clone(), auth).await {
-            Ok(result) => result,
-            Err(err) => {
-                error!("Password verification worker failed: {err}");
-                return HttpResponse::InternalServerError()
-                    .body("Authentication temporarily unavailable.");
-            }
-        };
+    let (authorized, password_needed) = match utils::verify_login(
+        password,
+        config.password.clone(),
+        auth,
+        data.permits.auth.clone(),
+    )
+    .await
+    {
+        Ok(result) => result,
+        Err(err) => {
+            error!("Password verification worker failed: {err}");
+            return HttpResponse::InternalServerError()
+                .body("Authentication temporarily unavailable.");
+        }
+    };
 
     if authorized {
         let cookie = gen_cookie(remember, false, &data.secret_key);

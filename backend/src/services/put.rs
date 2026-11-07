@@ -11,6 +11,7 @@ use tokio::task::spawn_blocking;
 use crate::{
     AppState,
     auth::Auth,
+    background::acquire_permit,
     services::{
         types::{
             ChhotoError::{ClientError, ServerError},
@@ -29,6 +30,14 @@ async fn edit_link(req: String, auth: Auth, data: web::Data<AppState>) -> HttpRe
     match auth {
         Auth::ValidAPIKey | Auth::ValidSession | Auth::NoAuthNeeded => {
             let data_clone = data.clone();
+            let server_error = HttpResponse::InternalServerError().json(JSONResponse {
+                success: false,
+                error: true,
+                reason: "Something went wrong when editing the link.".to_owned(),
+            });
+            let Ok(_permit) = acquire_permit(data.permits.db.clone()).await else {
+                return server_error;
+            };
             match spawn_blocking(move || {
                 utils::edit_link_helper(&req, &data_clone.writer, &data_clone.config)
             })
@@ -49,14 +58,7 @@ async fn edit_link(req: String, auth: Auth, data: web::Data<AppState>) -> HttpRe
                     }
                     HttpResponse::Created().json(body)
                 }
-                Err(ServerError) => {
-                    let body = JSONResponse {
-                        success: false,
-                        error: true,
-                        reason: "Something went wrong when editing the link.".to_owned(),
-                    };
-                    HttpResponse::InternalServerError().json(body)
-                }
+                Err(ServerError) => server_error,
                 Err(ClientError { reason }) => {
                     let body = JSONResponse {
                         success: false,

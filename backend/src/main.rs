@@ -13,10 +13,15 @@ use log::{error, info, warn};
 use r2d2::Pool;
 use rusqlite::Connection;
 use std::{
-    collections::HashMap, env::var, io::Result, process::exit, sync::Mutex, sync::Once,
+    collections::HashMap,
+    env::var,
+    io::Result,
+    process::exit,
+    sync::{Arc, Mutex, Once},
+    thread::available_parallelism,
     time::Duration,
 };
-use tokio::sync::mpsc;
+use tokio::sync::{Semaphore, mpsc};
 
 use crate::database::pool::{ReaderDbManager, open_pool};
 
@@ -39,6 +44,11 @@ pub(crate) const RW_DB_OPEN_ERROR: &str = "Unable to open writer database connec
 pub(crate) const DB_POOL_ERROR: &str = "Unable to get a reader database form the pool!";
 pub(crate) const DB_MUTEX_ERROR: &str = "Mutex for Database writer is poisoned!";
 
+struct Semaphores {
+    auth: Arc<Semaphore>,
+    db: Arc<Semaphore>,
+}
+
 // This struct represents state
 struct AppState {
     hits_tx: mpsc::Sender<(String, bool)>,
@@ -46,6 +56,7 @@ struct AppState {
     writer: Mutex<Connection>,
     config: config::Config,
     frontend_dir: String,
+    permits: Semaphores,
     oidc_data: Option<Mutex<oidc::OidcData>>,
     secret_key: Key,
 }
@@ -117,6 +128,13 @@ async fn main() -> Result<()> {
         writer,
         config,
         frontend_dir,
+        permits: {
+            let n = available_parallelism().map(usize::from).unwrap_or(2);
+            Semaphores {
+                auth: Arc::new(Semaphore::new(n)),
+                db: Arc::new(Semaphore::new(4 * n)),
+            }
+        },
         oidc_data,
         secret_key,
     });
