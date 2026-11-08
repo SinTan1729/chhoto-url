@@ -436,8 +436,7 @@ pub(crate) fn read() -> Config {
             s.split_once("=")
                 .filter(|(f, l)| !f.is_empty() && !l.is_empty())
                 .map(|(f, l)| (f.to_string(), l.to_string()))
-        })
-        .inspect(|(f, l)| info!("OIDC custom claim was configured as: {f}={l}"));
+        });
     if let Some(urls) = var("CHHOTO_OIDC_EXTRA_ORIGINS")
         .ok()
         .map(|s| remove_surrounding_quotes(s.trim()))

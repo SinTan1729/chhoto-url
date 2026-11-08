@@ -69,7 +69,7 @@ pub(crate) fn spawn_cleaner(data: web::Data<AppState>) -> tokio::task::JoinHandl
             let db_path = &data.config.db_location;
             let disable_backups = data.config.disable_backups;
 
-            info!("Starting database cleanup service, will run once every hour.");
+            info!("Starting hourly database cleanup service.");
             let mut interval = interval(Duration::from_hours(1));
             let mut first_run = true;
             loop {
