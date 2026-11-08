@@ -29,7 +29,8 @@ services:
       - CHHOTO_SQLITE_USE_WAL_MODE=True
       # - CHHOTO_DISABLE_BACKUPS=False
       # - CHHOTO_SITE_URL=https://www.example.com
-      # - CHHOTO_HASH_ALGORITHM=Argon2
+      # - CHHOTO_PASSWORD_HASH_ALGORITHM=Argon2
+      # - CHHOTO_API_KEY_HASH_ALGORITHM=SHA512
       # - CHHOTO_LISTEN_PORT=4567
       # - CHHOTO_LISTEN_ADDRESS=0.0.0.0
       - CHHOTO_PASSWORD=TopSecretPass # Change it before you run the container

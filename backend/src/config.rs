@@ -141,7 +141,7 @@ impl Credential {
                         if recommended == "Argon2" {
                             ""
                         } else {
-                            "Argon2 is recommended."
+                            " Argon2 is recommended."
                         }
                     );
                     Some(Credential::Argon2(hash.into()))
@@ -158,11 +158,11 @@ impl Credential {
                         if recommended == "SHA512" {
                             ""
                         } else {
-                            "SHA512 is recommended."
+                            " SHA512 is recommended."
                         }
                     );
                     let Ok(hash): Result<[u8; 64], _> = hash.try_into() else {
-                        warn!("Invalid SHA512 hash was provided for {name}. Must be 64 bytes.");
+                        warn!("Invalid SHA512 hash was provided for {name}. I must be 64 bytes.");
                         return None;
                     };
                     Some(Credential::SHA512(hash.into()))
@@ -254,6 +254,7 @@ pub(crate) fn read() -> Config {
         info!("Frontend is disabled.")
     };
 
+    // Legacy env variable, Deprecated and will be removed in a future major release
     let hash_algorithm = read_config_wrapper("CHHOTO_HASH_ALGORITHM", "hash_algorithm")
         .ok()
         .map(|h| h.trim().to_owned());

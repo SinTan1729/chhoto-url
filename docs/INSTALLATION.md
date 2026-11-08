@@ -103,7 +103,8 @@ use something like `/data/urls.sqlite` here.
 <!-- prettier-ignore-end -->
 
 Provide a secure password. If kept empty, anyone can access the website. Note that password is not encrypted in
-transport, so it's recommended to use a reverse proxy like `caddy` or `nginx`.
+transport, so it's recommended to use a reverse proxy like `caddy` or `nginx`. See [here](#chhoto_password_hash_algorithm)
+to use a hashed password (recommended).
 
 <!-- prettier-ignore-start -->
 <a id="chhoto_site_url"></a>
@@ -130,7 +131,7 @@ that you use a URL-safe `base64` encoded key (no padding) with 512 bits of entro
 Example Linux command for generating a secure API key: `head -c 64 /dev/urandom | base64 -w 0 | tr '+/' '-_' | tr -d '='`.
 
 If no API key is provided, the website will still work, but it'll be a significantly worse experience if you try
-to use Chhoto URL from the CLI.
+to use Chhoto URL from the CLI. See [here](#chhoto_api_key_hash_algorithm) to use a hashed API key.
 
 ### `CHHOTO_OIDC_ISSUER_URL`
 
@@ -244,14 +245,15 @@ variable to `True`. Any other value is ignored.
 This will also allow capital letters in UID slugs, if those are enabled. It has no effect for adjective-name slugs.
 
 <!-- prettier-ignore-start -->
-<a id="chhoto_hash_algorithm"></a>
-### `CHHOTO_HASH_ALGORITHM` \#
+<a id="chhoto_password_hash_algorithm"></a>
+### `CHHOTO_PASSWORD_HASH_ALGORITHM` \#
 <!-- prettier-ignore-end -->
 
-If you want to provided hashed password and API Key, name a supported algorithm here. For now, the supported
-values are: `Argon2`. More algorithms may be added later. Unsupported values are ignored.
+If you want to provided a hashed password, name a supported algorithm here. For now, the supported
+values are: `Argon2` and `SHA512`. Unsupported values are ignored. For passwords, `Argon2` is the recommended
+algorithm.
 
-It is highly recommended that you use `Argon2` hashes for security.
+It is highly recommended that you use hashes for security.
 
 _Note: If using a compose file, make sure to escape $ by $$._
 
@@ -264,6 +266,20 @@ echo -n <password> | argon2 <salt> -id -t 3 -m 16 -l 32 -e
 ```
 
 You may also use online tools for this step.
+
+### `CHHOTO_API_HASH_ALGORITHM`
+
+If you want to provided hashed API Key, name a supported algorithm here. For now, the supported
+values are: `Argon2` and `SHA512`. Unsupported values are ignored.
+
+For API keys, `SHA512` is the recommended algorithm. The hash must be `base64-url` encoded in this case.
+For `Argon2`, refer to the previous option. (But it's not recommended for API keys.)
+
+Recommended command for hashing:
+
+```bash
+echo -n <api-key> | openssl dgst -sha512 -binary | base64 -w 0 | tr '+/' '-_' | tr -d '='
+```
 
 ### `CHHOTO_PUBLIC_MODE`
 

@@ -28,7 +28,8 @@ Environment=CHHOTO_SQLITE_USE_WAL_MODE=True
 #Environment=CHHOTO_DISABLE_BACKUPS=False
 #Environment=CHHOTO_CUSTOM_SITE_TITLE="Custom Title"
 #Environment=CHHOTO_SITE_URL=https://www.example.com 
-#Environment=CHHOTO_HASH_ALGORITHM=Argon2 
+#Environment=CHHOTO_PASSWORD_HASH_ALGORITHM=Argon2
+#Environment=CHHOTO_API_KEY_HASH_ALGORITHM=SHA512
 #Change the password before you run the container
 Environment=CHHOTO_PASSWORD=TopSecretPass 
 Environment=CHHOTO_EXIT_ON_NO_AUTH=True
