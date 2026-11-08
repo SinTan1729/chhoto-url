@@ -115,13 +115,13 @@ pub async fn create_oidc_client(config: &Config) -> Option<(reqwest::Client, Oid
                     Some((async_http_client, core_client))
                 }
                 Err(e) => {
-                    error!("Error while creating OIDC client: {:?}", e);
+                    error!("Error while creating OIDC client: {}", e);
                     None
                 }
             }
         }
         Err(e) => {
-            error!("Error while processing OIDC issuer url: {:?}", e);
+            error!("Error while processing OIDC issuer url: {}", e);
             None
         }
     }
