@@ -11,8 +11,6 @@ use actix_web::{
     },
     web,
 };
-use argon2::{Argon2, PasswordVerifier};
-use constant_time_eq::constant_time_eq;
 use log::{debug, error, warn};
 use nanoid::nanoid;
 use openidconnect::{
@@ -22,7 +20,6 @@ use rand::{random_range, seq::IndexedRandom};
 use rusqlite::Connection;
 use serde::Deserialize;
 use serde_json::Value;
-use sha2::{Digest, Sha512};
 use std::{
     collections::HashSet,
     env,
@@ -33,9 +30,9 @@ use url::Url;
 
 use crate::{
     AppState,
-    auth::Auth,
+    auth::{Auth, Credential},
     background::acquire_permit,
-    config::{Config, Credential, SlugStyle},
+    config::{Config, SlugStyle},
     database::{self, add_links},
     oidc::OidcData,
     services::types::{
@@ -577,16 +574,7 @@ fn is_authorized(
     no_auth_needed: bool,
 ) -> (bool, bool) {
     if let Some(password) = password {
-        let authorized = match password {
-            Credential::Argon2(hash) => Argon2::default()
-                .verify_password(provided_pass.as_bytes(), hash.as_ref())
-                .is_ok(),
-            Credential::SHA512(hash) => {
-                constant_time_eq(Sha512::digest(provided_pass).as_slice(), hash.as_ref())
-            }
-            Credential::Plain(pass) => constant_time_eq(pass.as_bytes(), provided_pass.as_bytes()),
-        };
-
+        let authorized = password.validate(provided_pass);
         (authorized, true)
     } else {
         (no_auth_needed, false)

@@ -8,11 +8,13 @@ use std::{
     fmt::Display,
     fs,
     path::{Path, PathBuf},
-    sync::Arc,
 };
 use url::Url;
 
-use crate::{auth, utils};
+use crate::{
+    auth::{self, Credential},
+    utils,
+};
 
 #[derive(Clone)]
 pub(crate) enum SlugStyle {
@@ -118,70 +120,6 @@ fn get_db_location() -> PathBuf {
         }
     }
     new_location.into()
-}
-
-#[derive(Clone)]
-pub(crate) enum Credential {
-    Plain(String),
-    Argon2(Arc<argon2::PasswordHash>),
-    SHA512(Arc<[u8; 64]>),
-}
-impl Credential {
-    fn parse(val: String, hash_algorithm: &Option<String>, name: &str) -> Option<Self> {
-        let recommended = if name == "Password" {
-            "Argon2"
-        } else {
-            "SHA512"
-        };
-        match hash_algorithm.as_deref() {
-            Some("Argon2") => match argon2::PasswordHash::new(&val) {
-                Ok(hash) => {
-                    info!(
-                        "Using Argon2 for {name} verification.{}",
-                        if recommended == "Argon2" {
-                            ""
-                        } else {
-                            " Argon2 is recommended."
-                        }
-                    );
-                    Some(Credential::Argon2(hash.into()))
-                }
-                Err(e) => {
-                    warn!("Invalid Argon2 hash was provided for {name}: {e}");
-                    None
-                }
-            },
-            Some("SHA512") => match base64_url::decode(&val) {
-                Ok(hash) => {
-                    info!(
-                        "Using SHA512 for {name} verification.{}",
-                        if recommended == "SHA512" {
-                            ""
-                        } else {
-                            " SHA512 is recommended."
-                        }
-                    );
-                    let Ok(hash): Result<[u8; 64], _> = hash.try_into() else {
-                        warn!("Invalid SHA512 hash was provided for {name}. I must be 64 bytes.");
-                        return None;
-                    };
-                    Some(Credential::SHA512(hash.into()))
-                }
-                Err(e) => {
-                    warn!("Invalid SHA512 hash was provided for {name}: {e}");
-                    None
-                }
-            },
-            None => {
-                warn!("Using plaintext for {name} verification! {recommended} is recommended.");
-                Some(Credential::Plain(val))
-            }
-            _ => {
-                warn!("Bad hashing algorithm was provided for {name}! Treating it as plaintext.");
-                Some(Credential::Plain(val))
-            }
-        }
-    }
 }
 
 // Struct for storing config read form env vars that might be accessed more than once

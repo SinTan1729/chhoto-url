@@ -8,24 +8,101 @@ use actix_web::{
     http::header::HeaderMap,
     web,
 };
-use argon2::PasswordVerifier;
+use argon2::{Argon2, PasswordHash, PasswordVerifier};
 use constant_time_eq::constant_time_eq;
-use log::{debug, warn};
+use log::{debug, info, warn};
 use sha2::{Digest, Sha512};
 use std::pin::Pin;
-use std::time::SystemTime;
+use std::{sync::Arc, time::SystemTime};
 use tokio::task::spawn_blocking;
 
+use crate::background::acquire_permit;
 use crate::{AppState, services::types::JSONResponse};
-use crate::{
-    background::acquire_permit,
-    config::Credential::{self, Argon2, Plain, SHA512},
-};
 
 const API_HEADER: &str = "X-API-Key";
 pub(crate) const COOKIE_NAME: &str = "chhoto-url-auth";
 const COOKIE_VALUE_PASSWORD: &str = "chhoto-url-password";
 const COOKIE_VALUE_OIDC: &str = "chhoto-url-oidc";
+
+#[derive(Clone)]
+pub(crate) enum Credential {
+    Plain(String),
+    Argon2(Arc<argon2::PasswordHash>),
+    SHA512(Arc<[u8; 64]>),
+}
+impl Credential {
+    pub(crate) fn parse(val: String, hash_algorithm: &Option<String>, name: &str) -> Option<Self> {
+        let recommended = if name == "Password" {
+            "Argon2"
+        } else {
+            "SHA512"
+        };
+        match hash_algorithm.as_deref() {
+            Some("Argon2") => match PasswordHash::new(&val) {
+                Ok(hash) => {
+                    info!(
+                        "Using Argon2 for {name} verification.{}",
+                        if recommended == "Argon2" {
+                            ""
+                        } else {
+                            " Argon2 is recommended."
+                        }
+                    );
+                    Some(Credential::Argon2(hash.into()))
+                }
+                Err(e) => {
+                    warn!("Invalid Argon2 hash was provided for {name}: {e}");
+                    None
+                }
+            },
+            Some("SHA512") => match base64_url::decode(&val) {
+                Ok(hash) => {
+                    info!(
+                        "Using SHA512 for {name} verification.{}",
+                        if recommended == "SHA512" {
+                            ""
+                        } else {
+                            " SHA512 is recommended."
+                        }
+                    );
+                    let Ok(hash): Result<[u8; 64], _> = hash.try_into() else {
+                        warn!("Invalid SHA512 hash was provided for {name}. I must be 64 bytes.");
+                        return None;
+                    };
+                    Some(Credential::SHA512(hash.into()))
+                }
+                Err(e) => {
+                    warn!("Invalid SHA512 hash was provided for {name}: {e}");
+                    None
+                }
+            },
+            None => {
+                warn!("Using plaintext for {name} verification! {recommended} is recommended.");
+                Some(Credential::Plain(val))
+            }
+            _ => {
+                warn!("Bad hashing algorithm was provided for {name}! Treating it as plaintext.");
+                Some(Credential::Plain(val))
+            }
+        }
+    }
+
+    pub(crate) fn validate(&self, provided: &str) -> bool {
+        match self {
+            // Semaphore is checked before this in is_api_ok
+            Self::Argon2(hash) => Argon2::default()
+                .verify_password(provided.as_bytes(), hash.as_ref())
+                .is_ok(),
+            Self::SHA512(hash) => {
+                constant_time_eq(Sha512::digest(provided).as_slice(), hash.as_ref())
+            }
+            Self::Plain(value) => {
+                // If hashing is not enabled, use the plaintext API key for matching
+                constant_time_eq(value.as_bytes(), provided.as_bytes())
+            }
+        }
+    }
+}
 
 // Read API key from header and process it
 async fn is_api_ok(
@@ -87,23 +164,9 @@ async fn is_api_ok(
 }
 
 // Validate API key
-async fn is_key_valid(key: String, api_key: Credential) -> Result<(), String> {
+async fn is_key_valid(provided_key: String, api_key: Credential) -> Result<(), String> {
     // Check if API Key is hashed using Argon2. More algorithms maybe added later.
-    let Ok(authorized) = spawn_blocking(move || {
-        match api_key {
-            // Semaphore is checked before this in is_api_ok
-            Argon2(hash) => argon2::Argon2::default()
-                .verify_password(key.as_bytes(), hash.as_ref())
-                .is_ok(),
-            SHA512(val) => constant_time_eq(Sha512::digest(key).as_slice(), val.as_ref()),
-            Plain(val) => {
-                // If hashing is not enabled, use the plaintext API key for matching
-                constant_time_eq(val.as_bytes(), key.as_bytes())
-            }
-        }
-    })
-    .await
-    else {
+    let Ok(authorized) = spawn_blocking(move || api_key.validate(&provided_key)).await else {
         warn!("Error verifying API key.");
         return Err("API key validation temporarily unavailable.".to_string());
     };

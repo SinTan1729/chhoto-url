@@ -12,7 +12,7 @@ use actix_web::{App, Error, body::to_bytes, cookie::Key, dev::ServiceResponse, t
 use serde::Deserialize;
 use tempfile::TempDir;
 
-use crate::{config::Credential, *};
+use crate::{auth::Credential, *};
 
 pub(super) const API_HEADER: &str = "X-API-Key";
 

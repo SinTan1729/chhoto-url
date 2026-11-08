@@ -3,7 +3,7 @@
 
 use actix_web::{body::to_bytes, mime::APPLICATION_JSON, test};
 
-use crate::config::Credential;
+use crate::auth::Credential;
 
 use super::utils::*;
 
