@@ -101,7 +101,7 @@ curl -X POST \
 ```
 
 In that case, the response is an array containing one result per input object (in order), each in one of the formats shown above.
-A maximum of 2000 links can be added in a single request.
+A maximum of 2000 links can be added in a single request. Batch inserts are only available with requests made using a valid API key.
 
 Except for malformed requests or internal server errors, the HTTP status code is always `200`. Clients must inspect the `success` field of
 each response object to determine whether the operation succeeded.
