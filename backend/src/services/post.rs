@@ -110,7 +110,7 @@ async fn add_links(
             };
 
             let data_clone = data.clone();
-            let Ok(_permit) = acquire_permit(data.permits.db.clone()).await else {
+            let Ok(permit) = acquire_permit(data.permits.db.clone()).await else {
                 let res = JSONResponse {
                     success: false,
                     error: true,
@@ -119,6 +119,7 @@ async fn add_links(
                 return HttpResponse::InternalServerError().json(res);
             };
             match spawn_blocking(move || {
+                let _permit = permit;
                 let Ok(mut writer) = data_clone.writer.lock() else {
                     error!("{}", crate::DB_MUTEX_ERROR);
                     return Err(ServerError);

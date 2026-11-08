@@ -33,10 +33,11 @@ async fn expand(req: String, auth: Auth, data: web::Data<AppState>) -> HttpRespo
                 error: true,
                 reason: "Something went wrong when expanding the link".to_owned(),
             });
-            let Ok(_permit) = acquire_permit(data.permits.db.clone()).await else {
+            let Ok(permit) = acquire_permit(data.permits.db.clone()).await else {
                 return server_error;
             };
             match spawn_blocking(move || {
+                let _permit = permit;
                 let db = data.readers.get().map_err(|_| {
                     error!("{}", crate::DB_POOL_ERROR);
                     ServerError

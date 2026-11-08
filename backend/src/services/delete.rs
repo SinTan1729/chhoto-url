@@ -77,10 +77,11 @@ async fn delete_link(
                 error: true,
                 reason: "Something went wrong when deleting the link.".to_owned(),
             });
-            let Ok(_permit) = acquire_permit(data.permits.db.clone()).await else {
+            let Ok(permit) = acquire_permit(data.permits.db.clone()).await else {
                 return server_error;
             };
             match spawn_blocking(move || {
+                let _permit = permit;
                 let Ok(writer) = data.writer.lock() else {
                     error!("{}", crate::DB_MUTEX_ERROR);
                     return Err(ChhotoError::ServerError);
@@ -121,10 +122,11 @@ async fn delete_link(
             let server_error = HttpResponse::NotFound()
                 .content_type(TEXT_PLAIN)
                 .body("Not found!");
-            let Ok(_permit) = acquire_permit(data.permits.auth.clone()).await else {
+            let Ok(permit) = acquire_permit(data.permits.auth.clone()).await else {
                 return server_error;
             };
             if spawn_blocking(move || {
+                let _permit = permit;
                 let Ok(writer) = data.writer.lock() else {
                     error!("{}", crate::DB_MUTEX_ERROR);
                     return Err(ChhotoError::ServerError);

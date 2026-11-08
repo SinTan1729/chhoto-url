@@ -35,10 +35,11 @@ async fn edit_link(req: String, auth: Auth, data: web::Data<AppState>) -> HttpRe
                 error: true,
                 reason: "Something went wrong when editing the link.".to_owned(),
             });
-            let Ok(_permit) = acquire_permit(data.permits.db.clone()).await else {
+            let Ok(permit) = acquire_permit(data.permits.db.clone()).await else {
                 return server_error;
             };
             match spawn_blocking(move || {
+                let _permit = permit;
                 utils::edit_link_helper(&req, &data_clone.writer, &data_clone.config)
             })
             .await

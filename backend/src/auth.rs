@@ -14,7 +14,7 @@ use log::{debug, info, warn};
 use sha2::{Digest, Sha512};
 use std::pin::Pin;
 use std::{sync::Arc, time::SystemTime};
-use tokio::task::spawn_blocking;
+use tokio::{sync::Semaphore, task::spawn_blocking};
 
 use crate::background::acquire_permit;
 use crate::{AppState, services::types::JSONResponse};
@@ -87,20 +87,35 @@ impl Credential {
         }
     }
 
-    pub(crate) fn validate(&self, provided: &str) -> bool {
-        match self {
-            // Semaphore is checked before this in is_api_ok
-            Self::Argon2(hash) => Argon2::default()
-                .verify_password(provided.as_bytes(), hash.as_ref())
-                .is_ok(),
-            Self::SHA512(hash) => {
-                constant_time_eq(Sha512::digest(provided).as_slice(), hash.as_ref())
+    pub(crate) async fn validate(
+        &self,
+        provided: String,
+        permit: Arc<Semaphore>,
+    ) -> Result<bool, ()> {
+        let Ok(permit) = acquire_permit(permit).await else {
+            warn!("Auth verifier threads are full!");
+            return Err(());
+        };
+        let cred = self.to_owned();
+        spawn_blocking(move || {
+            let _permit = permit;
+            match cred {
+                // Semaphore is checked before this in is_api_ok
+                Self::Argon2(hash) => Argon2::default()
+                    .verify_password(provided.as_bytes(), hash.as_ref())
+                    .is_ok(),
+                Self::SHA512(hash) => constant_time_eq(
+                    Sha512::digest(provided.as_bytes()).as_slice(),
+                    hash.as_ref(),
+                ),
+                Self::Plain(value) => {
+                    // If hashing is not enabled, use the plaintext API key for matching
+                    constant_time_eq(value.as_bytes(), provided.as_bytes())
+                }
             }
-            Self::Plain(value) => {
-                // If hashing is not enabled, use the plaintext API key for matching
-                constant_time_eq(value.as_bytes(), provided.as_bytes())
-            }
-        }
+        })
+        .await
+        .map_err(|e| warn!("Something went wrong while verfying credential: {e}"))
     }
 }
 
@@ -116,14 +131,7 @@ async fn is_api_ok(
         // If the header exists
         if let Some(header) = api_header {
             // If the header is correct
-            let Ok(_permit) = acquire_permit(data.permits.auth.clone()).await else {
-                return JSONResponse {
-                    success: false,
-                    error: true,
-                    reason: "Something went wrong.".to_owned(),
-                };
-            };
-            match is_key_valid(header.to_string(), key).await {
+            match is_key_valid(header.to_string(), key, data.permits.auth.clone()).await {
                 Ok(()) => JSONResponse {
                     success: true,
                     error: false,
@@ -164,9 +172,13 @@ async fn is_api_ok(
 }
 
 // Validate API key
-async fn is_key_valid(provided_key: String, api_key: Credential) -> Result<(), String> {
+async fn is_key_valid(
+    provided_key: String,
+    api_key: Credential,
+    permit: Arc<Semaphore>,
+) -> Result<(), String> {
     // Check if API Key is hashed using Argon2. More algorithms maybe added later.
-    let Ok(authorized) = spawn_blocking(move || api_key.validate(&provided_key)).await else {
+    let Ok(authorized) = api_key.validate(provided_key, permit).await else {
         warn!("Error verifying API key.");
         return Err("API key validation temporarily unavailable.".to_string());
     };

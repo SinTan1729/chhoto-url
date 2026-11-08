@@ -25,13 +25,12 @@ use std::{
     env,
     sync::{Arc, Mutex},
 };
-use tokio::{sync::Semaphore, task::spawn_blocking};
+use tokio::sync::Semaphore;
 use url::Url;
 
 use crate::{
     AppState,
     auth::{Auth, Credential},
-    background::acquire_permit,
     config::{Config, SlugStyle},
     database::{self, add_links},
     oidc::OidcData,
@@ -549,34 +548,18 @@ pub(super) async fn verify_login(
     auth: Auth,
     permit: Arc<Semaphore>,
 ) -> Result<(bool, bool), actix_web::Error> {
-    let Ok(_permit) = acquire_permit(permit).await else {
-        return Err(actix_web::error::ErrorInternalServerError(
-            "Password verifier threads are full.",
-        ));
-    };
-    spawn_blocking(move || {
-        is_authorized(
-            &provided_password,
-            &password,
-            matches!(auth, Auth::NoAuthNeeded),
-        )
+    // (bool,  bool) = (authorized, password needed)
+    (if let Some(password) = password {
+        password
+            .validate(provided_password, permit)
+            .await
+            .map(|auth| (auth, true))
+    } else {
+        Ok((false, matches!(auth, Auth::NoAuthNeeded)))
     })
-    .await
     .map_err(|_| {
         let text = "Error verifying password.";
         warn!("{}", text);
         actix_web::error::ErrorInternalServerError(text)
     })
-}
-fn is_authorized(
-    provided_pass: &str,
-    password: &Option<Credential>,
-    no_auth_needed: bool,
-) -> (bool, bool) {
-    if let Some(password) = password {
-        let authorized = password.validate(provided_pass);
-        (authorized, true)
-    } else {
-        (no_auth_needed, false)
-    }
 }

@@ -145,7 +145,7 @@ pub(crate) enum AcquirePermitError {
 pub(crate) async fn acquire_permit(
     semaphore: Arc<Semaphore>,
 ) -> Result<OwnedSemaphorePermit, AcquirePermitError> {
-    match timeout(Duration::from_secs(5), semaphore.acquire_owned()).await {
+    match timeout(Duration::from_secs(1), semaphore.acquire_owned()).await {
         Ok(Ok(permit)) => Ok(permit),
         Ok(Err(err)) => Err(AcquirePermitError::Closed(err)),
         Err(_) => Err(AcquirePermitError::Timeout),

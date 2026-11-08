@@ -59,10 +59,11 @@ async fn getall(
                 .content_type(TEXT_PLAIN)
                 .body("Something went wrong while loading the links.".to_owned());
 
-            let Ok(_permit) = acquire_permit(data.permits.db.clone()).await else {
+            let Ok(permit) = acquire_permit(data.permits.db.clone()).await else {
                 return server_error;
             };
             match spawn_blocking(move || {
+                let _permit = permit;
                 utils::getall_helper(&data.into_inner(), params.into_inner())
             })
             .await
@@ -166,10 +167,11 @@ pub(super) async fn link_handler(
 ) -> impl Responder {
     let shortlink_clone = shortlink.clone();
     let data_clone = data.clone();
-    let Ok(_permit) = acquire_permit(data.permits.db.clone()).await else {
+    let Ok(permit) = acquire_permit(data.permits.db.clone()).await else {
         return Either::Right(utils::error404(data).await);
     };
     if let Ok(Ok(longlink)) = spawn_blocking(move || {
+        let _permit = permit;
         database::find_and_add_hit(&shortlink_clone, &data_clone.into_inner())
     })
     .await
