@@ -170,6 +170,7 @@ pub(super) fn add_links_helper(
     db: &mut Connection,
     config: &Config,
     using_public_mode: bool,
+    using_cookies: bool,
 ) -> AddLinksReturnType {
     // Ok : Vec<shortlink, expiry_time>, single_request
     let Ok((single_request, chunks)) =
@@ -190,6 +191,11 @@ pub(super) fn add_links_helper(
     if chunks.len() > 2000 {
         return Err(ClientError {
             reason: "More than 2000 links were provided!".to_owned(),
+        });
+    }
+    if (using_cookies || using_public_mode) && chunks.len() > 1 {
+        return Err(ClientError {
+            reason: "Batch inserts are only available with API keys.".to_owned(),
         });
     }
 

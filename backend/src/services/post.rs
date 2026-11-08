@@ -45,7 +45,7 @@ async fn add_links(
                 .content_type(TEXT_PLAIN)
                 .body("Internal server error.");
         };
-        let result = utils::add_links_helper(&payload, &mut writer, config, public_mode)
+        let result = utils::add_links_helper(&payload, &mut writer, config, public_mode, true)
             .and_then(|(v, _)| v.into_iter().next().unwrap_or(Err(ServerError)));
         match result {
             Ok((shorturl, _)) => HttpResponse::Created()
@@ -124,7 +124,7 @@ async fn add_links(
                     error!("{}", crate::DB_MUTEX_ERROR);
                     return Err(ServerError);
                 };
-                utils::add_links_helper(&payload, &mut writer, &data_clone.config, false)
+                utils::add_links_helper(&payload, &mut writer, &data_clone.config, false, false)
             })
             .await
             .map_err(|_| ServerError)
