@@ -565,9 +565,10 @@ pub(super) async fn verify_login(
         )
     })
     .await
-    .map_err({
-        warn!("Error verifying password.");
-        actix_web::error::ErrorInternalServerError
+    .map_err(|_| {
+        let text = "Error verifying password.";
+        warn!("{}", text);
+        actix_web::error::ErrorInternalServerError(text)
     })
 }
 fn is_authorized(
