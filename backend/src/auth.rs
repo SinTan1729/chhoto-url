@@ -97,25 +97,25 @@ impl Credential {
             return Err(());
         };
         let cred = self.to_owned();
-        spawn_blocking(move || {
-            let _permit = permit;
-            match cred {
-                // Semaphore is checked before this in is_api_ok
-                Self::Argon2(hash) => Argon2::default()
+        match cred {
+            // Semaphore is checked before this in is_api_ok
+            Self::Argon2(hash) => spawn_blocking(move || {
+                let _permit = permit;
+                Argon2::default()
                     .verify_password(provided.as_bytes(), hash.as_ref())
-                    .is_ok(),
-                Self::SHA512(hash) => constant_time_eq(
-                    Sha512::digest(provided.as_bytes()).as_slice(),
-                    hash.as_ref(),
-                ),
-                Self::Plain(value) => {
-                    // If hashing is not enabled, use the plaintext API key for matching
-                    constant_time_eq(value.as_bytes(), provided.as_bytes())
-                }
+                    .is_ok()
+            })
+            .await
+            .map_err(|e| warn!("Something went wrong while verfying credential: {e}")),
+            Self::SHA512(hash) => Ok(constant_time_eq(
+                Sha512::digest(provided.as_bytes()).as_slice(),
+                hash.as_ref(),
+            )),
+            Self::Plain(value) => {
+                // If hashing is not enabled, use the plaintext API key for matching
+                Ok(constant_time_eq(value.as_bytes(), provided.as_bytes()))
             }
-        })
-        .await
-        .map_err(|e| warn!("Something went wrong while verfying credential: {e}"))
+        }
     }
 }
 
