@@ -3,14 +3,14 @@
 
 use std::{
     fmt::Write as _,
-    io::{BufWriter, IsTerminal, Write},
+    io::{IsTerminal, Write},
     sync::{
-        Arc, Mutex,
-        atomic::{AtomicU64, Ordering},
+        Arc,
+        atomic::{AtomicBool, AtomicU64, Ordering},
         mpsc::{Receiver, SyncSender, TrySendError, sync_channel},
     },
     thread::spawn,
-    time::Duration,
+    time::{Duration, Instant},
 };
 
 use chrono::Local;
@@ -26,21 +26,29 @@ struct AsyncLoggerParams {
     color: bool,
 }
 
+struct LogMessage {
+    timestamp: chrono::DateTime<Local>,
+    level: Level,
+    target: String,
+    message: String,
+}
 pub(crate) struct AsyncStderrLogger {
     params: AsyncLoggerParams,
-    tx: Mutex<SyncSender<String>>,
+    tx: SyncSender<LogMessage>,
     dropped: Arc<AtomicU64>,
+    disconnected_reported: AtomicBool,
 }
 
 impl AsyncStderrLogger {
-    fn with_filter(params: AsyncLoggerParams) -> (Self, Receiver<String>, Arc<AtomicU64>) {
+    fn with_filter(params: AsyncLoggerParams) -> (Self, Receiver<LogMessage>, Arc<AtomicU64>) {
         let (tx, rx) = sync_channel(params.queue_capacity);
         let dropped = Arc::new(AtomicU64::new(0));
         (
             Self {
                 params,
-                tx: Mutex::new(tx),
+                tx,
                 dropped: Arc::clone(&dropped),
+                disconnected_reported: false.into(),
             },
             rx,
             dropped,
@@ -57,22 +65,31 @@ impl Log for AsyncStderrLogger {
         if !self.params.filter.matches(record) {
             return;
         }
-        let mut line = String::with_capacity(self.params.avg_log_line_bytes);
-        format_line(&mut line, record, self.params.color);
-        let tx = self
-            .tx
-            .lock()
-            .unwrap_or_else(|poisoned| poisoned.into_inner());
-        if let Err(TrySendError::Full(_)) = tx.try_send(line) {
-            // Writer thread is behind: drop instead of blocking the worker.
-            self.dropped.fetch_add(1, Ordering::Relaxed);
+
+        let message = LogMessage {
+            timestamp: Local::now(),
+            level: record.level(),
+            target: record.target().to_owned(),
+            message: record.args().to_string(),
+        };
+
+        match self.tx.try_send(message) {
+            Ok(()) => {}
+            Err(TrySendError::Full(_)) => {
+                self.dropped.fetch_add(1, Ordering::Relaxed);
+            }
+            Err(TrySendError::Disconnected(_)) => {
+                if !self.disconnected_reported.swap(true, Ordering::Relaxed) {
+                    eprintln!("Async logger writer disconnected; log line discarded");
+                }
+            }
         }
     }
 
     fn flush(&self) {}
 }
 
-fn format_line(out: &mut String, record: &Record, color: bool) {
+fn format_line(out: &mut String, record: &LogMessage, color: bool) {
     if color {
         out.push_str("\x1b[2m");
     }
@@ -80,13 +97,20 @@ fn format_line(out: &mut String, record: &Record, color: bool) {
     if color {
         out.push_str("\x1b[0m");
     }
-    let _ = write!(out, "{}", Local::now().format("%Y-%m-%d %H:%M:%S%Z"));
+
+    let _ = write!(
+        out,
+        "{}",
+        record.timestamp.format("%Y-%m-%d %H:%M:%S%.3f%Z")
+    );
     out.push(' ');
-    let level = record.level().as_str();
+
+    let level = record.level.as_str();
     if color {
-        out.push_str(level_ansi(record.level()));
+        out.push_str(level_ansi(record.level));
     }
     out.push_str(level);
+
     for _ in level.len()..5 {
         out.push(' ');
     }
@@ -94,7 +118,7 @@ fn format_line(out: &mut String, record: &Record, color: bool) {
         out.push_str("\x1b[0m");
     }
     out.push(' ');
-    out.push_str(record.target());
+    out.push_str(&record.target);
     if color {
         out.push_str("\x1b[2m");
     }
@@ -102,7 +126,7 @@ fn format_line(out: &mut String, record: &Record, color: bool) {
     if color {
         out.push_str("\x1b[0m");
     }
-    let _ = write!(out, "{}", record.args());
+    out.push_str(&record.message);
 }
 
 fn level_ansi(level: Level) -> &'static str {
@@ -115,69 +139,104 @@ fn level_ansi(level: Level) -> &'static str {
     }
 }
 
-fn run_writer(rx: Receiver<String>, dropped: Arc<AtomicU64>, params: AsyncLoggerParams) {
+fn run_writer(rx: Receiver<LogMessage>, dropped: Arc<AtomicU64>, params: AsyncLoggerParams) {
     let stderr = std::io::stderr();
-    let mut out = BufWriter::with_capacity(
-        params.avg_log_line_bytes * params.queue_capacity,
-        stderr.lock(),
-    );
+
     let mut reported = 0_u64;
     let max_batch_size: usize = (params.queue_capacity / 8).max(32);
+    let drain_budget = Duration::from_millis(50);
+    let mut buffer = Vec::with_capacity(
+        params
+            .avg_log_line_bytes
+            .saturating_add(1)
+            .saturating_mul(max_batch_size),
+    );
+    let mut line = String::with_capacity(params.avg_log_line_bytes);
 
     loop {
-        let mut wrote = false;
-        match rx.recv_timeout(params.poll_interval) {
-            Ok(line) => {
-                if out.write_all(line.as_bytes()).is_err() || out.write_all(b"\n").is_err() {
-                    break;
-                }
-                wrote = true;
+        // Collection phase.
+        std::thread::sleep(params.poll_interval);
 
-                for _ in 1..max_batch_size {
-                    match rx.try_recv() {
-                        Ok(line) => {
-                            if out.write_all(line.as_bytes()).is_err()
-                                || out.write_all(b"\n").is_err()
-                            {
-                                return;
-                            }
-                            wrote = true;
-                        }
-                        Err(_) => break,
+        // Drain phase.
+        let deadline = Instant::now() + drain_budget;
+        let mut disconnected = false;
+
+        while Instant::now() < deadline {
+            buffer.clear();
+            let mut batch_size = 0;
+            while batch_size < max_batch_size && Instant::now() < deadline {
+                match rx.try_recv() {
+                    Ok(message) => {
+                        line.clear();
+                        format_line(&mut line, &message, params.color);
+                        buffer.extend_from_slice(line.as_bytes());
+                        buffer.push(b'\n');
+                        batch_size += 1;
+                    }
+                    Err(std::sync::mpsc::TryRecvError::Empty) => break,
+                    Err(std::sync::mpsc::TryRecvError::Disconnected) => {
+                        disconnected = true;
+                        break;
                     }
                 }
             }
-            Err(std::sync::mpsc::RecvTimeoutError::Timeout) => {}
-            Err(std::sync::mpsc::RecvTimeoutError::Disconnected) => break,
+
+            if !buffer.is_empty() {
+                if Instant::now() >= deadline {
+                    dropped.fetch_add(batch_size as u64, Ordering::Relaxed);
+                    break;
+                }
+                let mut stderr = stderr.lock();
+                if stderr.write_all(&buffer).is_err() {
+                    return;
+                }
+            }
+
+            if disconnected || batch_size == 0 {
+                break;
+            }
         }
 
+        let mut discarded = 0_u64;
+        for _ in 0..params.queue_capacity {
+            match rx.try_recv() {
+                Ok(_) => discarded += 1,
+                Err(_) => break,
+            }
+        }
+
+        if discarded > 0 {
+            dropped.fetch_add(discarded, Ordering::Relaxed);
+        }
         let current = dropped.load(Ordering::Relaxed);
         if current > reported {
-            let message = format!(
-                "{} log lines dropped (stderr writer behind)",
-                current - reported
-            );
-            let args = format_args!("{}", message);
-            let record = Record::builder()
-                .args(args)
-                .level(Level::Warn)
-                .target("chhoto_url::logging")
-                .build();
+            let message = LogMessage {
+                timestamp: Local::now(),
+                level: Level::Warn,
+                target: "chhoto_url::logging".to_owned(),
+                message: format!(
+                    "{} log lines dropped (stderr writer behind)",
+                    current - reported
+                ),
+            };
+            buffer.clear();
+            line.clear();
+            format_line(&mut line, &message, params.color);
+            buffer.extend_from_slice(line.as_bytes());
+            buffer.push(b'\n');
 
-            let mut line = String::with_capacity(params.avg_log_line_bytes);
-            format_line(&mut line, &record, params.color);
-            if out.write_all(line.as_bytes()).is_err() || out.write_all(b"\n").is_err() {
-                break;
+            let mut stderr = stderr.lock();
+            if stderr.write_all(&buffer).is_err() {
+                return;
             }
 
             reported = current;
-            wrote = true;
         }
-        if wrote && out.flush().is_err() {
+
+        if disconnected {
             break;
         }
     }
-    let _ = out.flush();
 }
 
 pub fn init_async(
