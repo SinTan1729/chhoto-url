@@ -3,7 +3,7 @@
 
 include .env
 
-.PHONY: test tag reset-db upgrade-deps upgrade-deps-pre podman-stop
+.PHONY: test tag reset-db upgrade-deps upgrade-deps-pre podman-stop check
 .PHONY: build podman-build podman-run podman-stop podman-run-github podman-test audit
 .PHONY: build-release podman-build-release podman-run-release podman-test-release
 .PHONY: minify deploy purge-cache publish fixup clean merge merge-squash reset-db setup
@@ -40,6 +40,8 @@ build-release:
 		--target x86_64-unknown-linux-musl
 audit: 
 	cargo audit --file backend/Cargo.lock || true
+check:
+	cd backend && cargo clippy
 test: audit
 	CARGO_GIT_COMMIT=${short_sha} cargo test --locked --manifest-path=backend/Cargo.toml \
 		--target x86_64-unknown-linux-musl
