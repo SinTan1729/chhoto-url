@@ -127,18 +127,55 @@ pub(crate) enum Credential {
     SHA512(Arc<[u8]>),
 }
 impl Credential {
-    fn parse(val: String, hash_algorithm: &Option<String>) -> Option<Self> {
+    fn parse(val: String, hash_algorithm: &Option<String>, name: &str) -> Option<Self> {
+        let recommended = if name == "Password" {
+            "Argon2"
+        } else {
+            "SHA512"
+        };
         match hash_algorithm.as_deref() {
             Some("Argon2") => match argon2::PasswordHash::new(&val) {
-                Ok(hash) => Some(Credential::Argon2(hash.into())),
+                Ok(hash) => {
+                    info!(
+                        "Using Argon2 for {name} verification.{}",
+                        if recommended == "Argon2" {
+                            ""
+                        } else {
+                            "Argon2 is recommended."
+                        }
+                    );
+                    Some(Credential::Argon2(hash.into()))
+                }
                 Err(e) => {
-                    warn!("Invalid Argon2 hash was provided: {e}");
+                    warn!("Invalid Argon2 hash was provided for {name}: {e}");
                     None
                 }
             },
-            Some("SHA512") => Some(Credential::SHA512(val.as_bytes().into())),
-            None => Some(Credential::Plain(val)),
-            _ => panic!("Bad hashing algorithm was provided!"),
+            Some("SHA512") => match hex::decode(val) {
+                Ok(hash) => {
+                    info!(
+                        "Using SHA512 for {name} verification.{}",
+                        if recommended == "SHA512" {
+                            ""
+                        } else {
+                            "SHA512 is recommended."
+                        }
+                    );
+                    Some(Credential::SHA512(hash.into()))
+                }
+                Err(e) => {
+                    warn!("Invalid SHA512 hash was provided for {name}: {e}");
+                    None
+                }
+            },
+            None => {
+                warn!("Using plaintext for {name} verification! {recommended} is recommended.");
+                Some(Credential::Plain(val))
+            }
+            _ => {
+                warn!("Bad hashing algorithm was provided for {name}! Treating it as plaintext.");
+                Some(Credential::Plain(val))
+            }
         }
     }
 }
@@ -220,7 +257,7 @@ pub(crate) fn read() -> Config {
         .ok()
         .map(|h| h.trim().to_owned())
         .or(hash_algorithm.clone());
-    let api_hash_algorithm = var("CHHOTO_API_HASH_ALGORITHM")
+    let api_key_hash_algorithm = var("CHHOTO_API_KEY_HASH_ALGORITHM")
         .ok()
         .map(|h| h.trim().to_owned())
         .or(hash_algorithm.clone());
@@ -243,7 +280,7 @@ pub(crate) fn read() -> Config {
                 info!("Secure API key was provided.");
             }
         })
-        .and_then(|s| Credential::parse(s, &api_hash_algorithm));
+        .and_then(|s| Credential::parse(s, &api_key_hash_algorithm, "API Key"));
 
     let public_mode =
         read_config_wrapper("CHHOTO_PUBLIC_MODE", "public_mode") == Ok(String::from("Enable"));
@@ -293,16 +330,9 @@ pub(crate) fn read() -> Config {
                 warn!("No password was provided.");
                 None
             },
-            |s| Credential::parse(s, &password_hash_algorithm),
+            |s| Credential::parse(s, &password_hash_algorithm, "Password"),
         );
 
-    if password.is_some() || api_key.is_some() {
-        if hash_algorithm.as_deref() == Some("Argon2") {
-            info!("Using Argon2 hashes for password and API key verification.");
-        } else {
-            warn!("Using plaintext for password and API key verification. Argon2 is advised.");
-        }
-    }
     // If the site_url env variable exists
     let site_url = if let Some(provided_url) = read_config_wrapper("CHHOTO_SITE_URL", "site_url")
         .ok()

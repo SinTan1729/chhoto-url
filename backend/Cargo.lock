@@ -485,6 +485,7 @@ dependencies = [
  "chrono",
  "constant_time_eq",
  "env_filter",
+ "hex",
  "log",
  "nanoid",
  "openidconnect",

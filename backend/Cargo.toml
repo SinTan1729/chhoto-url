@@ -57,6 +57,7 @@ time = { version = "0.3.55", features = [ "formatting", "macros" ] }
 r2d2 = "0.8.10"
 sha2 = "0.11.1"
 constant_time_eq = "0.6.1"
+hex = "0.4.3"
 
 [dev-dependencies]
 actix-http = "3.20.3"
