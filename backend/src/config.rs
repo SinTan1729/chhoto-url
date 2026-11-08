@@ -124,7 +124,7 @@ fn get_db_location() -> PathBuf {
 pub(crate) enum Credential {
     Plain(String),
     Argon2(Arc<argon2::PasswordHash>),
-    SHA512(Arc<[u8]>),
+    SHA512(Arc<[u8; 64]>),
 }
 impl Credential {
     fn parse(val: String, hash_algorithm: &Option<String>, name: &str) -> Option<Self> {
@@ -151,7 +151,7 @@ impl Credential {
                     None
                 }
             },
-            Some("SHA512") => match hex::decode(val) {
+            Some("SHA512") => match base64_url::decode(&val) {
                 Ok(hash) => {
                     info!(
                         "Using SHA512 for {name} verification.{}",
@@ -161,6 +161,10 @@ impl Credential {
                             "SHA512 is recommended."
                         }
                     );
+                    let Ok(hash): Result<[u8; 64], _> = hash.try_into() else {
+                        warn!("Invalid SHA512 hash was provided for {name}. Must be 64 bytes.");
+                        return None;
+                    };
                     Some(Credential::SHA512(hash.into()))
                 }
                 Err(e) => {
