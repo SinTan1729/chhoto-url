@@ -14,7 +14,6 @@ use r2d2::Pool;
 use rusqlite::Connection;
 use std::{
     collections::HashMap,
-    env::var,
     io::Result,
     process::exit,
     sync::{Arc, Mutex, Once},
@@ -77,6 +76,7 @@ async fn main() -> Result<()> {
     logging::init_async(Duration::from_secs(1), 8 * 1024, 512);
 
     // Read config from env vars
+    let init_config = config::init_config();
     let config = config::read();
     // ArcMutex is necessary since the writer is shared across threads
     let writer = Mutex::new(database::open_db(&config.db_location, false).expect(RW_DB_OPEN_ERROR));
@@ -84,12 +84,12 @@ async fn main() -> Result<()> {
     // Initialize the database and perform migrations
     database::init_db(
         &mut writer.lock().expect(DB_MUTEX_ERROR),
-        config.use_wal_mode,
-        config.ensure_acid,
-        config.disable_backups,
+        init_config.use_wal_mode,
+        init_config.ensure_acid,
+        init_config.disable_backups,
     );
     // Apply custom title if needed
-    let frontend_dir = match utils::apply_custom_title(&config.custom_site_title) {
+    let frontend_dir = match utils::apply_custom_title(&init_config.custom_site_title) {
         Ok(dir) => dir,
         Err(e) => {
             warn!("Issue while applying custom title: {e}");
@@ -106,10 +106,9 @@ async fn main() -> Result<()> {
             states: HashMap::new(),
         }))
     } else {
-        let exit_on_no_auth = var("CHHOTO_EXIT_ON_NO_AUTH").is_ok_and(|s| s.trim() == "True");
         if config.password.is_none() {
             warn!("No auth is set up. Chhoto URL will be exposed to the public.");
-            if exit_on_no_auth {
+            if init_config.exit_on_no_auth {
                 error!("Exiting Chhoto URL.");
                 exit(1);
             }
@@ -119,8 +118,6 @@ async fn main() -> Result<()> {
 
     // Generate or load session master key
     let secret_key = utils::generate_key();
-    let (port, addr) = (config.port, config.listen_address.clone());
-
     let (hits_tx, hits_rx) = mpsc::channel::<(String, bool)>(1024);
 
     let data = web::Data::new(AppState {
@@ -140,7 +137,11 @@ async fn main() -> Result<()> {
         secret_key,
     });
     // Spawn cleaner
-    background::spawn_cleaner(data.clone());
+    background::spawn_cleaner(
+        data.clone(),
+        init_config.use_wal_mode,
+        init_config.disable_backups,
+    );
     // Spawn hit updater
     background::spawn_hits_worker(data.clone(), hits_rx);
 
@@ -155,13 +156,11 @@ async fn main() -> Result<()> {
             ))
             // Maintain a single instance of database throughout
             .app_data(data.clone())
-            .wrap(
-                if let Some(header) = data.config.cache_control_header.clone() {
-                    middleware::DefaultHeaders::new().add((CACHE_CONTROL, header.to_owned()))
-                } else {
-                    middleware::DefaultHeaders::new()
-                },
-            )
+            .wrap(if let Some(header) = &init_config.cache_control_header {
+                middleware::DefaultHeaders::new().add((CACHE_CONTROL, header.to_owned()))
+            } else {
+                middleware::DefaultHeaders::new()
+            })
             .service(web::scope("/api").configure(services::api_routes_v1))
             .service(web::scope("/oidc").configure(services::oidc_routes))
             .route("/{shortlink}", services::link_handler());
@@ -184,29 +183,24 @@ async fn main() -> Result<()> {
         app.default_service(services::error_route())
     })
     // Hardcode the port the server listens to. Allows for more intuitive Docker Compose port management
-    .bind((&*addr, port))
+    .bind((&*init_config.listen_address, init_config.port))
     .inspect(|_| {
         LOGGER.call_once(|| {
-            info!("Server has started listening to {} on port {}.", addr, port);
+            info!(
+                "Server has started listening to {} on port {}.",
+                init_config.listen_address, init_config.port
+            );
         })
     })?
     .run();
 
-    let health_port: u16 = var("CHHOTO_HEALTH_PORT")
-        .map(|s| {
-            s.parse().unwrap_or_else(|p| {
-                warn!("Invalid health port {p} was supplied. Ignoring.");
-                1729
-            })
-        })
-        .unwrap_or(1729);
     let health_app = HttpServer::new(move || {
         App::new()
             .app_data(data_clone.clone())
             .route("/healthz", services::health_route())
     })
     .workers(1)
-    .bind(("127.0.0.1", health_port))?
+    .bind(("127.0.0.1", init_config.health_port))?
     .run();
 
     tokio::try_join!(default_app, health_app)?;

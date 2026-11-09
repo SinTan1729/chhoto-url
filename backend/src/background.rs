@@ -62,12 +62,14 @@ pub(crate) fn spawn_hits_worker(
 }
 
 // Do database cleanup once every hour
-pub(crate) fn spawn_cleaner(data: web::Data<AppState>) -> tokio::task::JoinHandle<()> {
+pub(crate) fn spawn_cleaner(
+    data: web::Data<AppState>,
+    use_wal_mode: bool,
+    disable_backups: bool,
+) -> tokio::task::JoinHandle<()> {
     spawn({
         async move {
-            let use_wal_mode = data.config.use_wal_mode;
             let db_path = &data.config.db_location;
-            let disable_backups = data.config.disable_backups;
 
             info!("Starting hourly database cleanup service.");
             let mut interval = interval(Duration::from_hours(1));

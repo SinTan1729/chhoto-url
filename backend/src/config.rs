@@ -125,15 +125,97 @@ fn get_db_location() -> PathBuf {
     new_location.into()
 }
 
+// Struct for storing some configs only needed for initiation
+pub(crate) struct InitConfig {
+    pub(crate) port: u16,
+    pub(crate) listen_address: String,
+    pub(crate) health_port: u16,
+    pub(crate) exit_on_no_auth: bool,
+    pub(crate) custom_site_title: Option<String>,
+    pub(crate) cache_control_header: Option<String>,
+    pub(crate) use_wal_mode: bool,
+    pub(crate) ensure_acid: bool,
+    pub(crate) disable_backups: bool,
+}
+
+pub(crate) fn init_config() -> InitConfig {
+    let listen_address = read_config_wrapper("CHHOTO_LISTEN_ADDRESS", "listen_address")
+        .map(|s| s.trim().to_owned())
+        .filter(|s| !s.is_empty())
+        .unwrap_or(String::from("0.0.0.0"));
+    info!("Listening address is set to: {listen_address}");
+    let port = read_config_wrapper("CHHOTO_LISTEN_PORT", "port")
+        .and_then(|s| {
+            s.parse()
+                .map_err(|p| {
+                    warn!("Invalid listen port {p} was supplied. Ignoring.");
+                })
+                .ok()
+        })
+        .unwrap_or(4567);
+    info!("Listening port is set to: {port}");
+
+    let health_port: u16 = var("CHHOTO_HEALTH_PORT")
+        .map(|s| {
+            s.parse().unwrap_or_else(|p| {
+                warn!("Invalid health port {p} was supplied. Ignoring.");
+                1729
+            })
+        })
+        .unwrap_or(1729);
+
+    let exit_on_no_auth = var("CHHOTO_EXIT_ON_NO_AUTH").is_ok_and(|s| s.trim() == "True");
+
+    let custom_site_title = var("CHHOTO_CUSTOM_SITE_TITLE")
+        .ok()
+        .map(|s| remove_surrounding_quotes(s.trim()))
+        .filter(|s| !s.is_empty())
+        .inspect(|t| info!(r#"Found custom site title config: "{t}""#,));
+    let cache_control_header =
+        read_config_wrapper("CHHOTO_CACHE_CONTROL_HEADER", "cache_control_header")
+            .inspect(|h| info!("Using \"{h}\" as Cache-Control header."))
+            .map(|s| s.trim().to_owned())
+            .filter(|s| !s.is_empty());
+
+    let use_wal_mode = read_config_wrapper("CHHOTO_SQLITE_USE_WAL_MODE", "use_wal_mode")
+        .is_some_and(|s| s.trim() == "True");
+    if use_wal_mode {
+        info!("Using WAL journaling mode for database.");
+    } else {
+        warn!("Using DELETE journaling mode for database. WAL mode is recommended.");
+    }
+    let ensure_acid = !read_config_wrapper("CHHOTO_SQLITE_ENSURE_ACID", "ensure_acid")
+        .is_some_and(|s| s.trim() == "False");
+    if ensure_acid {
+        let synchronous = if use_wal_mode { "FULL" } else { "EXTRA" };
+        info!("Ensuring ACID compliance, using synchronous pragma: {synchronous}.");
+    } else {
+        let synchronous = if use_wal_mode { "NORMAL" } else { "FULL" };
+        info!("Not ensuring ACID compliance, using synchronous pragma: {synchronous}.")
+    }
+    let disable_backups = var("CHHOTO_DISABLE_BACKUPS").is_ok_and(|s| s.trim() == "True");
+    if disable_backups {
+        warn!("Disabling backups.");
+    }
+
+    InitConfig {
+        port,
+        listen_address,
+        health_port,
+        exit_on_no_auth,
+        custom_site_title,
+        cache_control_header,
+        use_wal_mode,
+        ensure_acid,
+        disable_backups,
+    }
+}
+
 // Struct for storing config read form env vars that might be accessed more than once
 #[derive(Clone)]
 pub(crate) struct Config {
-    pub(crate) listen_address: String,
-    pub(crate) port: u16,
     pub(crate) db_location: PathBuf,
-    pub(crate) cache_control_header: Option<String>,
     pub(crate) disable_frontend: bool,
-    pub(crate) custom_site_title: Option<String>,
     pub(crate) site_url: Option<String>,
     pub(crate) oidc_issuer_url: Option<String>,
     pub(crate) oidc_client_id: Option<String>,
@@ -151,9 +233,6 @@ pub(crate) struct Config {
     pub(crate) try_longer_slug: bool,
     pub(crate) allow_capital_letters: bool,
     pub(crate) custom_landing_directory: Option<String>,
-    pub(crate) use_wal_mode: bool,
-    pub(crate) ensure_acid: bool,
-    pub(crate) disable_backups: bool,
     pub(crate) frontend_page_size: u16,
 }
 
@@ -166,31 +245,6 @@ pub(crate) fn read() -> Config {
             .to_str()
             .expect("DB location should be a valid string.")
     );
-
-    // Get the address environment variable
-    let listen_address = read_config_wrapper("CHHOTO_LISTEN_ADDRESS", "listen_address")
-        .map(|s| s.trim().to_owned())
-        .filter(|s| !s.is_empty())
-        .unwrap_or(String::from("0.0.0.0"));
-    info!("Listening address is set to: {listen_address}");
-
-    // Get the port environment variable
-    let port = read_config_wrapper("CHHOTO_LISTEN_PORT", "port")
-        .and_then(|s| {
-            s.parse()
-                .map_err(|p| {
-                    warn!("Invalid listen port {p} was supplied. Ignoring.");
-                })
-                .ok()
-        })
-        .unwrap_or(4567);
-    info!("Listening port is set to: {port}");
-
-    let cache_control_header =
-        read_config_wrapper("CHHOTO_CACHE_CONTROL_HEADER", "cache_control_header")
-            .inspect(|h| info!("Using \"{h}\" as Cache-Control header."))
-            .map(|s| s.trim().to_owned())
-            .filter(|s| !s.is_empty());
 
     let disable_frontend = read_config_wrapper("CHHOTO_DISABLE_FRONTEND", "disable_frontend")
         .is_some_and(|s| s.trim() == "True");
@@ -395,12 +449,6 @@ pub(crate) fn read() -> Config {
         info!("OIDC allowed origins: {:?}", oidc_allowed_origins);
     }
 
-    let custom_site_title = var("CHHOTO_CUSTOM_SITE_TITLE")
-        .ok()
-        .map(|s| remove_surrounding_quotes(s.trim()))
-        .filter(|s| !s.is_empty())
-        .inspect(|t| info!(r#"Found custom site title config: "{t}""#,));
-
     let slug_length = read_config_wrapper("CHHOTO_SLUG_LENGTH", "slug_length")
         .and_then(|s| s.parse::<usize>().ok())
         .filter(|&s| s >= 4)
@@ -431,27 +479,6 @@ pub(crate) fn read() -> Config {
         info!("Capital letters won't be allowed in links.");
     }
 
-    let use_wal_mode = read_config_wrapper("CHHOTO_SQLITE_USE_WAL_MODE", "use_wal_mode")
-        .is_some_and(|s| s.trim() == "True");
-    if use_wal_mode {
-        info!("Using WAL journaling mode for database.");
-    } else {
-        warn!("Using DELETE journaling mode for database. WAL mode is recommended.");
-    }
-    let ensure_acid = !read_config_wrapper("CHHOTO_SQLITE_ENSURE_ACID", "ensure_acid")
-        .is_some_and(|s| s.trim() == "False");
-    if ensure_acid {
-        let synchronous = if use_wal_mode { "FULL" } else { "EXTRA" };
-        info!("Ensuring ACID compliance, using synchronous pragma: {synchronous}.");
-    } else {
-        let synchronous = if use_wal_mode { "NORMAL" } else { "FULL" };
-        info!("Not ensuring ACID compliance, using synchronous pragma: {synchronous}.")
-    }
-    let disable_backups = var("CHHOTO_DISABLE_BACKUPS").is_ok_and(|s| s.trim() == "True");
-    if disable_backups {
-        warn!("Disabling backups.");
-    }
-
     let custom_landing_directory = read_config_wrapper(
         "CHHOTO_CUSTOM_LANDING_DIRECTORY",
         "custom_landing_directory",
@@ -472,12 +499,8 @@ pub(crate) fn read() -> Config {
         .unwrap_or(10);
 
     Config {
-        listen_address,
-        port,
         db_location,
-        cache_control_header,
         disable_frontend,
-        custom_site_title,
         site_url,
         oidc_issuer_url,
         oidc_client_id,
@@ -495,9 +518,6 @@ pub(crate) fn read() -> Config {
         try_longer_slug,
         allow_capital_letters,
         custom_landing_directory,
-        use_wal_mode,
-        ensure_acid,
-        disable_backups,
         frontend_page_size,
     }
 }

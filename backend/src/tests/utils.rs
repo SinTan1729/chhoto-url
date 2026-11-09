@@ -67,12 +67,8 @@ pub(super) struct BackendConfig {
 
 pub(super) fn default_config(test: &str) -> config::Config {
     config::Config {
-        listen_address: String::from("0.0.0.0"),
-        port: 4567,
         db_location: PathBuf::from(format!("/tmp/chhoto-url-test-{test}.sqlite")),
-        cache_control_header: None,
         disable_frontend: true,
-        custom_site_title: None,
         site_url: Some(String::from("https://mydomain.com")),
         oidc_issuer_url: None,
         oidc_client_id: None,
@@ -92,9 +88,6 @@ pub(super) fn default_config(test: &str) -> config::Config {
         try_longer_slug: false,
         allow_capital_letters: false,
         custom_landing_directory: None,
-        use_wal_mode: true,
-        ensure_acid: false,
-        disable_backups: true,
         frontend_page_size: 10,
     }
 }
@@ -111,9 +104,9 @@ pub(super) async fn create_app(
     let writer = Mutex::from(database::open_db(&db_file, false).unwrap());
     database::init_db(
         &mut writer.lock().expect(crate::DB_MUTEX_ERROR),
-        conf.use_wal_mode,
-        conf.ensure_acid,
-        conf.disable_backups,
+        true,
+        false,
+        true,
     );
 
     let (hits_tx, hits_rx) = mpsc::channel::<(String, bool)>(1024);
