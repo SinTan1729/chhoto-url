@@ -16,6 +16,9 @@ use crate::{
     utils,
 };
 
+const DEFAULT_LISTEN_PORT: u16 = 4567;
+const DEFAULT_HEALTH_PORT: u16 = 1729;
+
 #[derive(Clone)]
 pub(crate) enum SlugStyle {
     Pair,
@@ -151,13 +154,13 @@ pub(crate) fn init_config() -> InitConfig {
                 None
             })
         })
-        .unwrap_or(4567);
+        .unwrap_or(DEFAULT_LISTEN_PORT);
     info!("Listening port is set to: {port}");
 
     let health_port = var("CHHOTO_HEALTH_PORT")
         .ok()
         .and_then(|s| s.parse::<u16>().ok())
-        .or(Some(1729))
+        .or(Some(DEFAULT_HEALTH_PORT))
         .filter(|&p| {
             if p == 0 {
                 warn!("Health port is set to 0. Health checks will be disabled!");
