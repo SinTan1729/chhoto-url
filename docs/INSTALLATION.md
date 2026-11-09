@@ -255,8 +255,6 @@ algorithm.
 
 It is highly recommended that you use hashes for security.
 
-_Note: If using a compose file, make sure to escape $ by $$._
-
 _Warning: It will add some latency to some of your requests and use more resources in general._
 
 Recommended command for hashing:
@@ -266,6 +264,13 @@ echo -n <password> | argon2 <salt> -id -t 3 -m 16 -l 32 -e
 ```
 
 You may also use online tools for this step.
+
+_Note: If using a compose or quadlet file, make sure to escape $ by replacing it with $$._
+
+```bash
+echo -n <argon2-hash> | sed 's/\$/$$/g'
+
+```
 
 ### `CHHOTO_API_HASH_ALGORITHM`
 
