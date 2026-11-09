@@ -58,16 +58,16 @@ podman-stop:
 	podman ps -aq --filter "name=chhoto-url" | xargs -r podman rm
 
 podman-run: podman-stop
-	podman run -t -p ${CHHOTO_LISTEN_PORT}:${CHHOTO_LISTEN_PORT} --name chhoto-url \
+	podman run -t -p 4567:${CHHOTO_LISTEN_PORT} --name chhoto-url \
 		--cap-drop=ALL --env-file ./.env -v "${DB_DIR}:/data" -v "./frontend:/app/frontend/base" -d chhoto-url:debug
 	podman logs chhoto-url -f 
 podman-run-release: podman-stop
-	podman run -t -p ${CHHOTO_LISTEN_PORT}:${CHHOTO_LISTEN_PORT} --name chhoto-url \
+	podman run -t -p 4567:${CHHOTO_LISTEN_PORT} --name chhoto-url \
 		--cap-drop=ALL --env-file ./.env -v "${DB_DIR}:/data" -d chhoto-url:release
 	podman logs chhoto-url -f 
 podman-run-github: podman-stop
 	podman pull ghcr.io/sintan1729/chhoto-url:dev
-	podman run -t -p ${CHHOTO_LISTEN_PORT}:${CHHOTO_LISTEN_PORT} --name chhoto-url \
+	podman run -t -p 4567:${CHHOTO_LISTEN_PORT} --name chhoto-url \
 		--cap-drop=ALL --env-file ./.env -v "${DB_DIR}:/data" -d ghcr.io/sintan1729/chhoto-url:dev
 	podman logs chhoto-url -f 
 

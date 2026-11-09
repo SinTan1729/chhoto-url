@@ -129,7 +129,7 @@ fn get_db_location() -> PathBuf {
 pub(crate) struct InitConfig {
     pub(crate) port: u16,
     pub(crate) listen_address: String,
-    pub(crate) health_port: u16,
+    pub(crate) health_port: Option<u16>,
     pub(crate) exit_on_no_auth: bool,
     pub(crate) custom_site_title: Option<String>,
     pub(crate) cache_control_header: Option<String>,
@@ -146,23 +146,26 @@ pub(crate) fn init_config() -> InitConfig {
     info!("Listening address is set to: {listen_address}");
     let port = read_config_wrapper("CHHOTO_LISTEN_PORT", "port")
         .and_then(|s| {
-            s.parse()
-                .map_err(|p| {
-                    warn!("Invalid listen port {p} was supplied. Ignoring.");
-                })
-                .ok()
+            s.parse().ok().filter(|&p| p != 0).or_else(|| {
+                warn!("Invalid listen port {s} was supplied. Ignoring.");
+                None
+            })
         })
         .unwrap_or(4567);
     info!("Listening port is set to: {port}");
 
-    let health_port: u16 = var("CHHOTO_HEALTH_PORT")
-        .map(|s| {
-            s.parse().unwrap_or_else(|p| {
-                warn!("Invalid health port {p} was supplied. Ignoring.");
-                1729
-            })
-        })
-        .unwrap_or(1729);
+    let health_port = var("CHHOTO_HEALTH_PORT")
+        .ok()
+        .and_then(|s| s.parse::<u16>().ok())
+        .or(Some(1729))
+        .filter(|&p| {
+            if p == 0 {
+                warn!("Health port is set to 0. Health checks will be disabled!");
+                false
+            } else {
+                true
+            }
+        });
 
     let exit_on_no_auth = var("CHHOTO_EXIT_ON_NO_AUTH").is_ok_and(|s| s.trim() == "True");
 

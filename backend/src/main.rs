@@ -194,15 +194,20 @@ async fn main() -> Result<()> {
     })?
     .run();
 
-    let health_app = HttpServer::new(move || {
-        App::new()
-            .app_data(data_clone.clone())
-            .route("/healthz", services::health_route())
-    })
-    .workers(1)
-    .bind(("127.0.0.1", init_config.health_port))?
-    .run();
+    if let Some(port) = init_config.health_port {
+        let health_app = HttpServer::new(move || {
+            App::new()
+                .app_data(data_clone.clone())
+                .route("/healthz", services::health_route())
+        })
+        .workers(1)
+        .bind(("127.0.0.1", port))?
+        .run();
+        info!("Health server listening to port {}.", port);
+        tokio::try_join!(default_app, health_app)?;
+    } else {
+        default_app.await?;
+    }
 
-    tokio::try_join!(default_app, health_app)?;
     Ok(())
 }
