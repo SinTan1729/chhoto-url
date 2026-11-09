@@ -41,13 +41,18 @@ body {
 .linkButton:hover {
   transform: scale(1.05);
 }
-.pure-form input.chhoto-input {
+.pure-form input.chhoto-input,
+.pure-form textarea.chhoto-input {
   width: 65%;
   border-color: var(--border);
   box-shadow: var(--shadow) 0 0.1em 0.2em inset;
 }
-.pure-form input.chhoto-input:focus {
+.pure-form input.chhoto-input:focus,
+.pure-form textarea.chhoto-input:focus {
   border-color: var(--border);
+}
+textarea::placeholder {
+  white-space: wrap;
 }
 
 #logo,
@@ -421,7 +426,8 @@ summary,
   .container {
     max-width: 98vw;
   }
-  .pure-form input.chhoto-input {
+  .pure-form input.chhoto-input,
+  .pure-form textarea.chhoto-input {
     width: 98%;
   }
   #new-url-fieldset label {

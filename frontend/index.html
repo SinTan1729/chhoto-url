@@ -139,16 +139,15 @@
               </div>
               <div class="pure-control-group">
                 <label for="notes">Notes</label>
-                <input
+                <textarea
                   class="chhoto-input"
-                  type="text"
                   name="notes"
                   id="notes"
-                  placeholder="Notes for the link, used for filtering"
-                  pattern="[\x20-\x7E]*"
-                  title="Only printable ASCII characters are allowed"
-                  autocapitalize="off"
-                />
+                  rows="2"
+                  placeholder="Notes for the link, used for filtering. Only printable ASCII
+                  characters are allowed."
+                  title="Notes for the link"
+                ></textarea>
               </div>
             </details>
           </div>
@@ -366,12 +365,11 @@
           </div>
           <div class="pure-control-group">
             <label for="edited-notes">Notes</label>
-            <input
+            <textarea
               class="chhoto-input"
               type="text"
-              pattern="[\x20-\x7E]*"
               id="edited-notes"
-            />
+            ></textarea>
           </div>
           <div class="pure-control-group">
             <label for="edited-expiry">Expiry</label>
