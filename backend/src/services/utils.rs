@@ -513,9 +513,9 @@ fn gen_link(
                 .choose(&mut rand::rng())
                 .expect("This should never happen.");
             let mut out = String::with_capacity(adj.len() + name.len() + 4);
-            out.push_str(name);
-            out.push('-');
             out.push_str(adj);
+            out.push('-');
+            out.push_str(name);
             if try_longer_slug {
                 let four_digits = |n| {
                     let mut out = String::with_capacity(4);
