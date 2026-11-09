@@ -319,5 +319,6 @@ Since there are no logs, it's impossible to prove that those links aren't create
 ## Healthcheck `GET /api/healthz`
 
 There's a special unauthenticated healthcheck route listening to `127.0.0.1:1729/healthz` (so not accessible by the public).
+The port can be changed using [`CHHOTO_HEALTH_PORT`](./INSTALLATION.md/#chhoto_health_port).
 When accessed, it would either return `healthy` or `unhealthy`. Look at the [deployment examples](../deploy) to see
 how to use it for healthchecks.

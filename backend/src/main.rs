@@ -192,13 +192,21 @@ async fn main() -> Result<()> {
     })?
     .run();
 
+    let health_port: u16 = var("CHHOTO_HEALTH_PORT")
+        .map(|s| {
+            s.parse().unwrap_or_else(|p| {
+                warn!("Invalid health port {p} was supplied. Ignoring.");
+                1729
+            })
+        })
+        .unwrap_or(1729);
     let health_app = HttpServer::new(move || {
         App::new()
             .app_data(data_clone.clone())
             .route("/healthz", services::health_route())
     })
     .workers(1)
-    .bind(("127.0.0.1", 1729))?
+    .bind(("127.0.0.1", health_port))?
     .run();
 
     tokio::try_join!(default_app, health_app)?;

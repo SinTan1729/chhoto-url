@@ -346,6 +346,10 @@ Defaults to 10.
 Use this to allow extra protocols for longlinks. By default, only `http`, `https`, `ftp`, and `magnet` links are allowed. It should be a comma
 separated list e.g. `ftps,obsidian`. Malformed protocols will be skipped.
 
+### `CHHOTO_HEALTH_PORT`
+
+The port the health endpoint will listen to. Defaults to `1729`.
+
 ### `RUST_LOG`
 
 It controls the level of logging.
