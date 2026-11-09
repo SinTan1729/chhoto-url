@@ -348,7 +348,7 @@ separated list e.g. `ftps,obsidian`. Malformed protocols will be skipped.
 
 ### `CHHOTO_HEALTH_PORT`
 
-The port the health endpoint will listen to. Defaults to `1729`. Set it to `0` disabled health checks.
+The port the health endpoint will listen to. Defaults to `1729`. Set it to `0` to disable health checks.
 
 ### `RUST_LOG`
 
