@@ -53,13 +53,14 @@ Environment=CHHOTO_TRY_LONGER_SLUG=True
 #Environment=CHHOTO_CUSTOM_LANDING_DIRECTORY=/custom/dir/location 
 #Environment=CHHOTO_CACHE_CONTROL_HEADER=no-cache,private
 #Environment=CHHOTO_FRONTEND_PAGE_SIZE=10
+#Environment=CHHOTO_HEALTH_PORT=1729
 #Environment=TZ=America/Chicago
 
 # Volume
 Volume=data:/data
 
 # Health check
-# Disable this if using the scratch images.
+# Disable this if using the scratch images. Also set CHHOTO_HEALTH_PORT=0 to the handler.
 HealthCmd=CMD-SHELL wget -qO- http://127.0.0.1:1729/healthz || exit 1
 HealthInterval=60s
 HealthRetries=3

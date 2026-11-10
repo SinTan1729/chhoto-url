@@ -54,10 +54,11 @@ services:
       # - CHHOTO_FRONTEND_PAGE_SIZE=10
       # - CHHOTO_SESSION_MASTER_KEY=SECURE_MASTER_KEY
       # - CHHOTO_EXTRA_PROTOCOLS=ftps,obsidian
+      # - CHHOTO_HEALTH_PORT=1729
       # - TZ=America, Chicago
     volumes:
       - data:/data
-    # Disable this if using the scratch images.
+    # Disable this if using the scratch images. Also set CHHOTO_HEALTH_PORT=0 to the handler.
     healthcheck:
       test: wget -qO- http://127.0.0.1:1729/healthz || exit 1
       interval: 60s

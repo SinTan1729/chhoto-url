@@ -154,13 +154,10 @@ fn run_writer(rx: Receiver<LogMessage>, dropped: Arc<AtomicU64>, params: AsyncLo
     let mut line = String::with_capacity(params.avg_log_line_bytes);
 
     loop {
-        // Collection phase.
         std::thread::sleep(params.poll_interval);
 
-        // Drain phase.
         let deadline = Instant::now() + drain_budget;
         let mut disconnected = false;
-
         while Instant::now() < deadline {
             buffer.clear();
             let mut batch_size = 0;
