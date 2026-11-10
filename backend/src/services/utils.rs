@@ -72,40 +72,54 @@ fn is_shortlink_valid(link: &str, allow_capital_letters: bool) -> bool {
     }
 }
 
+// Disallowed for search
+fn is_disallowed_char(c: char) -> bool {
+    let cp = c as u32;
+
+    c.is_control() && c != '\n' && c != '\r'
+        || cp == 0x200B
+        || cp == 0xFEFF
+        || (0xFDD0..=0xFDEF).contains(&cp)
+        || cp & 0xFFFF == 0xFFFE
+        || cp & 0xFFFF == 0xFFFF
+}
 // Only have printable ascii characters as valid characters in notes
 #[inline]
 fn is_note_valid(note: &Option<String>) -> bool {
     note.as_ref()
-        .is_none_or(|n| n.chars().all(|c| c.is_ascii_graphic() || c == ' '))
+        .is_none_or(|n| !n.chars().any(is_disallowed_char))
 }
 
 // Only have a-z, 0-9, - and _ as valid characters in a shortlink
 #[inline]
 fn normalize_filter(link: &str) -> Option<String> {
-    if link.len() < 3 {
+    if link.chars().count() < 3
+        || link
+            .chars()
+            .any(|c| is_disallowed_char(c) || c == '\n' || c == '\r')
+    {
         return None;
     }
 
     let mut out = String::with_capacity(link.len());
-    let mut last_was_sep = true;
-
+    let mut last_was_space = true;
     for c in link.chars() {
-        // Allow printable ascii chars
-        if c.is_ascii_alphanumeric() {
-            out.push(c);
-            last_was_sep = false;
-        } else if c.is_ascii_punctuation() || c == ' ' {
-            if !last_was_sep {
+        if c == ' ' {
+            if !last_was_space {
                 out.push(' ');
-                last_was_sep = true;
+                last_was_space = true;
             }
         } else {
-            return None;
+            out.push(c);
+            last_was_space = false;
         }
     }
 
-    let s = out.trim_ascii_end();
-    (s.len() > 2).then(|| s.to_owned())
+    let normalized = out.trim();
+    if normalized.chars().count() < 3 {
+        return None;
+    }
+    Some(format!("\"{}\"", normalized.replace('"', "\"\"")))
 }
 
 // Simply get the version string

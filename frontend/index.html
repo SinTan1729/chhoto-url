@@ -144,7 +144,7 @@
                   name="notes"
                   id="notes"
                   rows="2"
-                  placeholder="Notes for the link, used for filtering. Only printable ASCII
+                  placeholder="Notes for the link, used for filtering. All valid Unicode
                   characters are allowed."
                   title="Notes for the link"
                 ></textarea>
@@ -185,8 +185,8 @@
                   name="filter"
                   id="filterText"
                   placeholder="Filter shortlinks"
-                  pattern="^$|(?=(?:.*[A-Za-z0-9]){3,})[\x20-\x7E]+$"
-                  title="Only printable ASCII is allowed, min length 3 chars"
+                  pattern="(?:|[^\p{Cc}\p{Cs}\p{Co}\p{Cn}\u200B\uFEFF]{3,})"
+                  title="All valid Unicode characters are allowed, min length 3 chars"
                   autocapitalize="off"
                 />
                 <button class="chhoto-button pure-button pure-button-primary">
@@ -452,7 +452,7 @@
               <td id="info-enabled"></td>
             </tr>
             <tr>
-              <td class="label">Notes:</td>
+              <td class="label" id="info-notes-label">Notes:</td>
               <td id="info-notes"></td>
             </tr>
           </tbody>

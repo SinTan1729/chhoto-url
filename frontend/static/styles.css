@@ -378,6 +378,13 @@ summary,
   word-break: break-all;
 }
 
+#info-notes {
+  white-space: pre-wrap;
+}
+#info-notes-label {
+  vertical-align: top;
+}
+
 .tooltip {
   position: relative;
 }
