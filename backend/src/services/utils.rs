@@ -160,6 +160,7 @@ pub(super) fn getall_helper(data: &AppState, params: GetReqParams) -> Result<Str
     let page_size = params.page_size.filter(|&n| n > 0);
     let filter = params
         .filter
+        .filter(|s| !s.trim().is_empty())
         .map(|s| {
             normalize_filter(&s).ok_or(ChhotoError::ClientError {
                 reason: "Invalid filter was supplied!".to_owned(),
