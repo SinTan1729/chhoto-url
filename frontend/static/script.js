@@ -3,7 +3,7 @@
 
 // Application state
 let VERSION = null;
-let SITE_URL = '-';
+let SITE_URL = '';
 let CONFIG = null;
 let SUBDIR = null;
 let ADMIN = null;
