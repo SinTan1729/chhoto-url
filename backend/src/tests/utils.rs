@@ -134,7 +134,7 @@ pub(super) async fn create_app(
                 .app_data(data.clone())
                 .service(web::scope("/api").configure(services::api_routes_v1))
                 .service(web::scope("/oidc").configure(services::oidc_routes))
-                .route("/{shortlink}", services::link_handler()),
+                .service(services::link_handler()),
         )
         .await,
     )

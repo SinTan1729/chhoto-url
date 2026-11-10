@@ -2,8 +2,12 @@
 // SPDX-License-Identifier: MIT
 
 use actix_web::{
-    Either, HttpRequest, HttpResponse, Responder,
-    http::header::{Accept, Header},
+    HttpRequest, HttpResponse, Responder,
+    body::BoxBody,
+    http::{
+        Method,
+        header::{Accept, Header},
+    },
     mime::{APPLICATION_JSON, TEXT_PLAIN},
     web::{self, Redirect, ServiceConfig, get},
 };
@@ -168,11 +172,15 @@ async fn getconfig(auth: Auth, data: web::Data<AppState>) -> HttpResponse {
 pub(super) async fn link_handler(
     shortlink: web::Path<String>,
     data: web::Data<AppState>,
-) -> impl Responder {
+    req: HttpRequest,
+) -> HttpResponse {
+    fn respond<R: Responder>(responder: R, req: &HttpRequest) -> HttpResponse<BoxBody> {
+        responder.respond_to(req).map_into_boxed_body()
+    }
     let shortlink_clone = shortlink.clone();
     let data_clone = data.clone();
     let Ok(permit) = acquire_permit(data.permits.db.clone()).await else {
-        return Either::Right(utils::error404(data).await);
+        return respond(utils::error404(data).await, &req);
     };
     if let Ok(Ok(longlink)) = spawn_blocking(move || {
         let _permit = permit;
@@ -184,13 +192,16 @@ pub(super) async fn link_handler(
             error!("Failed to enqueue hit update after access: {err}");
         }
         if data.config.use_temp_redirect {
-            Either::Left(Redirect::to(longlink))
+            respond(Redirect::to(longlink), &req)
         } else {
             // Defaults to permanent redirection
-            Either::Left(Redirect::to(longlink).permanent())
+            respond(Redirect::to(longlink).permanent(), &req)
         }
     } else {
-        Either::Right(utils::error404(data).await)
+        match *req.method() {
+            Method::HEAD => HttpResponse::NotFound().finish(),
+            _ => respond(utils::error404(data).await, &req),
+        }
     }
 }
 

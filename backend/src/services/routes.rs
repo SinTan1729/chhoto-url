@@ -2,8 +2,8 @@
 // SPDX-License-Identifier: MIT
 
 use actix_web::{
-    Route,
-    web::{ServiceConfig, get},
+    Resource, Route,
+    web::{ServiceConfig, get, head, resource},
 };
 
 use super::{delete, get, post, put, query, utils};
@@ -29,6 +29,8 @@ pub(crate) fn health_route() -> Route {
     get().to(get::health_handler)
 }
 
-pub(crate) fn link_handler() -> Route {
-    get().to(get::link_handler)
+pub(crate) fn link_handler() -> Resource {
+    resource("/{shortlink}")
+        .route(get().to(get::link_handler))
+        .route(head().to(get::link_handler))
 }

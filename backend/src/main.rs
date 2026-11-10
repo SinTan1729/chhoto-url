@@ -163,7 +163,7 @@ async fn main() -> Result<()> {
             })
             .service(web::scope("/api").configure(services::api_routes_v1))
             .service(web::scope("/oidc").configure(services::oidc_routes))
-            .route("/{shortlink}", services::link_handler());
+            .service(services::link_handler());
 
         if !data.config.disable_frontend {
             if let Some(dir) = data.config.custom_landing_directory.clone() {
