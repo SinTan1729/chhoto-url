@@ -286,6 +286,8 @@ async fn link_editing() {
     assert!(resp.status().is_redirection());
     let status = edit_link(&app, &api_key, "test1", true, true, None, None).await;
     assert!(status.is_success());
+    // Wait for the hits worker to flush, so the reset can't be undone by a pending hit
+    sleep(timer).await;
 
     let (status, reply) = expand(&app, &api_key, "test1").await;
     assert!(status.is_success());
