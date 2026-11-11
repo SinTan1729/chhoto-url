@@ -20,7 +20,7 @@ use tokio::task::spawn_blocking;
 use crate::{
     AppState,
     auth::{Auth, gen_cookie},
-    background::acquire_permit,
+    background::{HitUpdate, acquire_permit},
     database,
     services::{
         types::{
@@ -188,7 +188,11 @@ pub(super) async fn link_handler(
     })
     .await
     {
-        if let Err(err) = data.hits_tx.send((shortlink.to_owned(), false)).await {
+        if let Err(err) = data
+            .hits_tx
+            .send(HitUpdate::Hit(shortlink.to_owned()))
+            .await
+        {
             error!("Failed to enqueue hit update after access: {err}");
         }
         if data.config.use_temp_redirect {

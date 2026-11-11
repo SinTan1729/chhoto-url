@@ -20,7 +20,10 @@ use std::{
 };
 use tokio::sync::{Semaphore, mpsc};
 
-use crate::database::pool::{ReaderDbManager, open_pool};
+use crate::{
+    background::HitUpdate,
+    database::pool::{ReaderDbManager, open_pool},
+};
 
 // Import modules
 mod auth;
@@ -49,7 +52,7 @@ struct Semaphores {
 
 // This struct represents state
 struct AppState {
-    hits_tx: mpsc::Sender<(String, bool)>,
+    hits_tx: mpsc::Sender<HitUpdate>,
     readers: Pool<ReaderDbManager>,
     writer: Mutex<Connection>,
     config: config::Config,
@@ -115,7 +118,7 @@ async fn main() -> Result<()> {
 
     // Generate or load session master key
     let secret_key = utils::generate_key();
-    let (hits_tx, hits_rx) = mpsc::channel::<(String, bool)>(1024);
+    let (hits_tx, hits_rx) = mpsc::channel::<HitUpdate>(1024);
 
     let data = web::Data::new(AppState {
         hits_tx: hits_tx.clone(),

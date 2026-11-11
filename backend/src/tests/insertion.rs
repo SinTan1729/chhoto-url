@@ -284,8 +284,13 @@ async fn link_editing() {
     assert_eq!(reply.expiry_time, now + 1);
 
     assert!(resp.status().is_redirection());
+
+    let req = test::TestRequest::get().uri("/test1").to_request();
+    let resp = test::call_service(&app, req).await;
+    assert!(resp.status().is_redirection());
     let status = edit_link(&app, &api_key, "test1", true, true, None, None).await;
     assert!(status.is_success());
+    sleep(timer).await;
 
     let (status, reply) = expand(&app, &api_key, "test1").await;
     assert!(status.is_success());
