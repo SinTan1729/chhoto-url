@@ -5,9 +5,16 @@ use actix_web::cookie::Key;
 use argon2::{Params, PasswordHash};
 use log::{info, warn};
 use regex::Regex;
-use std::{convert::TryFrom, env::var, fs, io, path::Path};
+use std::{
+    convert::TryFrom, env::var, fs, io, path::Path, sync::Arc, thread::available_parallelism,
+};
+use tokio::sync::Semaphore;
 
-use crate::auth;
+use crate::{
+    Semaphores,
+    auth::{self, Credential::Argon2},
+    config::Config,
+};
 
 fn copy_frontend(src: &str, dst: &str) -> io::Result<()> {
     fn copy_contents(src: &Path, dst: &Path) -> io::Result<()> {
@@ -149,11 +156,9 @@ pub(crate) fn generate_key() -> Key {
     key.unwrap_or(Key::generate())
 }
 
-pub(crate) fn max_argon2_concurrency(hash: &PasswordHash) -> usize {
+fn max_argon2_concurrency(hash: &PasswordHash) -> usize {
     const APP_HEADROOM: u64 = 50 * 1024 * 1024;
-
     let params = Params::try_from(hash).expect("Invalid Argon2 parameters");
-
     let required = (params.block_count() as u64) * 1024;
 
     let read = |path: &str| -> u64 {
@@ -167,10 +172,31 @@ pub(crate) fn max_argon2_concurrency(hash: &PasswordHash) -> usize {
     let available = read("/sys/fs/cgroup/memory.max")
         .saturating_sub(read("/sys/fs/cgroup/memory.current"))
         .saturating_sub(APP_HEADROOM);
-
     let concurrency = (available / required) as usize;
-
     assert!(concurrency > 0, "Insufficient memory for Argon2");
-
     concurrency
+}
+
+pub(crate) fn get_permit_values(config: &Config) -> Semaphores {
+    let threads = available_parallelism().map(usize::from).unwrap_or(2);
+
+    let password_argon2_concurrency = match config.password.as_ref() {
+        Some(Argon2(p)) => max_argon2_concurrency(p),
+        _ => threads,
+    };
+    let api_key_argon2_concurrency = match config.api_key.as_ref() {
+        Some(Argon2(p)) => max_argon2_concurrency(p),
+        _ => threads,
+    };
+    let argon2_concurrency = password_argon2_concurrency
+        .min(api_key_argon2_concurrency)
+        .min(threads);
+    if argon2_concurrency == 0 {
+        panic!("Not enough memory allocated for Argon2 hashing.");
+    }
+
+    Semaphores {
+        auth: Arc::new(Semaphore::new(argon2_concurrency)),
+        db: Arc::new(Semaphore::new(4 * threads)),
+    }
 }
