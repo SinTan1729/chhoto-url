@@ -157,45 +157,99 @@ pub(crate) fn generate_key() -> Key {
 }
 
 fn max_argon2_concurrency(hash: &PasswordHash) -> usize {
+    use std::{fs, path::Path};
+
     const APP_HEADROOM: u64 = 50 * 1024 * 1024;
+    const UNLIMITED_THRESHOLD: u64 = 1 << 60;
 
     let params = Params::try_from(hash).expect("Invalid Argon2 parameters");
     let required = (params.block_count() as u64) * 1024;
 
-    let read = |path: &str| -> Option<u64> {
-        let value = fs::read_to_string(path).ok()?;
-        let value = value.trim();
-        if value == "max" {
-            None
-        } else {
-            value.parse().ok()
+    let read = |path: &Path| -> Option<u64> { fs::read_to_string(path).ok()?.trim().parse().ok() };
+
+    let mut available = None;
+    let mut cgroup_v2 = false;
+
+    // Cgroup v2: inspect the current cgroup and all its ancestors.
+    if let Ok(content) = fs::read_to_string("/proc/self/cgroup")
+        && let Some(cgroup) = content.lines().find_map(|line| line.strip_prefix("0::"))
+    {
+        cgroup_v2 = true;
+
+        let root = Path::new("/sys/fs/cgroup");
+        let leaf = root.join(cgroup.trim_start_matches('/'));
+
+        for dir in leaf.ancestors() {
+            if !dir.starts_with(root) {
+                break;
+            }
+            let Ok(max) = fs::read_to_string(dir.join("memory.max")) else {
+                continue;
+            };
+            let max = max.trim();
+            if max == "max" {
+                continue;
+            }
+            let Ok(max) = max.parse::<u64>() else {
+                continue;
+            };
+            let Some(current) = read(&dir.join("memory.current")) else {
+                continue;
+            };
+            let remaining = max.saturating_sub(current);
+            available = Some(available.map_or(remaining, |prev: u64| prev.min(remaining)));
         }
-    };
+    }
 
-    let available = read("/sys/fs/cgroup/memory.max")
-        .zip(read("/sys/fs/cgroup/memory.current"))
-        .map(|(max, current)| max.saturating_sub(current))
-        .or_else(|| {
-            let max = read("/sys/fs/cgroup/memory/memory.limit_in_bytes")?;
-            let current = read("/sys/fs/cgroup/memory/memory.usage_in_bytes")?;
-
-            (max < (1 << 60)).then(|| max.saturating_sub(current))
+    // Cgroup v1: inspect the current cgroup and its ancestors.
+    if !cgroup_v2
+        && let Ok(content) = fs::read_to_string("/proc/self/cgroup")
+        && let Some(cgroup) = content.lines().find_map(|line| {
+            let (controllers, path) = line.split_once(':')?;
+            controllers
+                .split(',')
+                .any(|controller| controller == "memory")
+                .then_some(path)
         })
-        .or_else(|| {
-            let meminfo = fs::read_to_string("/proc/meminfo").ok()?;
+    {
+        let root = Path::new("/sys/fs/cgroup/memory");
+        let leaf = root.join(cgroup.trim_start_matches('/'));
 
-            meminfo.lines().find_map(|line| {
+        for dir in leaf.ancestors() {
+            if !dir.starts_with(root) {
+                break;
+            }
+            let Some(max) = read(&dir.join("memory.limit_in_bytes")) else {
+                continue;
+            };
+            if max >= UNLIMITED_THRESHOLD {
+                continue;
+            }
+            let Some(current) = read(&dir.join("memory.usage_in_bytes")) else {
+                continue;
+            };
+            let remaining = max.saturating_sub(current);
+            available = Some(available.map_or(remaining, |prev: u64| prev.min(remaining)));
+        }
+    }
+
+    // Host memory fallback when no finite cgroup limit was found.
+    let available = available.or_else(|| {
+        fs::read_to_string("/proc/meminfo")
+            .ok()?
+            .lines()
+            .find_map(|line| {
                 let (key, value) = line.split_once(':')?;
+
                 (key == "MemAvailable")
                     .then(|| value.split_whitespace().next()?.parse::<u64>().ok())
                     .flatten()
                     .map(|kb| kb * 1024)
             })
-        });
-
-    let available = available.map(|available| available.saturating_sub(APP_HEADROOM));
+    });
 
     available
+        .map(|available| available.saturating_sub(APP_HEADROOM))
         .map(|available| (available / required) as usize)
         .unwrap_or(1)
 }
@@ -217,6 +271,7 @@ pub(crate) fn get_permit_values(config: &Config) -> Semaphores {
     if argon2_concurrency == 0 {
         panic!("Not enough memory allocated for Argon2 hashing.");
     }
+    println!("{argon2_concurrency}");
 
     Semaphores {
         auth: Arc::new(Semaphore::new(argon2_concurrency)),
