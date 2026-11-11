@@ -27,6 +27,7 @@ pub(super) fn put_routes_v1(cfg: &mut ServiceConfig) {
 
 // Edit a shortlink
 async fn edit_link(req: String, auth: Auth, data: web::Data<AppState>) -> HttpResponse {
+    // Ok(Some(shortlink)) means hits need to be reset
     match auth {
         Auth::ValidAPIKey | Auth::ValidSession | Auth::NoAuthNeeded => {
             let data_clone = data.clone();
