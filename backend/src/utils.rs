@@ -2,9 +2,10 @@
 // SPDX-License-Identifier: MIT
 
 use actix_web::cookie::Key;
+use argon2::{Params, PasswordHash};
 use log::{info, warn};
 use regex::Regex;
-use std::{env::var, fs, io, path::Path};
+use std::{convert::TryFrom, env::var, fs, io, path::Path};
 
 use crate::auth;
 
@@ -146,4 +147,30 @@ pub(crate) fn generate_key() -> Key {
     };
 
     key.unwrap_or(Key::generate())
+}
+
+pub(crate) fn max_argon2_concurrency(hash: &PasswordHash) -> usize {
+    const APP_HEADROOM: u64 = 50 * 1024 * 1024;
+
+    let params = Params::try_from(hash).expect("Invalid Argon2 parameters");
+
+    let required = (params.block_count() as u64) * 1024;
+
+    let read = |path: &str| -> u64 {
+        fs::read_to_string(path)
+            .expect("Cannot read cgroup memory")
+            .trim()
+            .parse()
+            .expect("Invalid or unlimited cgroup memory")
+    };
+
+    let available = read("/sys/fs/cgroup/memory.max")
+        .saturating_sub(read("/sys/fs/cgroup/memory.current"))
+        .saturating_sub(APP_HEADROOM);
+
+    let concurrency = (available / required) as usize;
+
+    assert!(concurrency > 0, "Insufficient memory for Argon2");
+
+    concurrency
 }

@@ -21,7 +21,11 @@ use std::{
 };
 use tokio::sync::{Semaphore, mpsc};
 
-use crate::database::pool::{ReaderDbManager, open_pool};
+use crate::{
+    auth::Credential::Argon2,
+    database::pool::{ReaderDbManager, open_pool},
+    utils::max_argon2_concurrency,
+};
 
 // Import modules
 mod auth;
@@ -122,12 +126,24 @@ async fn main() -> Result<()> {
         hits_tx: hits_tx.clone(),
         readers: open_pool(&config.db_location).expect("Unable to open database reader pool."),
         writer,
-        config,
+        config: config.clone(),
         frontend_dir,
         permits: {
             let n = available_parallelism().map(usize::from).unwrap_or(2);
+            let c1 = match &config.password {
+                Some(Argon2(p)) => max_argon2_concurrency(p),
+                _ => n,
+            };
+            let c2 = match &config.api_key {
+                Some(Argon2(p)) => max_argon2_concurrency(p),
+                _ => n,
+            };
+            let c = c1.min(c2);
+            if c == 0 {
+                panic!("Not enough memory allocated for Argon2 hashing.");
+            }
             Semaphores {
-                auth: Arc::new(Semaphore::new(n)),
+                auth: Arc::new(Semaphore::new(c)),
                 db: Arc::new(Semaphore::new(4 * n)),
             }
         },
