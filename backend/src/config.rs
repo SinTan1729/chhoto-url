@@ -223,11 +223,6 @@ pub(crate) struct Config {
     pub(crate) db_location: PathBuf,
     pub(crate) disable_frontend: bool,
     pub(crate) site_url: Option<String>,
-    pub(crate) oidc_issuer_url: Option<String>,
-    pub(crate) oidc_client_id: Option<String>,
-    pub(crate) oidc_client_secret: Option<String>,
-    pub(crate) oidc_custom_claim: Option<(String, String)>,
-    pub(crate) oidc_allowed_origins: HashSet<String>,
     pub(crate) public_mode: bool,
     pub(crate) public_mode_expiry_delay: Option<i64>,
     pub(crate) use_temp_redirect: bool,
@@ -240,6 +235,11 @@ pub(crate) struct Config {
     pub(crate) allow_capital_letters: bool,
     pub(crate) custom_landing_directory: Option<String>,
     pub(crate) frontend_page_size: u16,
+    pub(crate) oidc_issuer_url: Option<String>,
+    pub(crate) oidc_client_id: Option<String>,
+    pub(crate) oidc_client_secret: Option<String>,
+    pub(crate) oidc_custom_claim: Option<(String, String)>,
+    pub(crate) oidc_allowed_origins: HashSet<String>,
 }
 
 pub(crate) fn read() -> Config {
@@ -432,10 +432,19 @@ pub(crate) fn read() -> Config {
         .ok()
         .map(|s| remove_surrounding_quotes(s.trim()))
         .filter(|s| !s.is_empty() && oidc_issuer_url.is_some())
-        .and_then(|s| {
-            s.split_once("=")
-                .filter(|(f, l)| !f.is_empty() && !l.is_empty())
-                .map(|(f, l)| (f.to_string(), l.to_string()))
+        .map(|s| {
+            assert!(
+                oidc_issuer_url.is_some(),
+                "CHHOTO_OIDC_CUSTOM_CLAIM requires CHHOTO_OIDC_ISSUER_URL"
+            );
+            let (field, value) = s
+                .split_once('=')
+                .filter(|(f, v)| !f.is_empty() && !v.is_empty())
+                .unwrap_or_else(|| {
+                    panic!("Invalid CHHOTO_OIDC_CUSTOM_CLAIM: expected field=value")
+                });
+
+            (field.to_string(), value.to_string())
         });
     if let Some(urls) = var("CHHOTO_OIDC_EXTRA_ORIGINS")
         .ok()
@@ -508,11 +517,6 @@ pub(crate) fn read() -> Config {
         db_location,
         disable_frontend,
         site_url,
-        oidc_issuer_url,
-        oidc_client_id,
-        oidc_client_secret,
-        oidc_custom_claim,
-        oidc_allowed_origins,
         public_mode,
         public_mode_expiry_delay,
         use_temp_redirect,
@@ -525,5 +529,10 @@ pub(crate) fn read() -> Config {
         allow_capital_letters,
         custom_landing_directory,
         frontend_page_size,
+        oidc_issuer_url,
+        oidc_client_id,
+        oidc_client_secret,
+        oidc_custom_claim,
+        oidc_allowed_origins,
     }
 }

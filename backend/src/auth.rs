@@ -32,6 +32,7 @@ pub(crate) enum Credential {
 }
 impl Credential {
     pub(crate) fn parse(val: String, hash_algorithm: &Option<String>, name: &str) -> Option<Self> {
+        const EXIT_MSG: &str = "Chhoto URL exit due to bad auth!";
         let recommended = if name == "Password" {
             "Argon2"
         } else {
@@ -51,8 +52,8 @@ impl Credential {
                     Some(Credential::Argon2(hash.into()))
                 }
                 Err(e) => {
-                    warn!("Invalid Argon2 hash was provided for {name}: {e}");
-                    None
+                    eprintln!("Invalid Argon2 hash was provided for {name}: {e}");
+                    panic!("{EXIT_MSG}");
                 }
             },
             Some("SHA512") => match base64_url::decode(&val) {
@@ -66,14 +67,16 @@ impl Credential {
                         }
                     );
                     let Ok(hash): Result<[u8; 64], _> = hash.try_into() else {
-                        warn!("Invalid SHA512 hash was provided for {name}. I must be 64 bytes.");
-                        return None;
+                        eprintln!(
+                            "Invalid SHA512 hash was provided for {name}. I must be 64 bytes."
+                        );
+                        panic!("{EXIT_MSG}");
                     };
                     Some(Credential::SHA512(hash.into()))
                 }
                 Err(e) => {
-                    warn!("Invalid SHA512 hash was provided for {name}: {e}");
-                    None
+                    eprintln!("Invalid SHA512 hash was provided for {name}: {e}");
+                    panic!("{EXIT_MSG}");
                 }
             },
             None => {

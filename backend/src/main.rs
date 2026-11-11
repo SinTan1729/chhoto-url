@@ -9,13 +9,12 @@ use actix_web::{
     middleware,
     web::{self, Redirect},
 };
-use log::{error, info, warn};
+use log::{info, warn};
 use r2d2::Pool;
 use rusqlite::Connection;
 use std::{
     collections::HashMap,
     io::Result,
-    process::exit,
     sync::{Arc, Mutex, Once},
     thread::available_parallelism,
     time::Duration,
@@ -76,8 +75,8 @@ async fn main() -> Result<()> {
     logging::init_async(Duration::from_secs(1), 8 * 1024, 512);
 
     // Read config from env vars
-    let init_config = config::init_config();
     let config = config::read();
+    let init_config = config::init_config();
     // ArcMutex is necessary since the writer is shared across threads
     let writer = Mutex::new(database::open_db(&config.db_location, false).expect(RW_DB_OPEN_ERROR));
 
@@ -109,8 +108,7 @@ async fn main() -> Result<()> {
         if config.password.is_none() {
             warn!("No auth is set up. Chhoto URL will be exposed to the public.");
             if init_config.exit_on_no_auth {
-                error!("Exiting Chhoto URL.");
-                exit(1);
+                panic!("Exiting Chhoto URL due to no auth.");
             }
         }
         None

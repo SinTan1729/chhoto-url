@@ -1,7 +1,7 @@
 // SPDX-FileCopyrightText: 2023-2026 Sayantan Santra <sayantan.santra689@gmail.com>
 // SPDX-License-Identifier: MIT
 
-use log::{error, info, warn};
+use log::{info, warn};
 use openidconnect::{
     AdditionalClaims, Client, ClientId, ClientSecret, EmptyExtraTokenFields, EndpointMaybeSet,
     EndpointNotSet, EndpointSet, IdTokenFields, IssuerUrl, Nonce, PkceCodeVerifier,
@@ -65,6 +65,7 @@ pub(crate) type OidcClient<
 >;
 
 pub async fn create_oidc_client(config: &Config) -> Option<(reqwest::Client, OidcClient)> {
+    const EXIT_MSG: &str = "Chhoto URL exit due to bad OIDC details!";
     let issuer_url = config.oidc_issuer_url.clone()?;
     let Some(client_id) = config.oidc_client_id.clone() else {
         warn!("OIDC Client ID must be non empty.");
@@ -98,12 +99,10 @@ pub async fn create_oidc_client(config: &Config) -> Option<(reqwest::Client, Oid
                     Err(e) => warn!("Could not read SSL_CERT_FILE at {path}: {e}"),
                 }
             }
-            let async_http_client = builder
-                .build()
-                .inspect_err(|e| {
-                    error!("Error building reqwest client for OIDC: {e}");
-                })
-                .ok()?;
+            let async_http_client = builder.build().unwrap_or_else(|e| {
+                eprintln!("Error building reqwest client for OIDC: {e}");
+                panic!("{EXIT_MSG}");
+            });
 
             match CoreProviderMetadata::discover_async(issuer_url, &async_http_client).await {
                 Ok(provider_metadata) => {
@@ -115,14 +114,14 @@ pub async fn create_oidc_client(config: &Config) -> Option<(reqwest::Client, Oid
                     Some((async_http_client, core_client))
                 }
                 Err(e) => {
-                    error!("Error while creating OIDC client: {}", e);
-                    None
+                    eprintln!("Error while creating OIDC client: {}", e);
+                    panic!("{EXIT_MSG}");
                 }
             }
         }
         Err(e) => {
-            error!("Error while processing OIDC issuer url: {}", e);
-            None
+            eprintln!("Error while processing OIDC issuer url: {}", e);
+            panic!("{EXIT_MSG}");
         }
     }
 }
