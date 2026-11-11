@@ -30,8 +30,7 @@ pub(crate) struct DBRow {
 }
 
 // Find a single URL for /api/expand
-pub(crate) fn find_url(shortlink: &str, db: &Connection) -> Result<DBRow, ChhotoError> {
-    // Long link, hits, expiry time
+pub(crate) fn find_url_details(shortlink: &str, db: &Connection) -> Result<DBRow, ChhotoError> {
     let now = chrono::Utc::now().timestamp();
     let Ok(mut statement) = db.prepare_cached(queries::EXPAND_URL) else {
         error!("Error preparing SQL statement for find_url.");
@@ -147,7 +146,7 @@ pub(crate) fn getall(
 }
 
 // Resolve site and add link to add_hit queue
-pub(crate) fn find_and_add_hit(shortlink: &str, data: &AppState) -> Result<String, ()> {
+pub(crate) fn find_longlink(shortlink: &str, data: &AppState) -> Result<String, ()> {
     let now = chrono::Utc::now().timestamp();
     let db = data
         .readers

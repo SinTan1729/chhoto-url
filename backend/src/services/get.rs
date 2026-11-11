@@ -184,7 +184,7 @@ pub(super) async fn link_handler(
     };
     if let Ok(Ok(longlink)) = spawn_blocking(move || {
         let _permit = permit;
-        database::find_and_add_hit(&shortlink_clone, &data_clone.into_inner())
+        database::find_longlink(&shortlink_clone, &data_clone.into_inner())
     })
     .await
     {

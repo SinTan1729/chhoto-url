@@ -42,7 +42,7 @@ async fn expand(req: String, auth: Auth, data: web::Data<AppState>) -> HttpRespo
                     error!("{}", crate::DB_POOL_ERROR);
                     ServerError
                 })?;
-                database::find_url(&req, &db)
+                database::find_url_details(&req, &db)
             })
             .await
             .map_err(|_| ServerError)
