@@ -569,7 +569,7 @@ pub(super) async fn verify_login(
     auth: Auth,
     permit: Arc<Semaphore>,
 ) -> Result<(bool, bool), actix_web::Error> {
-    // (bool,  bool) = (authorized, password needed)
+    // (bool,  bool) = (authorized, password login enabled)
     (if let Some(password) = password {
         password
             .validate(provided_password, permit)
