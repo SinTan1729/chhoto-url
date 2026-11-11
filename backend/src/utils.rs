@@ -271,7 +271,6 @@ pub(crate) fn get_permit_values(config: &Config) -> Semaphores {
     if argon2_concurrency == 0 {
         panic!("Not enough memory allocated for Argon2 hashing.");
     }
-    println!("{argon2_concurrency}");
 
     Semaphores {
         auth: Arc::new(Semaphore::new(argon2_concurrency)),
