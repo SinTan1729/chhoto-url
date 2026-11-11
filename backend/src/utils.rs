@@ -158,23 +158,46 @@ pub(crate) fn generate_key() -> Key {
 
 fn max_argon2_concurrency(hash: &PasswordHash) -> usize {
     const APP_HEADROOM: u64 = 50 * 1024 * 1024;
+
     let params = Params::try_from(hash).expect("Invalid Argon2 parameters");
     let required = (params.block_count() as u64) * 1024;
 
-    let read = |path: &str| -> u64 {
-        fs::read_to_string(path)
-            .expect("Cannot read cgroup memory")
-            .trim()
-            .parse()
-            .expect("Invalid or unlimited cgroup memory")
+    let read = |path: &str| -> Option<u64> {
+        let value = fs::read_to_string(path).ok()?;
+        let value = value.trim();
+        if value == "max" {
+            None
+        } else {
+            value.parse().ok()
+        }
     };
 
     let available = read("/sys/fs/cgroup/memory.max")
-        .saturating_sub(read("/sys/fs/cgroup/memory.current"))
-        .saturating_sub(APP_HEADROOM);
-    let concurrency = (available / required) as usize;
-    assert!(concurrency > 0, "Insufficient memory for Argon2");
-    concurrency
+        .zip(read("/sys/fs/cgroup/memory.current"))
+        .map(|(max, current)| max.saturating_sub(current))
+        .or_else(|| {
+            let max = read("/sys/fs/cgroup/memory/memory.limit_in_bytes")?;
+            let current = read("/sys/fs/cgroup/memory/memory.usage_in_bytes")?;
+
+            (max < (1 << 60)).then(|| max.saturating_sub(current))
+        })
+        .or_else(|| {
+            let meminfo = fs::read_to_string("/proc/meminfo").ok()?;
+
+            meminfo.lines().find_map(|line| {
+                let (key, value) = line.split_once(':')?;
+                (key == "MemAvailable")
+                    .then(|| value.split_whitespace().next()?.parse::<u64>().ok())
+                    .flatten()
+                    .map(|kb| kb * 1024)
+            })
+        });
+
+    let available = available.map(|available| available.saturating_sub(APP_HEADROOM));
+
+    available
+        .map(|available| (available / required) as usize)
+        .unwrap_or(1)
 }
 
 pub(crate) fn get_permit_values(config: &Config) -> Semaphores {
