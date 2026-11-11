@@ -11,7 +11,7 @@ use tokio::task::spawn_blocking;
 use crate::{
     AppState,
     auth::Auth,
-    background::acquire_permit,
+    background::{HitUpdate, acquire_permit},
     services::{
         types::{
             ChhotoError::{ClientError, ServerError},
@@ -53,7 +53,7 @@ async fn edit_link(req: String, auth: Auth, data: web::Data<AppState>) -> HttpRe
                         reason: String::from("Edit was successful."),
                     };
                     if let Some(shortlink) = result
-                        && let Err(err) = data.hits_tx.send((shortlink.to_owned(), true)).await
+                        && let Err(err) = data.hits_tx.send(HitUpdate::Reset(shortlink)).await
                     {
                         error!("Failed to enqueue hit update after edit: {err}");
                     }

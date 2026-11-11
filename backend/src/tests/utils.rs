@@ -109,7 +109,7 @@ pub(super) async fn create_app(
         true,
     );
 
-    let (hits_tx, hits_rx) = mpsc::channel::<(String, bool)>(1024);
+    let (hits_tx, hits_rx) = mpsc::channel::<HitUpdate>(1024);
     let data = web::Data::new(AppState {
         hits_tx,
         readers: database::pool::open_pool(&db_file).unwrap(),

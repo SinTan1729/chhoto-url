@@ -14,31 +14,37 @@ use tokio::{
 
 use crate::{AppState, database};
 
+pub(crate) enum HitUpdate {
+    Hit(String),
+    Reset(String),
+}
+
 // Run hit updates every 500ms or once 500 distinct links are pending.
 pub(crate) fn spawn_hits_worker(
     data: web::Data<AppState>,
-    mut hits_rx: mpsc::Receiver<(String, bool)>,
+    mut hits_rx: mpsc::Receiver<HitUpdate>,
 ) -> tokio::task::JoinHandle<()> {
     spawn({
         async move {
             let mut pending = HashMap::new();
-            fn update_count(link: String, reset: bool, pending: &mut HashMap<String, i64>) {
-                if reset {
-                    pending.remove(&link);
-                } else {
-                    *pending.entry(link).or_insert(0) += 1;
+            fn update_count(update: HitUpdate, pending: &mut HashMap<String, i64>) {
+                match update {
+                    HitUpdate::Hit(link) => *pending.entry(link).or_insert(0) += 1,
+                    HitUpdate::Reset(link) => {
+                        pending.remove(&link);
+                    }
                 }
             }
             loop {
-                let Some((first, reset)) = hits_rx.recv().await else {
+                let Some(first) = hits_rx.recv().await else {
                     break;
                 };
-                update_count(first, reset, &mut pending);
+                update_count(first, &mut pending);
                 let deadline = Instant::now() + Duration::from_millis(500);
 
                 while pending.len() < 500 {
                     tokio::select! {
-                        Some((link, reset)) = hits_rx.recv() => update_count(link, reset, &mut pending),
+                        Some(update) = hits_rx.recv() => update_count(update, &mut pending),
                         _ = sleep_until(deadline) => break,
                         else => break,
                     }
