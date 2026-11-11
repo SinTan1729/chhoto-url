@@ -576,7 +576,7 @@ pub(super) async fn verify_login(
             .await
             .map(|auth| (auth, true))
     } else {
-        Ok((false, matches!(auth, Auth::NoAuthNeeded)))
+        Ok((matches!(auth, Auth::NoAuthNeeded), false))
     })
     .map_err(|_| {
         let text = "Error verifying password.";
