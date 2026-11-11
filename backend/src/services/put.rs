@@ -53,7 +53,7 @@ async fn edit_link(req: String, auth: Auth, data: web::Data<AppState>) -> HttpRe
                         reason: String::from("Edit was successful."),
                     };
                     if let Some(shortlink) = result
-                        && let Err(err) = data.hits_tx.send((shortlink.to_owned(), false)).await
+                        && let Err(err) = data.hits_tx.send((shortlink.to_owned(), true)).await
                     {
                         error!("Failed to enqueue hit update after edit: {err}");
                     }
