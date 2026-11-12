@@ -164,7 +164,7 @@ pub(crate) fn find_longlink(shortlink: &str, data: &AppState) -> Result<String, 
         return Err(());
     };
 
-    debug!("Accessed link: {shortlink}.");
+    debug!("Accessed link: '{shortlink}'");
     Ok(long_url)
 }
 // Add hits
