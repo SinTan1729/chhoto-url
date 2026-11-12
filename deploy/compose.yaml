@@ -15,7 +15,7 @@ services:
     restart: unless-stopped
     container_name: chhoto-url
     tty: true
-    # mem_limit: "50m"
+    # mem_limit: "100m"
     # Be careful about limiting resources when using hashed credentials, as it might cause crashes
     # You may enable the next two options if you want. Make sure that you run the container as the proper
     # user. In most cases, user: 1000:1000 should work. You might also need to mount a directory with your

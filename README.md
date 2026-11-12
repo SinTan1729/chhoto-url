@@ -17,7 +17,7 @@
 
 # What is it?
 
-A simple selfhosted URL shortener with no unnecessary features. Simplicity
+A simple self-hosted URL shortener with no unnecessary features. Simplicity
 and speed are the main foci of this project. The `scratch` docker image is <6 MB (compressed),
 the `alpine` one is <10 MB (compressed), and it uses <15 MB of RAM under regular use.
 

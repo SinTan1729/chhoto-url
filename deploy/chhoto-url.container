@@ -19,7 +19,7 @@ Image=docker.io/sintan1729/chhoto-url:alpine
 PodmanArgs=--tty
 PublishPort=4567:4567
 DropCapability=ALL
-#Memory=50m # Note: This might not work with older versions of podman quadlets
+#Memory=100m # Note: This might not work with older versions of podman quadlets
 # Be careful about limiting resources when using hashed credentials, as it might cause crashes
 
 # Environment variables
