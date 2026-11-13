@@ -114,6 +114,7 @@ minify:
 	@echo "Minifying resources..."
 	minify -rs "./website/" -o "/tmp/chhoto-url-site/"
 	find /tmp/chhoto-url-site/ -type f -regextype egrep -not -regex '.+\.(html|js|css|svg|ico|png|webp)' -delete
+	@bust_html_assets_cache.py /tmp/chhoto-url-site
 
 deploy: minify
 	@echo "Deploying website for public access..."

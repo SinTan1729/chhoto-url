@@ -2,6 +2,7 @@
 # SPDX-License-Identifier: MIT
 
 name: Test and Release
+
 on:
   push:
     tags:
@@ -9,43 +10,40 @@ on:
     branches: ['dev']
     paths: ['backend/**', 'frontend/**']
   workflow_dispatch:
+
 env:
   CARGO_TERM_COLOR: always
   IMAGE_NAME: chhoto-url
 
 jobs:
-  # Build artifacts
   build:
     name: Build and Test - ${{ matrix.platform.os-name }}
     if: |
       github.ref_type == 'tag' ||
       !startsWith(github.event.head_commit.message, 'build: Bumped version to')
+    runs-on: ubuntu-latest
     strategy:
       matrix:
         platform:
           - os-name: Linux-x86_64
             target: x86_64-unknown-linux-musl
-
           - os-name: Linux-arm64
             target: aarch64-unknown-linux-musl
-
           - os-name: Linux-armv7
             target: armv7-unknown-linux-musleabihf
-
           - os-name: Linux-riscv64
             target: riscv64gc-unknown-linux-musl
-            # Need to use an unreleased version for now
+            # Need to use an unreleased version for now.
             cross-version: a5c1c64f0810eb90c790e94b7904b27dccc02287
 
-    runs-on: ubuntu-latest
     steps:
-      - name: Checkout
-        uses: actions/checkout@v6
+      - uses: actions/checkout@v6
+
       - name: Compute short SHA
         id: vars
         shell: bash
-        run: echo "short_sha=$(echo ${{ github.sha }} | cut -c1-7)" >> "$GITHUB_OUTPUT"
-        # Build the binaries and upload
+        run: echo "short_sha=${GITHUB_SHA::7}" >> "$GITHUB_OUTPUT"
+
       - name: Build binary and test
         uses: houseabsolute/actions-rust-cross@v1
         env:
@@ -53,10 +51,11 @@ jobs:
         with:
           command: both
           target: ${{ matrix.platform.target }}
-          args: '--locked --release --manifest-path=backend/Cargo.toml'
+          args: --locked --release --manifest-path=backend/Cargo.toml
           cross-version: ${{ matrix.platform.cross-version }}
           rust-cache-parameters: '{"workspaces":"backend -> target"}'
-      - name: Upload artifacts
+
+      - name: Upload binary
         uses: actions/upload-artifact@v7
         with:
           name: ${{ matrix.platform.target }}
@@ -64,40 +63,23 @@ jobs:
           retention-days: 1
           if-no-files-found: error
 
-  # Push dev image
   dev:
     name: Push dev image
     if: github.ref_type != 'tag'
     runs-on: ubuntu-latest
+    needs: build
     permissions:
       id-token: write
       contents: write
       packages: write
       attestations: write
-    needs: build
     steps:
-      # Prep the files
-      - name: Checkout repository
-        uses: actions/checkout@v6
+      - uses: actions/checkout@v6
+      - name: Prepare build context
+        uses: ./.github/actions/prepare-image-context
         with:
-          lfs: true
           fetch-depth: 1
-      - name: Download artifacts
-        uses: actions/download-artifact@v8
-      - name: Move stuff around and fix permissions
-        run: |
-          for f in *-unknown-linux-musl*
-          do
-            mkdir -p backend/target/$f/release
-            mv $f/chhoto-url backend/target/$f/release/
-            chmod +x backend/target/$f/release/chhoto-url
-          done
-      - name: Minify frontend for release
-        run: |
-          mv frontend/ frontend-original/
-          curl -fsSL 'https://github.com/tdewolff/minify/releases/latest/download/minify_linux_amd64.tar.gz' |
-            tar -xzf - -C . 'minify' || exit
-          ./minify -rs frontend-original/ -o frontend/
+
       - name: Log in to GHCR
         uses: docker/login-action@v4
         with:
@@ -105,80 +87,58 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      # Extract metadata
-      - name: Extract metadata (tags, labels) for Docker - dev
-        id: meta-dev
+      - name: Extract Docker metadata
+        id: meta
         uses: docker/metadata-action@v6
         env:
           DOCKER_METADATA_ANNOTATIONS_LEVELS: manifest,index
         with:
-          images: |
-            ghcr.io/sintan1729/${{ env.IMAGE_NAME }}
-          tags: |
-            type=raw,value=dev
+          images: ghcr.io/sintan1729/${{ env.IMAGE_NAME }}
+          tags: type=raw,value=dev
 
-      # Build and push docker images
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v4
-      - name: Build and push Docker image - dev
-        id: push-dev
+      - uses: docker/setup-buildx-action@v4
+
+      - name: Build and push dev image
+        id: push
         uses: docker/build-push-action@v7
         with:
           context: .
           push: true
           file: deploy/Containerfile.alpine
-          tags: ${{ steps.meta-dev.outputs.tags }}
-          labels: ${{ steps.meta-dev.outputs.labels }}
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
           platforms: linux/amd64,linux/arm64,linux/arm/v7,linux/riscv64
-          annotations: ${{ steps.meta-dev.outputs.annotations }}
+          annotations: ${{ steps.meta.outputs.annotations }}
 
-      # Attestation
-      - name: Generate artifact attestation - dev
+      - name: Generate artifact attestation
         uses: actions/attest@v4
         with:
           subject-name: sintan1729/${{ env.IMAGE_NAME }}
-          subject-digest: ${{ steps.push-dev.outputs.digest }}
+          subject-digest: ${{ steps.push.outputs.digest }}
 
-  # Push release images
   release:
     name: Push release images
     if: github.ref_type == 'tag'
     runs-on: ubuntu-latest
+    needs: build
     permissions:
       id-token: write
       contents: write
       packages: write
       attestations: write
-    needs: build
     steps:
-      # Prep the files
-      - name: Checkout repository
-        uses: actions/checkout@v6
+      - name: Prepare build context
+        uses: ./.github/actions/prepare-image-context
         with:
-          lfs: true
           fetch-depth: 0
-      - name: Download artifacts
-        uses: actions/download-artifact@v8
-      - name: Move stuff around and fix permissions
-        run: |
-          for f in *-unknown-linux-musl*
-          do
-            mkdir -p backend/target/$f/release
-            mv $f/chhoto-url backend/target/$f/release/
-            chmod +x backend/target/$f/release/chhoto-url
-          done
-      - name: Minify frontend for release
-        run: |
-          mv frontend/ frontend-original/
-          curl -fsSL 'https://github.com/tdewolff/minify/releases/latest/download/minify_linux_amd64.tar.gz' |
-            tar -xzf - -C . 'minify' || exit
-          ./minify -rs frontend-original/ -o frontend/
-          mkdir -p empty-dir # Needed for scratch
+          create-empty-dir: 'true'
+
       - name: Log in to Docker Hub
         uses: docker/login-action@v4
         with:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
+
       - name: Log in to GHCR
         uses: docker/login-action@v4
         with:
@@ -186,8 +146,7 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      # Extract metadata
-      - name: Extract metadata (tags, labels) for Docker - alpine
+      - name: Extract Alpine image metadata
         id: meta-alpine
         uses: docker/metadata-action@v6
         env:
@@ -202,7 +161,8 @@ jobs:
             type=semver,pattern={{version}}-alpine
             type=raw,value=latest-alpine
             type=raw,value=alpine
-      - name: Extract metadata (tags, labels) for Docker - scratch
+
+      - name: Extract scratch image metadata
         id: meta-scratch
         uses: docker/metadata-action@v6
         env:
@@ -218,10 +178,9 @@ jobs:
             type=raw,value=latest
             type=raw,value=scratch
 
-      # Build and push docker images
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v4
-      - name: Build and push Docker image - alpine
+      - uses: docker/setup-buildx-action@v4
+
+      - name: Build and push Alpine image
         id: push-alpine
         uses: docker/build-push-action@v7
         with:
@@ -234,7 +193,8 @@ jobs:
           labels: ${{ steps.meta-alpine.outputs.labels }}
           platforms: linux/amd64,linux/arm64,linux/arm/v7,linux/riscv64
           annotations: ${{ steps.meta-alpine.outputs.annotations }}
-      - name: Build and push Docker image - scratch
+
+      - name: Build and push scratch image
         id: push-scratch
         uses: docker/build-push-action@v7
         with:
@@ -246,31 +206,32 @@ jobs:
           platforms: linux/amd64,linux/arm64,linux/arm/v7,linux/riscv64
           annotations: ${{ steps.meta-scratch.outputs.annotations }}
 
-      # Attestation
-      - name: Generate artifact attestation - alpine
+      - name: Attest Alpine image
         uses: actions/attest@v4
         with:
           subject-name: sintan1729/${{ env.IMAGE_NAME }}
           subject-digest: ${{ steps.push-alpine.outputs.digest }}
-      - name: Generate artifact attestation - scratch
+
+      - name: Attest scratch image
         uses: actions/attest@v4
         with:
           subject-name: sintan1729/${{ env.IMAGE_NAME }}
           subject-digest: ${{ steps.push-scratch.outputs.digest }}
 
-      # Create a release with changelog
-      - name: Generate a changelog
-        uses: orhun/git-cliff-action@v4
+      - name: Generate changelog
         id: git-cliff
+        uses: orhun/git-cliff-action@v4
         with:
           config: .github/cliff.toml
           args: --latest --strip header
         env:
           GITHUB_REPO: ${{ github.repository }}
           OUTPUT: CHANGELOG.md
-      - name: Show the changelog
+
+      - name: Show changelog
         run: cat CHANGELOG.md
-      - name: Release
+
+      - name: Create GitHub release
         uses: softprops/action-gh-release@v3
         with:
           body_path: ${{ steps.git-cliff.outputs.changelog }}

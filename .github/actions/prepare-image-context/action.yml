@@ -1,0 +1,99 @@
+# SPDX-FileCopyrightText: 2023-2026 Sayantan Santra <sayantan.santra689@gmail.com>
+# SPDX-License-Identifier: MIT
+
+name: Prepare image build context
+description: Restore binary artifacts and prepare the minified frontend with SRI hashes.
+
+inputs:
+  fetch-depth:
+    description: Git checkout depth.
+    required: false
+    default: '1'
+  create-empty-dir:
+    description: Create empty-dir for the scratch image build.
+    required: false
+    default: 'false'
+
+runs:
+  using: composite
+  steps:
+    - name: Checkout repository
+      uses: actions/checkout@v6
+      with:
+        lfs: true
+        fetch-depth: ${{ inputs.fetch-depth }}
+
+    - name: Download binary artifacts
+      uses: actions/download-artifact@v8
+
+    - name: Restore binaries
+      shell: bash
+      run: |
+        shopt -s nullglob
+        for artifact in *-unknown-linux-musl*; do
+          mkdir -p "backend/target/$artifact/release"
+          mv "$artifact/chhoto-url" "backend/target/$artifact/release/"
+          chmod +x "backend/target/$artifact/release/chhoto-url"
+        done
+
+    - name: Minify frontend
+      shell: bash
+      run: |
+        mv frontend frontend-original
+        curl -fsSL 'https://github.com/tdewolff/minify/releases/download/v2.24.25/minify_linux_amd64.tar.gz' |
+          tar -xzf - -C . minify
+        ./minify -rs frontend-original/ -o frontend/
+
+    - name: Add version params to bust cache
+      shell: bash
+      run: |
+        python3 - <<'PY'
+        import re
+        import time
+        from pathlib import Path
+
+        root = Path("frontend")
+        html = root / "index.html"
+        content = html.read_text()
+        timestamp = int(time.time())
+        pattern = r"""<script\b(?=[^>]*\bsrc=)[^>]*>|<link\b(?=[^>]*\bhref=)[^>]*>"""
+
+        def add_cache_busting(match):
+            tag = match.group(0)
+            attr = "src" if tag.startswith("<script") else "href"
+            url = re.search(
+                rf"""\b{attr}\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s>]+))""",
+                tag,
+            )
+            if not url:
+                return tag
+
+            path = next(group for group in url.groups() if group is not None)
+            if path.startswith(("https://", "http://", "//")):
+                return tag
+
+            asset_path = path.split("?", 1)[0].lstrip("/")
+            asset = root / asset_path
+            if not asset.is_file():
+                print(f"Warning: asset not found: {asset_path}")
+                return tag
+
+            versioned_url = f"{asset_path}?v={timestamp}"
+            return re.sub(
+                rf"""(\b{attr}\s*=\s*)(?:"[^"]*"|'[^']*'|[^\s>]+)""",
+                lambda m: f'{m.group(1)}"{versioned_url}"',
+                tag,
+            )
+
+        updated = re.sub(pattern, add_cache_busting, content)
+        if updated != content:
+            html.write_text(updated)
+            print("Updated index.html")
+        else:
+            print("No changes needed")
+        PY
+
+    - name: Create scratch build directory
+      if: inputs.create-empty-dir == 'true'
+      shell: bash
+      run: mkdir -p empty-dir
