@@ -178,6 +178,12 @@ async fn main() -> Result<()> {
     })
     // Hardcode the port the server listens to. Allows for more intuitive Docker Compose port management
     .bind((&*init_config.listen_address, init_config.port))
+    .inspect_err(|_| {
+        eprintln!(
+            "Chhoto URL failed to bind to {}:{}",
+            init_config.listen_address, init_config.port
+        )
+    })
     .inspect(|_| {
         LOGGER.call_once(|| {
             info!(
@@ -195,7 +201,8 @@ async fn main() -> Result<()> {
                 .route("/healthz", services::health_route())
         })
         .workers(1)
-        .bind(("127.0.0.1", port))?
+        .bind(("127.0.0.1", port))
+        .inspect_err(|_| eprintln!("Health handler failed to bind to 127.0.0.1:{port}"))?
         .run();
         info!("Health server listening to port {}.", port);
         tokio::try_join!(default_app, health_app)?;
