@@ -35,7 +35,7 @@ Feel free to discuss any issues or suggestions in [#56](https://github.com/SinTa
 There's an unofficial NixOS package maintained by [@Defelo](https://github.com/Defelo) for Chhoto URL.  
 [Link (not an endorsement).](https://search.nixos.org/packages?query=chhoto-url)
 
-# MCP Server
+## MCP Server
 
 There's an unofficial MCP Server maintained by [@SpaghetGaming](https://github.com/SpaghetGaming) for Chhoto URL.  
 [Link (not an endorsement).](https://github.com/spaghetgaming/chhoto-mcp)

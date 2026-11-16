@@ -272,7 +272,7 @@ echo -n <argon2-hash> | sed 's/\$/$$/g'
 
 ```
 
-### `CHHOTO_API_HASH_ALGORITHM`
+### `CHHOTO_API_KEY_HASH_ALGORITHM`
 
 If you want to provided hashed API Key, name a supported algorithm here. For now, the supported
 values are: `Argon2` and `SHA512`. Unsupported values are ignored.
