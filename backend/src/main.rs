@@ -9,12 +9,13 @@ use actix_web::{
     middleware,
     web::{self, Redirect},
 };
-use log::{info, warn};
+use log::{error, info, warn};
 use r2d2::Pool;
 use rusqlite::Connection;
 use std::{
     collections::HashMap,
     io::Result,
+    process::exit,
     sync::{Arc, Mutex, Once},
     time::Duration,
 };
@@ -110,7 +111,9 @@ async fn main() -> Result<()> {
         if config.password.is_none() {
             warn!("No auth is set up. Chhoto URL will be exposed to the public.");
             if init_config.exit_on_no_auth {
-                panic!("Exiting Chhoto URL due to no auth.");
+                error!("Exiting Chhoto URL due to no auth.");
+                log::logger().flush();
+                exit(2);
             }
         }
         None
@@ -179,10 +182,11 @@ async fn main() -> Result<()> {
     // Hardcode the port the server listens to. Allows for more intuitive Docker Compose port management
     .bind((&*init_config.listen_address, init_config.port))
     .inspect_err(|_| {
-        eprintln!(
+        error!(
             "Chhoto URL failed to bind to {}:{}",
             init_config.listen_address, init_config.port
-        )
+        );
+        log::logger().flush();
     })
     .inspect(|_| {
         LOGGER.call_once(|| {
@@ -202,7 +206,10 @@ async fn main() -> Result<()> {
         })
         .workers(1)
         .bind(("127.0.0.1", port))
-        .inspect_err(|_| eprintln!("Health handler failed to bind to 127.0.0.1:{port}"))?
+        .inspect_err(|_| {
+            error!("Health handler failed to bind to 127.0.0.1:{port}");
+            log::logger().flush();
+        })?
         .run();
         info!("Health server listening to port {}.", port);
         tokio::try_join!(default_app, health_app)?;

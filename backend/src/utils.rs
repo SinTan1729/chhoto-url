@@ -3,10 +3,11 @@
 
 use actix_web::cookie::Key;
 use argon2::{Params, PasswordHash};
-use log::{info, warn};
+use log::{error, info, warn};
 use regex::Regex;
 use std::{
-    convert::TryFrom, env::var, fs, io, path::Path, sync::Arc, thread::available_parallelism,
+    convert::TryFrom, env::var, fs, io, path::Path, process::exit, sync::Arc,
+    thread::available_parallelism,
 };
 use tokio::sync::Semaphore;
 
@@ -269,7 +270,9 @@ pub(crate) fn get_permit_values(config: &Config) -> Semaphores {
         .min(api_key_argon2_concurrency)
         .min(threads);
     if argon2_concurrency == 0 {
-        panic!("Not enough memory allocated for Argon2 hashing.");
+        error!("Not enough memory allocated for Argon2 hashing.");
+        log::logger().flush();
+        exit(2);
     }
 
     Semaphores {

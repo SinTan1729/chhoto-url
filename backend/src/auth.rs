@@ -10,9 +10,9 @@ use actix_web::{
 };
 use argon2::{Argon2, PasswordHash, PasswordVerifier};
 use constant_time_eq::constant_time_eq;
-use log::{debug, info, warn};
+use log::{debug, error, info, warn};
 use sha2::{Digest, Sha512};
-use std::pin::Pin;
+use std::{pin::Pin, process::exit};
 use std::{sync::Arc, time::SystemTime};
 use tokio::{sync::Semaphore, task::spawn_blocking};
 
@@ -52,8 +52,10 @@ impl Credential {
                     Some(Credential::Argon2(hash.into()))
                 }
                 Err(e) => {
-                    eprintln!("Invalid Argon2 hash was provided for {name}: {e}");
-                    panic!("{EXIT_MSG}");
+                    error!("Invalid Argon2 hash was provided for {name}: {e}");
+                    error!("{EXIT_MSG}");
+                    log::logger().flush();
+                    exit(1);
                 }
             },
             Some("SHA512") => match base64_url::decode(&val) {
@@ -67,16 +69,18 @@ impl Credential {
                         }
                     );
                     let Ok(hash): Result<[u8; 64], _> = hash.try_into() else {
-                        eprintln!(
-                            "Invalid SHA512 hash was provided for {name}. I must be 64 bytes."
-                        );
-                        panic!("{EXIT_MSG}");
+                        error!("Invalid SHA512 hash was provided for {name}. I must be 64 bytes.");
+                        error!("{EXIT_MSG}");
+                        log::logger().flush();
+                        exit(1);
                     };
                     Some(Credential::SHA512(hash.into()))
                 }
                 Err(e) => {
-                    eprintln!("Invalid SHA512 hash was provided for {name}: {e}");
-                    panic!("{EXIT_MSG}");
+                    error!("Invalid SHA512 hash was provided for {name}: {e}");
+                    error!("{EXIT_MSG}");
+                    log::logger().flush();
+                    exit(1);
                 }
             },
             None => {

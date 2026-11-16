@@ -9,6 +9,7 @@ use std::{
     fs,
     ops::Add,
     path::{Path, PathBuf},
+    process::exit,
     time::{Duration, Instant},
 };
 use time::{OffsetDateTime, macros::format_description};
@@ -272,7 +273,9 @@ fn apply_migration_4(db: &mut Connection) {
         .expect("Unable to perform integrity_check.")
         != "ok"
     {
-        panic!("Unable to verify integrity after migration 4.");
+        error!("Unable to verify integrity after migration 4.");
+        log::logger().flush();
+        exit(1);
     }
     tx.pragma_update(None, "user_version", 5)
         .expect("Unable to set pragma: user_version.");
@@ -417,9 +420,11 @@ pub(crate) fn init_db(
         USER_VERSION
     };
     if current_user_version > USER_VERSION {
-        panic!(
+        error!(
             "User version is greater than what's supported in this version. Please update to the latest version."
         );
+        log::logger().flush();
+        exit(1);
     }
 
     let current_application_id: i32 = db

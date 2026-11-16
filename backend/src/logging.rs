@@ -6,7 +6,7 @@ use std::{
     io::{IsTerminal, Write},
     sync::{
         Arc,
-        atomic::{AtomicBool, AtomicU64, Ordering},
+        atomic::{AtomicBool, AtomicU64, AtomicUsize, Ordering},
         mpsc::{Receiver, SyncSender, TrySendError, sync_channel},
     },
     thread::spawn,
@@ -26,6 +26,10 @@ struct AsyncLoggerParams {
     color: bool,
 }
 
+enum WriterMessage {
+    Record(LogMessage),
+    Flush(SyncSender<()>),
+}
 struct LogMessage {
     timestamp: chrono::DateTime<Local>,
     level: Level,
@@ -34,14 +38,16 @@ struct LogMessage {
 }
 pub(crate) struct AsyncStderrLogger {
     params: AsyncLoggerParams,
-    tx: SyncSender<LogMessage>,
+    tx: SyncSender<WriterMessage>,
     dropped: Arc<AtomicU64>,
     disconnected_reported: AtomicBool,
+    flush_pending: Arc<AtomicUsize>,
 }
 
 impl AsyncStderrLogger {
-    fn with_filter(params: AsyncLoggerParams) -> (Self, Receiver<LogMessage>, Arc<AtomicU64>) {
+    fn with_filter(params: AsyncLoggerParams) -> (Self, Receiver<WriterMessage>, Arc<AtomicU64>) {
         let (tx, rx) = sync_channel(params.queue_capacity);
+        let flush_pending = Arc::new(AtomicUsize::new(0));
         let dropped = Arc::new(AtomicU64::new(0));
         (
             Self {
@@ -49,6 +55,7 @@ impl AsyncStderrLogger {
                 tx,
                 dropped: Arc::clone(&dropped),
                 disconnected_reported: false.into(),
+                flush_pending,
             },
             rx,
             dropped,
@@ -73,7 +80,7 @@ impl Log for AsyncStderrLogger {
             message: record.args().to_string(),
         };
 
-        match self.tx.try_send(message) {
+        match self.tx.try_send(WriterMessage::Record(message)) {
             Ok(()) => {}
             Err(TrySendError::Full(_)) => {
                 self.dropped.fetch_add(1, Ordering::Relaxed);
@@ -86,7 +93,49 @@ impl Log for AsyncStderrLogger {
         }
     }
 
-    fn flush(&self) {}
+    fn flush(&self) {
+        self.flush_pending.fetch_add(1, Ordering::Release);
+        let (ack_tx, ack_rx) = sync_channel(1);
+        if self.tx.send(WriterMessage::Flush(ack_tx)).is_err() {
+            self.flush_pending.fetch_sub(1, Ordering::AcqRel);
+            return;
+        }
+        let _ = ack_rx.recv();
+    }
+}
+
+fn write_buffer(
+    stderr: &std::io::Stderr,
+    records: &mut Vec<LogMessage>,
+    output: &mut Vec<u8>,
+    line: &mut String,
+    color: bool,
+    flush: bool,
+) -> std::io::Result<()> {
+    output.clear();
+    if records.is_empty() && !flush {
+        return Ok(());
+    }
+
+    for record in records.iter() {
+        line.clear();
+        format_line(line, record, color);
+        output.extend_from_slice(line.as_bytes());
+        output.push(b'\n');
+    }
+
+    let mut stderr = stderr.lock();
+
+    if !output.is_empty() {
+        stderr.write_all(output)?;
+    }
+
+    if flush {
+        stderr.flush()?;
+    }
+
+    records.clear();
+    Ok(())
 }
 
 fn format_line(out: &mut String, record: &LogMessage, color: bool) {
@@ -139,13 +188,20 @@ fn level_ansi(level: Level) -> &'static str {
     }
 }
 
-fn run_writer(rx: Receiver<LogMessage>, dropped: Arc<AtomicU64>, params: AsyncLoggerParams) {
+fn run_writer(
+    rx: Receiver<WriterMessage>,
+    dropped: Arc<AtomicU64>,
+    flush_pending: Arc<AtomicUsize>,
+    params: AsyncLoggerParams,
+) -> std::io::Result<()> {
     let stderr = std::io::stderr();
 
     let mut reported = 0_u64;
     let max_batch_size: usize = (params.queue_capacity / 8).max(32);
     let drain_budget = Duration::from_millis(50);
-    let mut buffer = Vec::with_capacity(
+
+    let mut buffer = Vec::with_capacity(max_batch_size);
+    let mut output = Vec::with_capacity(
         params
             .avg_log_line_bytes
             .saturating_add(1)
@@ -154,84 +210,79 @@ fn run_writer(rx: Receiver<LogMessage>, dropped: Arc<AtomicU64>, params: AsyncLo
     let mut line = String::with_capacity(params.avg_log_line_bytes);
 
     loop {
-        std::thread::sleep(params.poll_interval);
+        // Preserve periodic polling during normal operation.
+        if flush_pending.load(Ordering::Acquire) == 0 {
+            std::thread::sleep(params.poll_interval);
+        }
 
         let deadline = Instant::now() + drain_budget;
+        let mut batch_size = 0;
+        let mut flush_ack = None;
         let mut disconnected = false;
-        while Instant::now() < deadline {
-            buffer.clear();
-            let mut batch_size = 0;
-            while batch_size < max_batch_size && Instant::now() < deadline {
-                match rx.try_recv() {
-                    Ok(message) => {
-                        line.clear();
-                        format_line(&mut line, &message, params.color);
-                        buffer.extend_from_slice(line.as_bytes());
-                        buffer.push(b'\n');
-                        batch_size += 1;
-                    }
-                    Err(std::sync::mpsc::TryRecvError::Empty) => break,
-                    Err(std::sync::mpsc::TryRecvError::Disconnected) => {
-                        disconnected = true;
-                        break;
-                    }
-                }
-            }
 
-            if !buffer.is_empty() {
-                if Instant::now() >= deadline {
-                    dropped.fetch_add(batch_size as u64, Ordering::Relaxed);
+        loop {
+            match rx.try_recv() {
+                Ok(WriterMessage::Record(record)) => {
+                    buffer.push(record);
+                    batch_size += 1;
+                }
+
+                Ok(WriterMessage::Flush(ack)) => {
+                    flush_pending.fetch_sub(1, Ordering::AcqRel);
+                    flush_ack = Some(ack);
                     break;
                 }
-                let mut stderr = stderr.lock();
-                if stderr.write_all(&buffer).is_err() {
-                    return;
+
+                Err(std::sync::mpsc::TryRecvError::Empty) => break,
+
+                Err(std::sync::mpsc::TryRecvError::Disconnected) => {
+                    disconnected = true;
+                    break;
                 }
             }
 
-            if disconnected || batch_size == 0 {
+            // Pending flushes override both normal limits.
+            if flush_pending.load(Ordering::Acquire) == 0
+                && (batch_size >= max_batch_size || Instant::now() >= deadline)
+            {
                 break;
             }
         }
 
-        let mut discarded = 0_u64;
-        for _ in 0..params.queue_capacity {
-            match rx.try_recv() {
-                Ok(_) => discarded += 1,
-                Err(_) => break,
-            }
-        }
-
-        if discarded > 0 {
-            dropped.fetch_add(discarded, Ordering::Relaxed);
-        }
+        // Append dropped-message warning.
         let current = dropped.load(Ordering::Relaxed);
+
         if current > reported {
-            let message = LogMessage {
+            buffer.push(LogMessage {
                 timestamp: Local::now(),
                 level: Level::Warn,
                 target: "chhoto_url::logging".to_owned(),
                 message: format!(
                     "{} log lines dropped (stderr writer behind)",
-                    current - reported
+                    current - reported,
                 ),
-            };
-            buffer.clear();
-            line.clear();
-            format_line(&mut line, &message, params.color);
-            buffer.extend_from_slice(line.as_bytes());
-            buffer.push(b'\n');
-
-            let mut stderr = stderr.lock();
-            if stderr.write_all(&buffer).is_err() {
-                return;
-            }
+            });
 
             reported = current;
         }
 
+        let flush = flush_ack.is_some() || disconnected;
+
+        write_buffer(
+            &stderr,
+            &mut buffer,
+            &mut output,
+            &mut line,
+            params.color,
+            flush,
+        )?;
+
+        if let Some(ack) = flush_ack {
+            let _ = ack.send(());
+        }
+
         if disconnected {
-            break;
+            return Ok(());
         }
     }
 }
@@ -262,9 +313,14 @@ pub fn init_async(
         color,
     };
     let (logger, rx, dropped) = AsyncStderrLogger::with_filter(params.clone());
+    let flush_pending = Arc::clone(&logger.flush_pending);
 
     log::set_boxed_logger(Box::new(logger)).expect("Install logger once");
     log::set_max_level(max_level);
 
-    spawn(move || run_writer(rx, dropped, params))
+    spawn(move || {
+        if let Err(err) = run_writer(rx, dropped, flush_pending, params) {
+            eprintln!("Async logger writer failed: {err}");
+        }
+    })
 }

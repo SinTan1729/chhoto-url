@@ -1,7 +1,7 @@
 // SPDX-FileCopyrightText: 2023-2026 Sayantan Santra <sayantan.santra689@gmail.com>
 // SPDX-License-Identifier: MIT
 
-use log::{info, warn};
+use log::{error, info, warn};
 use openidconnect::{
     AdditionalClaims, Client, ClientId, ClientSecret, EmptyExtraTokenFields, EndpointMaybeSet,
     EndpointNotSet, EndpointSet, IdTokenFields, IssuerUrl, Nonce, PkceCodeVerifier,
@@ -15,7 +15,7 @@ use openidconnect::{
     reqwest::{self, Certificate},
 };
 use serde::{Deserialize, Serialize};
-use std::{collections::HashMap, env::var, fs};
+use std::{collections::HashMap, env::var, fs, process::exit};
 
 use crate::config::Config;
 
@@ -100,8 +100,10 @@ pub async fn create_oidc_client(config: &Config) -> Option<(reqwest::Client, Oid
                 }
             }
             let async_http_client = builder.build().unwrap_or_else(|e| {
-                eprintln!("Error building reqwest client for OIDC: {e}");
-                panic!("{EXIT_MSG}");
+                error!("Error building reqwest client for OIDC: {e}");
+                error!("{EXIT_MSG}");
+                log::logger().flush();
+                exit(1);
             });
 
             match CoreProviderMetadata::discover_async(issuer_url, &async_http_client).await {
@@ -114,14 +116,18 @@ pub async fn create_oidc_client(config: &Config) -> Option<(reqwest::Client, Oid
                     Some((async_http_client, core_client))
                 }
                 Err(e) => {
-                    eprintln!("Error while creating OIDC client: {}", e);
-                    panic!("{EXIT_MSG}");
+                    error!("Error while creating OIDC client: {}", e);
+                    error!("{EXIT_MSG}");
+                    log::logger().flush();
+                    exit(1);
                 }
             }
         }
         Err(e) => {
-            eprintln!("Error while processing OIDC issuer url: {}", e);
-            panic!("{EXIT_MSG}");
+            error!("Error while processing OIDC issuer url: {}", e);
+            error!("{EXIT_MSG}");
+            log::logger().flush();
+            exit(1);
         }
     }
 }

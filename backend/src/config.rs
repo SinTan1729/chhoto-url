@@ -8,6 +8,7 @@ use std::{
     fmt::Display,
     fs,
     path::{Path, PathBuf},
+    process::exit,
 };
 use url::Url;
 
@@ -441,7 +442,9 @@ pub(crate) fn read() -> Config {
                 .split_once('=')
                 .filter(|(f, v)| !f.is_empty() && !v.is_empty())
                 .unwrap_or_else(|| {
-                    panic!("Invalid CHHOTO_OIDC_CUSTOM_CLAIM: expected field=value")
+                    error!("Invalid CHHOTO_OIDC_CUSTOM_CLAIM: expected field=value");
+                    log::logger().flush();
+                    exit(2);
                 });
 
             (field.to_string(), value.to_string())
