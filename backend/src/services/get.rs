@@ -11,7 +11,7 @@ use actix_web::{
     mime::{APPLICATION_JSON, TEXT_PLAIN},
     web::{self, Redirect, ServiceConfig, get},
 };
-use log::{debug, error, info, warn};
+use log::{debug, error, info, trace, warn};
 use openidconnect::{
     CsrfToken, Nonce, PkceCodeChallenge, RedirectUrl, Scope, core::CoreAuthenticationFlow,
 };
@@ -102,7 +102,7 @@ async fn siteurl(data: web::Data<AppState>) -> HttpResponse {
 // This is deprecated, and might be removed in the future.
 // Use /api/getconfig instead
 async fn version() -> HttpResponse {
-    debug!("Version was queried.");
+    trace!("Version was queried.");
     let version = utils::get_version();
     let mut out = String::with_capacity(12 + version.len());
     out.push_str("Chhoto URL v");
@@ -112,7 +112,7 @@ async fn version() -> HttpResponse {
 
 // Get the user's current role
 async fn whoami(data: web::Data<AppState>, req: HttpRequest, auth: Auth) -> HttpResponse {
-    debug!("Whoami was queried.");
+    trace!("Whoami was queried.");
     let config = &data.config;
     if Accept::parse(&req)
         .is_ok_and(|accept| accept.iter().any(|item| item.item == APPLICATION_JSON))
@@ -139,7 +139,7 @@ async fn whoami(data: web::Data<AppState>, req: HttpRequest, auth: Auth) -> Http
 
 // Get some useful backend config
 async fn getconfig(auth: Auth, data: web::Data<AppState>) -> HttpResponse {
-    debug!("Site config was queried.");
+    trace!("Site config was queried.");
     let config = &data.config;
     let ok_response = || {
         let backend_config = BackendConfig {
