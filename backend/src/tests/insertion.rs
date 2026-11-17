@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: MIT
 
 use actix_web::{body::to_bytes, test};
+use jiff::Timestamp;
 use regex::Regex;
 use tokio::time::{Duration, sleep};
 
@@ -274,7 +275,7 @@ async fn link_editing() {
     let timer = Duration::from_millis(800);
     sleep(timer).await;
 
-    let now = chrono::Utc::now().timestamp();
+    let now = Timestamp::now().as_second();
     let status = edit_link(&app, &api_key, "test2", false, true, Some(now + 1), None).await;
     assert!(status.is_success());
 

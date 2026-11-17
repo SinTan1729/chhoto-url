@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: MIT
 
 use actix_web::web;
-use chrono::{Local, Timelike};
+use jiff::ZonedDateTime;
 use log::{error, info, warn};
 use std::{collections::HashMap, sync::Arc};
 use tokio::{
@@ -82,7 +82,7 @@ pub(crate) fn spawn_cleaner(
             let mut first_run = true;
             loop {
                 interval.tick().await;
-                let hour = Local::now().hour();
+                let hour = ZonedDateTime::now().hour();
 
                 info!("Starting database cleanup task.");
                 for attempt in 0..3 {

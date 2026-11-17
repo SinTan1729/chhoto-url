@@ -31,7 +31,7 @@ pub(crate) struct DBRow {
 
 // Find a single URL for /api/expand
 pub(crate) fn find_url_details(shortlink: &str, db: &Connection) -> Result<DBRow, ChhotoError> {
-    let now = chrono::Utc::now().timestamp();
+    let now = jiff::Timestamp::now().as_second();
     let Ok(mut statement) = db.prepare_cached(queries::EXPAND_URL) else {
         error!("Error preparing SQL statement for find_url.");
         return Err(ServerError);
@@ -63,7 +63,7 @@ pub(crate) fn getall(
     page_size: Option<i64>,
     filter: Option<String>,
 ) -> Rc<[DBRow]> {
-    let now = chrono::Utc::now().timestamp();
+    let now = jiff::Timestamp::now().as_second();
 
     let has_cursor = page_after.is_some();
     let has_filter = filter.is_some();
@@ -147,7 +147,7 @@ pub(crate) fn getall(
 
 // Resolve site and add link to add_hit queue
 pub(crate) fn find_longlink(shortlink: &str, data: &AppState) -> Result<String, ()> {
-    let now = chrono::Utc::now().timestamp();
+    let now = jiff::Timestamp::now().as_second();
     let db = data
         .readers
         .get()
@@ -206,7 +206,7 @@ pub(crate) fn add_links(
     if requests.is_empty() {
         return (Vec::new(), None);
     }
-    let now = chrono::Utc::now().timestamp();
+    let now = jiff::Timestamp::now().as_second();
     let in_use_error = ClientError {
         reason: "Short URL is already in use!".to_owned(),
     };
@@ -298,7 +298,7 @@ pub(crate) fn edit_link(
         return Ok((1, None));
     }
 
-    let now = chrono::Utc::now().timestamp();
+    let now = jiff::Timestamp::now().as_second();
     let Ok(mut statement) = db.prepare_cached(queries::EDIT_LINK) else {
         error!("Error preparing SQL statement for edit_link.");
         return Err(());

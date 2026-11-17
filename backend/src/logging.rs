@@ -13,8 +13,8 @@ use std::{
     time::{Duration, Instant},
 };
 
-use chrono::Local;
 use env_filter::Filter;
+use jiff::ZonedDateTime;
 use log::{Level, Log, Metadata, Record};
 
 #[derive(Clone)]
@@ -31,7 +31,7 @@ enum WriterMessage {
     Flush(SyncSender<()>),
 }
 struct LogMessage {
-    timestamp: chrono::DateTime<Local>,
+    timestamp: ZonedDateTime,
     level: Level,
     target: String,
     message: String,
@@ -74,7 +74,7 @@ impl Log for AsyncStderrLogger {
         }
 
         let message = LogMessage {
-            timestamp: Local::now(),
+            timestamp: ZonedDateTime::now(),
             level: record.level(),
             target: record.target().to_owned(),
             message: record.args().to_string(),
@@ -150,7 +150,7 @@ fn format_line(out: &mut String, record: &LogMessage, color: bool) {
     let _ = write!(
         out,
         "{}",
-        record.timestamp.format("%Y-%m-%d %H:%M:%S%.3f%Z")
+        record.timestamp.strftime("%Y-%m-%d %H:%M:%S%.3f%z")
     );
     out.push(' ');
 
@@ -254,7 +254,7 @@ fn run_writer(
 
         if current > reported {
             buffer.push(LogMessage {
-                timestamp: Local::now(),
+                timestamp: ZonedDateTime::now(),
                 level: Level::Warn,
                 target: "chhoto_url::logging".to_owned(),
                 message: format!(

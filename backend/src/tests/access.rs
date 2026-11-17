@@ -162,7 +162,7 @@ async fn edit_expiry() {
     assert!(status.is_success());
     assert_eq!(reply.longlink, "https://edited-test1.com");
 
-    let now = chrono::Utc::now().timestamp();
+    let now = jiff::Timestamp::now().as_second();
     let status = edit_link(&app, &api_key, "test1", false, false, Some(now + 1), None).await;
     assert!(status.is_success());
 

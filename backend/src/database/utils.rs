@@ -1,7 +1,7 @@
 // SPDX-FileCopyrightText: 2023-2026 Sayantan Santra <sayantan.santra689@gmail.com>
 // SPDX-License-Identifier: MIT
 
-use chrono::Utc;
+use jiff::Timestamp;
 use log::{debug, error, info, warn};
 use rusqlite::{Connection, Error, OpenFlags, backup::NO_PROGRESS, named_params};
 use std::{
@@ -12,7 +12,6 @@ use std::{
     process::exit,
     time::{Duration, Instant},
 };
-use time::{OffsetDateTime, macros::format_description};
 
 use crate::database::{self, queries};
 
@@ -34,7 +33,7 @@ pub(crate) fn cleanup(
     attempt: u8,
 ) -> Result<bool, String> {
     let start = Instant::now();
-    let now = Utc::now().timestamp();
+    let now = Timestamp::now().as_second();
 
     let deadline = Instant::now() + Duration::from_millis(200);
     let mut total_deleted = 0;
@@ -149,11 +148,7 @@ pub(crate) fn manage_backups(
         backup_dir
             .join(format!(
                 "{db_name}.{suffix}.{}",
-                OffsetDateTime::now_utc()
-                    .format(format_description!(
-                        "[year]-[month]-[day]T[hour]-[minute]-[second]Z"
-                    ))
-                    .expect("Failed to format backup timestamp.")
+                Timestamp::now().strftime("%Y-%m-%dT%H-%M-%SZ")
             ))
             .to_string_lossy()
             .as_ref(),
