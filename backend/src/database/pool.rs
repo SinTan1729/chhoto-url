@@ -1,6 +1,7 @@
 // SPDX-FileCopyrightText: 2023-2026 Sayantan Santra <sayantan.santra689@gmail.com>
 // SPDX-License-Identifier: MIT
 
+use log::trace;
 use r2d2::{ManageConnection, Pool};
 use rusqlite::Connection;
 use std::path::{Path, PathBuf};
@@ -36,13 +37,15 @@ pub(crate) fn open_pool(path: &Path, wal: bool) -> Result<DbPool, r2d2::Error> {
     };
 
     Pool::builder()
-        .max_size(
-            2 * std::thread::available_parallelism()
+        .max_size({
+            let n = 2 * std::thread::available_parallelism()
                 .map(usize::from)
                 .ok()
                 .filter(|_| wal)
-                .unwrap_or(2) as u32,
-        )
+                .unwrap_or(2) as u32;
+            trace!("Max reader pool size: {n}");
+            n
+        })
         .min_idle(Some(2))
         .connection_timeout(Duration::from_secs(5))
         .build(manager)

@@ -3,7 +3,7 @@
 
 use actix_web::cookie::Key;
 use argon2::{Params, PasswordHash};
-use log::{error, info, warn};
+use log::{error, info, trace, warn};
 use regex::Regex;
 use std::{
     convert::TryFrom, env::var, fs, io, path::Path, process::exit, sync::Arc,
@@ -294,6 +294,7 @@ pub(crate) fn get_permit_values(config: &Config, wal: bool) -> Semaphores {
 
     let db_concurrency = if wal { 4 * threads } else { threads.min(4) };
 
+    trace!("Chosen values for semaphores are db: {db_concurrency}, argon2: {argon2_concurrency}");
     Semaphores {
         auth: Arc::new(Semaphore::new(argon2_concurrency)),
         db: Arc::new(Semaphore::new(db_concurrency)),
