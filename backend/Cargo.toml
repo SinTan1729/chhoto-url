@@ -52,7 +52,6 @@ url = "2.5.8"
 openidconnect = "4.1.0"
 env_filter = "2.0.0"
 base64-url = "4.0.1"
-time = { version = "0.3.55", features = [ "formatting", "macros" ] }
 r2d2 = "0.8.10"
 sha2 = "0.11.1"
 constant_time_eq = "0.6.1"
