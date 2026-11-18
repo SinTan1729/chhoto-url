@@ -92,10 +92,10 @@ fn change_title(title: &str, dir: &str) -> io::Result<()> {
 }
 fn change_notice(notice: &str, dir: &str) -> io::Result<()> {
     let mut html = fs::read_to_string(format!("{dir}/index.html"))?;
-    let re = Regex::new(r#"<div id="notice"><\/div>"#).unwrap();
+    let re = Regex::new(r#"<div id=("?notice"?)><\/div>"#).unwrap();
 
     html = re
-        .replace(&html, format!(r#"<div id="notice">{notice}</div>"#))
+        .replace(&html, format!(r#"<div id=${{1}}>{notice}</div>"#))
         .to_string();
 
     fs::write(format!("{dir}/index.html.tmp"), html)?;
