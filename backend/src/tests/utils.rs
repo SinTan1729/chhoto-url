@@ -112,7 +112,7 @@ pub(super) async fn create_app(
     let (hits_tx, hits_rx) = mpsc::channel::<HitUpdate>(1024);
     let data = web::Data::new(AppState {
         hits_tx,
-        readers: database::pool::open_pool(&db_file).unwrap(),
+        readers: database::pool::open_pool(&db_file, false).unwrap(),
         writer,
         config: conf.clone(),
         frontend_dir: String::new(),

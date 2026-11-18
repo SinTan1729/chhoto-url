@@ -272,7 +272,7 @@ fn max_argon2_concurrency(hash: &PasswordHash) -> usize {
         .unwrap_or(1)
 }
 
-pub(crate) fn get_permit_values(config: &Config) -> Semaphores {
+pub(crate) fn get_permit_values(config: &Config, wal: bool) -> Semaphores {
     let threads = available_parallelism().map(usize::from).unwrap_or(2);
 
     let password_argon2_concurrency = match config.password.as_ref() {
@@ -292,8 +292,10 @@ pub(crate) fn get_permit_values(config: &Config) -> Semaphores {
         exit(2);
     }
 
+    let db_concurrency = if wal { 4 * threads } else { threads.min(4) };
+
     Semaphores {
         auth: Arc::new(Semaphore::new(argon2_concurrency)),
-        db: Arc::new(Semaphore::new(4 * threads)),
+        db: Arc::new(Semaphore::new(db_concurrency)),
     }
 }

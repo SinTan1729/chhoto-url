@@ -30,7 +30,7 @@ impl ManageConnection for ReaderDbManager {
 
 pub(crate) type DbPool = Pool<ReaderDbManager>;
 
-pub(crate) fn open_pool(path: &Path) -> Result<DbPool, r2d2::Error> {
+pub(crate) fn open_pool(path: &Path, wal: bool) -> Result<DbPool, r2d2::Error> {
     let manager = ReaderDbManager {
         path: path.to_path_buf(),
     };
@@ -39,6 +39,8 @@ pub(crate) fn open_pool(path: &Path) -> Result<DbPool, r2d2::Error> {
         .max_size(
             2 * std::thread::available_parallelism()
                 .map(usize::from)
+                .ok()
+                .filter(|_| wal)
                 .unwrap_or(2) as u32,
         )
         .min_idle(Some(2))

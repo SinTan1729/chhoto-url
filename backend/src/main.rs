@@ -125,10 +125,11 @@ async fn main() -> Result<()> {
 
     let data = web::Data::new(AppState {
         hits_tx: hits_tx.clone(),
-        readers: open_pool(&config.db_location).expect("Unable to open database reader pool."),
+        readers: open_pool(&config.db_location, init_config.use_wal_mode)
+            .expect("Unable to open database reader pool."),
         writer,
         frontend_dir,
-        permits: utils::get_permit_values(&config),
+        permits: utils::get_permit_values(&config, init_config.use_wal_mode),
         config,
         oidc_data,
         secret_key,
