@@ -50,6 +50,7 @@ services:
       # - CHHOTO_PUBLIC_MODE_EXPIRY_DELAY=3600
       # - CHHOTO_DISABLE_FRONTEND=False
       # - CHHOTO_CUSTOM_SITE_TITLE=Custom Title
+      # - CHHOTO_CUSTOM_SITE_NOTICE="Custom Notice"
       # - CHHOTO_CUSTOM_LANDING_DIRECTORY=/custom/dir/location
       # - CHHOTO_CACHE_CONTROL_HEADER=no-cache, private
       # - CHHOTO_FRONTEND_PAGE_SIZE=10

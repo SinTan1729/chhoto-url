@@ -91,10 +91,10 @@ async fn main() -> Result<()> {
         init_config.disable_backups,
     );
     // Apply custom title if needed
-    let frontend_dir = match utils::apply_custom_title(&init_config.custom_site_title) {
+    let frontend_dir = match utils::apply_custom_parts(&init_config) {
         Ok(dir) => dir,
         Err(e) => {
-            warn!("Issue while applying custom title: {e}");
+            warn!("Issue while applying custom frontend parts: {e}");
             utils::get_frontend_location().0
         }
     };

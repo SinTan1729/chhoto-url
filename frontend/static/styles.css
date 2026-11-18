@@ -81,6 +81,9 @@ span[name='label'] {
   border-bottom-color: var(--logo-border);
   font-size: 2em;
 }
+#notice {
+  font-size: 0.6em;
+}
 #logo img {
   height: 0.8em;
   transition: filter 0.1s ease;

@@ -311,6 +311,10 @@ The title used on the page will be simply "Custom Title". Using custom favicon i
 locations (`/app/frontend/base/assets/favicon*`). For more customization, please make use of
 [`CHHOTO_CUSTOM_LANDING_DIRECTORY`](#chhoto_custom_landing_directory).
 
+### `CHHOTO_CUSTOM_SITE_NOTICE`
+
+Use this to set a custom site notice. If shows up right under the title. This can serve as a notice, or a tagline.
+
 ### `CHHOTO_CUSTOM_LANDING_DIRECTORY`
 
 If you want to serve a custom landing page, put all your site related files, along with a valid `index.html` file in a

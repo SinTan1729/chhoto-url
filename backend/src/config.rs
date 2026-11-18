@@ -136,6 +136,7 @@ pub(crate) struct InitConfig {
     pub(crate) health_port: Option<u16>,
     pub(crate) exit_on_no_auth: bool,
     pub(crate) custom_site_title: Option<String>,
+    pub(crate) custom_site_notice: Option<String>,
     pub(crate) cache_control_header: Option<String>,
     pub(crate) use_wal_mode: bool,
     pub(crate) ensure_acid: bool,
@@ -178,6 +179,11 @@ pub(crate) fn init_config() -> InitConfig {
         .map(|s| remove_surrounding_quotes(s.trim()))
         .filter(|s| !s.is_empty())
         .inspect(|t| info!(r#"Found custom site title config: "{t}""#,));
+    let custom_site_notice = var("CHHOTO_CUSTOM_SITE_NOTICE")
+        .ok()
+        .map(|s| remove_surrounding_quotes(s.trim()))
+        .filter(|s| !s.is_empty())
+        .inspect(|n| info!(r#"Found custom site notice config: "{n}""#,));
     let cache_control_header =
         read_config_wrapper("CHHOTO_CACHE_CONTROL_HEADER", "cache_control_header")
             .inspect(|h| info!("Using \"{h}\" as Cache-Control header."))
@@ -211,6 +217,7 @@ pub(crate) fn init_config() -> InitConfig {
         health_port,
         exit_on_no_auth,
         custom_site_title,
+        custom_site_notice,
         cache_control_header,
         use_wal_mode,
         ensure_acid,

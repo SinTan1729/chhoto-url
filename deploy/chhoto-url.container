@@ -28,6 +28,7 @@ Environment=CHHOTO_SQLITE_USE_WAL_MODE=True
 #Environment=CHHOTO_SQLITE_ENSURE_ACID=True
 #Environment=CHHOTO_DISABLE_BACKUPS=False
 #Environment=CHHOTO_CUSTOM_SITE_TITLE="Custom Title"
+#Environment=CHHOTO_CUSTOM_SITE_NOTICE="Custom Notice"
 #Environment=CHHOTO_SITE_URL=https://www.example.com 
 #Environment=CHHOTO_PASSWORD_HASH_ALGORITHM=Argon2
 #Environment=CHHOTO_API_KEY_HASH_ALGORITHM=SHA512
