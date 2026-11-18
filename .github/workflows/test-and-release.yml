@@ -127,6 +127,7 @@ jobs:
       packages: write
       attestations: write
     steps:
+      - uses: actions/checkout@v6
       - name: Prepare build context
         uses: ./.github/actions/prepare-image-context
         with:
