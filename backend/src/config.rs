@@ -279,6 +279,7 @@ pub(crate) fn read() -> Config {
         .or(hash_algorithm.clone());
     // If an API key is set, check the security
     let api_key = read_config_wrapper("CHHOTO_API_KEY", "api_key")
+        .filter(|s| !s.trim().is_empty())
         .inspect(|key| {
             if hash_algorithm.is_none()
                 && base64_url::decode(key.as_bytes())
@@ -296,6 +297,16 @@ pub(crate) fn read() -> Config {
             }
         })
         .and_then(|s| Credential::parse(s, &api_key_hash_algorithm, "API Key"));
+
+    let password = read_config_wrapper("CHHOTO_PASSWORD", "password")
+        .filter(|s| !s.trim().is_empty())
+        .map_or_else(
+            || {
+                warn!("No password was provided.");
+                None
+            },
+            |s| Credential::parse(s, &password_hash_algorithm, "Password"),
+        );
 
     let public_mode =
         read_config_wrapper("CHHOTO_PUBLIC_MODE", "public_mode") == Some(String::from("Enable"));
@@ -335,16 +346,6 @@ pub(crate) fn read() -> Config {
         }
     }
     info!("Allowed protocols: {:?}", allowed_protocols);
-
-    let password = read_config_wrapper("CHHOTO_PASSWORD", "password")
-        .filter(|s| !s.trim().is_empty())
-        .map_or_else(
-            || {
-                warn!("No password was provided.");
-                None
-            },
-            |s| Credential::parse(s, &password_hash_algorithm, "Password"),
-        );
 
     // If the site_url env variable exists
     let site_url = if let Some(provided_url) = read_config_wrapper("CHHOTO_SITE_URL", "site_url")
