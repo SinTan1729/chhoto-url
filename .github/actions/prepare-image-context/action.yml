@@ -33,7 +33,6 @@ runs:
         for artifact in *-unknown-linux-musl*; do
           mkdir -p "backend/target/$artifact/release"
           mv "$artifact/chhoto-url" "backend/target/$artifact/release/"
-          chmod +x "backend/target/$artifact/release/chhoto-url"
         done
 
     - name: Minify frontend

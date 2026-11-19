@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: MIT
 
 FROM alpine AS builder
-COPY ./backend/target/x86_64-unknown-linux-musl/debug/chhoto-url /app/chhoto-url
+COPY --chmod=755 ./backend/target/x86_64-unknown-linux-musl/debug/chhoto-url /app/chhoto-url
 
 ARG TARGETARCH
 FROM builder
