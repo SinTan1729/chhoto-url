@@ -5,60 +5,59 @@
 name = "chhoto-url"
 version = "7.11.7"
 edition = "2024"
-authors = ["Sayantan Santra <mail@sayantansantra.com>"]
-license = "mit"
+rust-version = "1.96"
 description = "A simple self-hosted URL shortener with no unnecessary features."
-homepage = "https://chhoto.link"
 documentation = "https://github.com/SinTan1729/chhoto-url"
+readme = "../README.md"
+homepage = "https://chhoto.link"
 repository = "https://github.com/SinTan1729/chhoto-url"
-readme = "README.md"
+license = "mit"
 keywords = [
-    "docker",
-    "podman",
-    "container",
-    "quadlet",
-    "rust",
-    "chhoto-url",
-    "self-hosted",
-    "url-shortener",
-    "webapp",
-    "shortener",
-    "link-shortener",
-    "actix-web",
+  "actix-web",
+  "chhoto-url",
+  "container",
+  "docker",
+  "link-shortener",
+  "podman",
+  "quadlet",
+  "rust",
+  "self-hosted",
+  "shortener",
+  "url-shortener",
+  "webapp",
 ]
 categories = ["web-programming"]
-rust-version = "1.96"
-
-[profile.release]
-opt-level = 3
-lto = "fat"
-codegen-units = 1
-panic = "abort"
-strip = "symbols"
 
 [dependencies]
-actix-web = { version = "4.20.0", features = [ "secure-cookies" ] }
 actix-files = "0.7.5"
-rusqlite = { version = "0.43.0", features = [ "backup", "bundled" ] }
-regex = "1.13.2"
-rand = "0.10.4"
-nanoid = "0.5.0"
-serde = { version = "1.0.229", features = [ "derive", "rc" ] }
-serde_json = "1.0.154"
+actix-web = { version = "4.20.0", features = ["secure-cookies"] }
 argon2 = "0.6.0"
-tokio = { version = "1.54.1", features = [ "macros" ] }
-log = "0.4.35"
-url = "2.5.8"
-openidconnect = "4.1.0"
-env_filter = "2.0.0"
 base64-url = "4.0.1"
-r2d2 = "0.8.10"
-sha2 = "0.11.1"
 constant_time_eq = "0.6.1"
+env_filter = "2.0.0"
 jiff = "1.0.1"
+log = "0.4.35"
+nanoid = "0.5.0"
+openidconnect = "4.1.0"
+r2d2 = "0.8.10"
+rand = "0.10.4"
+regex = "1.13.2"
+rusqlite = { version = "0.43.0", features = ["backup", "bundled"] }
+serde = { version = "1.0.229", features = ["derive", "rc"] }
+serde_json = "1.0.154"
+sha2 = "0.11.1"
+tokio = { version = "1.54.1", features = ["macros"] }
+url = "2.5.8"
 
 [dev-dependencies]
 actix-http = "3.22.0"
 actix-service = "2.0.3"
 regex = "1.13.2"
 tempfile = "3.27.0"
+
+[profile.release]
+opt-level = 3
+strip = "symbols"
+lto = "fat"
+panic = "abort"
+codegen-units = 1
