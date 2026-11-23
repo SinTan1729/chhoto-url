@@ -12,11 +12,10 @@ use actix_web::{
     web,
 };
 use log::{debug, error, warn};
-use nanoid::nanoid;
+use nanorand::{Rng, tls::TlsWyRand};
 use openidconnect::{
     AccessTokenHash, AuthorizationCode, OAuth2TokenResponse, RedirectUrl, TokenResponse,
 };
-use rand::{random_range, seq::IndexedRandom};
 use rusqlite::Connection;
 use serde::Deserialize;
 use serde_json::Value;
@@ -510,37 +509,36 @@ fn gen_link(
         'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z', '1', '2', '3', '4', '5',
         '6', '7', '8', '9',
     ];
+    static CHARS_NUM: [char; 10] = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9'];
+
+    let mut rng = nanorand::tls_rng();
+    let push_chars = |len: usize, chars: &[char], rng: &mut TlsWyRand, out: &mut String| {
+        for _ in 0..len {
+            out.push(chars[rng.generate_range(0..chars.len())]);
+        }
+    };
 
     match style {
         SlugStyle::Uid => {
             let slug_len = if try_longer_slug { len + 4 } else { len };
+            let mut out = String::with_capacity(slug_len);
             if allow_capital_letters {
-                nanoid!(slug_len, &CHARS_CAPITAL)
+                push_chars(slug_len, &CHARS_CAPITAL, &mut rng, &mut out);
             } else {
-                nanoid!(slug_len, &CHARS_SMALL)
+                push_chars(slug_len, &CHARS_SMALL, &mut rng, &mut out);
             }
+            out
         }
         SlugStyle::Pair => {
-            let adj = ADJECTIVES
-                .choose(&mut rand::rng())
-                .expect("This should never happen.");
-            let name = NAMES
-                .choose(&mut rand::rng())
-                .expect("This should never happen.");
-            let mut out = String::with_capacity(adj.len() + name.len() + 4);
+            let adj = ADJECTIVES[rng.generate_range(0..ADJECTIVES.len())];
+            let name = NAMES[rng.generate_range(0..NAMES.len())];
+            let mut out = String::with_capacity(adj.len() + name.len() + 6);
             out.push_str(adj);
             out.push('-');
             out.push_str(name);
             if try_longer_slug {
-                let four_digits = |n| {
-                    let mut out = String::with_capacity(4);
-                    out.push((b'0' + (n / 1000) as u8) as char);
-                    out.push((b'0' + ((n / 100) % 10) as u8) as char);
-                    out.push((b'0' + ((n / 10) % 10) as u8) as char);
-                    out.push((b'0' + (n % 10) as u8) as char);
-                    out
-                };
-                out.push_str(&four_digits(random_range(0..=9999)));
+                out.push('-');
+                push_chars(4, &CHARS_NUM, &mut rng, &mut out);
             }
             out
         }
