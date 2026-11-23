@@ -210,9 +210,9 @@ generated slug is used.
 
 ### `CHHOTO_SLUG_LENGTH`
 
-If UID slugs are enabled, the length of the slug can be set using this. A minimum of 4 is supported, and it defaults to 16.
+If UID slugs are enabled, the length of the slug can be set using this. It defaults to 8, and can range from 4 to 32.
 If you intend to have more than a few thousand shortlinks, it's strongly recommended that you use the UID
-[`CHHOTO_SLUG_STYLE`](#chhoto_slug_style) with a [`CHHOTO_SLUG_LENGTH`](#chhoto_slug_length) of 16 or more.
+[`CHHOTO_SLUG_STYLE`](#chhoto_slug_style) with a [`CHHOTO_SLUG_LENGTH`](#chhoto_slug_length) of 16 or more. Max length possible is 32.
 
 ### `CHHOTO_TRY_LONGER_SLUG`
 

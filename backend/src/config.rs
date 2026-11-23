@@ -477,9 +477,8 @@ pub(crate) fn read() -> Config {
 
     let slug_length = read_config_wrapper("CHHOTO_SLUG_LENGTH", "slug_length")
         .and_then(|s| s.parse::<usize>().ok())
-        .filter(|&s| s >= 4)
         .unwrap_or(8)
-        .min(32);
+        .clamp(4, 32);
     let try_longer_slug = read_config_wrapper("CHHOTO_TRY_LONGER_SLUG", "try_longer_slug")
         .is_some_and(|s| s.trim() == "True");
     let slug_style =
