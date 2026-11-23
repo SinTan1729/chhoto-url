@@ -11,7 +11,7 @@ documentation = "https://github.com/SinTan1729/chhoto-url"
 readme = "../README.md"
 homepage = "https://chhoto.link"
 repository = "https://github.com/SinTan1729/chhoto-url"
-license = "mit"
+license = "MIT"
 keywords = [
   "actix-web",
   "chhoto-url",
@@ -53,6 +53,12 @@ actix-http = "3.22.0"
 actix-service = "2.0.3"
 regex = "1.13.2"
 tempfile = "3.27.0"
+
+[lints.cargo]
+unused_dependencies = "deny"
+
+[lints.rust]
+unsafe_code = "forbid"
 
 [profile.release]
 opt-level = 3
