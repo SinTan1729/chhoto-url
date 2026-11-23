@@ -256,8 +256,9 @@ pub(super) fn add_links_helper(
         output[i] = res
     }
 
-    let with_link = |mut req: NewURLRequest, retry: bool| {
+    let with_link = |rng: &mut TlsWyRand, mut req: NewURLRequest, retry: bool| {
         req.shortlink = gen_link(
+            rng,
             &config.slug_style,
             config.slug_length,
             config.allow_capital_letters,
@@ -265,10 +266,11 @@ pub(super) fn add_links_helper(
         );
         req
     };
+    let mut rng = nanorand::tls_rng();
     let (successful, rejected) = add_links(
         without_shortlinks
             .into_iter()
-            .map(|(i, r)| (i, with_link(r, false)))
+            .map(|(i, r)| (i, with_link(&mut rng, r, false)))
             .collect(),
         db,
         true,
@@ -281,7 +283,7 @@ pub(super) fn add_links_helper(
     if let Some(rej) = rejected {
         for (i, res) in add_links(
             rej.into_iter()
-                .map(|(i, r)| (i, with_link(r, true)))
+                .map(|(i, r)| (i, with_link(&mut rng, r, true)))
                 .collect(),
             db,
             false,
@@ -462,6 +464,7 @@ pub(super) fn delete_link_helper(
 
 // Generate a random link using either adjective-name pair (default) of a slug or a-z, 0-9
 fn gen_link(
+    rng: &mut TlsWyRand,
     style: &SlugStyle,
     len: usize,
     allow_capital_letters: bool,
@@ -511,7 +514,6 @@ fn gen_link(
     ];
     static CHARS_NUM: [char; 10] = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9'];
 
-    let mut rng = nanorand::tls_rng();
     let push_chars = |len: usize, chars: &[char], rng: &mut TlsWyRand, out: &mut String| {
         for _ in 0..len {
             out.push(chars[rng.generate_range(0..chars.len())]);
@@ -523,9 +525,9 @@ fn gen_link(
             let slug_len = if try_longer_slug { len + 4 } else { len };
             let mut out = String::with_capacity(slug_len);
             if allow_capital_letters {
-                push_chars(slug_len, &CHARS_CAPITAL, &mut rng, &mut out);
+                push_chars(slug_len, &CHARS_CAPITAL, rng, &mut out);
             } else {
-                push_chars(slug_len, &CHARS_SMALL, &mut rng, &mut out);
+                push_chars(slug_len, &CHARS_SMALL, rng, &mut out);
             }
             out
         }
@@ -538,7 +540,7 @@ fn gen_link(
             out.push_str(name);
             if try_longer_slug {
                 out.push('-');
-                push_chars(4, &CHARS_NUM, &mut rng, &mut out);
+                push_chars(4, &CHARS_NUM, rng, &mut out);
             }
             out
         }
