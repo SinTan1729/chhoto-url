@@ -18,18 +18,11 @@ repository = "https://github.com/SinTan1729/chhoto-url"
 license = "MIT"
 license-file = "LICENSE"
 keywords = [
-  "actix-web",
-  "chhoto-url",
-  "container",
   "docker",
   "link-shortener",
-  "podman",
-  "quadlet",
   "rust",
   "self-hosted",
-  "shortener",
   "url-shortener",
-  "webapp",
 ]
 categories = ["web-programming"]
 
