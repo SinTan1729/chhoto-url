@@ -80,7 +80,7 @@ podman-test-release: test podman-build-release podman-run-release
 upgrade-deps-pre:
 	cargo upgrade --verbose
 	cargo update --verbose
-	git add Cargo.{toml,lock}
+	git add backend/Cargo.toml Cargo.lock
 	git commit -m "chore: Updated deps"
 upgrade-deps: upgrade-deps-pre test
 
