@@ -10,6 +10,7 @@ on:
     paths:
       - 'backend/**'
       - 'Cargo.toml'
+      - 'Cargo.lock'
   pull_request:
   workflow_dispatch:
 
