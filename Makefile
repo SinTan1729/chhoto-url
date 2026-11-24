@@ -33,17 +33,17 @@ merge-squash:
 
 short_sha := $(shell git rev-parse --short HEAD) 
 build:
-	CARGO_GIT_COMMIT=${short_sha} cargo build --locked --manifest-path=backend/Cargo.toml \
+	CARGO_GIT_COMMIT=${short_sha} cargo build --locked \
 		--target x86_64-unknown-linux-musl
 build-release:
-	CARGO_GIT_COMMIT=${short_sha} cargo build --release --locked --manifest-path=backend/Cargo.toml \
+	CARGO_GIT_COMMIT=${short_sha} cargo build --release --locked \
 		--target x86_64-unknown-linux-musl
 audit: 
-	cargo audit --file backend/Cargo.lock || true
+	cargo audit || true
 check:
 	cd backend && cargo clippy
 test: audit
-	CARGO_GIT_COMMIT=${short_sha} cargo test --locked --manifest-path=backend/Cargo.toml \
+	CARGO_GIT_COMMIT=${short_sha} cargo test --locked \
 		--target x86_64-unknown-linux-musl
 
 podman-clean:
@@ -78,19 +78,19 @@ podman-test: test podman-build podman-run
 podman-test-release: test podman-build-release podman-run-release
 
 upgrade-deps-pre:
-	cargo upgrade --manifest-path=backend/Cargo.toml --verbose
-	cargo update --manifest-path=backend/Cargo.toml --verbose
-	git add backend/Cargo.{toml,lock}
+	cargo upgrade --verbose
+	cargo update --verbose
+	git add Cargo.{toml,lock}
 	git commit -m "chore: Updated deps"
 upgrade-deps: upgrade-deps-pre test
 
-conf_tag := $(shell cat backend/Cargo.toml | sed -rn 's/^version = "(.+)"$$/\1/p')
+conf_tag := $(shell cat Cargo.toml | sed -rn 's/^version = "(.+)"$$/\1/p')
 last_tag := $(shell git describe --tags --abbrev=0)
 bumped := $(shell git log -1 --pretty=%B | grep "build: Bumped version to " | wc -l)
 uncommitted := $(shell git status --porcelain=v1 2>/dev/null | wc -l)
 upgrade-version:
-	cargo update --manifest-path=backend/Cargo.toml -p chhoto-url --verbose
-	git add backend/Cargo.{toml,lock}
+	cargo update -p chhoto-url --verbose
+	git add Cargo.{toml,lock}
 	git commit -m "build: Bumped version to ${conf_tag}"
 
 tag:
@@ -107,7 +107,7 @@ endif
 
 clean: podman-stop
 	@echo "Cleaning up..."
-	cargo clean --manifest-path=backend/Cargo.toml
+	cargo clean
 
 minify:
 	rm -rf "/tmp/chhoto-url-site/"

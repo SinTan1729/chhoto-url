@@ -2,16 +2,16 @@
 # SPDX-License-Identifier: MIT
 
 FROM scratch AS builder-amd64
-COPY --chmod=755 ./backend/target/x86_64-unknown-linux-musl/release/chhoto-url /app/chhoto-url
+COPY --chmod=755 ./target/x86_64-unknown-linux-musl/release/chhoto-url /app/chhoto-url
 
 FROM scratch AS builder-arm64
-COPY --chmod=755 ./backend/target/aarch64-unknown-linux-musl/release/chhoto-url /app/chhoto-url
+COPY --chmod=755 ./target/aarch64-unknown-linux-musl/release/chhoto-url /app/chhoto-url
 
 FROM scratch AS builder-arm
-COPY --chmod=755 ./backend/target/armv7-unknown-linux-musleabihf/release/chhoto-url /app/chhoto-url
+COPY --chmod=755 ./target/armv7-unknown-linux-musleabihf/release/chhoto-url /app/chhoto-url
 
 FROM scratch AS builder-riscv64
-COPY --chmod=755 ./backend/target/riscv64gc-unknown-linux-musl/release/chhoto-url /app/chhoto-url
+COPY --chmod=755 ./target/riscv64gc-unknown-linux-musl/release/chhoto-url /app/chhoto-url
 
 ARG TARGETARCH
 FROM builder-$TARGETARCH

@@ -8,7 +8,7 @@ on:
     tags:
       - '*'
     branches: ['dev']
-    paths: ['backend/**', 'frontend/**']
+    paths: ['backend/**', 'frontend/**', 'Cargo.toml']
   workflow_dispatch:
 
 env:
@@ -51,15 +51,14 @@ jobs:
         with:
           command: both
           target: ${{ matrix.platform.target }}
-          args: --locked --release --manifest-path=backend/Cargo.toml
+          args: --locked --release
           cross-version: ${{ matrix.platform.cross-version }}
-          rust-cache-parameters: '{"workspaces":"backend -> target"}'
 
       - name: Upload binary
         uses: actions/upload-artifact@v7
         with:
           name: ${{ matrix.platform.target }}
-          path: ./backend/target/${{ matrix.platform.target }}/release/${{ env.IMAGE_NAME }}
+          path: ./target/${{ matrix.platform.target }}/release/${{ env.IMAGE_NAME }}
           retention-days: 1
           if-no-files-found: error
 

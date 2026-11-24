@@ -3,30 +3,17 @@
 
 [package]
 name = "chhoto-url"
-version = "7.11.7"
-edition = "2024"
-rust-version = "1.96"
-description = "A simple self-hosted URL shortener with no unnecessary features."
-documentation = "https://github.com/SinTan1729/chhoto-url"
-readme = "../README.md"
-homepage = "https://chhoto.link"
-repository = "https://github.com/SinTan1729/chhoto-url"
-license = "MIT"
-keywords = [
-  "actix-web",
-  "chhoto-url",
-  "container",
-  "docker",
-  "link-shortener",
-  "podman",
-  "quadlet",
-  "rust",
-  "self-hosted",
-  "shortener",
-  "url-shortener",
-  "webapp",
-]
-categories = ["web-programming"]
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+description.workspace = true
+documentation.workspace = true
+readme.workspace = true
+homepage.workspace = true
+repository.workspace = true
+license.workspace = true
+keywords.workspace = true
+categories.workspace = true
 
 [dependencies]
 actix-files = "0.7.5"
@@ -54,15 +41,5 @@ actix-service = "2.0.3"
 regex = "1.13.2"
 tempfile = "3.27.0"
 
-[lints.cargo]
-unused_dependencies = "deny"
-
-[lints.rust]
-unsafe_code = "forbid"
-
-[profile.release]
-opt-level = 3
-strip = "symbols"
-lto = "fat"
-panic = "abort"
-codegen-units = 1
+[lints]
+workspace = true

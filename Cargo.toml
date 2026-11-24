@@ -1,0 +1,46 @@
+# SPDX-FileCopyrightText: 2023 Sayantan Santra <sayantan.santra689@gmail.com>
+# SPDX-License-Identifier: MIT
+
+[workspace]
+resolver = "3"
+members = ["backend"]
+default-members = ["backend"]
+
+[workspace.package]
+version = "7.11.7"
+edition = "2024"
+rust-version = "1.96"
+description = "A simple self-hosted URL shortener with no unnecessary features."
+documentation = "https://github.com/SinTan1729/chhoto-url"
+readme = "README.md"
+homepage = "https://chhoto.link"
+repository = "https://github.com/SinTan1729/chhoto-url"
+license = "MIT"
+keywords = [
+  "actix-web",
+  "chhoto-url",
+  "container",
+  "docker",
+  "link-shortener",
+  "podman",
+  "quadlet",
+  "rust",
+  "self-hosted",
+  "shortener",
+  "url-shortener",
+  "webapp",
+]
+categories = ["web-programming"]
+
+[workspace.lints.cargo]
+unused_dependencies = "deny"
+
+[workspace.lints.rust]
+unsafe_code = "forbid"
+
+[profile.release]
+opt-level = 3
+strip = "symbols"
+lto = "fat"
+panic = "abort"
+codegen-units = 1

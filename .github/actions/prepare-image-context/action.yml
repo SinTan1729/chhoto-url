@@ -31,8 +31,8 @@ runs:
       run: |
         shopt -s nullglob
         for artifact in *-unknown-linux-musl*; do
-          mkdir -p "backend/target/$artifact/release"
-          mv "$artifact/chhoto-url" "backend/target/$artifact/release/"
+          mkdir -p "target/$artifact/release"
+          mv "$artifact/chhoto-url" "target/$artifact/release/"
         done
 
     - name: Minify frontend
