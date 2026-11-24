@@ -9,7 +9,7 @@ default-members = ["backend"]
 [workspace.package]
 version = "7.11.8"
 edition = "2024"
-rust-version = "1.96"
+rust-version = "1.100"
 description = "A simple self-hosted URL shortener with no unnecessary features."
 documentation = "https://github.com/SinTan1729/chhoto-url"
 readme = "README.md"
