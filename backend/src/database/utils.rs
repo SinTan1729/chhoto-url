@@ -137,6 +137,22 @@ pub(crate) fn manage_backups(
             ("init", 3)
         }
         BackupType::Daily => {
+            let today = Timestamp::now().strftime("%Y-%m-%d");
+            let prefix = format!("{db_name}.daily.{today}");
+            if fs::read_dir(&backup_dir)
+                .map_err(|_| "Error checking existing backups.".to_string())?
+                .filter_map(Result::ok)
+                .any(|entry| {
+                    entry
+                        .file_name()
+                        .to_str()
+                        .is_some_and(|name| name.starts_with(&prefix))
+                })
+            {
+                debug!("Daily backup already exists for today; skipping.");
+                return Ok(());
+            }
+
             info!("Creating a daily backup of the database.");
             ("daily", 7)
         }
