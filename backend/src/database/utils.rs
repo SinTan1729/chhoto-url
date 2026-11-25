@@ -484,6 +484,18 @@ pub(crate) fn init_db(
     create_indices(db, tables, indices);
     apply_pragma(db, use_wal_mode, ensure_acid);
 
+    if use_wal_mode
+        && !matches!(
+            db.query_row("PRAGMA wal_checkpoint(TRUNCATE)", [], |row| {
+                Ok(row.get::<_, i32>(1)? == row.get::<_, i32>(2)?)
+            }),
+            Ok(true)
+        )
+    {
+        log::error!("Unable to create WAL checkpoint.");
+        log::logger().flush();
+        exit(1);
+    }
     info!("Database initialization was successful.");
 }
 

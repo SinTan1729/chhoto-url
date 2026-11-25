@@ -213,8 +213,10 @@ async fn main() -> Result<()> {
         })?
         .run();
         info!("Health server listening to port {}.", port);
+        log::logger().flush();
         tokio::try_join!(default_app, health_app)?;
     } else {
+        log::logger().flush();
         default_app.await?;
     }
 
