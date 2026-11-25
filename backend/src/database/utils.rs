@@ -9,11 +9,13 @@ use std::{
     fs,
     ops::Add,
     path::{Path, PathBuf},
-    process::exit,
     time::{Duration, Instant},
 };
 
-use crate::database::{self, queries};
+use crate::{
+    database::{self, queries},
+    utils::ErrorMessage,
+};
 
 // Some constants
 const APPLICATION_ID: i32 = i32::from_be_bytes(*b"chht"); // MUST NEVER BE CHANGED
@@ -257,7 +259,7 @@ fn apply_migration_3(
         .expect("failed to vacuum database after migration 3.");
     (HashSet::from(["urls".to_owned()]), HashSet::new())
 }
-fn apply_migration_4(db: &mut Connection) {
+fn apply_migration_4(db: &mut Connection) -> Result<(), ErrorMessage> {
     info!(
         "Applying migration 4: Change expiry column type, add default to hits, and \
             add enabled column."
@@ -284,14 +286,16 @@ fn apply_migration_4(db: &mut Connection) {
         .expect("Unable to perform integrity_check.")
         != "ok"
     {
-        error!("Unable to verify integrity after migration 4.");
-        log::logger().flush();
-        exit(1);
+        return Err(ErrorMessage {
+            code: 1,
+            message: "Unable to verify integrity after migration 4.".to_string(),
+        });
     }
     tx.pragma_update(None, "user_version", 5)
         .expect("Unable to set pragma: user_version.");
     tx.commit()
         .expect("Unable to commit transaction for migration 4.");
+    Ok(())
 }
 
 fn create_indices(db: &mut Connection, tables: HashSet<String>, indices: HashSet<String>) {
@@ -382,7 +386,7 @@ pub(crate) fn init_db(
     use_wal_mode: bool,
     ensure_acid: bool,
     disable_backups: bool,
-) {
+) -> Result<(), ErrorMessage> {
     if let Some(db_path) = db.path() {
         if let Err(e) = manage_backups(
             &db_path.to_string().into(),
@@ -431,11 +435,12 @@ pub(crate) fn init_db(
         USER_VERSION
     };
     if current_user_version > USER_VERSION {
-        error!(
-            "User version is greater than what's supported in this version. Please update to the latest version."
-        );
-        log::logger().flush();
-        exit(1);
+        return Err(ErrorMessage {
+            code: 1,
+            message: "User version is greater than what's supported in this version. \
+                Please update to the latest version."
+                .to_string(),
+        });
     }
 
     let current_application_id: i32 = db
@@ -478,7 +483,7 @@ pub(crate) fn init_db(
     // Migration 4: Change expiry_time column type, add default value to hits,
     // and add enabled column, introduced in version 7.10.0
     if current_user_version < 5 {
-        apply_migration_4(db);
+        apply_migration_4(db)?;
     }
 
     create_indices(db, tables, indices);
@@ -492,11 +497,13 @@ pub(crate) fn init_db(
             Ok(true)
         )
     {
-        log::error!("Unable to create WAL checkpoint.");
-        log::logger().flush();
-        exit(1);
+        return Err(ErrorMessage {
+            code: 1,
+            message: "Unable to create WAL checkpoint.".to_string(),
+        });
     }
     info!("Database initialization was successful.");
+    Ok(())
 }
 
 // Open and return a rusqlite connection

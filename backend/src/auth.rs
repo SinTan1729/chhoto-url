@@ -12,12 +12,12 @@ use argon2::{Argon2, PasswordHash, PasswordVerifier};
 use constant_time_eq::constant_time_eq;
 use log::{debug, error, info, warn};
 use sha2::{Digest, Sha512};
-use std::{pin::Pin, process::exit};
+use std::pin::Pin;
 use std::{sync::Arc, time::SystemTime};
 use tokio::{sync::Semaphore, task::spawn_blocking};
 
-use crate::background::acquire_permit;
 use crate::{AppState, services::types::JSONResponse};
+use crate::{background::acquire_permit, utils::ErrorMessage};
 
 const API_HEADER: &str = "X-API-Key";
 pub(crate) const COOKIE_NAME: &str = "chhoto-url-auth";
@@ -31,8 +31,15 @@ pub(crate) enum Credential {
     SHA512(Arc<[u8; 64]>),
 }
 impl Credential {
-    pub(crate) fn parse(val: String, hash_algorithm: &Option<String>, name: &str) -> Option<Self> {
-        const EXIT_MSG: &str = "Chhoto URL exit due to bad auth!";
+    pub(crate) fn parse(
+        val: String,
+        hash_algorithm: &Option<String>,
+        name: &str,
+    ) -> Result<Self, ErrorMessage> {
+        let error_message = ErrorMessage {
+            code: 1,
+            message: "Chhoto URL exit due to bad auth!".to_string(),
+        };
         let recommended = if name == "Password" {
             "Argon2"
         } else {
@@ -49,13 +56,11 @@ impl Credential {
                             " Argon2 is recommended."
                         }
                     );
-                    Some(Credential::Argon2(hash.into()))
+                    Ok(Credential::Argon2(hash.into()))
                 }
                 Err(e) => {
                     error!("Invalid Argon2 hash was provided for {name}: {e}");
-                    error!("{EXIT_MSG}");
-                    log::logger().flush();
-                    exit(1);
+                    Err(error_message)
                 }
             },
             Some("SHA512") => match base64_url::decode(&val) {
@@ -70,26 +75,22 @@ impl Credential {
                     );
                     let Ok(hash): Result<[u8; 64], _> = hash.try_into() else {
                         error!("Invalid SHA512 hash was provided for {name}. I must be 64 bytes.");
-                        error!("{EXIT_MSG}");
-                        log::logger().flush();
-                        exit(1);
+                        return Err(error_message);
                     };
-                    Some(Credential::SHA512(hash.into()))
+                    Ok(Credential::SHA512(hash.into()))
                 }
                 Err(e) => {
                     error!("Invalid SHA512 hash was provided for {name}: {e}");
-                    error!("{EXIT_MSG}");
-                    log::logger().flush();
-                    exit(1);
+                    Err(error_message)
                 }
             },
             None => {
                 warn!("Using plaintext for {name} verification! {recommended} is recommended.");
-                Some(Credential::Plain(val))
+                Ok(Credential::Plain(val))
             }
             _ => {
                 warn!("Bad hashing algorithm was provided for {name}! Treating it as plaintext.");
-                Some(Credential::Plain(val))
+                Ok(Credential::Plain(val))
             }
         }
     }

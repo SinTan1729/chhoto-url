@@ -102,11 +102,14 @@ pub(super) async fn create_app(
     let tempdir = TempDir::new().unwrap();
     let db_file = tempdir.path().join(format!("{test}.sqlite"));
     let writer = Mutex::from(database::open_db(&db_file, false).unwrap());
-    database::init_db(
-        &mut writer.lock().expect(crate::DB_MUTEX_ERROR),
-        true,
-        false,
-        true,
+    assert!(
+        database::init_db(
+            &mut writer.lock().expect(crate::DB_MUTEX_ERROR),
+            true,
+            false,
+            true,
+        )
+        .is_ok()
     );
 
     let (hits_tx, hits_rx) = mpsc::channel::<HitUpdate>(1024);

@@ -15,7 +15,6 @@ use rusqlite::Connection;
 use std::{
     collections::HashMap,
     io::Result,
-    process::exit,
     sync::{Arc, Mutex, Once},
     time::Duration,
 };
@@ -24,6 +23,7 @@ use tokio::sync::{Semaphore, mpsc};
 use crate::{
     background::HitUpdate,
     database::pool::{ReaderDbManager, open_pool},
+    utils::{ErrorMessage, print_error_and_exit},
 };
 
 // Import modules
@@ -78,18 +78,20 @@ async fn main() -> Result<()> {
     logging::init_async(Duration::from_secs(1), 8 * 1024, 512);
 
     // Read config from env vars
-    let config = config::read();
-    let init_config = config::init_config();
+    let config = config::read().unwrap_or_else(|e| utils::print_error_and_exit(e));
+    let init_config = config::read_init();
     // ArcMutex is necessary since the writer is shared across threads
     let writer = Mutex::new(database::open_db(&config.db_location, false).expect(RW_DB_OPEN_ERROR));
 
     // Initialize the database and perform migrations
-    database::init_db(
+    if let Err(e) = database::init_db(
         &mut writer.lock().expect(DB_MUTEX_ERROR),
         init_config.use_wal_mode,
         init_config.ensure_acid,
         init_config.disable_backups,
-    );
+    ) {
+        print_error_and_exit(e);
+    };
     // Apply custom title if needed
     let frontend_dir = match utils::apply_custom_parts(&init_config) {
         Ok(dir) => dir,
@@ -99,29 +101,37 @@ async fn main() -> Result<()> {
         }
     };
 
-    let oidc_client = oidc::create_oidc_client(&config).await;
-    let oidc_data = if let Some((http_client, oidc_client)) = oidc_client {
-        info!("OIDC was successfully enabled.");
-        Some(Mutex::new(oidc::OidcData {
-            http_client,
-            oidc_client,
-            states: HashMap::new(),
-        }))
-    } else {
-        if config.password.is_none() {
-            warn!("No auth is set up. Chhoto URL will be exposed to the public.");
-            if init_config.exit_on_no_auth {
-                error!("Exiting Chhoto URL due to no auth.");
-                log::logger().flush();
-                exit(2);
-            }
+    let oidc_data = match oidc::create_oidc_client(&config).await {
+        Ok((http_client, oidc_client)) => {
+            info!("OIDC was successfully enabled.");
+            Some(Mutex::new(oidc::OidcData {
+                http_client,
+                oidc_client,
+                states: HashMap::new(),
+            }))
         }
-        None
+        Err(e) => {
+            if config.password.is_none() {
+                warn!("No auth is set up. Chhoto URL will be exposed to the public.");
+                if init_config.exit_on_no_auth {
+                    print_error_and_exit(ErrorMessage {
+                        code: 2,
+                        message: "Exiting Chhoto URL due to no auth.".to_string(),
+                    });
+                }
+            }
+            if e.code != 0 {
+                print_error_and_exit(e);
+            }
+            None
+        }
     };
 
     // Generate or load session master key
     let secret_key = utils::generate_key();
     let (hits_tx, hits_rx) = mpsc::channel::<HitUpdate>(1024);
+    let permits = utils::get_permit_values(&config, init_config.use_wal_mode)
+        .unwrap_or_else(|e| utils::print_error_and_exit(e));
 
     let data = web::Data::new(AppState {
         hits_tx: hits_tx.clone(),
@@ -129,7 +139,7 @@ async fn main() -> Result<()> {
             .expect("Unable to open database reader pool."),
         writer,
         frontend_dir,
-        permits: utils::get_permit_values(&config, init_config.use_wal_mode),
+        permits,
         config,
         oidc_data,
         secret_key,

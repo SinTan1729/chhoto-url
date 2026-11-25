@@ -15,9 +15,9 @@ use openidconnect::{
     reqwest::{self, Certificate},
 };
 use serde::{Deserialize, Serialize};
-use std::{collections::HashMap, env::var, fs, process::exit};
+use std::{collections::HashMap, env::var, fs};
 
-use crate::config::Config;
+use crate::{config::Config, utils::ErrorMessage};
 
 #[derive(Clone, Debug, Default, Deserialize, Serialize)]
 pub(crate) struct AppClaims {
@@ -64,16 +64,27 @@ pub(crate) type OidcClient<
     HasUserInfoUrl,
 >;
 
-pub async fn create_oidc_client(config: &Config) -> Option<(reqwest::Client, OidcClient)> {
-    const EXIT_MSG: &str = "Chhoto URL exit due to bad OIDC details!";
-    let issuer_url = config.oidc_issuer_url.clone()?;
+pub async fn create_oidc_client(
+    config: &Config,
+) -> Result<(reqwest::Client, OidcClient), ErrorMessage> {
+    let no_error = ErrorMessage {
+        code: 0,
+        message: String::new(),
+    };
+    let error_message = ErrorMessage {
+        code: 1,
+        message: "Chhoto URL exit due to bad OIDC details!".to_string(),
+    };
+    let Some(issuer_url) = config.oidc_issuer_url.clone() else {
+        return Err(no_error);
+    };
     let Some(client_id) = config.oidc_client_id.clone() else {
         warn!("OIDC Client ID must be non empty.");
-        return None;
+        return Err(no_error);
     };
     let Some(client_secret) = config.oidc_client_secret.clone() else {
         warn!("OIDC Client Secret must be non empty.");
-        return None;
+        return Err(no_error);
     };
 
     match IssuerUrl::new(issuer_url) {
@@ -99,12 +110,13 @@ pub async fn create_oidc_client(config: &Config) -> Option<(reqwest::Client, Oid
                     Err(e) => warn!("Could not read SSL_CERT_FILE at {path}: {e}"),
                 }
             }
-            let async_http_client = builder.build().unwrap_or_else(|e| {
-                error!("Error building reqwest client for OIDC: {e}");
-                error!("{EXIT_MSG}");
-                log::logger().flush();
-                exit(1);
-            });
+            let async_http_client = match builder.build() {
+                Ok(c) => c,
+                Err(e) => {
+                    error!("Error building reqwest client for OIDC: {e}");
+                    return Err(error_message);
+                }
+            };
 
             match CoreProviderMetadata::discover_async(issuer_url, &async_http_client).await {
                 Ok(provider_metadata) => {
@@ -113,21 +125,17 @@ pub async fn create_oidc_client(config: &Config) -> Option<(reqwest::Client, Oid
                         ClientId::new(client_id),
                         Some(ClientSecret::new(client_secret)),
                     );
-                    Some((async_http_client, core_client))
+                    Ok((async_http_client, core_client))
                 }
                 Err(e) => {
-                    error!("Error while creating OIDC client: {}", e);
-                    error!("{EXIT_MSG}");
-                    log::logger().flush();
-                    exit(1);
+                    error!("Error while creating OIDC client: {e}");
+                    return Err(error_message);
                 }
             }
         }
         Err(e) => {
-            error!("Error while processing OIDC issuer url: {}", e);
-            error!("{EXIT_MSG}");
-            log::logger().flush();
-            exit(1);
+            error!("Error while processing OIDC issuer url: {e}");
+            return Err(error_message);
         }
     }
 }

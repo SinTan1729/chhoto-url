@@ -6,8 +6,7 @@ use argon2::{Params, PasswordHash};
 use log::{error, info, trace, warn};
 use regex::Regex;
 use std::{
-    convert::TryFrom, env::var, fs, io, path::Path, process::exit, sync::Arc,
-    thread::available_parallelism,
+    convert::TryFrom, env::var, fs, io, path::Path, sync::Arc, thread::available_parallelism,
 };
 use tokio::sync::Semaphore;
 
@@ -272,7 +271,7 @@ fn max_argon2_concurrency(hash: &PasswordHash) -> usize {
         .unwrap_or(1)
 }
 
-pub(crate) fn get_permit_values(config: &Config, wal: bool) -> Semaphores {
+pub(crate) fn get_permit_values(config: &Config, wal: bool) -> Result<Semaphores, ErrorMessage> {
     let threads = available_parallelism().map(usize::from).unwrap_or(2);
 
     let password_argon2_concurrency = match config.password.as_ref() {
@@ -287,16 +286,28 @@ pub(crate) fn get_permit_values(config: &Config, wal: bool) -> Semaphores {
         .min(api_key_argon2_concurrency)
         .min(threads);
     if argon2_concurrency == 0 {
-        error!("Not enough memory allocated for Argon2 hashing.");
-        log::logger().flush();
-        exit(2);
+        return Err(ErrorMessage {
+            code: 2,
+            message: "Not enough memory allocated for Argon2 hashing.".to_string(),
+        });
     }
 
     let db_concurrency = if wal { 4 * threads } else { threads.min(4) };
 
     trace!("Chosen values for semaphores are db: {db_concurrency}, argon2: {argon2_concurrency}");
-    Semaphores {
+    Ok(Semaphores {
         auth: Arc::new(Semaphore::new(argon2_concurrency)),
         db: Arc::new(Semaphore::new(db_concurrency)),
-    }
+    })
+}
+
+pub(crate) struct ErrorMessage {
+    pub(crate) code: i32,
+    pub(crate) message: String,
+}
+
+pub(crate) fn print_error_and_exit(ErrorMessage { code, message }: ErrorMessage) -> ! {
+    error!("{message}");
+    log::logger().flush();
+    std::process::exit(code);
 }

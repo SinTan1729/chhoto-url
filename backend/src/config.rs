@@ -8,13 +8,12 @@ use std::{
     fmt::Display,
     fs,
     path::{Path, PathBuf},
-    process::exit,
 };
 use url::Url;
 
 use crate::{
     auth::{self, Credential},
-    utils,
+    utils::{self, ErrorMessage},
 };
 
 const DEFAULT_LISTEN_PORT: u16 = 4567;
@@ -143,7 +142,7 @@ pub(crate) struct InitConfig {
     pub(crate) disable_backups: bool,
 }
 
-pub(crate) fn init_config() -> InitConfig {
+pub(crate) fn read_init() -> InitConfig {
     let listen_address = read_config_wrapper("CHHOTO_LISTEN_ADDRESS", "listen_address")
         .map(|s| s.trim().to_owned())
         .filter(|s| !s.is_empty())
@@ -250,7 +249,8 @@ pub(crate) struct Config {
     pub(crate) oidc_allowed_origins: HashSet<String>,
 }
 
-pub(crate) fn read() -> Config {
+pub(crate) fn read() -> Result<Config, ErrorMessage> {
+    // Err(code, message)
     let db_location = get_db_location();
     info!(
         "Database Location is set to: {}",
@@ -296,17 +296,14 @@ pub(crate) fn read() -> Config {
                 info!("Secure API key was provided.");
             }
         })
-        .and_then(|s| Credential::parse(s, &api_key_hash_algorithm, "API Key"));
+        .map(|s| Credential::parse(s, &api_key_hash_algorithm, "API Key"))
+        .transpose()?;
 
     let password = read_config_wrapper("CHHOTO_PASSWORD", "password")
         .filter(|s| !s.trim().is_empty())
-        .map_or_else(
-            || {
-                warn!("No password was provided.");
-                None
-            },
-            |s| Credential::parse(s, &password_hash_algorithm, "Password"),
-        );
+        .map(|s| Credential::parse(s, &password_hash_algorithm, "Password"))
+        .transpose()
+        .inspect_err(|_| warn!("No password was provided!"))?;
 
     let public_mode =
         read_config_wrapper("CHHOTO_PUBLIC_MODE", "public_mode") == Some(String::from("Enable"));
@@ -442,21 +439,18 @@ pub(crate) fn read() -> Config {
         .map(|s| remove_surrounding_quotes(s.trim()))
         .filter(|s| !s.is_empty() && oidc_issuer_url.is_some())
         .map(|s| {
-            assert!(
-                oidc_issuer_url.is_some(),
-                "CHHOTO_OIDC_CUSTOM_CLAIM requires CHHOTO_OIDC_ISSUER_URL"
-            );
-            let (field, value) = s
-                .split_once('=')
-                .filter(|(f, v)| !f.is_empty() && !v.is_empty())
-                .unwrap_or_else(|| {
-                    error!("Invalid CHHOTO_OIDC_CUSTOM_CLAIM: expected field=value");
-                    log::logger().flush();
-                    exit(2);
-                });
-
+            let (field, value) = s.split_once('=').unwrap_or_default();
             (field.to_string(), value.to_string())
         });
+    if oidc_custom_claim
+        .as_ref()
+        .is_some_and(|(f, v)| f.is_empty() || v.is_empty())
+    {
+        return Err(ErrorMessage {
+            code: 2,
+            message: "Invalid CHHOTO_OIDC_CUSTOM_CLAIM. Expected field=value.".to_string(),
+        });
+    };
     if let Some(urls) = var("CHHOTO_OIDC_EXTRA_ORIGINS")
         .ok()
         .map(|s| remove_surrounding_quotes(s.trim()))
@@ -524,7 +518,7 @@ pub(crate) fn read() -> Config {
         .inspect(|s| info!("Frontend page size is set to {s}."))
         .unwrap_or(10);
 
-    Config {
+    Ok(Config {
         db_location,
         disable_frontend,
         site_url,
@@ -545,5 +539,5 @@ pub(crate) fn read() -> Config {
         oidc_client_secret,
         oidc_custom_claim,
         oidc_allowed_origins,
-    }
+    })
 }
