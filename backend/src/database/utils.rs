@@ -287,7 +287,7 @@ fn apply_migration_4(db: &mut Connection) -> Result<(), ErrorMessage> {
         != "ok"
     {
         return Err(ErrorMessage {
-            code: 1,
+            code: 2,
             message: "Unable to verify integrity after migration 4.".to_string(),
         });
     }
@@ -436,7 +436,7 @@ pub(crate) fn init_db(
     };
     if current_user_version > USER_VERSION {
         return Err(ErrorMessage {
-            code: 1,
+            code: 2,
             message: "User version is greater than what's supported in this version. \
                 Please update to the latest version."
                 .to_string(),
@@ -489,19 +489,6 @@ pub(crate) fn init_db(
     create_indices(db, tables, indices);
     apply_pragma(db, use_wal_mode, ensure_acid);
 
-    if use_wal_mode
-        && !matches!(
-            db.query_row("PRAGMA wal_checkpoint(TRUNCATE)", [], |row| {
-                Ok(row.get::<_, i32>(1)? == row.get::<_, i32>(2)?)
-            }),
-            Ok(true)
-        )
-    {
-        return Err(ErrorMessage {
-            code: 1,
-            message: "Unable to create WAL checkpoint.".to_string(),
-        });
-    }
     info!("Database initialization was successful.");
     Ok(())
 }

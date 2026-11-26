@@ -59,6 +59,11 @@ impl AsyncStderrLogger {
         )
     }
 }
+impl Drop for AsyncStderrLogger {
+    fn drop(&mut self) {
+        self.flush();
+    }
+}
 
 impl Log for AsyncStderrLogger {
     fn enabled(&self, metadata: &Metadata) -> bool {

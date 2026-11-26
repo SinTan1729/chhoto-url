@@ -78,7 +78,7 @@ async fn main() -> Result<()> {
     logging::init_async(Duration::from_secs(1), 8 * 1024, 512);
 
     // Read config from env vars
-    let config = config::read().unwrap_or_else(|e| utils::print_error_and_exit(e));
+    let config = config::read().unwrap_or_else(|e| utils::print_error_and_exit(e, None));
     let init_config = config::read_init();
     // ArcMutex is necessary since the writer is shared across threads
     let writer = Mutex::new(database::open_db(&config.db_location, false).expect(RW_DB_OPEN_ERROR));
@@ -90,7 +90,7 @@ async fn main() -> Result<()> {
         init_config.ensure_acid,
         init_config.disable_backups,
     ) {
-        print_error_and_exit(e);
+        print_error_and_exit(e, Some(&writer));
     };
     // Apply custom title if needed
     let frontend_dir = match utils::apply_custom_parts(&init_config) {
@@ -114,14 +114,17 @@ async fn main() -> Result<()> {
             if config.password.is_none() {
                 warn!("No auth is set up. Chhoto URL will be exposed to the public.");
                 if init_config.exit_on_no_auth {
-                    print_error_and_exit(ErrorMessage {
-                        code: 2,
-                        message: "Exiting Chhoto URL due to no auth.".to_string(),
-                    });
+                    print_error_and_exit(
+                        ErrorMessage {
+                            code: 3,
+                            message: "Exiting Chhoto URL due to no auth.".to_string(),
+                        },
+                        Some(&writer),
+                    );
                 }
             }
             if e.code != 0 {
-                print_error_and_exit(e);
+                print_error_and_exit(e, Some(&writer));
             }
             None
         }
@@ -131,7 +134,7 @@ async fn main() -> Result<()> {
     let secret_key = utils::generate_key();
     let (hits_tx, hits_rx) = mpsc::channel::<HitUpdate>(1024);
     let permits = utils::get_permit_values(&config, init_config.use_wal_mode)
-        .unwrap_or_else(|e| utils::print_error_and_exit(e));
+        .unwrap_or_else(|e| utils::print_error_and_exit(e, Some(&writer)));
 
     let data = web::Data::new(AppState {
         hits_tx: hits_tx.clone(),

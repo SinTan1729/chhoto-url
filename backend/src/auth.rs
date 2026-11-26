@@ -37,7 +37,7 @@ impl Credential {
         name: &str,
     ) -> Result<Self, ErrorMessage> {
         let error_message = ErrorMessage {
-            code: 1,
+            code: 3,
             message: "Chhoto URL exit due to bad auth!".to_string(),
         };
         let recommended = if name == "Password" {

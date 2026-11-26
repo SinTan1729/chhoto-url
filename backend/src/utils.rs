@@ -5,8 +5,14 @@ use actix_web::cookie::Key;
 use argon2::{Params, PasswordHash};
 use log::{error, info, trace, warn};
 use regex::Regex;
+use rusqlite::Connection;
 use std::{
-    convert::TryFrom, env::var, fs, io, path::Path, sync::Arc, thread::available_parallelism,
+    convert::TryFrom,
+    env::var,
+    fs, io,
+    path::Path,
+    sync::{Arc, Mutex},
+    thread::available_parallelism,
 };
 use tokio::sync::Semaphore;
 
@@ -306,8 +312,15 @@ pub(crate) struct ErrorMessage {
     pub(crate) message: String,
 }
 
-pub(crate) fn print_error_and_exit(ErrorMessage { code, message }: ErrorMessage) -> ! {
+pub(crate) fn print_error_and_exit(
+    ErrorMessage { code, message }: ErrorMessage,
+    db: Option<&Mutex<Connection>>,
+) -> ! {
     error!("{message}");
+    if let Some(mutex) = db {
+        let conn = mutex.lock().expect(crate::DB_MUTEX_ERROR);
+        let _ = conn.execute_batch("PRAGMA wal_checkpoint(TRUNCATE)");
+    }
     log::logger().flush();
     std::process::exit(code);
 }
