@@ -93,14 +93,24 @@ pub(crate) fn cleanup(
         .query_one("PRAGMA freelist_count", (), |r| r.get::<usize, i64>(0))
         .map_err(|_| "Failed to get freelist_count.".to_string())?;
 
-    // Roughly 20 MB with 4 KiB pages
-    if freelist_count > 5000 && db.execute("VACUUM", ()).is_err() {
-        return Err("failed to vacuum database".to_string());
+    const FREELIST_THRESHOLD: i64 = 1000; // Roughly 4 MB with 4 KiB pages
+    const DELETE_THRESHOLD: usize = 500;
+    const STAT_LINKS_THRESHOLD: i64 = 2000;
+
+    if total_deleted > DELETE_THRESHOLD
+        && db
+            .execute("INSERT INTO urls_fts(urls_fts) VALUES('optimize')", ())
+            .is_err()
+    {
+        return Err("Failed to optimize FTS index".to_string());
+    }
+    if freelist_count > FREELIST_THRESHOLD && db.execute("VACUUM", ()).is_err() {
+        return Err("Failed to vacuum database".to_string());
     }
     let link_count: i64 = db
         .query_one("SELECT COUNT(id) FROM urls", (), |row| row.get(0))
         .unwrap_or_default();
-    if link_count > 2000 && db.execute("PRAGMA optimize", ()).is_err() {
+    if link_count > STAT_LINKS_THRESHOLD && db.execute("PRAGMA optimize", ()).is_err() {
         Err("Unable to optimize database.".to_string())
     } else {
         debug!("Optimized database.");
