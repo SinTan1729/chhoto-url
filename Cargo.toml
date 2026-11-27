@@ -16,7 +16,6 @@ readme = "README.md"
 homepage = "https://chhoto.link"
 repository = "https://github.com/SinTan1729/chhoto-url"
 license = "MIT"
-license-file = "LICENSE"
 keywords = [
   "docker",
   "link-shortener",
