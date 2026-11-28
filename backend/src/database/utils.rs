@@ -17,9 +17,13 @@ use crate::{
     utils::ErrorMessage,
 };
 
-// Some constants
+// Immutable constants
 const APPLICATION_ID: i32 = i32::from_be_bytes(*b"chht"); // MUST NEVER BE CHANGED
 const USER_VERSION: u32 = 5; // Should be incremented on change of schema
+// Cleanup related constants
+const FREELIST_RATIO_THRESHOLD: i64 = 4; // 25% pages are free
+const DELETE_THRESHOLD: usize = 500;
+const STAT_LINKS_THRESHOLD: i64 = 2000;
 
 // Enum for backup types
 pub(crate) enum BackupType {
@@ -31,7 +35,7 @@ pub(crate) enum BackupType {
 pub(crate) fn cleanup(
     db: &mut Connection,
     use_wal_mode: bool,
-    no_time_budget: bool,
+    first_run: bool,
     attempt: u8,
 ) -> Result<bool, String> {
     let start = Instant::now();
@@ -46,7 +50,7 @@ pub(crate) fn cleanup(
         let mut statement = tx
             .prepare_cached(queries::CLEANUP_BATCH)
             .map_err(|_| "Error preparing SQL statement.".to_string())?;
-        while Instant::now() < deadline || no_time_budget {
+        while Instant::now() < deadline || first_run {
             let deleted = statement
                 .execute(named_params! { ":now": now })
                 .map_err(|_| "Error cleaning expired links.".to_string())?;
@@ -89,13 +93,6 @@ pub(crate) fn cleanup(
     {
         return Err("Unable to create WAL checkpoint.".to_string());
     }
-    let freelist_count = db
-        .query_one("PRAGMA freelist_count", (), |r| r.get::<usize, i64>(0))
-        .map_err(|_| "Failed to get freelist_count.".to_string())?;
-
-    const FREELIST_THRESHOLD: i64 = 1000; // Roughly 4 MB with 4 KiB pages
-    const DELETE_THRESHOLD: usize = 500;
-    const STAT_LINKS_THRESHOLD: i64 = 2000;
 
     if total_deleted > DELETE_THRESHOLD
         && db
@@ -104,18 +101,19 @@ pub(crate) fn cleanup(
     {
         return Err("Failed to optimize FTS index".to_string());
     }
-    if freelist_count > FREELIST_THRESHOLD && db.execute("VACUUM", ()).is_err() {
-        return Err("Failed to vacuum database".to_string());
-    }
+
     let link_count: i64 = db
         .query_one("SELECT COUNT(id) FROM urls", (), |row| row.get(0))
         .unwrap_or_default();
-    if link_count > STAT_LINKS_THRESHOLD && db.execute("PRAGMA optimize", ()).is_err() {
-        Err("Unable to optimize database.".to_string())
-    } else {
-        debug!("Optimized database.");
-        Ok(leftovers)
+    if link_count > STAT_LINKS_THRESHOLD && !first_run {
+        if db.execute("PRAGMA optimize", ()).is_err() {
+            return Err("Unable to optimize database.".to_string());
+        } else {
+            debug!("Optimized database.");
+        }
     }
+
+    Ok(leftovers)
 }
 
 // Create backups
@@ -161,7 +159,7 @@ pub(crate) fn manage_backups(
                         .is_some_and(|name| name.starts_with(&prefix))
                 })
             {
-                debug!("Daily backup already exists for today; skipping.");
+                debug!("Daily backup already exists for today, skipping.");
                 return Ok(());
             }
 
@@ -376,15 +374,29 @@ fn apply_pragma(db: &mut Connection, use_wal_mode: bool, ensure_acid: bool) {
     tx.pragma_update(None, "user_version", USER_VERSION)
         .expect("Unable to set pragma: user_version.");
     tx.commit().expect("Unable to set correct pragma values.");
+
+    db.execute("INSERT INTO urls_fts(urls_fts) VALUES('optimize')", ())
+        .expect("Failed to optimize FTS index");
+
+    let freelist_count = db
+        .query_one("PRAGMA freelist_count", (), |r| r.get::<usize, i64>(0))
+        .expect("Failed to get freelist_count.");
+    let total_pages = db
+        .query_one("PRAGMA page_count", (), |r| r.get::<usize, i64>(0))
+        .expect("Failed to get freelist_count.");
+    if freelist_count * FREELIST_RATIO_THRESHOLD > total_pages {
+        db.execute("VACUUM", ())
+            .expect("Failed to vacuum database.");
+    }
+
+    db.execute("PRAGMA optimize=0x10002", ())
+        .expect("Unable to optimize database.");
     let link_count: i64 = db
         .query_one("SELECT COUNT(id) FROM urls", (), |row| row.get(0))
         .unwrap_or_default();
-    if link_count > 2000 {
-        db.execute("PRAGMA optimize=0x10002", ())
-            .expect("Unable to optimize database.");
-        debug!("Optimized database.");
-    } else {
-        debug!("Using bootstrap stat1 table");
+    debug!("Optimized database.");
+    if link_count <= STAT_LINKS_THRESHOLD {
+        debug!("Using bootstrap stat1 table.");
         db.execute_batch(queries::Z_STAT1_INIT)
             .expect("Error inserting bootstrap table.");
     }
